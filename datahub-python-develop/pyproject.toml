@@ -31,9 +31,11 @@ fuse = [
     "fusepy>=3.0.1",
 ]
 nfs = [
-    # datahub-nfsd Rust 바이너리 배포 패키지 (플랫폼별 wheel)
-    # GitLab Package Registry: https://gitlab.lgresearch.ai/data-governance-public/datahub-nfsd
-    "datahub-nfsd-bin>=0.1.0",
+    # datahub-nfsd Rust 바이너리 배포 패키지 (플랫폼별 wheel) — 사내 GitLab
+    # Package Registry(https://gitlab.lgresearch.ai/data-governance-public/datahub-nfsd)
+    # 에서 배포되므로 로컬/외부망 환경에서는 설치 불가.
+    # 사내망에서 NFS 마운트 기능을 사용할 때만 아래 줄을 활성화하세요:
+    # "datahub-nfsd-bin>=0.1.0",
 ]
 dev = [
     "pytest>=8.0",

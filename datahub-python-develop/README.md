@@ -17,6 +17,62 @@ LakeFS, Unity Catalog, GCS 등 인프라 의존성 없이, 서버 API만 호출�
 
 ---
 
+## Local Development (사내망 없이 개발)
+
+이 섹션은 **사내 VPN/시스템망 없이 개인 PC에서 코드를 수정·테스트**하는 경우를 위한 가이드입니다. 사내 환경에서 실제 서비스에 연결해 사용하려면 아래 [Installation](#installation) 섹션을 따르세요.
+
+### 1. 소스에서 editable 설치
+
+```bash
+# 저장소 루트에서
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+`pyproject.toml` 의 기본 의존성에는 사내 패키지가 포함되어 있지 않으므로 외부망(PyPI)만으로 설치 가능합니다.
+선택 의존성 중 `[nfs]` 만 사내 GitLab Package Registry 에서 배포되는 `datahub-nfsd-bin` 을 요구하므로 로컬에서는 사용하지 마세요. (`[fuse]` 는 PyPI 의 `fusepy` 라 무관)
+
+### 2. 기본 endpoint
+
+import 시 자동으로 사내 URL 로 향하던 동작은 제거되었습니다. 기본값은 `http://localhost:8000` 이며, 다른 endpoint 를 쓰려면 다음 중 하나로 override 하세요.
+
+```bash
+# 환경변수
+export DATAHUB_AUTH_ENDPOINT=http://localhost:8000
+
+# 또는 ~/.datahub/config.yaml
+cat > ~/.datahub/config.yaml <<'YAML'
+auth:
+  endpoint: http://localhost:8000
+  verify_ssl: false
+YAML
+```
+
+코드에서 직접 주입할 수도 있습니다:
+
+```python
+from datahub import DataClient
+client = DataClient(endpoint="http://localhost:8000")
+```
+
+### 3. 테스트 실행
+
+E2E 테스트는 라이브 서버를 요구하므로 제외합니다 (단위 테스트는 네트워크 불요):
+
+```bash
+pytest tests/ --ignore=tests/e2e
+```
+
+### 4. 사내망 의존 항목 (참고)
+
+로컬 개발 시 의도적으로 **건드리지 않는** 사내 결합 지점:
+
+- `.gitlab-ci.yml` — 사내 GitLab CI 전용 (로컬 실행 안 됨)
+- `src/datahub/_trust.py` — 사내 TLS 검사 프록시 대응. `truststore` 패키지 미설치 시 silent no-op 이라 로컬 영향 없음
+- `tests/e2e/` — 라이브 API 서버 필요 (위에서 `--ignore` 로 제외)
+
+---
+
 ## Installation
 
 내부망 GitLab Package Registry에서 설치합니다. Public 레지스트리이므로 **인증 토큰 불필요**.
