@@ -60,6 +60,38 @@ export default function Page({ params }: { params: { id: string } }) {
         </table>
       </div>
 
+      {form.attachments.length > 0 && (
+        <div className="mt-4">
+          <h3 className="mb-2 text-sm font-semibold">첨부 파일 ({form.attachments.length})</h3>
+          <ul className="space-y-2">
+            {form.attachments.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-gray-400">📎</span>
+                  <span className="truncate font-medium">{a.filename}</span>
+                  <span className="shrink-0 text-xs text-gray-400">
+                    {a.size_bytes < 1024
+                      ? `${a.size_bytes} B`
+                      : a.size_bytes < 1024 * 1024
+                      ? `${(a.size_bytes / 1024).toFixed(1)} KB`
+                      : `${(a.size_bytes / 1024 / 1024).toFixed(1)} MB`}
+                  </span>
+                </div>
+                <a
+                  href={api.formAttachmentUrl(form.id, a.id)}
+                  className="rounded border border-gray-200 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                >
+                  다운로드
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mt-4 flex justify-end gap-2">
         <Link
           href="/governance/forms"

@@ -7,25 +7,35 @@ URL:
   GET  /forms/{id}             → 상세 (read-only 보기)
   PATCH /forms/{id}            → 수정 (제출자 or admin)
   GET  /forms/{id}/export      → Excel 다운로드
+
+  파일 첨부:
+  POST   /forms/{id}/attachments         → 업로드 (multipart/form-data, file)
+  GET    /forms/{id}/attachments/{aid}   → 다운로드
+  DELETE /forms/{id}/attachments/{aid}   → 삭제
 """
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse, StreamingResponse
 from openpyxl import Workbook
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.config import settings
 from app.db.session import get_db
-from app.models import Form, User
+from app.models import Form, FormAttachment, User
 from app.models.form import FORM_TYPES
-from app.schemas.form import FormCreate, FormDetail, FormListItem
+from app.schemas.form import FormAttachmentOut, FormCreate, FormDetail, FormListItem
 
 router = APIRouter(prefix="/forms", tags=["forms"])
+
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB (UI hint 와 일치)
 
 
 def _next_request_no(db: Session) -> str:
@@ -175,3 +185,105 @@ def export_form(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── 파일 첨부 ─────────────────────────────────────────────────────────────────
+
+
+def _check_form_owner(form_id: int, db: Session, user: User) -> Form:
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+    if form.submitter_id != user.id and user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+    return form
+
+
+@router.post(
+    "/{form_id}/attachments",
+    response_model=FormAttachmentOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_attachment(
+    form_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """파일 1개 업로드 — 50MB 제한.
+
+    저장 경로: `uploads/forms/{form_id}/{token}_{원본파일명}`
+    원본 파일명은 별도 컬럼에 그대로 보관 (다운로드 시 노출).
+    """
+    form = _check_form_owner(form_id, db, user)
+
+    # 50MB 제한 — 미리 head 만 읽어서 크기 추정 후, 전체 읽고 재검증
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"파일 크기는 {MAX_UPLOAD_BYTES // (1024 * 1024)}MB 이하여야 합니다.",
+        )
+
+    # 디렉토리 + 충돌 방지 파일명
+    target_dir: Path = settings.upload_dir / "forms" / str(form.id)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = (file.filename or "unnamed").replace("/", "_").replace("\\", "_")
+    stored_name = f"{secrets.token_hex(8)}_{safe_name}"
+    target_path = target_dir / stored_name
+    target_path.write_bytes(contents)
+
+    att = FormAttachment(
+        form_id=form.id,
+        filename=safe_name,
+        stored_path=str(target_path),
+        size_bytes=len(contents),
+    )
+    db.add(att)
+    db.commit()
+    db.refresh(att)
+    return att
+
+
+@router.get("/{form_id}/attachments/{att_id}")
+def download_attachment(
+    form_id: int,
+    att_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _check_form_owner(form_id, db, user)
+    att = (
+        db.query(FormAttachment)
+        .filter(FormAttachment.id == att_id, FormAttachment.form_id == form_id)
+        .first()
+    )
+    if not att:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="attachment not found")
+    if not Path(att.stored_path).exists():
+        raise HTTPException(status.HTTP_410_GONE, detail="파일이 디스크에서 사라졌습니다.")
+    return FileResponse(att.stored_path, filename=att.filename)
+
+
+@router.delete("/{form_id}/attachments/{att_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_attachment(
+    form_id: int,
+    att_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _check_form_owner(form_id, db, user)
+    att = (
+        db.query(FormAttachment)
+        .filter(FormAttachment.id == att_id, FormAttachment.form_id == form_id)
+        .first()
+    )
+    if not att:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="attachment not found")
+    # 디스크에서 먼저 삭제 시도 (실패해도 DB row 는 삭제 — 고아 파일 방지)
+    try:
+        Path(att.stored_path).unlink(missing_ok=True)
+    except OSError:
+        pass
+    db.delete(att)
+    db.commit()

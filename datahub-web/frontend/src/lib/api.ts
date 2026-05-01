@@ -129,4 +129,17 @@ export const api = {
   submitForm: (body: { form_type: FormType; project_name: string; payload: Record<string, unknown>; status?: string }) =>
     request<FormDetail>("/forms", { method: "POST", body: JSON.stringify(body) }),
   exportFormUrl: (id: number) => `${BASE}/forms/${id}/export`,
+
+  /** 신청서 1개에 파일 1개 업로드 (multipart/form-data). */
+  uploadFormAttachment: (formId: number, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<{ id: number; filename: string; size_bytes: number }>(
+      `/forms/${formId}/attachments`,
+      { method: "POST", body: fd },
+    );
+  },
+  formAttachmentUrl: (formId: number, attId: number) => `${BASE}/forms/${formId}/attachments/${attId}`,
+  deleteFormAttachment: (formId: number, attId: number) =>
+    request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
 };

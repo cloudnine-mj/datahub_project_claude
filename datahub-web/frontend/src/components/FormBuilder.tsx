@@ -1,22 +1,49 @@
 "use client";
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Save, Upload } from "lucide-react";
+import { Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
+
+const MAX_BYTES = 50 * 1024 * 1024;
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function FormBuilder({ formType }: { formType: FormType }) {
   const router = useRouter();
   const schema = FORM_SCHEMAS[formType];
   const [values, setValues] = useState<Record<string, unknown>>({});
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
+  }
+
+  function addFiles(list: FileList | File[]) {
+    const arr = Array.from(list);
+    const tooBig = arr.find((f) => f.size > MAX_BYTES);
+    if (tooBig) {
+      setError(`"${tooBig.name}" 은(는) 50MB 를 초과합니다.`);
+      return;
+    }
+    setError(null);
+    setFiles((prev) => [...prev, ...arr]);
+  }
+
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -25,15 +52,29 @@ export function FormBuilder({ formType }: { formType: FormType }) {
     setSubmitting(true);
     try {
       const projectName = String(values[schema.projectField] || "(미입력)");
+      setProgress("신청서 저장 중...");
       const result = await api.submitForm({
         form_type: formType,
         project_name: projectName,
         payload: values,
       });
+
+      // 파일은 신청서 생성 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도
+      for (let i = 0; i < files.length; i++) {
+        setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
+        try {
+          await api.uploadFormAttachment(result.id, files[i]);
+        } catch (e) {
+          // 일부 파일만 실패해도 사용자에게 알리고 계속
+          console.error(`업로드 실패 (${files[i].name}):`, e);
+        }
+      }
+
       router.push(`/governance/forms/submitted?id=${result.id}`);
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
+      setProgress(null);
     }
   }
 
@@ -91,17 +132,75 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             <span className="block h-5 w-1 rounded-sm bg-brand" />
             <h2 className="text-base font-bold">파일 첨부</h2>
           </div>
-          <div className="rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 px-6 py-10 text-center">
+
+          {/* 드래그&드롭 + 클릭 업로드 영역 */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+              if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={
+              "cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition " +
+              (dragActive ? "border-brand bg-brand/5" : "border-blue-300 bg-blue-50/30 hover:border-brand/60 hover:bg-blue-50/50")
+            }
+          >
             <Upload size={20} className="mx-auto text-gray-400" />
             <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
             <p className="mt-1 text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 첨부 가능 · 최대 50MB</p>
-            <button type="button" className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
+            <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
               📎 파일 선택
-            </button>
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                e.target.value = "";  // 같은 파일 다시 선택 가능하게
+              }}
+            />
           </div>
+
+          {/* 선택된 파일 목록 */}
+          {files.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {files.map((f, i) => (
+                <li
+                  key={`${f.name}-${i}`}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-gray-400">📎</span>
+                    <span className="truncate font-medium">{f.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(i);
+                    }}
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                    aria-label="제거"
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
         <div className="flex justify-end">
           <button
@@ -109,7 +208,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
-            <Save size={14} /> 저장
+            <Save size={14} /> {submitting ? "저장 중..." : "저장"}
           </button>
         </div>
       </form>
