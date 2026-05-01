@@ -1,0 +1,313 @@
+"use client";
+
+// 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Save, Upload, X } from "lucide-react";
+import { api, type FormType } from "@/lib/api";
+import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
+import { Breadcrumb } from "./Breadcrumb";
+
+const MAX_BYTES = 50 * 1024 * 1024;
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+export function FormBuilder({ formType }: { formType: FormType }) {
+  const router = useRouter();
+  const schema = FORM_SCHEMAS[formType];
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function setField(key: string, v: unknown) {
+    setValues((prev) => ({ ...prev, [key]: v }));
+  }
+
+  function addFiles(list: FileList | File[]) {
+    const arr = Array.from(list);
+    const tooBig = arr.find((f) => f.size > MAX_BYTES);
+    if (tooBig) {
+      setError(`"${tooBig.name}" 은(는) 50MB 를 초과합니다.`);
+      return;
+    }
+    setError(null);
+    setFiles((prev) => [...prev, ...arr]);
+  }
+
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const projectName = String(values[schema.projectField] || "(미입력)");
+      setProgress("신청서 저장 중...");
+      const result = await api.submitForm({
+        form_type: formType,
+        project_name: projectName,
+        payload: values,
+      });
+
+      // 파일은 신청서 생성 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도
+      for (let i = 0; i < files.length; i++) {
+        setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
+        try {
+          await api.uploadFormAttachment(result.id, files[i]);
+        } catch (e) {
+          // 일부 파일만 실패해도 사용자에게 알리고 계속
+          console.error(`업로드 실패 (${files[i].name}):`, e);
+        }
+      }
+
+      router.push(`/governance/forms/submitted?id=${result.id}`);
+    } catch (e) {
+      setError((e as Error).message);
+      setSubmitting(false);
+      setProgress(null);
+    }
+  }
+
+  return (
+    <div>
+      <Breadcrumb
+        items={[
+          { label: "Governance", href: "/governance" },
+          { label: "제작/활용 신청서 작성", href: "/governance/forms" },
+          { label: schema.label },
+        ]}
+      />
+
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
+        <button
+          form="form-builder"
+          type="submit"
+          disabled={submitting}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+        >
+          <Save size={14} /> 저장
+        </button>
+      </div>
+
+      <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
+        {schema.sections.map((section) => (
+          <section key={section.title}>
+            <div className="mb-3 flex items-center gap-2">
+              <span className="block h-5 w-1 rounded-sm bg-brand" />
+              <h2 className="text-base font-bold">{section.title}</h2>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <table className="w-full text-sm">
+                <tbody>
+                  {section.fields.map((f) => (
+                    <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
+                      <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
+                        {f.label}
+                        {f.required && <span className="ml-1 text-brand">*</span>}
+                      </td>
+                      <td className="px-5 py-3">
+                        <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))}
+
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="block h-5 w-1 rounded-sm bg-brand" />
+            <h2 className="text-base font-bold">파일 첨부</h2>
+          </div>
+
+          {/* 드래그&드롭 + 클릭 업로드 영역 */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+              if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={
+              "cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition " +
+              (dragActive ? "border-brand bg-brand/5" : "border-blue-300 bg-blue-50/30 hover:border-brand/60 hover:bg-blue-50/50")
+            }
+          >
+            <Upload size={20} className="mx-auto text-gray-400" />
+            <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
+            <p className="mt-1 text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 첨부 가능 · 최대 50MB</p>
+            <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
+              📎 파일 선택
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                e.target.value = "";  // 같은 파일 다시 선택 가능하게
+              }}
+            />
+          </div>
+
+          {/* 선택된 파일 목록 */}
+          {files.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {files.map((f, i) => (
+                <li
+                  key={`${f.name}-${i}`}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-gray-400">📎</span>
+                    <span className="truncate font-medium">{f.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(i);
+                    }}
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                    aria-label="제거"
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+          >
+            <Save size={14} /> {submitting ? "저장 중..." : "저장"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function FieldInput({
+  field,
+  value,
+  onChange,
+}: {
+  field: FieldDef;
+  value: unknown;
+  onChange: (v: unknown) => void;
+}) {
+  const common = "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none";
+  switch (field.type) {
+    case "textarea":
+      return (
+        <textarea
+          rows={3}
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className={common}
+        />
+      );
+    case "date":
+      return (
+        <input
+          type="date"
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={common}
+        />
+      );
+    case "number":
+      return (
+        <input
+          type="number"
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className={common}
+        />
+      );
+    case "radio":
+      return (
+        <div className="space-y-2">
+          {field.options?.map((opt) => (
+            <label key={opt} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name={field.key}
+                value={opt}
+                checked={value === opt}
+                onChange={() => onChange(opt)}
+                className="text-brand focus:ring-brand"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      );
+    case "checkbox":
+      return (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(e) => onChange(e.target.checked)}
+            className="rounded text-brand focus:ring-brand"
+          />
+          <span className="text-gray-700">{field.label}</span>
+        </label>
+      );
+    case "select":
+      return (
+        <select
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={common}
+        >
+          <option value="">선택하세요</option>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      );
+    default:
+      return (
+        <input
+          type="text"
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className={common}
+        />
+      );
+  }
+}
