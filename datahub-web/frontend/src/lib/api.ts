@@ -146,6 +146,10 @@ export const api = {
   postAttachmentUrl: (board: BoardType, postId: number, attId: number) =>
     `${BASE}/boards/${board}/posts/${postId}/attachments/${attId}`,
 
+  /** 게시글 삭제 — 작성자 본인 또는 admin 만 가능 (백엔드에서 검증). */
+  deletePost: (board: BoardType, postId: number) =>
+    request<void>(`/boards/${board}/posts/${postId}`, { method: "DELETE" }),
+
   listForms: (params: { form_type?: FormType; mine?: boolean } = {}) => {
     const q = new URLSearchParams();
     if (params.form_type) q.set("form_type", params.form_type);

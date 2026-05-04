@@ -13,9 +13,10 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, FileText, Lightbulb, Users } from "lucide-react";
-import { api, type PostDetail } from "@/lib/api";
+import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { SeverityBadge } from "./SeverityBadge";
+import { DeletePostButton } from "./DeletePostButton";
 import { formatDate } from "@/lib/utils";
 
 /**
@@ -68,15 +69,20 @@ function PolicyContent({ text }: { text: string }) {
 
 export function PolicyDetailView({ postId }: { postId: number }) {
   const [post, setPost] = useState<PostDetail | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     api.getPost("policy", postId).then(setPost).catch((e) => setError((e as Error).message));
+    api.me().then(setMe).catch(() => setMe(null));
   }, [postId]);
 
   if (error) return <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>;
   if (!post) return <div className="text-sm text-gray-400">불러오는 중...</div>;
+
+  // 삭제 권한: admin 이거나 작성자 본인. 백엔드도 동일하게 검증함.
+  const canDelete = !!me && (me.user.role === "admin" || me.user.name === post.author_name);
 
   const items = post.action_items ?? [];
   const doneCount = Object.values(checked).filter(Boolean).length;
@@ -101,7 +107,12 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         <span className="text-gray-400">· {post.author_name}</span>
       </div>
 
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{post.title}</h1>
+      <div className="mt-2 flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
+        {canDelete && (
+          <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
+        )}
+      </div>
       {post.summary && <p className="mt-2 text-base text-gray-600">{post.summary}</p>}
 
       {post.applies_to && (
