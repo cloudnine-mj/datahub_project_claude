@@ -4,14 +4,22 @@
 //
 // 정책 게시판(policy)일 때는 추가 메타필드(summary/tags/severity/applies_to/tldr/
 // action_items/examples) 입력 영역이 같이 보임. 다른 게시판은 단순 폼 그대로.
+// 파일 첨부는 글 등록 후 순차 업로드 (FormBuilder 와 동일 패턴).
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Paperclip } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { SEVERITIES } from "./SeverityBadge";
 
 const CATEGORIES = ["가이드", "공지", "정책", "FAQ"];
+const MAX_BYTES = 50 * 1024 * 1024;
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function PostNewView({ board }: { board: BoardType }) {
   const router = useRouter();
@@ -31,12 +39,33 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [actionItemsText, setActionItemsText] = useState(""); // 줄당 1개
   const [examples, setExamples] = useState("");
 
+  // 파일 첨부 (글 등록 후 순차 업로드)
+  const [files, setFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.me().then(setMe);
   }, []);
+
+  function addFiles(list: FileList | File[]) {
+    const arr = Array.from(list);
+    const tooBig = arr.find((f) => f.size > MAX_BYTES);
+    if (tooBig) {
+      setError(`"${tooBig.name}" 은(는) 50MB 를 초과합니다.`);
+      return;
+    }
+    setError(null);
+    setFiles((prev) => [...prev, ...arr]);
+  }
+
+  function removeFile(idx: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   // 권한 없는 사용자가 직접 URL 로 진입한 경우 화면 12 로 강제 이동
   useEffect(() => {
@@ -59,7 +88,8 @@ export function PostNewView({ board }: { board: BoardType }) {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      await api.createPost(board, {
+      setProgress("게시글 저장 중...");
+      const post = await api.createPost(board, {
         title,
         category: category || undefined,
         content,
@@ -73,10 +103,22 @@ export function PostNewView({ board }: { board: BoardType }) {
           examples: examples || null,
         }),
       });
+
+      // 게시글 생성 후 파일 순차 업로드 — 일부 실패해도 계속 시도
+      for (let i = 0; i < files.length; i++) {
+        setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
+        try {
+          await api.uploadPostAttachment(board, post.id, files[i]);
+        } catch (e) {
+          console.error(`업로드 실패 (${files[i].name}):`, e);
+        }
+      }
+
       router.push(`/governance/${boardSegment(board)}`);
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
+      setProgress(null);
     }
   }
 
@@ -221,15 +263,78 @@ export function PostNewView({ board }: { board: BoardType }) {
           </section>
         )}
 
-        {/* 첨부 (TODO: 게시글 업로드 연동은 다음 단계) */}
+        {/* 파일 첨부 — 글 등록 후 순차 업로드 */}
         <section className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-3 text-sm text-gray-400">
-            <Paperclip size={14} />
-            파일 첨부 (다음 단계에서 연동 예정)
+          <h2 className="mb-3 text-sm font-bold text-gray-700">파일 첨부</h2>
+
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+              if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={
+              "cursor-pointer rounded-lg border-2 border-dashed px-6 py-8 text-center transition " +
+              (dragActive
+                ? "border-brand bg-brand/5"
+                : "border-gray-300 bg-gray-50/40 hover:border-brand/60 hover:bg-gray-50")
+            }
+          >
+            <Upload size={20} className="mx-auto text-gray-400" />
+            <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
+            <p className="mt-1 text-xs text-gray-500">최대 50MB · 여러 파일 가능</p>
+            <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
+              📎 파일 선택
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
           </div>
+
+          {files.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {files.map((f, i) => (
+                <li
+                  key={`${f.name}-${i}`}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-gray-400">📎</span>
+                    <span className="truncate font-medium">{f.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(i);
+                    }}
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                    aria-label="제거"
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
         <div className="flex gap-2">
           <button

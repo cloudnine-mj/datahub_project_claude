@@ -134,6 +134,18 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  /** 게시글에 파일 1개 업로드 (multipart/form-data). */
+  uploadPostAttachment: (board: BoardType, postId: number, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<{ id: number; filename: string; size_bytes: number }>(
+      `/boards/${board}/posts/${postId}/attachments`,
+      { method: "POST", body: fd },
+    );
+  },
+  postAttachmentUrl: (board: BoardType, postId: number, attId: number) =>
+    `${BASE}/boards/${board}/posts/${postId}/attachments/${attId}`,
+
   listForms: (params: { form_type?: FormType; mine?: boolean } = {}) => {
     const q = new URLSearchParams();
     if (params.form_type) q.set("form_type", params.form_type);

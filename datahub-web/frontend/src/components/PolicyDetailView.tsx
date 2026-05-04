@@ -143,10 +143,23 @@ export function PolicyDetailView({ postId }: { postId: number }) {
           <h2 className="text-sm font-bold">첨부 파일 ({post.attachments.length})</h2>
           <ul className="mt-2 space-y-1.5">
             {post.attachments.map((a) => (
-              <li key={a.id} className="flex items-center gap-2 text-sm">
-                <span className="text-gray-400">📎</span>
-                <span>{a.filename}</span>
-                <span className="text-xs text-gray-400">({Math.round(a.size_bytes / 1024)} KB)</span>
+              <li
+                key={a.id}
+                className="flex items-center justify-between rounded border border-gray-100 px-3 py-2 text-sm"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-gray-400">📎</span>
+                  <span className="truncate">{a.filename}</span>
+                  <span className="shrink-0 text-xs text-gray-400">
+                    ({Math.round(a.size_bytes / 1024)} KB)
+                  </span>
+                </div>
+                <a
+                  href={api.postAttachmentUrl("policy", post.id, a.id)}
+                  className="shrink-0 rounded border border-gray-200 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                >
+                  다운로드
+                </a>
               </li>
             ))}
           </ul>
