@@ -7,9 +7,10 @@
 // 파일 첨부는 글 등록 후 순차 업로드 (FormBuilder 와 동일 패턴).
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, X } from "lucide-react";
+import { Sparkles, Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
+import { PolicyExampleModal } from "./PolicyExampleModal";
 import { SEVERITIES } from "./SeverityBadge";
 
 const CATEGORIES = ["가이드", "공지", "정책", "FAQ"];
@@ -44,9 +45,26 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 예시 보기 모달
+  const [exampleOpen, setExampleOpen] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /** "이 예시로 채우기" — 모달에서 시드 예시를 받아 모든 폼 필드에 일괄 입력. */
+  function applyExample(ex: import("@/lib/policyExample").PolicyExample) {
+    setTitle(ex.title);
+    setCategory(ex.category);
+    setContent(ex.content);
+    setSummary(ex.summary);
+    setTagsInput(ex.tags.join(", "));
+    setSeverity(ex.severity);
+    setAppliesTo(ex.applies_to);
+    setTldr(ex.tldr);
+    setActionItemsText(ex.action_items.join("\n"));
+    setExamples(ex.examples);
+  }
 
   useEffect(() => {
     api.me().then(setMe);
@@ -173,6 +191,13 @@ export function PostNewView({ board }: { board: BoardType }) {
             <div className="mb-1 flex items-center gap-2">
               <h2 className="text-sm font-bold text-blue-900">정책 메타데이터</h2>
               <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">선택</span>
+              <button
+                type="button"
+                onClick={() => setExampleOpen(true)}
+                className="ml-auto inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+              >
+                <Sparkles size={12} /> 예시 보기
+              </button>
             </div>
             <p className="mb-4 text-xs text-blue-800/70">
               정책을 읽는 사람이 빠르게 파악하고 행동으로 옮길 수 있도록 도와주는 정보입니다. 비워둔 항목은 화면에 표시되지 않습니다.
@@ -353,6 +378,15 @@ export function PostNewView({ board }: { board: BoardType }) {
           </button>
         </div>
       </form>
+
+      {/* 정책 게시판 한정 — 예시 보기 모달 */}
+      {isPolicy && (
+        <PolicyExampleModal
+          open={exampleOpen}
+          onClose={() => setExampleOpen(false)}
+          onApply={applyExample}
+        />
+      )}
     </div>
   );
 }
