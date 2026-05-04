@@ -1,4 +1,6 @@
-import { PostDetailView } from "@/components/PostDetailView";
+// 화면 4 (사용자 여정 Step 4): 정책 상세 — TL;DR + 체크리스트 + 예시.
+import { PolicyDetailView } from "@/components/PolicyDetailView";
+
 export default function Page({ params }: { params: { id: string } }) {
-  return <PostDetailView board="policy" postId={Number(params.id)} />;
+  return <PolicyDetailView postId={Number(params.id)} />;
 }

@@ -1,5 +1,6 @@
-// 화면 2: 데이터 관리 정책 (빈 게시판)
-import { BoardListView } from "@/components/BoardListView";
+// 화면 2: 데이터 관리 정책 — 사용자 여정 분석에 따라 카드형으로 업그레이드.
+import { PolicyBoardView } from "@/components/PolicyBoardView";
+
 export default function Page() {
-  return <BoardListView board="policy" />;
+  return <PolicyBoardView />;
 }

@@ -65,10 +65,24 @@ export interface Me {
   };
 }
 
-export interface PostListItem {
+export type Severity = "required" | "recommended" | "reference";
+
+/** 정책 게시판에서만 활용되는 메타필드 — Step 2,3,4 의 Opportunity 매핑. */
+export interface PolicyMeta {
+  summary?: string | null;
+  tags?: string[] | null;
+  severity?: Severity | null;
+  applies_to?: string | null;
+  tldr?: string | null;
+  action_items?: string[] | null;
+  examples?: string | null;
+}
+
+export interface PostListItem extends PolicyMeta {
   id: number;
   title: string;
   created_at: string;
+  updated_at: string;
   author_name: string;
 }
 
@@ -76,7 +90,6 @@ export interface PostDetail extends PostListItem {
   board_type: BoardType;
   category: string | null;
   content: string;
-  updated_at: string;
   attachments: { id: number; filename: string; size_bytes: number }[];
 }
 
@@ -112,7 +125,10 @@ export const api = {
 
   listPosts: (board: BoardType) => request<PostListItem[]>(`/boards/${board}/posts`),
   getPost: (board: BoardType, id: number) => request<PostDetail>(`/boards/${board}/posts/${id}`),
-  createPost: (board: BoardType, body: { title: string; category?: string; content: string }) =>
+  createPost: (
+    board: BoardType,
+    body: { title: string; category?: string; content: string } & Partial<PolicyMeta>,
+  ) =>
     request<PostDetail>(`/boards/${board}/posts`, {
       method: "POST",
       body: JSON.stringify(body),
