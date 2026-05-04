@@ -18,22 +18,46 @@ class PostCreate(BaseModel):
     category: str | None = None
     content: str = ""
 
+    # 정책 메타 (모두 선택)
+    summary: str | None = None
+    tags: list[str] | None = None
+    severity: str | None = None  # required / recommended / reference
+    applies_to: str | None = None
+    tldr: str | None = None
+    action_items: list[str] | None = None
+    examples: str | None = None
+
 
 class PostUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=300)
     category: str | None = None
     content: str | None = None
+    summary: str | None = None
+    tags: list[str] | None = None
+    severity: str | None = None
+    applies_to: str | None = None
+    tldr: str | None = None
+    action_items: list[str] | None = None
+    examples: str | None = None
 
 
 class PostListItem(BaseModel):
-    """게시판 목록 row — 화면 3,4 의 (번호 / 제목 / 작성일)."""
+    """게시판 목록 row.
+
+    정책 게시판은 카드형이라 메타필드도 함께 노출 — 단순 게시판은 None 들이 와서 무시됨.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
     created_at: datetime
+    updated_at: datetime
     author_name: str
+    summary: str | None = None
+    tags: list[str] | None = None
+    severity: str | None = None
+    applies_to: str | None = None
 
 
 class PostDetail(BaseModel):
@@ -48,3 +72,12 @@ class PostDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     attachments: list[PostAttachmentOut] = []
+
+    # 정책 메타
+    summary: str | None = None
+    tags: list[str] | None = None
+    severity: str | None = None
+    applies_to: str | None = None
+    tldr: str | None = None
+    action_items: list[str] | None = None
+    examples: str | None = None

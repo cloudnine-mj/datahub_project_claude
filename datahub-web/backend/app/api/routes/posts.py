@@ -61,6 +61,13 @@ def create_post(
         content=payload.content,
         author_id=user.id,
         author_name=user.name,
+        summary=payload.summary,
+        tags=payload.tags,
+        severity=payload.severity,
+        applies_to=payload.applies_to,
+        tldr=payload.tldr,
+        action_items=payload.action_items,
+        examples=payload.examples,
     )
     db.add(post)
     db.commit()
