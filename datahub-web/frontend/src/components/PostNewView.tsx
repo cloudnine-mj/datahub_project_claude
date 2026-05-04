@@ -175,7 +175,7 @@ export function PostNewView({ board }: { board: BoardType }) {
               <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">선택</span>
             </div>
             <p className="mb-4 text-xs text-blue-800/70">
-              사용자가 정책을 빠르게 파악하고 행동으로 옮길 수 있도록 도와주는 정보입니다. 비워두면 단순 게시글로 표시됩니다.
+              정책을 읽는 사람이 빠르게 파악하고 행동으로 옮길 수 있도록 도와주는 정보입니다. 비워둔 항목은 화면에 표시되지 않습니다.
             </p>
 
             <div className="space-y-5">
