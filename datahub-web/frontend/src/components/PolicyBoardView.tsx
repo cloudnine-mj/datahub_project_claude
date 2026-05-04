@@ -59,15 +59,21 @@ export function PolicyBoardView() {
       <h1 className="text-3xl font-bold tracking-tight">데이터 관리 정책</h1>
 
       {/* Step 1 — 가이드 배너 */}
-      <div className="mt-4 flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
-        <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
-        <div className="text-sm">
-          <div className="font-semibold text-blue-900">이 페이지에서 확인할 수 있는 것</div>
-          <p className="mt-1 text-blue-800/80">
-            DataHub 사용 시 준수해야 하는 데이터 등록·보안·개인정보 관련 정책을 모아 두었습니다.
-            제목 옆 <SeverityBadge severity="required" /> 표시는 반드시 지켜야 하는 정책,
-            <SeverityBadge severity="recommended" /> 는 권장사항, <SeverityBadge severity="reference" /> 는 참고용입니다.
-          </p>
+      <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
+        <div className="flex items-start gap-3 text-sm">
+          <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
+          <div>
+            <div className="font-semibold text-blue-900">이 페이지의 목적</div>
+            <p className="mt-1 text-blue-800/80">
+              데이터의 <strong className="font-semibold">생성·저장·활용·폐기</strong> 까지의 기준을 정의합니다.
+              필요한 정책을 확인하고 <strong className="font-semibold">바로 실행</strong>할 수 있습니다.
+            </p>
+            <p className="mt-2 text-xs text-blue-800/60">
+              제목 옆 <SeverityBadge severity="required" /> 는 반드시 지켜야 하는 정책,
+              <SeverityBadge severity="recommended" /> 는 권장사항,
+              <SeverityBadge severity="reference" /> 는 참고용입니다.
+            </p>
+          </div>
         </div>
       </div>
 
