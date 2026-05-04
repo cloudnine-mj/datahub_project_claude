@@ -177,9 +177,6 @@ export function PolicyDetailView({ postId }: { postId: number }) {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-gray-400">
-            ※ 체크는 본인 확인용입니다 — 서버에 저장되지 않습니다.
-          </p>
         </section>
       )}
 
