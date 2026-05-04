@@ -20,6 +20,19 @@ import { DeletePostButton } from "./DeletePostButton";
 import { formatDate } from "@/lib/utils";
 
 /**
+ * 예시 본문에서 ✅/❌ 같은 선두 이모지 1자만 제거.
+ * 기존 시드에 들어간 데이터를 DB 재생성 없이 깔끔하게 보이기 위함.
+ *
+ * 예: "✅ 올바른 사례\n- ..."  →  "올바른 사례\n- ..."
+ */
+function stripExampleEmojis(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/^[✅❌✨⭐⚠️]\s*/u, ""))
+    .join("\n");
+}
+
+/**
  * 본문 렌더 — 라이브러리 없이 가벼운 변환만:
  *   - "## 헤딩" / "# 헤딩" 으로 시작하는 줄 → 굵은 헤딩
  *   - 빈 줄 → 단락 구분
@@ -191,7 +204,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             예시
           </h2>
           <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-amber-900/90">
-            {post.examples}
+            {stripExampleEmojis(post.examples)}
           </div>
         </section>
       )}

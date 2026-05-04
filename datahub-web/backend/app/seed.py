@@ -92,8 +92,8 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
                     "2. 등록 절차\n등록 화면에서 메타데이터 5개 항목을 입력하고, "
                     "라이선스·소유권 정보를 명시해야 합니다.\n\n"
                     "3. PII 데이터\n개인정보가 포함된 경우 보안팀의 사전 승인이 필수입니다.",
-            examples="✅ 올바른 사례\n- 라이선스: CC-BY-4.0 명시, 출처 URL 첨부, 담당자 이메일 기재\n\n"
-                     "❌ 잘못된 사례\n- 라이선스 미기재, 메타데이터 항목 누락, PII 포함 데이터를 무신고 등록",
+            examples="올바른 사례\n- 라이선스: CC-BY-4.0 명시, 출처 URL 첨부, 담당자 이메일 기재\n\n"
+                     "잘못된 사례\n- 라이선스 미기재, 메타데이터 항목 누락, PII 포함 데이터를 무신고 등록",
             author_id=admin.id,
             author_name=admin.name,
             created_at=datetime(2025, 1, 15, 10, 0),
@@ -120,8 +120,8 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
                     "목적 달성 후 즉시 폐기합니다.\n\n"
                     "3. 접근 제어\nPII 가 포함된 데이터셋은 ACL 그룹으로만 접근 가능하며, "
                     "그룹 가입은 데이터 오너 + 보안팀의 이중 승인이 필요합니다.",
-            examples="✅ 올바른 사례\n- 이메일을 SHA-256 해시로 변환 후 저장\n- 접근 권한을 4명 핵심 분석가로 제한\n\n"
-                     "❌ 잘못된 사례\n- 원본 PII 를 평문 저장\n- 전사에 공유 권한 부여",
+            examples="올바른 사례\n- 이메일을 SHA-256 해시로 변환 후 저장\n- 접근 권한을 4명 핵심 분석가로 제한\n\n"
+                     "잘못된 사례\n- 원본 PII 를 평문 저장\n- 전사에 공유 권한 부여",
             author_id=admin.id,
             author_name=admin.name,
             created_at=datetime(2025, 1, 10, 14, 30),
