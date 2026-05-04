@@ -57,7 +57,7 @@ const dataProduction: FormSchema = {
           key: "접근_권한",
           label: "접근 권한",
           type: "radio",
-          options: ["전사에 공유 😎", "제한된 사용자 🙂"],
+          options: ["전사에 공유", "제한된 사용자"],
         },
       ],
     },
