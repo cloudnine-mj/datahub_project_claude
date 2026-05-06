@@ -265,7 +265,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                 />
               </Field>
 
-              <Field label="TL;DR (요약)" hint="상세 페이지 최상단 빨간 배너 — '결국 무엇을 해야 하는가'">
+              <Field label="핵심 요약" hint="상세 페이지 최상단 빨간 배너 — '결국 무엇을 해야 하는가'">
                 <textarea
                   value={tldr}
                   onChange={(e) => setTldr(e.target.value)}

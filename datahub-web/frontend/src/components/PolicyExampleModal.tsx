@@ -107,7 +107,7 @@ export function PolicyExampleModal({ open, onClose, defaultSeverity = "required"
             </div>
           </Row>
           <Row label="적용 대상">{ex.applies_to}</Row>
-          <Row label="TL;DR">
+          <Row label="핵심 요약">
             <span className="whitespace-pre-wrap">{ex.tldr}</span>
           </Row>
           <Row label="해야 할 것">

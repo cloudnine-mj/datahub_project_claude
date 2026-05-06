@@ -3,7 +3,7 @@
 /**
  * 정책 상세 — 사용자 여정 Step 4 의 Opportunity 반영.
  *
- *  ┌─ TL;DR 박스 ───────────────────────────────┐  ← '결국 내가 해야 하는 건 뭐지?'
+ *  ┌─ 핵심 요약 박스 ────────────────────────────┐  ← '결국 내가 해야 하는 건 뭐지?'
  *  ├─ ✅ 이 정책을 지키려면 (체크리스트)         │  ← '행동으로 번역'
  *  ├─ 본문                                       │
  *  └─ 💡 예시                                     │
@@ -135,10 +135,10 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         </div>
       )}
 
-      {/* TL;DR */}
+      {/* 핵심 요약 */}
       {post.tldr && (
         <section className="mt-6 rounded-lg border-l-4 border-brand bg-red-50/40 p-5">
-          <div className="text-xs font-bold uppercase tracking-wider text-brand">TL;DR</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-brand">핵심 요약</div>
           <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-gray-900">{post.tldr}</p>
         </section>
       )}
