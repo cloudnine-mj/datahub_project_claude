@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
+import { ChevronDown, Calendar, Save, Sparkles, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -32,6 +32,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitterName, setSubmitterName] = useState("");
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
+
+  // 작성 예시 모달
+  const [exampleOpen, setExampleOpen] = useState(false);
 
   // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
   // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
@@ -132,7 +135,16 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       />
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
+          <button
+            type="button"
+            onClick={() => setExampleOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+          >
+            <Sparkles size={12} /> 작성 예시
+          </button>
+        </div>
 
         {/* 진행률 안내 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
@@ -353,6 +365,47 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </button>
         </div>
       </form>
+
+      {/* 작성 예시 모달 — 현재 placeholder, 향후 신청서별 예시 데이터 연결 */}
+      {exampleOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setExampleOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
+                <Sparkles size={12} /> 작성 예시
+              </div>
+              <button
+                type="button"
+                onClick={() => setExampleOpen(false)}
+                aria-label="닫기"
+                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <h3 className="mt-2 text-base font-bold">{schema.label}</h3>
+            <p className="mt-3 text-sm text-gray-600">
+              이 신청서의 작성 예시는 곧 추가될 예정입니다. 작성 시 도움이 필요하면
+              관리자에게 문의해 주세요.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setExampleOpen(false)}
+                className="rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
