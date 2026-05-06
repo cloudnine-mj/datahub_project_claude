@@ -511,23 +511,41 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
 
 /**
  * 필드 아래 안내 텍스트(hint) + 선택적 외부 링크(hintLink) 렌더.
- * hint 도 hintLink 도 없으면 아무것도 그리지 않음.
+ *
+ * hint 에 `{link}` 토큰이 있으면 그 자리에 클릭 가능한 링크가 인라인으로 들어감.
+ * 토큰이 없으면 hint 아래에 별도 줄로 링크 표시.
  */
 function FieldHint({ field }: { field: FieldDef }) {
   if (!field.hint && !field.hintLink) return null;
+
+  const link = field.hintLink ? (
+    <a
+      href={field.hintLink.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-blue-600 underline-offset-2 hover:underline"
+    >
+      {field.hintLink.label}
+    </a>
+  ) : null;
+
+  // hint 안에 {link} 토큰 — 인라인 링크 삽입
+  if (field.hint && link && field.hint.includes("{link}")) {
+    const [before, after] = field.hint.split("{link}");
+    return (
+      <p className="mt-1.5 text-xs font-semibold text-gray-500">
+        {before}
+        {link}
+        {after}
+      </p>
+    );
+  }
+
+  // 토큰 없음 — hint 텍스트 + 아래에 별도 링크 줄
   return (
     <div className="mt-1.5">
       {field.hint && <p className="text-xs font-semibold text-gray-500">{field.hint}</p>}
-      {field.hintLink && (
-        <a
-          href={field.hintLink.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
-        >
-          {field.hintLink.label} ↗
-        </a>
-      )}
+      {link && <div className="mt-1 text-xs">{link} ↗</div>}
     </div>
   );
 }
