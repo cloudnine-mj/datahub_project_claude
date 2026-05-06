@@ -2,22 +2,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { CheckSquare, Database, Eye, Pencil, Square } from "lucide-react";
-import { api, type FormDetail } from "@/lib/api";
+import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [form, setForm] = useState<FormDetail | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
     api.getForm(Number(params.id)).then(setForm).catch((e) => setError((e as Error).message));
   }, [params.id]);
+
+  useEffect(() => {
+    refetch();
+    api.me().then(setMe).catch(() => setMe(null));
+  }, [refetch]);
 
   if (error) return <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>;
   if (!form) return <div className="text-sm text-gray-400">불러오는 중...</div>;
@@ -43,7 +50,15 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <FormStatusPanel
+        formId={form.id}
+        status={form.status}
+        history={form.approval_history}
+        me={me}
+        onChanged={refetch}
+      />
+
+      <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <tbody>
             <Row label="신청자 이름">{form.submitter_name}</Row>

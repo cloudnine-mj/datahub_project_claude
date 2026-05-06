@@ -32,8 +32,15 @@ class FormCreate(BaseModel):
     submitter_department: str | None = None
 
 
+class ApprovalEntry(BaseModel):
+    status: str
+    changed_by: str
+    changed_at: datetime
+    comment: str | None = None
+
+
 class FormListItem(BaseModel):
-    """내 문서 목록 row — 화면 5/8 의 (신청서 종류 / 프로젝트명 / 제출일 / Export)."""
+    """내 문서 목록 row — 화면 5/8 의 (신청서 종류 / 프로젝트명 / 제출일 / 상태 / Export)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,7 +65,15 @@ class FormDetail(BaseModel):
     submitter_email: EmailStr
     submitter_department: str | None
     status: str
+    approval_history: list[ApprovalEntry] | None = None
     payload: dict[str, Any]
     submitted_at: datetime
     updated_at: datetime
     attachments: list[FormAttachmentOut] = []
+
+
+class StatusChange(BaseModel):
+    """admin 의 신청서 상태 변경 — reviewing/approved/rejected."""
+
+    status: str  # STATUS_VALUES 중 하나
+    comment: str | None = None

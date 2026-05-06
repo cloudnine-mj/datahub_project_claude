@@ -1,18 +1,59 @@
-// 화면 11: 신청서 제출 완료
+// 화면 11: 신청서 제출 완료 — 다음 단계(전자결재) 안내 포함.
 "use client";
 
 import Link from "next/link";
-import { Check, FileEdit, List } from "lucide-react";
+import { Check, ExternalLink, FileEdit, List } from "lucide-react";
 
 export default function Page() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+    <div className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center text-center">
       <div className="grid h-20 w-20 place-items-center rounded-full bg-emerald-500 text-white">
         <Check size={36} strokeWidth={3} />
       </div>
       <h1 className="mt-6 text-2xl font-bold tracking-tight">신청서가 제출되었습니다</h1>
+      <p className="mt-2 text-sm text-gray-500">
+        시스템에는 등록되었지만, <strong className="font-semibold text-gray-700">최종 승인은 전자결재가 완료되어야</strong> 처리됩니다.
+      </p>
 
-      <div className="mt-8 flex gap-2">
+      {/* 다음 단계 가이드 */}
+      <div className="mt-6 w-full rounded-lg border border-gray-200 bg-gray-50/40 p-5 text-left">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">다음 단계</h3>
+        <ol className="mt-3 space-y-2.5 text-sm text-gray-700">
+          <li className="flex gap-2">
+            <span className="font-mono text-gray-400">1.</span>
+            <span>
+              <strong className="font-semibold">전자결재 시스템</strong>에서 결재선을 추가하고 상신해 주세요.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-mono text-gray-400">2.</span>
+            <span>승인이 완료되면 거버넌스 관리자가 본 신청서 상태를 <strong>승인 완료</strong>로 변경합니다.</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-mono text-gray-400">3.</span>
+            <span>
+              진행 상황은{" "}
+              <Link href="/governance/forms" className="font-semibold text-blue-600 hover:underline">
+                내 문서 목록
+              </Link>{" "}
+              의 상태 컬럼에서 확인 가능합니다.
+            </span>
+          </li>
+        </ol>
+
+        <div className="mt-4 border-t border-gray-200 pt-3">
+          <a
+            href="https://eapproval.example.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline"
+          >
+            전자결재 시스템 바로가기 <ExternalLink size={11} />
+          </a>
+        </div>
+      </div>
+
+      <div className="mt-6 flex gap-2">
         <Link
           href="/governance/forms"
           className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"

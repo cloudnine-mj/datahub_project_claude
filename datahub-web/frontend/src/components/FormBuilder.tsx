@@ -99,6 +99,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
+        {schema.description && (
+          <p className="mt-2 text-sm text-gray-500">{schema.description}</p>
+        )}
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
@@ -163,6 +166,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                         </td>
                         <td className="px-5 py-3">
                           <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                          {f.hint && (
+                            <p className="mt-1.5 text-xs text-gray-500">💡 {f.hint}</p>
+                          )}
                         </td>
                       </tr>
                     );

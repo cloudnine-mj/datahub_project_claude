@@ -98,18 +98,24 @@ export function PolicyBoardView() {
           />
         </div>
 
-        <Link
-          href={
-            canWrite
-              ? filter !== "all"
-                ? `/governance/policy/new?severity=${filter}`
-                : "/governance/policy/new"
-              : "/governance/policy/forbidden"
-          }
-          className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
-        >
-          <Pencil size={14} /> 글쓰기
-        </Link>
+        {canWrite ? (
+          <Link
+            href={filter !== "all"
+              ? `/governance/policy/new?severity=${filter}`
+              : "/governance/policy/new"
+            }
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+          >
+            <Pencil size={14} /> 글쓰기
+          </Link>
+        ) : (
+          <span
+            className="ml-auto inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
+            title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
+          >
+            <Pencil size={14} /> 글쓰기
+          </span>
+        )}
       </div>
 
       {/* 카드 목록 */}
@@ -124,9 +130,22 @@ export function PolicyBoardView() {
               message={
                 posts && posts.length > 0
                   ? "검색 결과가 없습니다. 다른 키워드로 다시 시도해 보세요."
-                  : "등록된 정책이 없습니다"
+                  : "등록된 정책이 없습니다 — 곧 추가될 예정입니다."
               }
             />
+            {posts && posts.length === 0 && (
+              <div className="border-t border-gray-100 px-6 py-4 text-center">
+                <p className="text-xs text-gray-500">
+                  필요한 정책이 있다면 거버넌스 관리자에게 작성을 요청하세요.
+                </p>
+                <a
+                  href="mailto:datahub-governance@example.com?subject=%5BDataHub%5D%20%EC%A0%95%EC%B1%85%20%EC%9E%91%EC%84%B1%20%EC%9A%94%EC%B2%AD"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  ✉ 정책 작성 요청하기
+                </a>
+              </div>
+            )}
           </div>
         ) : (
           filtered.map((p) => <PolicyCard key={p.id} post={p} />)

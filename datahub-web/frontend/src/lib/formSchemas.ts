@@ -53,6 +53,7 @@ export interface FormSchema {
 const dataProduction: FormSchema = {
   type: "data_production",
   label: "데이터 용역 제작 신청서",
+  description: "외주 업체에 데이터 라벨링·수집·QA 등을 의뢰할 때 사용합니다. 작업 형태·수량·일정을 명시하세요.",
   projectField: "관련_프로젝트_PMS",
   sections: [
     {
@@ -111,6 +112,7 @@ const dataProduction: FormSchema = {
 const dataPurchase: FormSchema = {
   type: "data_purchase",
   label: "데이터 구매 신청서",
+  description: "외부 데이터셋을 일회성으로 구매할 때 사용합니다. 판매처·예산·라이선스 검토가 필요합니다.",
   projectField: "프로젝트명",
   sections: [
     {
@@ -122,7 +124,13 @@ const dataPurchase: FormSchema = {
         { key: "사용_예상_금액", label: "사용 예상 금액 (예산)", type: "text", placeholder: "예: 5,000,000원" },
         { key: "사용_목적_및_기대_효과", label: "사용 목적 및 기대 효과", type: "textarea" },
         { key: "데이터_품질_검수_담당자", label: "데이터 품질/검수 담당자", type: "text" },
-        { key: "compliance_확인_여부", label: "Compliance 확인 여부", type: "radio", options: ["확인 완료", "확인 필요"] },
+        {
+          key: "compliance_확인_여부",
+          label: "Compliance 확인 여부",
+          type: "radio",
+          options: ["확인 완료", "확인 필요"],
+          hint: "라이선스·개인정보·외부 공유 가능 여부를 사전 검토했는지 확인. 미확인 시 컴플라이언스팀(compliance@example.com)에 문의 후 진행하세요.",
+        },
         {
           key: "데이터셋_저장_레포지토리",
           label: "데이터셋 저장 레포지토리",
@@ -137,6 +145,7 @@ const dataPurchase: FormSchema = {
 const dataSubscription: FormSchema = {
   type: "data_subscription",
   label: "데이터 구독 신청서",
+  description: "정기적으로 갱신되는 데이터를 구독할 때 사용합니다. 구독 기간·월 사용 비용을 명시하세요.",
   projectField: "프로젝트명",
   sections: [
     {
@@ -156,6 +165,7 @@ const dataSubscription: FormSchema = {
 const productLogUsage: FormSchema = {
   type: "product_log_usage",
   label: "product 로그 데이터 활용 신청서",
+  description: "사내 프로덕트의 클릭·세션·이벤트 로그를 활용할 때 필요합니다. PII 검토가 동반됩니다.",
   projectField: "프로젝트명",
   sections: [
     {
@@ -175,6 +185,7 @@ const productLogUsage: FormSchema = {
 const dataProductionPlan: FormSchema = {
   type: "data_production_plan",
   label: "데이터 제작 계획서",
+  description: "용역 신청 전 제작 일정·수량·방식을 정리하는 계획서입니다. 본 신청 전에 사전 검토용으로 활용.",
   projectField: "프로젝트명",
   sections: [
     {

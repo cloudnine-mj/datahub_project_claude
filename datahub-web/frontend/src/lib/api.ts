@@ -109,6 +109,15 @@ export interface FormListItem {
   status: string;
 }
 
+export type FormStatus = "draft" | "submitted" | "reviewing" | "approved" | "rejected";
+
+export interface ApprovalEntry {
+  status: FormStatus;
+  changed_by: string;
+  changed_at: string;
+  comment: string | null;
+}
+
 export interface FormDetail extends FormListItem {
   submitter_name: string;
   submitter_email: string;
@@ -116,6 +125,7 @@ export interface FormDetail extends FormListItem {
   payload: Record<string, unknown>;
   updated_at: string;
   attachments: { id: number; filename: string; size_bytes: number }[];
+  approval_history: ApprovalEntry[] | null;
 }
 
 // ── API 함수 ────────────────────────────────────────────
@@ -173,6 +183,13 @@ export const api = {
   /** 신청서 삭제 — 제출자 본인 또는 admin 만 가능 (백엔드에서 검증). */
   deleteForm: (id: number) =>
     request<void>(`/forms/${id}`, { method: "DELETE" }),
+
+  /** 신청서 상태 변경 — admin 만. 변경 이력은 approval_history 에 누적. */
+  changeFormStatus: (id: number, body: { status: FormStatus; comment?: string }) =>
+    request<FormDetail>(`/forms/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   /** 신청서 1개에 파일 1개 업로드 (multipart/form-data). */
   uploadFormAttachment: (formId: number, file: File) => {

@@ -27,6 +27,14 @@ FORM_TYPES = (
     "data_production_plan",
 )
 
+# 신청서 상태 — 전자결재 시스템과 연동되기 전 mock 워크플로우.
+#   draft       : 임시저장 (작성 중)
+#   submitted   : 제출됨 — 검토 대기
+#   reviewing   : 검토 중 (관리자가 픽업)
+#   approved    : 승인 완료
+#   rejected    : 반려
+STATUS_VALUES = ("draft", "submitted", "reviewing", "approved", "rejected")
+
 
 class Form(Base):
     __tablename__ = "forms"
@@ -40,7 +48,9 @@ class Form(Base):
     submitter_email: Mapped[str] = mapped_column(String(255))
     submitter_department: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    status: Mapped[str] = mapped_column(String(20), default="submitted")  # draft / submitted / approved / rejected
+    status: Mapped[str] = mapped_column(String(20), default="submitted")
+    # 상태 변경 이력 — [{status, changed_by, changed_at, comment}, ...]
+    approval_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)  # 타입별 자유 필드
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

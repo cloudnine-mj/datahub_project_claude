@@ -31,7 +31,8 @@ from app.config import settings
 from app.db.session import get_db
 from app.models import Form, FormAttachment, User
 from app.models.form import FORM_TYPES
-from app.schemas.form import FormAttachmentOut, FormCreate, FormDetail, FormListItem
+from app.models.form import STATUS_VALUES
+from app.schemas.form import FormAttachmentOut, FormCreate, FormDetail, FormListItem, StatusChange
 
 router = APIRouter(prefix="/forms", tags=["forms"])
 
@@ -140,6 +141,41 @@ def update_form(
         form.submitter_email = payload.submitter_email
     if payload.submitter_department is not None:
         form.submitter_department = payload.submitter_department
+    db.commit()
+    db.refresh(form)
+    return form
+
+
+@router.patch("/{form_id}/status", response_model=FormDetail)
+def change_form_status(
+    form_id: int,
+    body: StatusChange,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """신청서 상태 변경 — admin 만 가능. 변경 이력은 approval_history 에 누적.
+
+    실제 환경에서는 전자결재 시스템 webhook 으로 들어오겠지만, MVP 는
+    admin 이 직접 reviewing/approved/rejected 로 전이.
+    """
+    if user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="관리자만 상태를 변경할 수 있습니다.")
+    if body.status not in STATUS_VALUES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"unknown status: {body.status}")
+
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+
+    history = list(form.approval_history or [])
+    history.append({
+        "status": body.status,
+        "changed_by": user.name,
+        "changed_at": datetime.utcnow().isoformat(),
+        "comment": body.comment,
+    })
+    form.status = body.status
+    form.approval_history = history
     db.commit()
     db.refresh(form)
     return form

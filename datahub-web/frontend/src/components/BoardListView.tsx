@@ -36,12 +36,21 @@ export function BoardListView({ board }: Props) {
       <h1 className="text-3xl font-bold tracking-tight">{label}</h1>
 
       <div className="mt-8 flex justify-end">
-        <Link
-          href={canWrite ? `/governance/${boardSegment(board)}/new` : `/governance/${boardSegment(board)}/forbidden`}
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
-        >
-          <Pencil size={14} /> 글쓰기
-        </Link>
+        {canWrite ? (
+          <Link
+            href={`/governance/${boardSegment(board)}/new`}
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+          >
+            <Pencil size={14} /> 글쓰기
+          </Link>
+        ) : (
+          <span
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
+            title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
+          >
+            <Pencil size={14} /> 글쓰기
+          </span>
+        )}
       </div>
 
       <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
