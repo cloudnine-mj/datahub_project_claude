@@ -86,14 +86,16 @@ def submit_form(
     if payload.form_type not in FORM_TYPES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"unknown form_type: {payload.form_type}")
 
+    # 신청자 정보는 사용자 입력 우선, 없으면 로그인 사용자로 fallback.
+    # 추후 감사·추적이 필요하면 submitter_id 는 항상 로그인 사용자로 고정.
     form = Form(
         request_no=_next_request_no(db),
         form_type=payload.form_type,
         project_name=payload.project_name,
         submitter_id=user.id,
-        submitter_name=user.name,
-        submitter_email=user.email,
-        submitter_department=user.department,
+        submitter_name=payload.submitter_name or user.name,
+        submitter_email=payload.submitter_email or user.email,
+        submitter_department=payload.submitter_department or user.department,
         status=payload.status,
         payload=payload.payload,
     )
@@ -132,6 +134,12 @@ def update_form(
     form.project_name = payload.project_name
     form.payload = payload.payload
     form.status = payload.status
+    if payload.submitter_name is not None:
+        form.submitter_name = payload.submitter_name
+    if payload.submitter_email is not None:
+        form.submitter_email = payload.submitter_email
+    if payload.submitter_department is not None:
+        form.submitter_department = payload.submitter_department
     db.commit()
     db.refresh(form)
     return form

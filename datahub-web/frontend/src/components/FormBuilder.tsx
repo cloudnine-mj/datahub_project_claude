@@ -27,11 +27,20 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 신청자 정보 — 로그인한 사용자에서 자동으로 채워짐 (제출 시 백엔드가 user 로 덮어씀).
-  // 작성자가 본인 정보를 확인할 수 있도록 폼 최상단에 read-only 로 노출.
+  // 신청자 정보 — 기본값은 로그인 사용자의 정보지만 작성자가 직접 수정 가능.
+  // 비워두면 백엔드가 로그인 사용자 정보로 fallback.
   const [me, setMe] = useState<Me | null>(null);
+  const [submitterName, setSubmitterName] = useState("");
+  const [submitterDepartment, setSubmitterDepartment] = useState("");
+  const [submitterEmail, setSubmitterEmail] = useState("");
   useEffect(() => {
-    api.me().then(setMe).catch(() => setMe(null));
+    api.me().then((m) => {
+      setMe(m);
+      // 사용자가 아직 직접 수정하지 않았을 때만 default 적용
+      setSubmitterName((prev) => prev || m.user.name);
+      setSubmitterDepartment((prev) => prev || (m.user.department ?? ""));
+      setSubmitterEmail((prev) => prev || m.user.email);
+    }).catch(() => setMe(null));
   }, []);
 
   function setField(key: string, v: unknown) {
@@ -64,6 +73,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         form_type: formType,
         project_name: projectName,
         payload: values,
+        submitter_name: submitterName || undefined,
+        submitter_email: submitterEmail || undefined,
+        submitter_department: submitterDepartment || undefined,
       });
 
       // 파일은 신청서 생성 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도
@@ -108,21 +120,34 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
-        {/* 신청자 정보 — 로그인 사용자에서 자동 입력 (read-only) */}
+        {/* 신청자 정보 — 기본은 로그인 사용자, 직접 수정 가능 */}
         <section>
           <div className="mb-3 flex items-center gap-2">
             <span className="block h-5 w-1 rounded-sm bg-brand" />
             <h2 className="text-base font-bold">신청자 정보</h2>
-            <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
-              자동 입력
-            </span>
           </div>
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
             <table className="w-full text-sm">
               <tbody>
-                <SubmitterRow label="신청자 이름" value={me?.user.name ?? "..."} />
-                <SubmitterRow label="소속" value={me?.user.department ?? "-"} />
-                <SubmitterRow label="이메일" value={me?.user.email ?? "..."} />
+                <SubmitterInputRow
+                  label="신청자 이름"
+                  value={submitterName}
+                  onChange={setSubmitterName}
+                  placeholder={me?.user.name ?? "이름을 입력하세요"}
+                />
+                <SubmitterInputRow
+                  label="소속"
+                  value={submitterDepartment}
+                  onChange={setSubmitterDepartment}
+                  placeholder={me?.user.department ?? "소속을 입력하세요"}
+                />
+                <SubmitterInputRow
+                  label="이메일"
+                  value={submitterEmail}
+                  onChange={setSubmitterEmail}
+                  placeholder={me?.user.email ?? "이메일을 입력하세요"}
+                  type="email"
+                />
               </tbody>
             </table>
           </div>
@@ -357,11 +382,31 @@ function FieldInput({
   }
 }
 
-function SubmitterRow({ label, value }: { label: string; value: string }) {
+function SubmitterInputRow({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: "text" | "email";
+}) {
   return (
     <tr className="border-b border-gray-100 last:border-b-0">
       <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">{label}</td>
-      <td className="px-5 py-3 text-gray-900">{value}</td>
+      <td className="px-5 py-3">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+        />
+      </td>
     </tr>
   );
 }

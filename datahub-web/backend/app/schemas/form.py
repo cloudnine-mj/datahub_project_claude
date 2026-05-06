@@ -18,12 +18,18 @@ class FormCreate(BaseModel):
     """공통 + 타입별 자유 페이로드.
 
     `payload` 는 신청서 종류별로 필드가 다르므로 dict 그대로 보관 (검증 X).
+
+    submitter_* 필드는 모두 선택값. 비워서 보내면 백엔드가 로그인 사용자의
+    정보로 자동 채움. 사용자가 폼에서 직접 수정한 경우 그 값으로 들어감.
     """
 
     form_type: str
     project_name: str = Field(min_length=1, max_length=300)
     payload: dict[str, Any] = Field(default_factory=dict)
     status: str = "submitted"  # 'draft' 로 보내면 임시저장
+    submitter_name: str | None = None
+    submitter_email: EmailStr | None = None
+    submitter_department: str | None = None
 
 
 class FormListItem(BaseModel):

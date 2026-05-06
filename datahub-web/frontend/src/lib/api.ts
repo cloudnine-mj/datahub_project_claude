@@ -158,7 +158,15 @@ export const api = {
     return request<FormListItem[]>(`/forms${qs ? `?${qs}` : ""}`);
   },
   getForm: (id: number) => request<FormDetail>(`/forms/${id}`),
-  submitForm: (body: { form_type: FormType; project_name: string; payload: Record<string, unknown>; status?: string }) =>
+  submitForm: (body: {
+    form_type: FormType;
+    project_name: string;
+    payload: Record<string, unknown>;
+    status?: string;
+    submitter_name?: string;
+    submitter_email?: string;
+    submitter_department?: string;
+  }) =>
     request<FormDetail>("/forms", { method: "POST", body: JSON.stringify(body) }),
   exportFormUrl: (id: number) => `${BASE}/forms/${id}/export`,
 
