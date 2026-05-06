@@ -236,7 +236,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                         <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
                           <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
                             {f.label}
-                            {f.required && <span className="ml-1 text-brand">*</span>}
                           </td>
                           <td className="px-5 py-3">
                             {inline ? (
