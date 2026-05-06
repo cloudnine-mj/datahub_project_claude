@@ -255,8 +255,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                             ) : (
                               <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                             )}
-                            {f.hint && <p className="mt-1.5 text-xs text-gray-500">💡 {f.hint}</p>}
-                            {inline?.hint && <p className="mt-1.5 text-xs text-gray-500">💡 {inline.hint}</p>}
+                            {f.hint && <p className="mt-1.5 text-xs font-semibold text-gray-700">{f.hint}</p>}
+                            {inline?.hint && <p className="mt-1.5 text-xs font-semibold text-gray-700">{inline.hint}</p>}
                           </td>
                         </tr>
                       );
