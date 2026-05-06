@@ -13,7 +13,7 @@ import { boardSegment } from "./BoardListView";
 import { PolicyExampleModal } from "./PolicyExampleModal";
 import { SEVERITIES } from "./SeverityBadge";
 
-const SEVERITY_VALUES = ["required", "recommended", "security", "approval_required"] as const;
+const SEVERITY_VALUES = ["required", "recommended"] as const;
 function parseSeverityParam(v: string | null): Severity | "" {
   return v && (SEVERITY_VALUES as readonly string[]).includes(v) ? (v as Severity) : "";
 }

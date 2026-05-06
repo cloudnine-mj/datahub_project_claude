@@ -27,13 +27,11 @@ from app.db.session import Base
 # 게시판 종류 — Governance 인덱스의 4개 카드 중 게시판형 3개
 BOARD_TYPES = ("policy", "production_process", "usage_process")
 
-# 정책 분류 — Step 2 의 사용자 판단 보조 (4단계).
-# 사용자 여정 분석에서 도출된 예시 그대로:
-#   required          : 필수 (반드시 지켜야)
-#   recommended       : 권장 (지키면 좋음)
-#   security          : 보안 (개인정보·접근 제어 등)
-#   approval_required : 승인 필요 (사전 승인 동반)
-SEVERITY_VALUES = ("required", "recommended", "security", "approval_required")
+# 정책 분류 — Step 2 의 사용자 판단 보조 (2단계).
+# 보안·승인 필요 등은 자유 tags 로 분류 (예: tags=["보안", "PII"]).
+#   required    : 필수 (반드시 지켜야)
+#   recommended : 권장 (지키면 좋음)
+SEVERITY_VALUES = ("required", "recommended")
 
 
 class Post(Base):
