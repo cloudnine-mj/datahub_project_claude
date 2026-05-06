@@ -1,10 +1,10 @@
 "use client";
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Save, Upload, X } from "lucide-react";
-import { api, type FormType, type Me } from "@/lib/api";
+import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
 
@@ -27,21 +27,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 신청자 정보 — 기본값은 로그인 사용자의 정보지만 작성자가 직접 수정 가능.
-  // 비워두면 백엔드가 로그인 사용자 정보로 fallback.
-  const [me, setMe] = useState<Me | null>(null);
+  // 신청자 정보 — 빈 상태로 시작, 사용자가 직접 입력.
+  // 비워두면 백엔드가 로그인 사용자 정보로 fallback (안전망).
   const [submitterName, setSubmitterName] = useState("");
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
-  useEffect(() => {
-    api.me().then((m) => {
-      setMe(m);
-      // 사용자가 아직 직접 수정하지 않았을 때만 default 적용
-      setSubmitterName((prev) => prev || m.user.name);
-      setSubmitterDepartment((prev) => prev || (m.user.department ?? ""));
-      setSubmitterEmail((prev) => prev || m.user.email);
-    }).catch(() => setMe(null));
-  }, []);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
@@ -125,19 +115,19 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                   label="신청자 이름"
                   value={submitterName}
                   onChange={setSubmitterName}
-                  placeholder={me?.user.name ?? "이름을 입력하세요"}
+                  placeholder="이름을 입력하세요"
                 />
                 <SubmitterInputRow
                   label="소속"
                   value={submitterDepartment}
                   onChange={setSubmitterDepartment}
-                  placeholder={me?.user.department ?? "소속을 입력하세요"}
+                  placeholder="소속을 입력하세요"
                 />
                 <SubmitterInputRow
                   label="이메일"
                   value={submitterEmail}
                   onChange={setSubmitterEmail}
-                  placeholder={me?.user.email ?? "이메일을 입력하세요"}
+                  placeholder="이메일을 입력하세요"
                   type="email"
                 />
               </tbody>
