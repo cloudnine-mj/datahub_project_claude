@@ -126,7 +126,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance" },
-          { label: "제작/활용 신청서 작성", href: "/governance/forms" },
+          { label: "제작 / 활용 신청서 작성", href: "/governance/forms" },
           { label: schema.label },
         ]}
       />

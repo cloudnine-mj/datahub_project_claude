@@ -1,4 +1,4 @@
-// 화면 5: 제작/활용 신청서 작성 — 5개 양식 카드 + 내 문서 목록
+// 화면 5: 제작 / 활용 신청서 작성 — 5개 양식 카드 + 내 문서 목록
 "use client";
 
 import Link from "next/link";
@@ -41,8 +41,8 @@ export default function FormsIndexPage() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Governance", href: "/governance" }, { label: "제작/활용 신청서 작성" }]} />
-      <h1 className="text-3xl font-bold tracking-tight">제작/활용 신청서 작성</h1>
+      <Breadcrumb items={[{ label: "Governance", href: "/governance" }, { label: "제작 / 활용 신청서 작성" }]} />
+      <h1 className="text-3xl font-bold tracking-tight">제작 / 활용 신청서 작성</h1>
       <p className="mt-2 text-sm text-gray-500">
         작성할 품의서 종류를 선택하세요. 작성 완료 후 전자결재를 통해 신청을 완료해 주세요.
       </p>
