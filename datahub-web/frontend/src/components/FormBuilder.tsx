@@ -107,16 +107,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         ]}
       />
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
-        <button
-          form="form-builder"
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
-        >
-          <Save size={14} /> 저장
-        </button>
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
