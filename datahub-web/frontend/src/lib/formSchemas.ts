@@ -135,7 +135,7 @@ const dataPurchase: FormSchema = {
           label: "Compliance 확인 여부",
           type: "radio",
           options: ["확인 완료", "확인 필요"],
-          hint: "라이선스·개인정보·외부 공유 가능 여부를 사전 검토했는지 확인. 미확인 시 컴플라이언스팀(compliance@example.com)에 문의 후 진행하세요.",
+          hint: "* 라이선스·개인정보·외부 공유 가능 여부를 사전 검토했는지 확인해주세요. 미확인 시 컴플라이언스팀(compliance@example.com)에 문의 후 진행하세요.",
         },
         {
           key: "데이터셋_저장_레포지토리",
