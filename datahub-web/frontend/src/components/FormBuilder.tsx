@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Calendar, Save, Sparkles, Upload, X } from "lucide-react";
+import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -377,8 +377,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
-                <Sparkles size={12} /> 작성 예시
+              <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                작성 예시
               </div>
               <button
                 type="button"
