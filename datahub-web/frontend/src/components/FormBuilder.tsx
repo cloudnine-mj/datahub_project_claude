@@ -110,17 +110,29 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
               <table className="w-full text-sm">
                 <tbody>
-                  {section.fields.map((f) => (
-                    <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
-                      <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
-                        {f.label}
-                        {f.required && <span className="ml-1 text-brand">*</span>}
-                      </td>
-                      <td className="px-5 py-3">
-                        <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
-                      </td>
-                    </tr>
-                  ))}
+                  {section.fields.map((f) => {
+                    // 체크박스는 라벨이 input 옆에 이미 있으므로 좌측 라벨 셀 생략 (중복 방지)
+                    if (f.type === "checkbox") {
+                      return (
+                        <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
+                          <td colSpan={2} className="px-5 py-3">
+                            <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
+                        <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
+                          {f.label}
+                          {f.required && <span className="ml-1 text-brand">*</span>}
+                        </td>
+                        <td className="px-5 py-3">
+                          <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
