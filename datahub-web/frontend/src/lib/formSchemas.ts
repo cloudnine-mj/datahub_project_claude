@@ -50,8 +50,6 @@ export interface FormSchema {
   label: string;
   /** 헤더용 짧은 설명 */
   description?: string;
-  /** 작성 예상 소요 시간 (분) — 폼 상단에 노출 */
-  estimatedMinutes?: number;
   /** project_name 으로 매핑되는 필드 key — 목록 화면에 노출 */
   projectField: string;
   sections: SectionDef[];
@@ -62,7 +60,6 @@ const dataProduction: FormSchema = {
   type: "data_production",
   label: "데이터 용역 제작 신청서",
   description: "외주 업체에 데이터 라벨링·수집·QA 등을 의뢰할 때 사용합니다. 작업 형태·수량·일정을 명시하세요.",
-  estimatedMinutes: 10,
   projectField: "관련_프로젝트_PMS",
   sections: [
     {
@@ -122,7 +119,6 @@ const dataPurchase: FormSchema = {
   type: "data_purchase",
   label: "데이터 구매 신청서",
   description: "외부 데이터셋을 일회성으로 구매할 때 사용합니다. 판매처·예산·라이선스 검토가 필요합니다.",
-  estimatedMinutes: 5,
   projectField: "프로젝트명",
   sections: [
     {
@@ -156,7 +152,6 @@ const dataSubscription: FormSchema = {
   type: "data_subscription",
   label: "데이터 구독 신청서",
   description: "정기적으로 갱신되는 데이터를 구독할 때 사용합니다. 구독 기간·월 사용 비용을 명시하세요.",
-  estimatedMinutes: 4,
   projectField: "프로젝트명",
   sections: [
     {
@@ -177,7 +172,6 @@ const productLogUsage: FormSchema = {
   type: "product_log_usage",
   label: "product 로그 데이터 활용 신청서",
   description: "사내 프로덕트의 클릭·세션·이벤트 로그를 활용할 때 필요합니다. PII 검토가 동반됩니다.",
-  estimatedMinutes: 5,
   projectField: "프로젝트명",
   sections: [
     {
@@ -198,7 +192,6 @@ const dataProductionPlan: FormSchema = {
   type: "data_production_plan",
   label: "데이터 제작 계획서",
   description: "용역 신청 전 제작 일정·수량·방식을 정리하는 계획서입니다. 본 신청 전에 사전 검토용으로 활용.",
-  estimatedMinutes: 5,
   projectField: "프로젝트명",
   sections: [
     {

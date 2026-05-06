@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Clock, Save, Upload, X } from "lucide-react";
+import { ChevronDown, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -137,18 +137,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           <p className="mt-2 text-sm text-gray-500">{schema.description}</p>
         )}
 
-        {/* 소요 시간 + 진행률 안내 */}
+        {/* 진행률 안내 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-            {schema.estimatedMinutes && (
-              <div className="inline-flex items-center gap-1.5 text-gray-600">
-                <Clock size={13} className="text-gray-400" />
-                <span>
-                  예상 소요 시간 <strong className="font-semibold text-gray-800">{schema.estimatedMinutes}분</strong> 내 작성 가능합니다
-                </span>
-              </div>
-            )}
-            <span className="hidden text-gray-300 sm:inline">·</span>
             <div className="inline-flex items-center gap-1.5 text-gray-600">
               Step{" "}
               <strong className="font-semibold text-gray-800">
