@@ -1,10 +1,10 @@
 "use client";
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Upload, X } from "lucide-react";
-import { api, type FormType } from "@/lib/api";
+import { api, type FormType, type Me } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
 
@@ -26,6 +26,13 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 신청자 정보 — 로그인한 사용자에서 자동으로 채워짐 (제출 시 백엔드가 user 로 덮어씀).
+  // 작성자가 본인 정보를 확인할 수 있도록 폼 최상단에 read-only 로 노출.
+  const [me, setMe] = useState<Me | null>(null);
+  useEffect(() => {
+    api.me().then(setMe).catch(() => setMe(null));
+  }, []);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
@@ -101,6 +108,26 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
+        {/* 신청자 정보 — 로그인 사용자에서 자동 입력 (read-only) */}
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <span className="block h-5 w-1 rounded-sm bg-brand" />
+            <h2 className="text-base font-bold">신청자 정보</h2>
+            <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+              자동 입력
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+            <table className="w-full text-sm">
+              <tbody>
+                <SubmitterRow label="신청자 이름" value={me?.user.name ?? "..."} />
+                <SubmitterRow label="소속" value={me?.user.department ?? "-"} />
+                <SubmitterRow label="이메일" value={me?.user.email ?? "..."} />
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {schema.sections.map((section) => (
           <section key={section.title}>
             <div className="mb-3 flex items-center gap-2">
@@ -322,4 +349,13 @@ function FieldInput({
         />
       );
   }
+}
+
+function SubmitterRow({ label, value }: { label: string; value: string }) {
+  return (
+    <tr className="border-b border-gray-100 last:border-b-0">
+      <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">{label}</td>
+      <td className="px-5 py-3 text-gray-900">{value}</td>
+    </tr>
+  );
 }
