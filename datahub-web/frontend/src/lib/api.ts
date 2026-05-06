@@ -162,6 +162,10 @@ export const api = {
     request<FormDetail>("/forms", { method: "POST", body: JSON.stringify(body) }),
   exportFormUrl: (id: number) => `${BASE}/forms/${id}/export`,
 
+  /** 신청서 삭제 — 제출자 본인 또는 admin 만 가능 (백엔드에서 검증). */
+  deleteForm: (id: number) =>
+    request<void>(`/forms/${id}`, { method: "DELETE" }),
+
   /** 신청서 1개에 파일 1개 업로드 (multipart/form-data). */
   uploadFormAttachment: (formId: number, file: File) => {
     const fd = new FormData();

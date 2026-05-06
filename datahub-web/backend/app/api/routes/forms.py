@@ -137,6 +137,30 @@ def update_form(
     return form
 
 
+@router.delete("/{form_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_form(
+    form_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """신청서 삭제 — 제출자 본인 또는 admin 만 가능. 첨부 파일도 함께 정리."""
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+    if form.submitter_id != user.id and user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="삭제 권한이 없습니다.")
+
+    # 첨부 디스크 파일 정리 (DB row 는 cascade 로 삭제됨)
+    for att in form.attachments:
+        try:
+            Path(att.stored_path).unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    db.delete(form)
+    db.commit()
+
+
 @router.get("/{form_id}/export")
 def export_form(
     form_id: int,

@@ -2,10 +2,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronRight, FileText } from "lucide-react";
 import { api, type FormListItem } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { FORM_TYPE_LABELS, formatDate } from "@/lib/utils";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 
@@ -14,9 +15,13 @@ const TYPES = Object.values(FORM_SCHEMAS).map((s) => s.type);
 export default function FormsIndexPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
     api.listForms({ mine: true }).then(setItems).catch(() => setItems([]));
   }, []);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <div>
@@ -50,7 +55,7 @@ export default function FormsIndexPage() {
               <th className="px-6 py-3 font-medium">신청서 종류</th>
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-32 px-6 py-3 font-medium">제출일</th>
-              <th className="w-28 px-6 py-3 font-medium">Export</th>
+              <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -74,12 +79,19 @@ export default function FormsIndexPage() {
                   </td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
                   <td className="px-6 py-4">
-                    <a
-                      href={api.exportFormUrl(it.id)}
-                      className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
-                    >
-                      📄 Excel
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={api.exportFormUrl(it.id)}
+                        className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                      >
+                        📄 Excel
+                      </a>
+                      <DeleteFormButton
+                        formId={it.id}
+                        contextLabel={it.project_name}
+                        onDeleted={refetch}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
