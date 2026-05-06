@@ -6,12 +6,17 @@
 // action_items/examples) 입력 영역이 같이 보임. 다른 게시판은 단순 폼 그대로.
 // 파일 첨부는 글 등록 후 순차 업로드 (FormBuilder 와 동일 패턴).
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { PolicyExampleModal } from "./PolicyExampleModal";
 import { SEVERITIES } from "./SeverityBadge";
+
+const SEVERITY_VALUES = ["required", "recommended", "reference"] as const;
+function parseSeverityParam(v: string | null): Severity | "" {
+  return v && (SEVERITY_VALUES as readonly string[]).includes(v) ? (v as Severity) : "";
+}
 
 const CATEGORIES = ["가이드", "공지", "정책", "FAQ"];
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -24,7 +29,12 @@ function formatBytes(n: number): string {
 
 export function PostNewView({ board }: { board: BoardType }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isPolicy = board === "policy";
+
+  // 정책 목록의 필터 탭에서 진입한 경우 ?severity=... 가 붙어 있음.
+  // 폼 초기값과 예시 모달 기본 탭 양쪽에 사용.
+  const initialSeverity = parseSeverityParam(searchParams?.get("severity") ?? null);
 
   const [me, setMe] = useState<Me | null>(null);
   const [title, setTitle] = useState("");
@@ -34,7 +44,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   // 정책 메타 — 비정책 게시판에서는 사용하지 않음
   const [summary, setSummary] = useState("");
   const [tagsInput, setTagsInput] = useState("");           // "보안, PII, 적재"
-  const [severity, setSeverity] = useState<Severity | "">("");
+  const [severity, setSeverity] = useState<Severity | "">(initialSeverity);
   const [appliesTo, setAppliesTo] = useState("");
   const [tldr, setTldr] = useState("");
   const [actionItemsText, setActionItemsText] = useState(""); // 줄당 1개
@@ -379,11 +389,13 @@ export function PostNewView({ board }: { board: BoardType }) {
         </div>
       </form>
 
-      {/* 정책 게시판 한정 — 예시 보기 모달 */}
+      {/* 정책 게시판 한정 — 예시 보기 모달.
+          현재 폼의 severity 가 설정돼 있으면 그 탭을 기본으로, 아니면 url 의 severity, 둘 다 없으면 '필수'. */}
       {isPolicy && (
         <PolicyExampleModal
           open={exampleOpen}
           onClose={() => setExampleOpen(false)}
+          defaultSeverity={(severity || initialSeverity || "required") as Severity}
           onApply={applyExample}
         />
       )}

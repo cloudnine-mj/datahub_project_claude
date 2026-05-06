@@ -99,7 +99,13 @@ export function PolicyBoardView() {
         </div>
 
         <Link
-          href={canWrite ? "/governance/policy/new" : "/governance/policy/forbidden"}
+          href={
+            canWrite
+              ? filter !== "all"
+                ? `/governance/policy/new?severity=${filter}`
+                : "/governance/policy/new"
+              : "/governance/policy/forbidden"
+          }
           className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
         >
           <Pencil size={14} /> 글쓰기

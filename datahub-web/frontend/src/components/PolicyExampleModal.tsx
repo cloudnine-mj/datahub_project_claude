@@ -3,25 +3,38 @@
 /**
  * 정책 작성 폼의 "예시 보기" 모달.
  *
- * 시드 데이터(POLICY_EXAMPLE) 를 필드별로 보여주고,
- * "이 예시로 채우기" 버튼으로 작성 폼에 일괄 입력할 수 있게 한다.
+ * severity 별 3종 예시 (필수/권장/참고) 를 탭으로 전환하며 볼 수 있고,
+ * 진입 시 `defaultSeverity` 에 해당하는 예시가 기본 선택된다.
+ *
+ * "이 예시로 채우기" 클릭 시 현재 보고 있는 예시를 부모(PostNewView) 폼에 일괄 입력.
  */
 
+import { useEffect, useState } from "react";
 import { Sparkles, X } from "lucide-react";
-import { POLICY_EXAMPLE } from "@/lib/policyExample";
-import { SeverityBadge } from "./SeverityBadge";
+import { POLICY_EXAMPLES, type PolicyExample } from "@/lib/policyExample";
+import type { Severity } from "@/lib/api";
+import { SeverityBadge, SEVERITIES } from "./SeverityBadge";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** 기본으로 보여줄 예시의 severity — 보통 작성 폼이 진입할 때의 컨텍스트 */
+  defaultSeverity?: Severity;
   /** 클릭 시 호출 — 부모(PostNewView)가 받은 값으로 form state 를 채운다 */
-  onApply: (example: typeof POLICY_EXAMPLE) => void;
+  onApply: (example: PolicyExample) => void;
 }
 
-export function PolicyExampleModal({ open, onClose, onApply }: Props) {
+export function PolicyExampleModal({ open, onClose, defaultSeverity = "required", onApply }: Props) {
+  const [tab, setTab] = useState<Severity>(defaultSeverity);
+
+  // 모달이 새로 열릴 때마다 컨텍스트 severity 로 초기화
+  useEffect(() => {
+    if (open) setTab(defaultSeverity);
+  }, [open, defaultSeverity]);
+
   if (!open) return null;
 
-  const ex = POLICY_EXAMPLE;
+  const ex = POLICY_EXAMPLES[tab];
 
   return (
     <div
@@ -48,6 +61,26 @@ export function PolicyExampleModal({ open, onClose, onApply }: Props) {
           >
             <X size={16} />
           </button>
+        </div>
+
+        {/* severity 탭 */}
+        <div className="flex items-center gap-1 border-b border-gray-100 bg-gray-50/50 px-6 py-2">
+          <span className="mr-2 text-xs text-gray-500">중요도별 예시:</span>
+          {SEVERITIES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => setTab(s.value)}
+              className={
+                "rounded-full px-3 py-1 text-xs font-semibold transition " +
+                (tab === s.value
+                  ? "bg-blue-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100")
+              }
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
         {/* 본문 — 필드별 예시 값 */}
