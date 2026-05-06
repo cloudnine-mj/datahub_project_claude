@@ -33,9 +33,9 @@ export function StatusBadge({ status }: { status: FormStatus | string }) {
   const s = STYLES[status as FormStatus] ?? STYLES.submitted;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${s.cls}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${s.cls}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
       {s.label}
     </span>
   );
