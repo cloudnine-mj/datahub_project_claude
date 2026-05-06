@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import { POLICY_EXAMPLES, type PolicyExample } from "@/lib/policyExample";
 import type { Severity } from "@/lib/api";
 import { SeverityBadge, SEVERITIES } from "./SeverityBadge";
@@ -48,8 +48,8 @@ export function PolicyExampleModal({ open, onClose, defaultSeverity = "required"
         {/* 헤더 */}
         <div className="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-600">
-              <Sparkles size={12} /> 작성 예시
+            <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              작성 예시
             </div>
             <h2 className="mt-1 text-lg font-bold">{ex.label}</h2>
           </div>
@@ -150,9 +150,9 @@ export function PolicyExampleModal({ open, onClose, defaultSeverity = "required"
                 onApply(ex);
                 onClose();
               }}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+              className="inline-flex items-center rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
             >
-              <Sparkles size={14} /> 이 예시로 채우기
+              이 예시로 채우기
             </button>
           </div>
         </div>

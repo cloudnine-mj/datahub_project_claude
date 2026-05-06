@@ -7,7 +7,7 @@
 // 파일 첨부는 글 등록 후 순차 업로드 (FormBuilder 와 동일 패턴).
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Sparkles, Upload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { PolicyExampleModal } from "./PolicyExampleModal";
@@ -206,7 +206,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                 onClick={() => setExampleOpen(true)}
                 className="ml-auto inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
               >
-                <Sparkles size={12} /> 예시 보기
+                예시 보기
               </button>
             </div>
             <p className="mb-4 text-xs text-blue-800/70">
