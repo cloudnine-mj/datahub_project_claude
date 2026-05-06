@@ -1,9 +1,9 @@
 "use client";
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Save, Upload, X } from "lucide-react";
+import { ChevronDown, Clock, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -32,6 +32,39 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitterName, setSubmitterName] = useState("");
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
+
+  // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
+  // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
+  const progress = useMemo(() => {
+    const allFields = schema.sections.flatMap((s) => s.fields);
+    const filledSchemaFields = allFields.filter((f) => {
+      const v = values[f.key];
+      if (v === undefined || v === null) return false;
+      if (typeof v === "string") return v.trim().length > 0;
+      if (typeof v === "boolean") return v === true;
+      return true;
+    }).length;
+    const filledSubmitter = [submitterName, submitterDepartment, submitterEmail]
+      .filter((s) => s.trim().length > 0).length;
+
+    const total = allFields.length + 3; // +3 for submitter info
+    const filled = filledSchemaFields + filledSubmitter;
+    const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
+
+    // 섹션 진행 — '신청자 정보' 1개 + schema sections.
+    const totalSections = schema.sections.length + 1;
+    const startedSections =
+      (filledSubmitter > 0 ? 1 : 0) +
+      schema.sections.filter((s) => s.fields.some((f) => {
+        const v = values[f.key];
+        if (v === undefined || v === null) return false;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (typeof v === "boolean") return v === true;
+        return true;
+      })).length;
+
+    return { filled, total, percent, startedSections, totalSections };
+  }, [values, submitterName, submitterDepartment, submitterEmail, schema]);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
@@ -102,6 +135,44 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         {schema.description && (
           <p className="mt-2 text-sm text-gray-500">{schema.description}</p>
         )}
+
+        {/* 소요 시간 + 진행률 안내 */}
+        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+            {schema.estimatedMinutes && (
+              <div className="inline-flex items-center gap-1.5 text-gray-600">
+                <Clock size={13} className="text-gray-400" />
+                <span>
+                  예상 소요 시간 <strong className="font-semibold text-gray-800">{schema.estimatedMinutes}분</strong> 내 작성 가능합니다
+                </span>
+              </div>
+            )}
+            <span className="hidden text-gray-300 sm:inline">·</span>
+            <div className="inline-flex items-center gap-1.5 text-gray-600">
+              Step{" "}
+              <strong className="font-semibold text-gray-800">
+                {progress.startedSections} / {progress.totalSections}
+              </strong>
+              <span className="text-gray-400">진행 중</span>
+            </div>
+            <span className="hidden text-gray-300 sm:inline">·</span>
+            <div className="text-gray-600">
+              <strong className="font-semibold text-gray-800">{progress.filled}</strong>
+              <span className="text-gray-400"> / {progress.total} 필드</span>
+            </div>
+          </div>
+
+          {/* progress bar */}
+          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${progress.percent}%` }}
+            />
+          </div>
+          <div className="mt-1 text-right text-[11px] font-semibold text-blue-600">
+            {progress.percent}% 완료
+          </div>
+        </div>
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
