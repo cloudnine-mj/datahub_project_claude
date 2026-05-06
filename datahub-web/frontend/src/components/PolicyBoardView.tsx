@@ -63,9 +63,8 @@ export function PolicyBoardView() {
         <div className="flex items-start gap-3 text-sm">
           <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
           <div>
-            <div className="font-semibold text-blue-900">이 페이지의 목적</div>
-            <p className="mt-1 text-blue-800/80">
-              데이터의 <strong className="font-semibold">생성·저장·활용·폐기</strong> 까지의 기준을 정의합니다.
+            <p className="text-blue-800/80">
+              이 페이지는 데이터의 <strong className="font-semibold">생성·저장·활용·폐기</strong> 까지의 기준을 정의합니다.
               필요한 정책을 확인하고 <strong className="font-semibold">바로 실행</strong>할 수 있습니다.
             </p>
             <p className="mt-2 text-xs text-blue-800/60">
