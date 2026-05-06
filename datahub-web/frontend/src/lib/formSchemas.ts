@@ -67,7 +67,7 @@ const dataProduction: FormSchema = {
       fields: [
         { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능, PMS 기준)", required: true },
         { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)" },
-        { key: "데이터셋_이름", label: "데이터셋 이름", type: "text", placeholder: "멋진 이름을 정해 주세요!" },
+        { key: "데이터셋_이름", label: "데이터셋 이름", type: "text" },
         { key: "희망_작업_착수일", label: "희망 작업 착수일", type: "date" },
         { key: "희망_수령일", label: "희망 수령일", type: "date" },
       ],
