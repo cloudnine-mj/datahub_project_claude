@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Save, Upload, X } from "lucide-react";
+import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -379,14 +379,7 @@ function FieldInput({
         />
       );
     case "date":
-      return (
-        <input
-          type="date"
-          value={(value as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          className={common}
-        />
-      );
+      return <DateField value={(value as string) ?? ""} onChange={(v) => onChange(v)} />;
     case "number":
       return (
         <input
@@ -457,6 +450,63 @@ function FieldInput({
         />
       );
   }
+}
+
+/**
+ * 날짜 입력 — 텍스트 입력 + 달력 아이콘 버튼.
+ *
+ * 기본 `<input type="date">` 의 브라우저 placeholder ("연도. 월. 일.") 를
+ * 우회하기 위한 하이브리드 컴포넌트:
+ *  - 비어있을 때: "날짜를 선택하세요" 안내
+ *  - 자유 타이핑 가능 (YYYY-MM-DD, 2026-04-30 등)
+ *  - 달력 아이콘 클릭 시 네이티브 date picker 열림 (showPicker API)
+ *  - picker 로 선택 후에도 텍스트 input 으로 수동 수정 가능
+ */
+function DateField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  function openPicker() {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") {
+      try {
+        el.showPicker();
+        return;
+      } catch {
+        // 일부 브라우저는 보안상 throw — fallback
+      }
+    }
+    el.click();
+  }
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="날짜를 선택하세요"
+        className="w-full rounded-md border border-gray-200 px-3 py-2 pr-9 text-sm focus:border-brand focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={openPicker}
+        aria-label="달력 열기"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+      >
+        <Calendar size={14} />
+      </button>
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={/^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="pointer-events-none absolute h-0 w-0 opacity-0"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    </div>
+  );
 }
 
 function SubmitterInputRow({
