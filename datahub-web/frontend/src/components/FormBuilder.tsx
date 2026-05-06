@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Upload, X } from "lucide-react";
+import { ChevronDown, Save, Upload, X } from "lucide-react";
 import { api, type FormType, type Me } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -327,16 +327,22 @@ function FieldInput({
       );
     case "select":
       return (
-        <select
-          value={(value as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          className={common}
-        >
-          <option value="">선택하세요</option>
-          {field.options?.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={(value as string) ?? ""}
+            onChange={(e) => onChange(e.target.value)}
+            className={common + " appearance-none bg-white pr-9"}
+          >
+            <option value="">선택하세요</option>
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+          <ChevronDown
+            size={14}
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+        </div>
       );
     default:
       return (

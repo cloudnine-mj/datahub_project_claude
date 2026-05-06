@@ -19,6 +19,21 @@ export interface FieldDef {
   hint?: string;
 }
 
+/**
+ * 데이터셋 저장 레포지토리 — 신청서에서 선택 가능한 사전 정의 목록.
+ *
+ * 추후 백엔드에서 동적으로 받아올 수도 있으나(예: GET /repositories),
+ * 현재는 데모용으로 고정 목록 사용. 시드된 'analytics-platform-repo' 도 포함.
+ */
+export const DATASET_REPOSITORIES = [
+  "analytics-platform-repo",
+  "marketing-data-repo",
+  "logistics-data-repo",
+  "product-log-repo",
+  "research-experiment-repo",
+  "security-data-repo",
+];
+
 export interface SectionDef {
   title: string;
   fields: FieldDef[];
@@ -108,7 +123,12 @@ const dataPurchase: FormSchema = {
         { key: "사용_목적_및_기대_효과", label: "사용 목적 및 기대 효과", type: "textarea" },
         { key: "데이터_품질_검수_담당자", label: "데이터 품질/검수 담당자", type: "text" },
         { key: "compliance_확인_여부", label: "Compliance 확인 여부", type: "radio", options: ["확인 완료", "확인 필요"] },
-        { key: "데이터셋_저장_레포지토리", label: "데이터셋 저장 레포지토리", type: "text" },
+        {
+          key: "데이터셋_저장_레포지토리",
+          label: "데이터셋 저장 레포지토리",
+          type: "select",
+          options: DATASET_REPOSITORIES,
+        },
       ],
     },
   ],
