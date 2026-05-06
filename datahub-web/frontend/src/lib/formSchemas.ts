@@ -17,6 +17,12 @@ export interface FieldDef {
   options?: string[];
   required?: boolean;
   hint?: string;
+  /**
+   * true 면 다음 필드를 같은 행(행 1개)에 인라인으로 함께 렌더링.
+   * 다음 필드의 label 이 두 입력 사이에 인라인 레이블로 배치됨.
+   * 예: 목표 데이터 수량(number) → 단위(text) 를 한 줄에.
+   */
+  inlineWithNext?: boolean;
 }
 
 /**
@@ -82,7 +88,7 @@ const dataProduction: FormSchema = {
       fields: [
         { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "e.g., 대화, 점수 매기기, AB 테스트, 다차원 레이블링, 한영번역검수, OCR, 문서 수집, 문서QA" },
         { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀 or 외주 업체 자체 툴 (별도로 원하는 도구가 있으시면 적어 주세요! e.g., Gradio)" },
-        { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력" },
+        { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력", inlineWithNext: true },
         { key: "단위", label: "단위", type: "text", placeholder: "e.g., 문장, 문항" },
         { key: "목표_데이터_수량_상세", label: "목표 데이터 수량 (상세)", type: "textarea", placeholder: "필요 시 수량에 대한 세부 사항 기재 (e.g., 대화 1턴당 문장 최소 10개 → 최소 50만 문장)" },
         { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "**명 (동일 데이터에 여러 작업자의 의견이 필요하면 1명 이상 기재)" },

@@ -138,46 +138,76 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </div>
         </section>
 
-        {schema.sections.map((section) => (
-          <section key={section.title}>
-            <div className="mb-3 flex items-center gap-2">
-              <span className="block h-5 w-1 rounded-sm bg-brand" />
-              <h2 className="text-base font-bold">{section.title}</h2>
-            </div>
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-              <table className="w-full text-sm">
-                <tbody>
-                  {section.fields.map((f) => {
-                    // 체크박스는 라벨이 input 옆에 이미 있으므로 좌측 라벨 셀 생략 (중복 방지)
-                    if (f.type === "checkbox") {
+        {schema.sections.map((section) => {
+          // inlineWithNext 적용 — 두 필드를 같은 행에 묶기 위한 사전 그룹핑.
+          type Row = { primary: FieldDef; inline?: FieldDef };
+          const rows: Row[] = [];
+          for (let i = 0; i < section.fields.length; i++) {
+            const f = section.fields[i];
+            if (f.inlineWithNext && i + 1 < section.fields.length) {
+              rows.push({ primary: f, inline: section.fields[i + 1] });
+              i++; // 다음 필드는 인라인으로 흡수됐으니 별도 행 X
+            } else {
+              rows.push({ primary: f });
+            }
+          }
+
+          return (
+            <section key={section.title}>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="block h-5 w-1 rounded-sm bg-brand" />
+                <h2 className="text-base font-bold">{section.title}</h2>
+              </div>
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <table className="w-full text-sm">
+                  <tbody>
+                    {rows.map(({ primary: f, inline }) => {
+                      // 체크박스는 라벨이 input 옆에 이미 있으므로 좌측 라벨 셀 생략 (중복 방지)
+                      if (f.type === "checkbox") {
+                        return (
+                          <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
+                            <td colSpan={2} className="px-5 py-3">
+                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                            </td>
+                          </tr>
+                        );
+                      }
                       return (
                         <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
-                          <td colSpan={2} className="px-5 py-3">
-                            <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                          <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
+                            {f.label}
+                            {f.required && <span className="ml-1 text-brand">*</span>}
+                          </td>
+                          <td className="px-5 py-3">
+                            {inline ? (
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1">
+                                  <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                                </div>
+                                <span className="shrink-0 text-sm text-gray-600">{inline.label}</span>
+                                <div className="flex-1">
+                                  <FieldInput
+                                    field={inline}
+                                    value={values[inline.key]}
+                                    onChange={(v) => setField(inline.key, v)}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                            )}
+                            {f.hint && <p className="mt-1.5 text-xs text-gray-500">💡 {f.hint}</p>}
+                            {inline?.hint && <p className="mt-1.5 text-xs text-gray-500">💡 {inline.hint}</p>}
                           </td>
                         </tr>
                       );
-                    }
-                    return (
-                      <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
-                        <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">
-                          {f.label}
-                          {f.required && <span className="ml-1 text-brand">*</span>}
-                        </td>
-                        <td className="px-5 py-3">
-                          <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
-                          {f.hint && (
-                            <p className="mt-1.5 text-xs text-gray-500">💡 {f.hint}</p>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ))}
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
 
         <section>
           <div className="mb-3 flex items-center gap-2">
