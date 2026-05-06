@@ -255,8 +255,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                             ) : (
                               <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
                             )}
-                            {f.hint && <p className="mt-1.5 text-xs font-semibold text-gray-500">{f.hint}</p>}
-                            {inline?.hint && <p className="mt-1.5 text-xs font-semibold text-gray-500">{inline.hint}</p>}
+                            <FieldHint field={f} />
+                            {inline && <FieldHint field={inline} />}
                           </td>
                         </tr>
                       );
@@ -505,6 +505,29 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
         tabIndex={-1}
         aria-hidden="true"
       />
+    </div>
+  );
+}
+
+/**
+ * 필드 아래 안내 텍스트(hint) + 선택적 외부 링크(hintLink) 렌더.
+ * hint 도 hintLink 도 없으면 아무것도 그리지 않음.
+ */
+function FieldHint({ field }: { field: FieldDef }) {
+  if (!field.hint && !field.hintLink) return null;
+  return (
+    <div className="mt-1.5">
+      {field.hint && <p className="text-xs font-semibold text-gray-500">{field.hint}</p>}
+      {field.hintLink && (
+        <a
+          href={field.hintLink.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+        >
+          {field.hintLink.label} ↗
+        </a>
+      )}
     </div>
   );
 }
