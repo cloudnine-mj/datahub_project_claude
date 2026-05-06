@@ -35,7 +35,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
   // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
-  const progress = useMemo(() => {
+  // (변수명 'progress' 는 파일 업로드 메시지 useState 와 충돌하므로 'completion' 사용)
+  const completion = useMemo(() => {
     const allFields = schema.sections.flatMap((s) => s.fields);
     const filledSchemaFields = allFields.filter((f) => {
       const v = values[f.key];
@@ -151,14 +152,14 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             <div className="inline-flex items-center gap-1.5 text-gray-600">
               Step{" "}
               <strong className="font-semibold text-gray-800">
-                {progress.startedSections} / {progress.totalSections}
+                {completion.startedSections} / {completion.totalSections}
               </strong>
               <span className="text-gray-400">진행 중</span>
             </div>
             <span className="hidden text-gray-300 sm:inline">·</span>
             <div className="text-gray-600">
-              <strong className="font-semibold text-gray-800">{progress.filled}</strong>
-              <span className="text-gray-400"> / {progress.total} 필드</span>
+              <strong className="font-semibold text-gray-800">{completion.filled}</strong>
+              <span className="text-gray-400"> / {completion.total} 필드</span>
             </div>
           </div>
 
@@ -166,11 +167,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
             <div
               className="h-full rounded-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${progress.percent}%` }}
+              style={{ width: `${completion.percent}%` }}
             />
           </div>
           <div className="mt-1 text-right text-[11px] font-semibold text-blue-600">
-            {progress.percent}% 완료
+            {completion.percent}% 완료
           </div>
         </div>
       </div>
