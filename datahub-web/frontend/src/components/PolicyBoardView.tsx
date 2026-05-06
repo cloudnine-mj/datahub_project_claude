@@ -138,12 +138,12 @@ export function PolicyBoardView() {
                 <p className="text-xs text-gray-500">
                   필요한 정책이 있다면 거버넌스 관리자에게 작성을 요청하세요.
                 </p>
-                <a
-                  href="mailto:datahub-governance@example.com?subject=%5BDataHub%5D%20%EC%A0%95%EC%B1%85%20%EC%9E%91%EC%84%B1%20%EC%9A%94%EC%B2%AD"
+                <button
+                  type="button"
                   className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   ✉ 정책 작성 요청하기
-                </a>
+                </button>
               </div>
             )}
           </div>
