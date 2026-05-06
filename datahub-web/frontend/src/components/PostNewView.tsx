@@ -290,7 +290,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                   value={examples}
                   onChange={(e) => setExamples(e.target.value)}
                   rows={4}
-                  placeholder={"✅ 올바른 사례\n- 라이선스: CC-BY-4.0 명시, 출처 URL 첨부\n\n❌ 잘못된 사례\n- 라이선스 미기재"}
+                  placeholder={"올바른 사례\n- 라이선스: CC-BY-4.0 명시, 출처 URL 첨부\n\n잘못된 사례\n- 라이선스 미기재"}
                   className={inputCls}
                 />
               </Field>
