@@ -12,7 +12,7 @@ export default function Page() {
       </div>
       <h1 className="mt-6 text-2xl font-bold tracking-tight">신청서가 제출되었습니다</h1>
       <p className="mt-2 text-sm text-gray-500">
-        시스템에는 등록되었지만, <strong className="font-semibold text-gray-700">최종 승인은 전자결재가 완료되어야</strong> 처리됩니다.
+        최종 승인을 받으려면 <strong className="font-semibold text-gray-700">전자결재 시스템에서 결재를 완료</strong>해 주세요.
       </p>
 
       {/* 다음 단계 가이드 */}
