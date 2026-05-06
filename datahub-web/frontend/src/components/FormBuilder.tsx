@@ -140,9 +140,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           <button
             type="button"
             onClick={() => setExampleOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            className="inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
           >
-            <Sparkles size={12} /> 작성 예시
+            작성 예시
           </button>
         </div>
 
