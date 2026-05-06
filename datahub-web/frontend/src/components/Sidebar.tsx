@@ -5,17 +5,36 @@ import { usePathname } from "next/navigation";
 import { Database, Brain, Folder, LayoutGrid, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// 화면 캡처의 좌측 사이드바 — Datasets / Models / Workspace / Dashboard / Governance
-const NAV = [
+// 사이드바 — Datasets / Models / Workspace / Dashboard / Governance.
+// Governance 는 4개 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof Database;
+  children?: { href: string; label: string }[];
+}
+
+const NAV: NavItem[] = [
   { href: "/datasets", label: "Datasets", icon: Database },
   { href: "/models", label: "Models", icon: Brain },
   { href: "/workspace", label: "Workspace", icon: Folder },
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/governance", label: "Governance", icon: ShieldCheck },
+  {
+    href: "/governance",
+    label: "Governance",
+    icon: ShieldCheck,
+    children: [
+      { href: "/governance/policy", label: "데이터 관리 정책" },
+      { href: "/governance/process/production", label: "데이터 제작 프로세스" },
+      { href: "/governance/process/usage", label: "데이터 활용 요청 프로세스" },
+      { href: "/governance/forms", label: "제작 / 활용 신청서 작성" },
+    ],
+  },
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
 
   return (
     <aside className="w-60 shrink-0 border-r border-gray-200 bg-white">
@@ -25,20 +44,48 @@ export function Sidebar() {
       </div>
       <nav className="px-3 py-2">
         {NAV.map((item) => {
-          const active = pathname?.startsWith(item.href) ?? false;
+          const active = pathname.startsWith(item.href);
           const Icon = item.icon;
+          // 부모가 active 거나 자식 중 하나가 active 면 자식 메뉴 펼침
+          const expanded = active && !!item.children;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition",
-                active ? "text-brand" : "text-gray-600 hover:bg-gray-50",
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition",
+                  active ? "text-brand" : "text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+              {expanded && item.children && (
+                <ul className="ml-3 mt-0.5 mb-1 border-l border-gray-100 pl-3">
+                  {item.children.map((c) => {
+                    const childActive =
+                      pathname === c.href ||
+                      // /governance/policy/[id] 같은 하위 경로도 active 로 간주
+                      pathname.startsWith(c.href + "/");
+                    return (
+                      <li key={c.href}>
+                        <Link
+                          href={c.href}
+                          className={cn(
+                            "block rounded-md px-3 py-1.5 text-xs transition",
+                            childActive
+                              ? "font-semibold text-brand"
+                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                          )}
+                        >
+                          {c.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </Link>
+            </div>
           );
         })}
       </nav>
