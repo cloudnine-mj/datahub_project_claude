@@ -170,7 +170,7 @@ const dataSubscription: FormSchema = {
 
 const productLogUsage: FormSchema = {
   type: "product_log_usage",
-  label: "product 로그 데이터 활용 신청서",
+  label: "Product 로그 데이터 활용 신청서",
   description: "사내 프로덕트의 클릭·세션·이벤트 로그를 활용할 때 필요합니다. PII 검토가 동반됩니다.",
   projectField: "프로젝트명",
   sections: [

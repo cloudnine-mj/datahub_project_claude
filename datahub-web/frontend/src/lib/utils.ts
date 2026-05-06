@@ -17,7 +17,7 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
   data_production: "데이터 용역 제작 신청서",
   data_purchase: "데이터 구매 신청서",
   data_subscription: "데이터 구독 신청서",
-  product_log_usage: "product 로그 데이터 활용 신청서",
+  product_log_usage: "Product 로그 데이터 활용 신청서",
   data_production_plan: "데이터 제작 계획서",
 };
 

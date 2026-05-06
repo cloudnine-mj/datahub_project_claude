@@ -132,10 +132,10 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
     db.add_all([
         Post(
             board_type="usage_process",
-            title="product 서비스 로그 데이터 활용 방법",
+            title="Product 서비스 로그 데이터 활용 방법",
             category="가이드",
-            content="product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
-                    "신청서: 'product 로그 데이터 활용 신청서'",
+            content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
+                    "신청서: 'Product 로그 데이터 활용 신청서'",
             author_id=admin.id,
             author_name=admin.name,
             created_at=datetime(2025, 1, 15, 9, 30),
