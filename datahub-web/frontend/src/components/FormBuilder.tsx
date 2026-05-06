@@ -133,9 +133,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
-        {schema.description && (
-          <p className="mt-2 text-sm text-gray-500">{schema.description}</p>
-        )}
 
         {/* 진행률 안내 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
