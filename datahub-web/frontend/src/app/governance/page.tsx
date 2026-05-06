@@ -7,25 +7,25 @@ const CARDS = [
     href: "/governance/policy",
     icon: ShieldCheck,
     title: "데이터 관리 정책",
-    desc: "데이터 관리 원칙과 정책 문서를 확인합니다",
+    desc: "데이터 관리 원칙과 정책 문서를 확인합니다.",
   },
   {
     href: "/governance/process/production",
     icon: Layers,
     title: "데이터 제작 프로세스",
-    desc: "용역 제작 및 구매/구독 요청 방법을 안내합니다",
+    desc: "용역 제작 및 구매/구독 요청 방법을 안내합니다.",
   },
   {
     href: "/governance/process/usage",
     icon: Share2,
     title: "데이터 활용 요청 프로세스",
-    desc: "서비스 로그 및 구매 데이터 활용 요청 방법을 안내합니다",
+    desc: "서비스 로그 및 구매 데이터 활용 요청 방법을 안내합니다.",
   },
   {
     href: "/governance/forms",
     icon: FileEdit,
     title: "제작/활용 신청서 작성",
-    desc: "각종 신청서 및 품의서 양식을 작성합니다",
+    desc: "각종 신청서 및 품의서 양식을 작성합니다.",
   },
 ];
 
@@ -33,7 +33,7 @@ export default function GovernancePage() {
   return (
     <div>
       <h1 className="text-3xl font-bold tracking-tight">Governance</h1>
-      <p className="mt-2 text-sm text-gray-500">데이터 거버넌스 정책 및 프로세스를 확인하세요</p>
+      <p className="mt-2 text-sm text-gray-500">데이터 거버넌스 정책 및 프로세스를 확인하세요.</p>
 
       <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
         {CARDS.map((c) => {
