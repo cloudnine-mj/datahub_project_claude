@@ -71,7 +71,8 @@ export function PolicyBoardView() {
             <p className="mt-2 text-xs text-blue-800/60">
               제목 옆 <SeverityBadge severity="required" /> 는 반드시 지켜야 하는 정책,
               <SeverityBadge severity="recommended" /> 는 권장사항,
-              <SeverityBadge severity="reference" /> 는 참고용입니다.
+              <SeverityBadge severity="security" /> 는 보안 관련,
+              <SeverityBadge severity="approval_required" /> 는 사전 승인이 필요한 정책입니다.
             </p>
           </div>
         </div>

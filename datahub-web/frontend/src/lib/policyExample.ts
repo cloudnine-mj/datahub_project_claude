@@ -1,10 +1,11 @@
 /**
- * 정책 작성 폼의 예시 데이터 — severity 별 3종.
+ * 정책 작성 폼의 예시 데이터 — severity 별 4종.
  *
  * Admin 이 "예시 보기" 버튼 클릭 시 모달로 보여주거나,
  * "이 예시로 채우기" 클릭 시 폼 필드에 자동 입력하는 데 사용한다.
  *
- * 시드(`backend/app/seed.py`)의 정책 항목 + 권장/참고용 모범 사례를 추가.
+ * 분류 4단계 (사용자 여정 분석 Step 2 의 태그 예시 그대로):
+ *   필수 / 권장 / 보안 / 승인 필요
  */
 
 import type { Severity } from "./api";
@@ -28,7 +29,7 @@ export interface PolicyExample {
 const REQUIRED_EXAMPLE: PolicyExample = {
   label: "데이터 적재 정책 (필수 — 모범 작성 사례)",
   title: "데이터 적재 정책",
-  category: "정책",
+  category: "데이터 관리 정책",
   summary: "신규 데이터셋 등록 시 메타데이터·라이선스·소유권 검증을 필수화합니다.",
   tags: ["적재", "라이선스", "메타데이터"],
   severity: "required",
@@ -56,7 +57,7 @@ const REQUIRED_EXAMPLE: PolicyExample = {
 const RECOMMENDED_EXAMPLE: PolicyExample = {
   label: "데이터셋 명명 컨벤션 (권장 — 모범 작성 사례)",
   title: "데이터셋 명명 컨벤션",
-  category: "가이드",
+  category: "데이터 관리 정책",
   summary: "데이터셋 이름을 일관된 규칙으로 작성해 검색·식별을 쉽게 만듭니다.",
   tags: ["명명", "메타데이터", "검색"],
   severity: "recommended",
@@ -80,36 +81,69 @@ const RECOMMENDED_EXAMPLE: PolicyExample = {
     "잘못된 사례\n- MarketingSegment2 (대문자 + 형식 미준수)\n- mkt_seg_v2 (언더스코어 + 약어 남용)",
 };
 
-const REFERENCE_EXAMPLE: PolicyExample = {
-  label: "데이터 활용 사례집 (참고 — 모범 작성 사례)",
-  title: "데이터 활용 사례집",
-  category: "FAQ",
-  summary: "사내 팀들이 DataHub 데이터를 어떻게 활용했는지 모은 참고 자료입니다.",
-  tags: ["활용", "사례", "참고"],
-  severity: "reference",
-  applies_to: "데이터 활용 아이디어를 찾는 누구나",
+const SECURITY_EXAMPLE: PolicyExample = {
+  label: "개인정보 처리 가이드 (보안 — 모범 작성 사례)",
+  title: "개인정보 처리 가이드",
+  category: "데이터 관리 정책",
+  summary: "PII 가 포함된 데이터셋 처리 시 준수해야 할 보안·접근 제어 가이드입니다.",
+  tags: ["보안", "PII", "비식별화"],
+  severity: "security",
+  applies_to: "PII (이메일·전화·주민번호 등) 포함 데이터를 다루는 모든 사용자",
   tldr:
-    "이 문서는 강제 사항이 아닙니다. 다른 팀의 활용 사례를 살펴보고 " +
-    "본인 프로젝트에 영감을 얻는 용도로 활용하세요.",
+    "PII 데이터는 반드시 비식별화 처리 후 등록하고, 접근 권한은 " +
+    "최소 인원으로 제한하세요. 외부 공유 전 보안팀 승인 필수.",
   action_items: [
-    "관심 도메인의 사례부터 읽기",
-    "유사 사례가 있다면 해당 팀에 직접 문의해 협업",
-    "본인 활용 사례도 공유하고 싶으면 이 페이지에 댓글/링크 첨부",
+    "PII 컬럼 식별 및 비식별화 처리 (해싱·마스킹)",
+    "접근 권한을 최소 필요 인원으로 제한",
+    "외부 공유 시 보안팀 승인 획득",
+    "보유 기간 명시 — 만료 후 자동 삭제 정책 적용",
   ],
   content:
-    "1. 마케팅 — 고객 세그먼트 분석\n매출·행동 데이터를 결합해 타겟 정밀도를 향상시킨 사례.\n\n" +
-    "2. 물류 — 배송 ETA 모델\n과거 배송 로그로 지역별 ETA 정확도를 개선한 사례.\n\n" +
-    "3. 추천 — 콘텐츠 개인화\n이용 이력 + 메타데이터로 추천 정확도를 끌어올린 사례.",
+    "1. PII 정의\n이메일·전화번호·주민번호·계좌번호·주소 등 개인을 식별할 수 " +
+    "있는 정보.\n\n" +
+    "2. 처리 원칙\n수집-목적-보유 원칙에 따라 최소한의 정보만 보유하고, " +
+    "목적 달성 후 즉시 폐기합니다.\n\n" +
+    "3. 접근 제어\nPII 가 포함된 데이터셋은 ACL 그룹으로만 접근 가능하며, " +
+    "그룹 가입은 데이터 오너 + 보안팀의 이중 승인이 필요합니다.",
   examples:
-    "참고: 자세한 사례별 결과는 사내 위키 또는 담당팀에 문의하세요.\n" +
-    "이 페이지는 시작점일 뿐, 결정 근거는 각 사례의 원문에서 확인해야 합니다.",
+    "올바른 사례\n- 이메일을 SHA-256 해시로 변환 후 저장\n- 접근 권한을 4명 핵심 분석가로 제한\n\n" +
+    "잘못된 사례\n- 원본 PII 를 평문 저장\n- 전사에 공유 권한 부여",
+};
+
+const APPROVAL_REQUIRED_EXAMPLE: PolicyExample = {
+  label: "외부 데이터 공유 절차 (승인 필요 — 모범 작성 사례)",
+  title: "외부 데이터 공유 승인 절차",
+  category: "데이터 관리 정책",
+  summary: "외부 조직·파트너와 데이터를 공유하기 전 거쳐야 하는 사전 승인 절차입니다.",
+  tags: ["공유", "외부", "승인"],
+  severity: "approval_required",
+  applies_to: "외부 조직·파트너와 데이터 공유 협력을 진행하려는 모든 사용자",
+  tldr:
+    "외부 조직과 데이터를 공유하기 전, 공유 범위·라이선스·기간을 명시한 " +
+    "공유 신청서를 제출하고 데이터 오너 + Compliance + 법무팀의 승인을 받아야 합니다.",
+  action_items: [
+    "공유 대상 데이터셋·범위 식별",
+    "공유 신청서 작성 (대상 조직, 사용 목적, 보유 기간)",
+    "데이터 오너 1차 승인",
+    "Compliance + 법무팀 검토",
+    "승인 후 공유 채널·접근 권한 설정",
+  ],
+  content:
+    "1. 적용 대상\n사내 데이터를 외부 조직(파트너·연구기관·고객사 등)과 공유하려는 모든 사용자.\n\n" +
+    "2. 승인 단계\n① 데이터 오너 → ② Compliance 팀 → ③ 법무팀 자문 → ④ 최종 승인.\n" +
+    "각 단계에서 반려 사유가 있을 경우 신청자에게 회신됩니다.\n\n" +
+    "3. 사후 관리\n승인된 공유는 분기별로 사용 현황을 점검하며, 보유 기간 만료 시 자동 폐기.",
+  examples:
+    "올바른 사례\n- 공유 신청서에 대상 조직·범위·기간 명시 + 법무팀 자문 결과 첨부\n\n" +
+    "잘못된 사례\n- 사전 승인 없이 외부 이메일로 데이터 전송\n- 보유 기간 미지정 상태로 공유",
 };
 
 /** severity → 예시 매핑. 모달이 현재 severity 컨텍스트로 자동 선택. */
 export const POLICY_EXAMPLES: Record<Severity, PolicyExample> = {
   required: REQUIRED_EXAMPLE,
   recommended: RECOMMENDED_EXAMPLE,
-  reference: REFERENCE_EXAMPLE,
+  security: SECURITY_EXAMPLE,
+  approval_required: APPROVAL_REQUIRED_EXAMPLE,
 };
 
 /** 후방 호환 — 단일 예시가 필요한 곳에서 사용 (기본은 필수). */
