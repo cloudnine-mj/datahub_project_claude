@@ -18,7 +18,7 @@ function parseSeverityParam(v: string | null): Severity | "" {
   return v && (SEVERITY_VALUES as readonly string[]).includes(v) ? (v as Severity) : "";
 }
 
-const CATEGORIES = ["가이드", "공지", "정책", "FAQ"];
+const CATEGORIES = ["데이터 관리 정책", "데이터 제작 프로세스", "데이터 활용 요청 프로세스"];
 const MAX_BYTES = 50 * 1024 * 1024;
 
 function formatBytes(n: number): string {
