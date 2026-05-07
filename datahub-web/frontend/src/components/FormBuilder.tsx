@@ -828,7 +828,7 @@ function CurrencyField({
         type="text"
         value={value.custom ?? ""}
         onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value })}
-        placeholder="직접 입력"
+        placeholder="예: EUR"
         disabled={kind !== "기타"}
         className="w-32 rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
       />
@@ -989,7 +989,7 @@ function ServiceBlockCard({
               ))}
             </div>
           </BlockRow>
-          <BlockRow label="사용 인원">
+          <BlockRow label="사용자">
             <MemberChipsField
               members={block.members}
               onChange={(members) => onChange({ members })}
@@ -1000,7 +1000,7 @@ function ServiceBlockCard({
               <span className="font-semibold text-gray-900">{memberCount}</span>
               <span className="text-gray-500">명</span>
               <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-                이름 수 자동 계산
+                사용자 수 자동 계산
               </span>
             </div>
           </BlockRow>
@@ -1127,7 +1127,7 @@ function MemberChipsField({
           }
         }}
         onBlur={commit}
-        placeholder={members.length === 0 ? "이름을 추가하세요" : ""}
+        placeholder={members.length === 0 ? "이름을 입력하고 Enter 또는 + 버튼 클릭 (예: 홍길동)" : ""}
         className="min-w-[140px] flex-1 rounded-md border-0 bg-transparent px-2 py-1 text-sm placeholder:text-gray-400 focus:outline-none"
       />
       <button
