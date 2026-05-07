@@ -257,4 +257,14 @@ export const api = {
   formAttachmentUrl: (formId: number, attId: number) => `${BASE}/forms/${formId}/attachments/${attId}`,
   deleteFormAttachment: (formId: number, attId: number) =>
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
+
+  /** 이미지 업로드 — 마크다운 본문 삽입용. 글 저장 전에도 호출 가능. */
+  uploadImage: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<{ url: string; filename: string; size_bytes: number }>(
+      `/uploads/images`,
+      { method: "POST", body: fd },
+    );
+  },
 };

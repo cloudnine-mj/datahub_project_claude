@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Lightbulb, Lock, Pencil, Users, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
+import { MarkdownView } from "./MarkdownEditor";
 import { SeverityBadge } from "./SeverityBadge";
 import { DeletePostButton } from "./DeletePostButton";
 
@@ -30,54 +31,6 @@ function stripExampleEmojis(text: string): string {
     .split("\n")
     .map((line) => line.replace(/^[✅❌✨⭐⚠️]\s*/u, ""))
     .join("\n");
-}
-
-/**
- * 본문 렌더 — 라이브러리 없이 가벼운 변환만:
- *   - "## 헤딩" / "# 헤딩" 으로 시작하는 줄 → 굵은 헤딩
- *   - 빈 줄 → 단락 구분
- *   - 그 외 → 일반 텍스트 (whitespace 보존)
- */
-function PolicyContent({ text }: { text: string }) {
-  const blocks: { type: "h" | "p"; content: string }[] = [];
-  let buffer: string[] = [];
-
-  const flush = () => {
-    if (buffer.length > 0) {
-      blocks.push({ type: "p", content: buffer.join("\n") });
-      buffer = [];
-    }
-  };
-
-  for (const raw of text.split("\n")) {
-    const line = raw.trimEnd();
-    const heading = /^#{1,6}\s+(.*)$/.exec(line);
-    if (heading) {
-      flush();
-      blocks.push({ type: "h", content: heading[1] });
-    } else if (line === "") {
-      flush();
-    } else {
-      buffer.push(raw);
-    }
-  }
-  flush();
-
-  return (
-    <div className="space-y-3">
-      {blocks.map((b, i) =>
-        b.type === "h" ? (
-          <h3 key={i} className="mt-2 text-sm font-bold text-gray-900">
-            {b.content}
-          </h3>
-        ) : (
-          <p key={i} className="whitespace-pre-wrap">
-            {b.content}
-          </p>
-        ),
-      )}
-    </div>
-  );
 }
 
 export function PolicyDetailView({ postId }: { postId: number }) {
@@ -203,9 +156,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
               ))}
             </div>
           )}
-          <div className="text-sm leading-relaxed text-gray-800">
-            <PolicyContent text={post.content} />
-          </div>
+          <MarkdownView source={post.content} />
         </section>
       )}
 

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
+import { MarkdownEditor } from "./MarkdownEditor";
 import { SEVERITIES } from "./SeverityBadge";
 
 const CATEGORIES = ["데이터 관리 정책", "데이터 제작 프로세스", "데이터 활용 요청 프로세스"];
@@ -204,15 +205,28 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            <Field label="내용" required>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                rows={8}
-                placeholder="내용을 입력하세요"
-                className={inputCls}
-              />
+            <Field
+              label="내용"
+              required
+              hint={isPolicy ? "마크다운 지원 — 툴바 / 이미지 업로드 / 붙여넣기 / 드래그 앤 드롭" : undefined}
+            >
+              {isPolicy ? (
+                <MarkdownEditor
+                  value={content}
+                  onChange={setContent}
+                  height={420}
+                  placeholder={"## 정책 개요\n\n- 적용 대상\n- 주요 원칙\n\n**중요**: 마크다운으로 작성하세요."}
+                />
+              ) : (
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                  rows={8}
+                  placeholder="내용을 입력하세요"
+                  className={inputCls}
+                />
+              )}
             </Field>
           </div>
         </section>
