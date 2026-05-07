@@ -113,19 +113,19 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         ]}
       />
 
-      {/* 헤더 — severity, 태그, 갱신일 */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-        <SeverityBadge severity={post.severity} />
-        {(post.tags ?? []).map((t) => (
-          <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">#{t}</span>
-        ))}
-        <span className="ml-2 text-gray-400">갱신: {formatDate(post.updated_at)}</span>
-        <span className="text-gray-400">· {post.author_name}</span>
-      </div>
-
       <div className="mt-2 flex items-start justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <SeverityBadge severity={post.severity} />
+            {(post.tags ?? []).map((t) => (
+              <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">#{t}</span>
+            ))}
+            <span className="text-gray-400">갱신: {formatDate(post.updated_at)}</span>
+            <span className="text-gray-400">· {post.author_name}</span>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
           {isAdmin ? (
             <Link
               href={`/governance/policy/new?id=${post.id}`}
