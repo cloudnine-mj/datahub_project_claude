@@ -1,7 +1,7 @@
 "use client";
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
@@ -27,11 +27,24 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 신청자 정보 — 빈 상태로 시작, 사용자가 직접 입력.
-  // 비워두면 백엔드가 로그인 사용자 정보로 fallback (안전망).
+  // 신청자 정보 — 로그인 사용자 정보로 자동 입력. 사용자가 직접 수정 가능.
   const [submitterName, setSubmitterName] = useState("");
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
+  useEffect(() => {
+    api
+      .me()
+      .then((m) => {
+        // 사용자가 아직 직접 입력하지 않았을 때만 default 적용.
+        // (이미 타이핑 중이었다면 덮어쓰지 않음)
+        setSubmitterName((prev) => prev || m.user.name);
+        setSubmitterDepartment((prev) => prev || (m.user.department ?? ""));
+        setSubmitterEmail((prev) => prev || m.user.email);
+      })
+      .catch(() => {
+        /* 로그인 정보 없으면 빈 상태 유지 */
+      });
+  }, []);
 
   // 작성 예시 모달
   const [exampleOpen, setExampleOpen] = useState(false);
