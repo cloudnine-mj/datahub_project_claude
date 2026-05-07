@@ -249,7 +249,6 @@ const dataProductionPlan: FormSchema = {
 const apiUsagePlan: FormSchema = {
   type: "api_usage_plan",
   label: "API 활용 계획서",
-  description: "외부 API / SaaS (Claude API, Notion AI 등) 사용을 사전 품의할 때",
   projectField: "관련_프로젝트",
   sections: [
     {
