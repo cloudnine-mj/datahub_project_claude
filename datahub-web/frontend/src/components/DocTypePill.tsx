@@ -9,11 +9,10 @@ export function DocTypePill({ docType }: { docType: string }) {
   return (
     <span
       className={
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-1.5 py-0 text-[10px] font-semibold " +
+        "inline-flex items-center whitespace-nowrap rounded-full border px-1.5 py-0 text-[10px] font-semibold " +
         s.pill
       }
     >
-      <span className={"h-1 w-1 shrink-0 rounded-full " + s.dot} />
       {docType}
     </span>
   );

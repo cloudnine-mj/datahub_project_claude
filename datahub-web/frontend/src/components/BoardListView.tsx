@@ -104,7 +104,6 @@ export function BoardListView({ board }: Props) {
                   activeCls={colors?.chipActive ?? "bg-brand text-white"}
                   onClick={() => setFilter(c)}
                 >
-                  <span className={"mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle " + (colors?.dot ?? "bg-gray-400")} />
                   {c}
                   {(counts[c] ?? 0) > 0 && (
                     <span className={"ml-1 " + (isActive ? "text-white/75" : "text-gray-400")}>
@@ -225,15 +224,13 @@ function CategoryPill({ category }: { category: string }) {
   const c = CATEGORY_COLORS[category];
   if (!c) {
     return (
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-600">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
+      <span className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-600">
         {category}
       </span>
     );
   }
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${c.pill}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.dot}`} />
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${c.pill}`}>
       {c.label}
     </span>
   );

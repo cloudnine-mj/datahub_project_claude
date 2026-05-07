@@ -87,8 +87,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
               dot: "bg-gray-400",
             };
             return (
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${s.pill}`}>
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${s.pill}`}>
                 {post.doc_type}
               </span>
             );
