@@ -11,42 +11,6 @@ html, body {
   box-sizing: border-box;
 }
 
-/* @uiw/react-md-editor 의 read-only 마크다운 뷰가 내부 overflow 를 잡는 것을 해제.
-   페이지 자체 스크롤로 자연스럽게 흐르도록. */
-.wmde-markdown {
-  background: transparent !important;
-  overflow: visible !important;
-  max-height: none !important;
-  height: auto !important;
-  font-family: inherit !important;
-  color: inherit !important;
-}
-
-/* 라이브러리 기본 ul/ol 스타일이 list-style/padding 을 제거해 하이픈/숫자 리스트가
-   불릿 없이 평문처럼 보이는 이슈 → 명시적 복원. (편집기 미리보기 + 정책 상세 양쪽 적용) */
-.wmde-markdown ul,
-.wmde-markdown ol {
-  padding-left: 1.5rem !important;
-  margin: 0.5rem 0 !important;
-}
-.wmde-markdown li {
-  display: list-item !important;   /* 라이브러리 일부 빌드에서 inline-block 처리되는 케이스 방어 */
-  margin: 0.15rem 0 !important;
-}
-.wmde-markdown li > p { margin: 0 !important; }
-
-/* 중첩 리스트 마커 cycle — 표준 브라우저 동작 강제 */
-.wmde-markdown ul                { list-style: disc        !important; }
-.wmde-markdown ul ul             { list-style: circle      !important; }
-.wmde-markdown ul ul ul          { list-style: square      !important; }
-.wmde-markdown ul ul ul ul       { list-style: disc        !important; }
-.wmde-markdown ol                { list-style: decimal     !important; }
-.wmde-markdown ol ol             { list-style: lower-alpha !important; }
-.wmde-markdown ol ol ol          { list-style: lower-roman !important; }
-.wmde-markdown ol ol ol ol       { list-style: decimal     !important; }
-
-/* 체크리스트(`- [ ]`) 는 불릿 없애고 들여쓰기만 */
-.wmde-markdown li.task-list-item,
-.wmde-markdown ul ul li.task-list-item,
-.wmde-markdown ul ul ul li.task-list-item { list-style: none !important; }
-.wmde-markdown ul.contains-task-list { padding-left: 0 !important; }
+/* Toast UI Editor — 페이지 흐름과 충돌 방지. 컨테이너 자체 height 는 prop 으로
+   지정되니 그대로 두되, viewer 영역의 색·배경만 부모에 맞춤. */
+.toastui-editor-contents { font-family: inherit; color: inherit; }
