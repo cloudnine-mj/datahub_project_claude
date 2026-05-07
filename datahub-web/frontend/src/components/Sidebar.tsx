@@ -28,7 +28,7 @@ const NAV: NavItem[] = [
       { href: "/governance/policy", label: "데이터 관리 정책" },
       { href: "/governance/process/production", label: "데이터 제작 프로세스" },
       { href: "/governance/process/usage", label: "데이터 활용 요청 프로세스" },
-      { href: "/governance/forms", label: "데이터 제작 / 활용 신청서 작성" },
+      { href: "/governance/forms", label: "데이터 거버넌스 문서 서식" },
       { href: "/governance/forms/my", label: "내 문서 목록" },
     ],
   },

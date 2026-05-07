@@ -24,7 +24,7 @@ const CARDS = [
   {
     href: "/governance/forms",
     icon: FileEdit,
-    title: "데이터 제작 / 활용 신청서 작성",
+    title: "데이터 거버넌스 문서 서식",
     desc: "각종 신청서 및 품의서 양식을 작성합니다.",
   },
 ];
