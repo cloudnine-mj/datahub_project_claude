@@ -121,9 +121,12 @@ export function PostNewView({ board }: { board: BoardType }) {
                 className={inputCls}
               >
                 <option value="">카테고리를 선택하세요</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                {/* 정책 게시판은 카테고리 옵션 미정 — 팀 논의 후 추가 예정. 그 전까지 빈 dropdown.
+                    다른 게시판은 기존 옵션 그대로. */}
+                {!isPolicy &&
+                  CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
               </select>
             </Field>
 
