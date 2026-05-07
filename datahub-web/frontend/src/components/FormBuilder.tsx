@@ -1068,13 +1068,24 @@ function AmountWithCurrencyInput({
       )}
       <input
         type="text"
+        inputMode="decimal"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(formatThousands(e.target.value))}
         placeholder={placeholder}
         className={`${base} ${padX}`}
       />
     </div>
   );
+}
+
+/** 입력 문자열에서 숫자/점만 남기고 정수부에 천 단위 콤마. 빈 입력은 빈 문자열. */
+function formatThousands(raw: string): string {
+  const cleaned = raw.replace(/[^\d.]/g, "");
+  if (!cleaned) return "";
+  const [intPart, ...rest] = cleaned.split(".");
+  const decimal = rest.length > 0 ? "." + rest.join("") : "";
+  const formattedInt = intPart ? Number(intPart).toLocaleString("en-US") : "";
+  return formattedInt + decimal;
 }
 
 function MemberChipsField({
