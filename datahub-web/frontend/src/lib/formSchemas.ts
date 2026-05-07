@@ -111,6 +111,18 @@ const dataProduction: FormSchema = {
       ],
     },
     {
+      title: "기타 유의 사항",
+      fields: [
+        {
+          key: "기타_유의_사항",
+          label: "내용",
+          type: "textarea",
+          hint: "위에서 설명하지 못한 기타 유의 사항이 있으면 적어주세요.",
+          placeholder: "예: 이런 주제로 대화하지 말아주세요 (정치, 위험 행동 지시, 미래 예측)",
+        },
+      ],
+    },
+    {
       title: "파일 첨부 체크 리스트",
       fields: [
         { key: "체크_샘플_데이터", label: "다양성이 있는 샘플 데이터를 직접 제작하여 최소 5개 보내주세요. (작업자 분들의 이해도가 올라가 데이터의 품질이 향상됩니다.)", type: "checkbox" },
