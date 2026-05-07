@@ -41,14 +41,14 @@ export function BoardListView({ board }: Props) {
             href={`/governance/${boardSegment(board)}/new`}
             className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
           >
-            <Pencil size={14} /> 글쓰기
+            <Pencil size={14} /> 작성하기
           </Link>
         ) : (
           <span
             className="inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
             title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
           >
-            <Pencil size={14} /> 글쓰기
+            <Pencil size={14} /> 작성하기
           </span>
         )}
       </div>
