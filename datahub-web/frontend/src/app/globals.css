@@ -21,3 +21,18 @@ html, body {
   font-family: inherit !important;
   color: inherit !important;
 }
+
+/* 라이브러리 기본 ul/ol 스타일이 list-style/padding 을 제거해 하이픈/숫자 리스트가
+   불릿 없이 평문처럼 보이는 이슈 → 명시적 복원. (편집기 미리보기 + 정책 상세 양쪽 적용) */
+.wmde-markdown ul,
+.wmde-markdown ol {
+  padding-left: 1.5rem !important;
+  margin: 0.5rem 0 !important;
+}
+.wmde-markdown ul { list-style: disc !important; }
+.wmde-markdown ol { list-style: decimal !important; }
+.wmde-markdown li { margin: 0.15rem 0 !important; }
+.wmde-markdown li > p { margin: 0 !important; }
+/* 체크리스트(`- [ ]`) 는 불릿 없애고 들여쓰기만 */
+.wmde-markdown li.task-list-item { list-style: none !important; }
+.wmde-markdown ul.contains-task-list { padding-left: 0 !important; }
