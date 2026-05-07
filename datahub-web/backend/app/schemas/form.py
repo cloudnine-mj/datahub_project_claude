@@ -39,9 +39,22 @@ class ApprovalEntry(BaseModel):
     comment: str | None = None
 
 
+class FieldChange(BaseModel):
+    """수정 이력의 필드별 변경. before/after 는 임의 JSON 값.
+
+    field 는 백엔드 키 (예: '프로젝트명' 또는 payload 의 key — 'API_사용_목적' 등).
+    프론트가 FORM_SCHEMAS 로 라벨 매핑.
+    """
+
+    field: str
+    before: Any = None
+    after: Any = None
+
+
 class EditHistoryEntry(BaseModel):
     edited_by: str
     edited_at: datetime
+    changes: list[FieldChange] = Field(default_factory=list)
 
 
 class FormListItem(BaseModel):

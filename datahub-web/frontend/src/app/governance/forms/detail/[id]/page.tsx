@@ -4,8 +4,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, Database, Eye, Pencil, Square } from "lucide-react";
-import { api, type FormDetail, type Me } from "@/lib/api";
+import { ChevronDown, ChevronRight, CheckSquare, Database, Eye, Pencil, Square } from "lucide-react";
+import { api, type EditHistoryEntry, type FieldChange, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
@@ -78,31 +78,7 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
 
       {form.edit_history && form.edit_history.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 bg-gray-50/40 px-5 py-3">
-            <h3 className="text-sm font-bold">수정 이력 ({form.edit_history.length})</h3>
-          </div>
-          <ul className="divide-y divide-gray-100">
-            {[...form.edit_history].reverse().map((e, i) => (
-              <li key={i} className="flex items-center justify-between px-5 py-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Pencil size={14} className="text-gray-400" />
-                  <span className="font-medium text-gray-800">{e.edited_by}</span>
-                  <span className="text-gray-500">님이 수정함</span>
-                </div>
-                <span className="text-xs text-gray-500">
-                  {new Date(e.edited_at).toLocaleString("ko-KR", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <EditHistorySection history={form.edit_history} fieldLabels={fieldLabelMap(allFields)} />
       )}
 
       {form.attachments.length > 0 && (
@@ -168,6 +144,153 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       <td className="px-5 py-3">{children}</td>
     </tr>
   );
+}
+
+/** payload key (예: 'API_사용_목적') → schema 의 사람이 읽을 라벨 매핑. */
+function fieldLabelMap(fields: FieldDef[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of fields) if (f.label) out[f.key] = f.label;
+  return out;
+}
+
+/**
+ * 수정 이력 섹션 — 최신 수정이 위로. 각 row 클릭 시 변경된 필드 diff 펼침/접기.
+ */
+function EditHistorySection({
+  history,
+  fieldLabels,
+}: {
+  history: EditHistoryEntry[];
+  fieldLabels: Record<string, string>;
+}) {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const reversed = [...history].reverse();
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="border-b border-gray-100 bg-gray-50/40 px-5 py-3">
+        <h3 className="text-sm font-bold">수정 이력 ({history.length})</h3>
+      </div>
+      <ul className="divide-y divide-gray-100">
+        {reversed.map((e, i) => {
+          const open = openIdx === i;
+          const count = e.changes?.length ?? 0;
+          return (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => setOpenIdx(open ? null : i)}
+                className="flex w-full items-center justify-between px-5 py-3 text-left text-sm hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-2">
+                  {open ? (
+                    <ChevronDown size={14} className="text-gray-400" />
+                  ) : (
+                    <ChevronRight size={14} className="text-gray-400" />
+                  )}
+                  <Pencil size={14} className="text-gray-400" />
+                  <span className="font-medium text-gray-800">{e.edited_by}</span>
+                  <span className="text-gray-500">님이 수정함</span>
+                  <span className="ml-1 rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                    {count}개 필드
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {new Date(e.edited_at).toLocaleString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </button>
+              {open && count > 0 && (
+                <div className="border-t border-gray-100 bg-gray-50/40 px-5 py-3">
+                  <ul className="space-y-2">
+                    {e.changes.map((c, ci) => (
+                      <ChangeRow key={ci} change={c} fieldLabels={fieldLabels} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {open && count === 0 && (
+                <div className="border-t border-gray-100 bg-gray-50/40 px-5 py-3 text-xs text-gray-400">
+                  변경 내역이 기록되지 않았습니다.
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ChangeRow({
+  change,
+  fieldLabels,
+}: {
+  change: FieldChange;
+  fieldLabels: Record<string, string>;
+}) {
+  const label = fieldLabels[change.field] ?? change.field;
+  return (
+    <li className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+      <div className="text-xs font-semibold text-gray-700">{label}</div>
+      <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        <DiffCell label="변경 전" value={change.before} variant="before" />
+        <DiffCell label="변경 후" value={change.after} variant="after" />
+      </div>
+    </li>
+  );
+}
+
+function DiffCell({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: unknown;
+  variant: "before" | "after";
+}) {
+  const formatted = formatDiffValue(value);
+  const empty = formatted === "" || formatted === "—";
+  const styles =
+    variant === "before"
+      ? "border-red-100 bg-red-50/40 text-red-900"
+      : "border-emerald-100 bg-emerald-50/40 text-emerald-900";
+  return (
+    <div className={"rounded border px-2.5 py-1.5 " + styles}>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</div>
+      <div className="mt-0.5 whitespace-pre-wrap break-words text-xs">
+        {empty ? <span className="text-gray-400">—</span> : formatted}
+      </div>
+    </div>
+  );
+}
+
+/** diff 값을 사람이 보기 좋은 문자열로 변환. 객체/배열은 JSON 으로 표시. */
+function formatDiffValue(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  // 알려진 패턴 — date_range / currency / service_blocks / service_list
+  if (Array.isArray(v)) {
+    if (v.every((x) => typeof x === "string")) return v.join(", ") || "—";
+    return JSON.stringify(v, null, 2);
+  }
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if ("start" in o || "end" in o) return `${o.start ?? "?"} ~ ${o.end ?? "?"}`;
+    if ("kind" in o) {
+      if (o.kind === "기타") return `기타(${o.custom ?? "-"})`;
+      return String(o.kind ?? "—");
+    }
+    return JSON.stringify(v, null, 2);
+  }
+  return String(v);
 }
 
 /**

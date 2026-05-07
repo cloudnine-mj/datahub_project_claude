@@ -122,9 +122,16 @@ export interface ApprovalEntry {
   comment: string | null;
 }
 
+export interface FieldChange {
+  field: string;
+  before: unknown;
+  after: unknown;
+}
+
 export interface EditHistoryEntry {
   edited_by: string;
   edited_at: string;
+  changes: FieldChange[];
 }
 
 export interface FormDetail extends FormListItem {

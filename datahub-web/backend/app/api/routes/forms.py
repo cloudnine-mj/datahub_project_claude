@@ -132,6 +132,9 @@ def update_form(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
     if form.submitter_id != user.id and user.role != "admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
+    # 변경 diff 계산 — 저장 전 before snapshot 캡처
+    changes = _compute_form_diff(form, payload)
+
     form.project_name = payload.project_name
     form.payload = payload.payload
     form.status = payload.status
@@ -142,17 +145,55 @@ def update_form(
     if payload.submitter_department is not None:
         form.submitter_department = payload.submitter_department
 
-    # 수정 이력 누적 — 누가 / 언제 수정했는지만 기록 (diff 는 보관 X)
-    history = list(form.edit_history or [])
-    history.append({
-        "edited_by": user.name,
-        "edited_at": datetime.utcnow().isoformat(),
-    })
-    form.edit_history = history
+    # 변경된 게 하나도 없으면 이력에 추가 X (불필요한 noise 방지)
+    if changes:
+        history = list(form.edit_history or [])
+        history.append({
+            "edited_by": user.name,
+            "edited_at": datetime.utcnow().isoformat(),
+            "changes": changes,
+        })
+        form.edit_history = history
 
     db.commit()
     db.refresh(form)
     return form
+
+
+def _compute_form_diff(form: Form, payload: FormCreate) -> list[dict]:
+    """수정 전 form 의 값과 새 payload 비교 → 변경된 필드 리스트.
+
+    공통 메타(프로젝트명/신청자 정보) + payload 내부 키 모두 검사.
+    중첩 dict/list 는 deep equality 만 비교 (sub-key diff 는 안 만듦).
+    submitter_* 가 None 으로 들어오면 변경 없음으로 취급.
+    """
+    out: list[dict] = []
+
+    if form.project_name != payload.project_name:
+        out.append({
+            "field": "프로젝트명",
+            "before": form.project_name,
+            "after": payload.project_name,
+        })
+
+    submitter_fields = (
+        ("신청자 이름", form.submitter_name, payload.submitter_name),
+        ("이메일", form.submitter_email, payload.submitter_email),
+        ("소속", form.submitter_department, payload.submitter_department),
+    )
+    for label, before, after in submitter_fields:
+        if after is not None and before != after:
+            out.append({"field": label, "before": before, "after": after})
+
+    before_payload = form.payload or {}
+    after_payload = payload.payload or {}
+    for key in set(before_payload) | set(after_payload):
+        b = before_payload.get(key)
+        a = after_payload.get(key)
+        if b != a:
+            out.append({"field": key, "before": b, "after": a})
+
+    return out
 
 
 @router.patch("/{form_id}/status", response_model=FormDetail)
