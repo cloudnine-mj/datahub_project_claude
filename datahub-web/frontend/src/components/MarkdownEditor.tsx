@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * 마크다운 에디터 — Toast UI Editor 기반.
+ * 마크다운 에디터 — Toast UI Editor 기반 (마크다운 전용, WYSIWYG 비활성).
  *
- *  - 기본 모드: markdown (raw 마크다운 붙여넣기 자연 동작)
- *  - 우하단 토글로 WYSIWYG 모드 전환 — 워드프로세서처럼 시각 편집
- *  - 표 / 이미지 / 링크 / 헤딩 / 리스트 / 인용 / 코드 등 툴바 내장
+ *  - markdown 모드 고정 — hideModeSwitch 로 WYSIWYG 토글 제거
+ *  - previewStyle: 'vertical' — 좌측 마크다운 입력 / 우측 실시간 렌더 미리보기
+ *  - 표 / 이미지 / 링크 / 헤딩 / 리스트 / 인용 / 코드 툴바 내장
  *  - 이미지: 툴바 또는 드래그앤드롭 → addImageBlobHook 으로 백엔드 업로드 후 ![](url) 삽입
  *  - 저장 형식: 마크다운 문자열 (post.content)
  *
@@ -54,9 +54,10 @@ export function MarkdownEditor({ value, onChange, height = 480, placeholder }: P
           editorRef.current = r;
         }}
         initialValue={value || ""}
-        previewStyle="tab"
+        previewStyle="vertical"
         height={`${height}px`}
         initialEditType="markdown"
+        hideModeSwitch
         useCommandShortcut
         placeholder={placeholder}
         onChange={() => {
