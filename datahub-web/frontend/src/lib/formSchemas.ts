@@ -251,6 +251,7 @@ const dataProductionPlan: FormSchema = {
 const apiUsagePlan: FormSchema = {
   type: "api_usage_plan",
   label: "API 활용 계획서",
+  description: "외부 API 도입 전 사용 목적 · 기간 · 비용을 사전 품의할 때",
   projectField: "관련_프로젝트",
   sections: [
     {
@@ -301,6 +302,7 @@ const apiUsagePlan: FormSchema = {
 const productivityTool: FormSchema = {
   type: "productivity_tool",
   label: "업무생산성 도구 신청서",
+  description: "팀 · 부서에서 사용할 SaaS 라이선스를 사용자 별로 신청할 때",
   // 서비스 블록 첫 항목의 service_name 을 project_name 으로 매핑
   // (FormBuilder.onSubmit 에서 array 타입을 특별 처리)
   projectField: "서비스_목록",
