@@ -191,15 +191,7 @@ export function PostNewView({ board }: { board: BoardType }) {
               </select>
             </Field>
 
-            <Field
-              label="내용"
-              required
-              hint={
-                isPolicy
-                  ? "정책 메타데이터를 입력하면 자동으로 합성됩니다. 직접 수정해도 메타데이터 변경 시 덮어쓰여집니다."
-                  : undefined
-              }
-            >
+            <Field label="내용" required>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
