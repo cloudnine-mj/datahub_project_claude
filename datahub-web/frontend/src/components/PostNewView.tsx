@@ -8,8 +8,8 @@ import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { SEVERITIES } from "./SeverityBadge";
+import { PROCESS_CATEGORIES } from "@/lib/utils";
 
-const CATEGORIES = ["데이터 관리 정책", "데이터 제작 프로세스", "데이터 활용 요청 프로세스"];
 const MAX_BYTES = 50 * 1024 * 1024;
 
 function formatBytes(n: number): string {
@@ -167,7 +167,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                   className={inputCls}
                 >
                   <option value="">카테고리를 선택하세요</option>
-                  {CATEGORIES.map((c) => (
+                  {PROCESS_CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>

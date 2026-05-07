@@ -45,9 +45,9 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
     # 화면 3 — 데이터 제작 프로세스 (2 건, 2025.01.15)
     db.add_all([
         Post(
-            board_type="production_process",
+            board_type="process",
             title="용역 제작 요청 방법",
-            category="가이드",
+            category="제작 프로세스",
             content="외주 업체를 통한 데이터 용역 제작을 요청하는 절차를 안내합니다.\n\n"
                     "1. 데이터 거버넌스 문서 서식에서 '데이터 용역 제작 신청서' 작성\n"
                     "2. 작성 완료 후 전자결재 상신\n"
@@ -57,9 +57,9 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             created_at=datetime(2025, 1, 15, 10, 0),
         ),
         Post(
-            board_type="production_process",
+            board_type="process",
             title="구매/구독 요청 방법",
-            category="가이드",
+            category="제작 프로세스",
             content="외부 데이터셋 구매 또는 구독 신청 절차입니다.\n\n"
                     "- 일회성 구매 → 데이터 구매 신청서\n"
                     "- 정기 구독 → 데이터 구독 신청서",
@@ -75,9 +75,9 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
     # 화면 4 — 데이터 활용 요청 프로세스 (2 건, 2025.01.15)
     db.add_all([
         Post(
-            board_type="usage_process",
+            board_type="process",
             title="Product 서비스 로그 데이터 활용 방법",
-            category="가이드",
+            category="활용 요청 프로세스",
             content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
                     "신청서: 'Product 로그 데이터 활용 신청서'",
             author_id=admin.id,
@@ -85,9 +85,9 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             created_at=datetime(2025, 1, 15, 9, 30),
         ),
         Post(
-            board_type="usage_process",
+            board_type="process",
             title="다운로드 불가능한 구매 데이터 활용 방법",
-            category="가이드",
+            category="활용 요청 프로세스",
             content="라이선스 제약으로 다운로드가 불가능한 구매 데이터는 보안 워크스페이스에서만 사용 가능합니다.",
             author_id=admin.id,
             author_name=admin.name,
@@ -191,8 +191,30 @@ def _ensure_forms(db: Session, users: dict[str, User]) -> None:
     ])
 
 
+def _migrate_board_types(db: Session) -> None:
+    """과거 'production_process' / 'usage_process' board_type 을 통합된 'process' 로 마이그레이션.
+
+    이미 process 로 합쳐진 환경이면 영향 없음 (옛 row 가 없음).
+    카테고리도 같이 부여 — 비어있거나 '가이드' 인 옛 글은 출처별로 분류.
+    """
+    legacy = (
+        db.query(Post)
+        .filter(Post.board_type.in_(("production_process", "usage_process")))
+        .all()
+    )
+    if not legacy:
+        return
+    for p in legacy:
+        new_cat = "제작 프로세스" if p.board_type == "production_process" else "활용 요청 프로세스"
+        # 옛 카테고리가 일반적이면 새 카테고리로 덮어쓰기. 사용자가 지정한 의미있는 값은 보존.
+        if p.category in (None, "", "가이드"):
+            p.category = new_cat
+        p.board_type = "process"
+
+
 def run_seed(db: Session) -> None:
     users = _ensure_users(db)
+    _migrate_board_types(db)
     _ensure_posts(db, users)
     _ensure_forms(db, users)
     db.commit()

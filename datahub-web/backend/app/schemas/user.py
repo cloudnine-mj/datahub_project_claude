@@ -15,8 +15,7 @@ class UserOut(BaseModel):
 
 class UserPermissions(BaseModel):
     can_write_policy: bool
-    can_write_production_process: bool
-    can_write_usage_process: bool
+    can_write_process: bool
 
 
 class MeResponse(BaseModel):

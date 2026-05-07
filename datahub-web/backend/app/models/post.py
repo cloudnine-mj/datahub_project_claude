@@ -25,7 +25,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
 # 게시판 종류 — Governance 인덱스의 4개 카드 중 게시판형 3개
-BOARD_TYPES = ("policy", "production_process", "usage_process")
+BOARD_TYPES = ("policy", "process")
 
 # 정책 분류 — Step 2 의 사용자 판단 보조 (2단계).
 # 보안·승인 필요 등은 자유 tags 로 분류 (예: tags=["보안", "PII"]).

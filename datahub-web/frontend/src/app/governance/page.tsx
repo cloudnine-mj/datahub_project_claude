@@ -1,6 +1,6 @@
-// 화면 1: Governance 인덱스 — 4개 카드
+// Governance 인덱스 — 3개 카드
 import Link from "next/link";
-import { ShieldCheck, Layers, Share2, FileEdit, ArrowRight } from "lucide-react";
+import { ShieldCheck, Layers, FileEdit, ArrowRight } from "lucide-react";
 
 const CARDS = [
   {
@@ -10,16 +10,10 @@ const CARDS = [
     desc: "데이터 관리 원칙과 정책 문서를 확인합니다.",
   },
   {
-    href: "/governance/process/production",
+    href: "/governance/process",
     icon: Layers,
-    title: "데이터 제작 프로세스",
-    desc: "용역 제작 및 구매/구독 요청 방법을 안내합니다.",
-  },
-  {
-    href: "/governance/process/usage",
-    icon: Share2,
-    title: "데이터 활용 요청 프로세스",
-    desc: "서비스 로그 및 구매 데이터 활용 요청 방법을 안내합니다.",
+    title: "데이터 프로세스",
+    desc: "데이터 제작 및 활용 요청 프로세스를 한곳에서 확인합니다.",
   },
   {
     href: "/governance/forms",

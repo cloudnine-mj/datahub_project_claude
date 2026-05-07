@@ -48,7 +48,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 // ── 도메인 타입 ─────────────────────────────────────────
 
-export type BoardType = "policy" | "production_process" | "usage_process";
+export type BoardType = "policy" | "process";
 
 export interface Me {
   user: {
@@ -60,8 +60,7 @@ export interface Me {
   };
   permissions: {
     can_write_policy: boolean;
-    can_write_production_process: boolean;
-    can_write_usage_process: boolean;
+    can_write_process: boolean;
   };
 }
 
