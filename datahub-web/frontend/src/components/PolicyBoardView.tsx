@@ -56,12 +56,12 @@ export function PolicyBoardView() {
 
       // 2) 검색
       if (!q) return true;
+      // 표에 노출되는 컬럼만 검색 대상 — 관리 번호 / 정책명 / 작성자 / 태그
       const haystack = [
-        p.title,
         p.doc_no ?? "",
-        p.summary ?? "",
+        p.title,
+        p.author_name,
         (p.tags ?? []).join(" "),
-        p.applies_to ?? "",
       ]
         .join(" ")
         .toLowerCase();
@@ -121,7 +121,7 @@ export function PolicyBoardView() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="관리 번호, 제목, 설명, 태그로 검색"
+            placeholder="관리 번호, 정책명, 작성자, 태그로 검색"
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
