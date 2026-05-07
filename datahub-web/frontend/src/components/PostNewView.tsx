@@ -96,7 +96,7 @@ export function PostNewView({ board }: { board: BoardType }) {
       const body = {
         title,
         doc_no: docNo.trim() || null,
-        doc_type: docType || null,
+        ...(isPolicy ? {} : { doc_type: docType || null }),
         category: category || undefined,
         content,
         ...(isPolicy && {
@@ -160,18 +160,20 @@ export function PostNewView({ board }: { board: BoardType }) {
               />
             </Field>
 
-            <Field label="유형" hint="가이드 / 공지 등 문서의 성격">
-              <select
-                value={docType}
-                onChange={(e) => setDocType(e.target.value)}
-                className={inputCls}
-              >
-                <option value="">유형을 선택하세요</option>
-                {DOC_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </Field>
+            {!isPolicy && (
+              <Field label="유형" hint="가이드 / 공지 등 문서의 성격">
+                <select
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">유형을 선택하세요</option>
+                  {DOC_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
 
             {/* 카테고리 — 정책 게시판에는 노출하지 않음 (다른 게시판만) */}
             {!isPolicy && (
