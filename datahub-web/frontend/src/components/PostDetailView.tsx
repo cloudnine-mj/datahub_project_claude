@@ -3,7 +3,7 @@
 // 게시글 상세 — 화면 캡처에는 명시적 디자인 없으나 자연스러운 read-only 뷰.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Lock, Pencil, X } from "lucide-react";
 import { api, type BoardType, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DeletePostButton } from "./DeletePostButton";
@@ -14,6 +14,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
   const [post, setPost] = useState<PostDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forbiddenOpen, setForbiddenOpen] = useState(false);
 
   useEffect(() => {
     api.getPost(board, postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -22,8 +23,9 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
 
   const label = BOARD_LABELS[board];
   const canDelete = !!post && !!me && (me.user.role === "admin" || me.user.name === post.author_name);
-  // 수정은 정책 게시판만, 어드민 한정.
-  const canEdit = !!post && !!me && board === "policy" && me.user.role === "admin";
+  // 정책 게시판만 수정 버튼 노출 (admin 외에는 클릭 시 안내 모달).
+  const showEditButton = !!post && board === "policy";
+  const isAdmin = me?.user.role === "admin";
 
   return (
     <div>
@@ -40,14 +42,23 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold tracking-tight">{post.title}</h1>
             <div className="flex items-center gap-1.5">
-              {canEdit && (
-                <Link
-                  href={`/governance/${boardSegment(board)}/new?id=${post.id}`}
-                  className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
-                >
-                  <Pencil size={12} /> 수정
-                </Link>
-              )}
+              {showEditButton &&
+                (isAdmin ? (
+                  <Link
+                    href={`/governance/${boardSegment(board)}/new?id=${post.id}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    <Pencil size={12} /> 수정
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setForbiddenOpen(true)}
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+                  >
+                    <Pencil size={12} /> 수정
+                  </button>
+                ))}
               {canDelete && (
                 <DeletePostButton
                   board={board}
@@ -99,6 +110,47 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
               </ul>
             </div>
           )}
+        </div>
+      )}
+
+      {forbiddenOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setForbiddenOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-red-50 text-red-500">
+                  <Lock size={18} />
+                </span>
+                <h3 className="text-base font-bold">수정 권한 없음</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForbiddenOpen(false)}
+                aria-label="닫기"
+                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              데이터 관리 정책 문서는 <strong className="font-semibold text-gray-800">관리자</strong>만 수정할 수 있습니다. 수정이 필요하면 거버넌스 관리자에게 요청해 주세요.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setForbiddenOpen(false)}
+                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+              >
+                확인
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
