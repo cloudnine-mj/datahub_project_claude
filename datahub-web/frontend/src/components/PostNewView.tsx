@@ -1,11 +1,13 @@
 "use client";
 
-// 화면 7: 새 글 작성 폼 — 모든 게시판 공통 단순 구조 (제목/카테고리/내용 + 첨부).
+// 화면 7: 새 글 작성 폼 — 모든 게시판 공통 (제목/카테고리/내용 + 첨부).
+// 정책 게시판은 추가로 '진행상태(severity)' 칩 선택을 노출 → 표 진행상태 컬럼에 반영.
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
-import { api, type BoardType, type Me } from "@/lib/api";
+import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
+import { SEVERITIES } from "./SeverityBadge";
 
 const CATEGORIES = ["데이터 관리 정책", "데이터 제작 프로세스", "데이터 활용 요청 프로세스"];
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -18,11 +20,13 @@ function formatBytes(n: number): string {
 
 export function PostNewView({ board }: { board: BoardType }) {
   const router = useRouter();
+  const isPolicy = board === "policy";
 
   const [me, setMe] = useState<Me | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
+  const [severity, setSeverity] = useState<Severity | "">("");
 
   // 파일 첨부 (글 등록 후 순차 업로드)
   const [files, setFiles] = useState<File[]>([]);
@@ -69,6 +73,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         title,
         category: category || undefined,
         content,
+        ...(isPolicy && { severity: severity || null }),
       });
 
       // 게시글 생성 후 파일 순차 업로드 — 일부 실패해도 계속 시도
@@ -121,6 +126,30 @@ export function PostNewView({ board }: { board: BoardType }) {
                 ))}
               </select>
             </Field>
+
+            {isPolicy && (
+              <Field label="진행상태">
+                <div className="flex gap-1 rounded-md border border-gray-200 bg-white p-1">
+                  <button
+                    type="button"
+                    onClick={() => setSeverity("")}
+                    className={chipCls(severity === "")}
+                  >
+                    미지정
+                  </button>
+                  {SEVERITIES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setSeverity(s.value)}
+                      className={chipCls(severity === s.value)}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
 
             <Field label="내용" required>
               <textarea
@@ -231,6 +260,13 @@ export function PostNewView({ board }: { board: BoardType }) {
 
 const inputCls =
   "w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-brand focus:outline-none";
+
+function chipCls(active: boolean) {
+  return (
+    "rounded px-3 py-1.5 text-xs font-semibold transition " +
+    (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
+  );
+}
 
 function Field({
   label,
