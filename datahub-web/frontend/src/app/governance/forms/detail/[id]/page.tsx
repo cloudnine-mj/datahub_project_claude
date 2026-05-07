@@ -38,7 +38,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance" },
-          { label: "제작 / 활용 신청서", href: "/governance/forms" },
+          { label: "데이터 제작 / 활용 신청서", href: "/governance/forms" },
           { label },
         ]}
       />
