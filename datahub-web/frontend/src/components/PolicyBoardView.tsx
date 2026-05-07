@@ -150,6 +150,7 @@ export function PolicyBoardView() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-medium text-gray-500">
             <tr>
+              <th className="w-36 px-5 py-3">관리 번호</th>
               <th className="px-5 py-3">정책명</th>
               <th className="w-32 px-5 py-3">작성자</th>
               <th className="w-32 px-5 py-3">등록일</th>
@@ -161,11 +162,11 @@ export function PolicyBoardView() {
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
+                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={6}>
+                <td colSpan={7}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
@@ -179,15 +180,19 @@ export function PolicyBoardView() {
               pageItems.map((p) => (
                 <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                   <td className="px-5 py-3">
+                    {p.doc_no ? (
+                      <span className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-700">
+                        {p.doc_no}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
                     <Link
                       href={`/governance/policy/${p.id}`}
                       className="font-medium text-gray-900 hover:text-brand"
                     >
-                      {p.doc_no && (
-                        <span className="mr-2 rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-700">
-                          {p.doc_no}
-                        </span>
-                      )}
                       {p.title}
                     </Link>
                     {p.summary && (
