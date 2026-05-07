@@ -47,14 +47,19 @@ async def upload_image(
 
     target_dir = settings.upload_dir / "images"
     target_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = (file.filename or "image").replace("/", "_").replace("\\", "_")
-    stored_name = f"{secrets.token_hex(8)}_{safe_name}"
+    original_name = file.filename or "image"
+    # 저장 파일명은 토큰 + 확장자만 (URL safe). 원본 파일명은 응답으로만 돌려줘
+    # 프론트가 마크다운 alt 텍스트로 사용.
+    ext = Path(original_name).suffix.lower() or ".bin"
+    if len(ext) > 10:  # 비정상적으로 긴 확장자 차단
+        ext = ".bin"
+    stored_name = f"{secrets.token_hex(12)}{ext}"
     target_path = target_dir / stored_name
     target_path.write_bytes(contents)
 
     return {
         "url": f"/api/uploads/images/{stored_name}",
-        "filename": safe_name,
+        "filename": original_name,
         "size_bytes": len(contents),
     }
 

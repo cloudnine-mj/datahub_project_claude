@@ -39,7 +39,10 @@ export function MarkdownEditor({ value, onChange, height = 400, placeholder }: P
       setUploading(true);
       try {
         const res = await api.uploadImage(file);
-        const md = `\n![${res.filename}](${res.url})\n`;
+        // alt 텍스트의 ']' / '[' / 줄바꿈은 마크다운 파싱을 깨뜨리니 제거.
+        // URL 은 백엔드에서 이미 URL-safe (token+ext) 형태로 돌려줌.
+        const safeAlt = (res.filename || "image").replace(/[\[\]\n\r]/g, " ").trim();
+        const md = `\n![${safeAlt}](${res.url})\n`;
         onChange((value ?? "") + md);
       } catch (e) {
         setError((e as Error).message);
