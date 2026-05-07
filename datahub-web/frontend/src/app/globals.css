@@ -11,19 +11,62 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Toast UI Editor / Viewer 본문 — 페이지 폰트·색상에 맞춤 */
-.toastui-editor-contents { font-family: inherit; color: inherit; }
+/* 마크다운 렌더 — react-markdown + remark-gfm 결과에 적용. GitHub 스타일 톤. */
+.markdown-body {
+  color: #1f2937;
+  line-height: 1.75;
+  font-size: 0.9375rem;
+}
+.markdown-body h1 { font-size: 1.6rem;  font-weight: 700; margin: 1.6rem 0 0.8rem; }
+.markdown-body h2 { font-size: 1.3rem;  font-weight: 700; margin: 1.4rem 0 0.6rem; }
+.markdown-body h3 { font-size: 1.1rem;  font-weight: 700; margin: 1.1rem 0 0.5rem; }
+.markdown-body h4 { font-size: 1rem;    font-weight: 700; margin: 0.9rem 0 0.4rem; }
+.markdown-body p  { margin: 0.6rem 0; }
 
-/* 표 헤더 — Toast UI 기본 테마는 진한 회색이라 GitHub 스타일 옅은 회색으로 변경 */
-.toastui-editor-contents table th {
-  background: #f9fafb !important;
-  color: #111827 !important;
-  font-weight: 600 !important;
-  border: 1px solid #e5e7eb !important;
+.markdown-body ul,
+.markdown-body ol { padding-left: 1.6rem; margin: 0.5rem 0; }
+.markdown-body li { margin: 0.2rem 0; display: list-item; }
+.markdown-body ul                 { list-style: disc; }
+.markdown-body ul ul              { list-style: circle; }
+.markdown-body ul ul ul           { list-style: square; }
+.markdown-body ol                 { list-style: decimal; }
+.markdown-body ol ol              { list-style: lower-alpha; }
+.markdown-body ol ol ol           { list-style: lower-roman; }
+
+.markdown-body a  { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body strong { font-weight: 600; color: #111827; }
+.markdown-body code {
+  background: #f3f4f6;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.toastui-editor-contents table td {
-  border: 1px solid #e5e7eb !important;
+.markdown-body pre {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
 }
-.toastui-editor-contents table tr:nth-child(even) td {
-  background: #fafafa;
+.markdown-body pre code { background: transparent; padding: 0; }
+.markdown-body blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.85rem;
+  color: #4b5563;
+  margin: 0.75rem 0;
 }
+
+/* 표 — GitHub 스타일 옅은 헤더 */
+.markdown-body table { border-collapse: collapse; margin: 0.85rem 0; font-size: 0.9em; }
+.markdown-body th, .markdown-body td { border: 1px solid #e5e7eb; padding: 0.45rem 0.7rem; }
+.markdown-body th { background: #f9fafb; font-weight: 600; color: #111827; }
+.markdown-body tr:nth-child(even) td { background: #fafafa; }
+
+.markdown-body hr { border: 0; border-top: 1px solid #e5e7eb; margin: 1.2rem 0; }
+.markdown-body img { max-width: 100%; height: auto; border-radius: 6px; }
+
+/* GFM 체크리스트 */
+.markdown-body input[type="checkbox"] { margin-right: 0.4rem; }
+.markdown-body li.task-list-item { list-style: none; margin-left: -1.4rem; }
