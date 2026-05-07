@@ -24,6 +24,7 @@ const COLUMNS = [
   { key: "created_at", label: "등록일" },
   { key: "updated_at", label: "수정일" },
   { key: "severity", label: "중요도" },
+  { key: "tags", label: "태그" },
 ] as const;
 
 type ColumnKey = (typeof COLUMNS)[number]["key"];
@@ -147,6 +148,7 @@ export function PolicyBoardView() {
               {isVisible("created_at") && <th className="w-32 px-5 py-3">등록일</th>}
               {isVisible("updated_at") && <th className="w-32 px-5 py-3">수정일</th>}
               {isVisible("severity") && <th className="w-32 px-5 py-3">중요도</th>}
+              {isVisible("tags") && <th className="w-48 px-5 py-3">태그</th>}
             </tr>
           </thead>
           <tbody>
@@ -200,6 +202,24 @@ export function PolicyBoardView() {
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
                           미지정
                         </span>
+                      )}
+                    </td>
+                  )}
+                  {isVisible("tags") && (
+                    <td className="px-5 py-3">
+                      {(p.tags ?? []).length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {(p.tags ?? []).slice(0, 3).map((t) => (
+                            <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                              #{t}
+                            </span>
+                          ))}
+                          {(p.tags ?? []).length > 3 && (
+                            <span className="text-xs text-gray-400">+{(p.tags ?? []).length - 3}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
                   )}
