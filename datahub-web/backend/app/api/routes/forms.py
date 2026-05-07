@@ -205,6 +205,69 @@ def delete_form(
     db.commit()
 
 
+def _compute_total_cost(cost_str: str, count: int, currency_kind: str | None) -> str:
+    """예상 비용 문자열의 첫 숫자 × 인원 수 → 통화 기호와 함께 포맷.
+
+    프론트의 computeTotal 과 동일 로직 (USD: $N, KRW: N원, 그 외: 숫자만).
+    """
+    import re
+    if not cost_str or count <= 0:
+        return ""
+    m = re.search(r"-?\d+(?:\.\d+)?", cost_str.replace(",", ""))
+    if not m:
+        return ""
+    try:
+        n = float(m.group(0))
+    except ValueError:
+        return ""
+    total = round(n * count)
+    formatted = f"{total:,}"
+    if currency_kind == "USD":
+        return f"${formatted}"
+    if currency_kind == "KRW":
+        return f"{formatted}원"
+    return formatted
+
+
+def _render_productivity_tool_table(ws, payload: dict) -> None:
+    """업무생산성 도구 신청서 — service_blocks 를 표 형태로 출력.
+
+    컬럼: 서비스명 / 활용 방안 / 예상 비용 / 결제 방식 / 사용 인원 / 인원 수 / 총 비용
+    """
+    blocks = payload.get("서비스_목록") or []
+    if not isinstance(blocks, list):
+        return
+
+    headers = ["서비스명", "활용 방안", "예상 비용", "결제 방식", "사용 인원", "인원 수", "총 비용"]
+    ws.append(headers)
+    for b in blocks:
+        if not isinstance(b, dict):
+            continue
+        members = b.get("members") or []
+        if not isinstance(members, list):
+            members = []
+        currency = b.get("currency") or {}
+        kind = currency.get("kind") if isinstance(currency, dict) else None
+        cost = b.get("cost") or ""
+        count = len(members)
+        total = _compute_total_cost(cost, count, kind)
+        ws.append([
+            b.get("service_name", "") or "",
+            b.get("usage", "") or "",
+            cost,
+            b.get("payment_method", "") or "",
+            ", ".join(str(m) for m in members),
+            count,
+            total,
+        ])
+
+    # 표 컬럼 폭 조정 (헤더 후 7 컬럼)
+    widths = [22, 40, 18, 14, 30, 8, 14]
+    for i, w in enumerate(widths):
+        col_letter = chr(ord("A") + i)
+        ws.column_dimensions[col_letter].width = w
+
+
 @router.get("/{form_id}/export")
 def export_form(
     form_id: int,
@@ -222,7 +285,7 @@ def export_form(
     ws = wb.active
     ws.title = "신청서"
 
-    rows: list[tuple[str, str]] = [
+    header_rows: list[tuple[str, str]] = [
         ("신청번호", form.request_no),
         ("신청서 종류", form.form_type),
         ("프로젝트명", form.project_name),
@@ -232,16 +295,18 @@ def export_form(
         ("상태", form.status),
         ("제출일", form.submitted_at.strftime("%Y-%m-%d %H:%M")),
         ("", ""),
-        ("--- 상세 ---", ""),
     ]
-    for k, v in form.payload.items():
-        rows.append((str(k), str(v) if not isinstance(v, (dict, list)) else str(v)))
-
-    for row in rows:
+    for row in header_rows:
         ws.append(row)
 
-    ws.column_dimensions["A"].width = 24
-    ws.column_dimensions["B"].width = 60
+    if form.form_type == "productivity_tool":
+        _render_productivity_tool_table(ws, form.payload)
+    else:
+        ws.append(("--- 상세 ---", ""))
+        for k, v in form.payload.items():
+            ws.append((str(k), str(v) if not isinstance(v, (dict, list)) else str(v)))
+        ws.column_dimensions["A"].width = 24
+        ws.column_dimensions["B"].width = 60
 
     buf = BytesIO()
     wb.save(buf)
