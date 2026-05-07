@@ -268,6 +268,51 @@ def _render_productivity_tool_table(ws, payload: dict) -> None:
         ws.column_dimensions[col_letter].width = w
 
 
+def _render_api_usage_plan_table(ws, payload: dict) -> None:
+    """API 활용 계획서 — 한 행 짜리 표.
+
+    컬럼: 연관 프로젝트 / API 사용 목적 / 서비스명 / 사용 기간 / 결제 통화 / 총 예상비용
+    """
+    headers = ["연관 프로젝트", "API 사용 목적", "서비스명", "사용 기간", "결제 통화", "총 예상비용"]
+    ws.append(headers)
+
+    services = payload.get("서비스_목록") or []
+    if isinstance(services, list):
+        services_str = ", ".join(str(s) for s in services if s)
+    else:
+        services_str = str(services)
+
+    period = payload.get("사용_기간") or {}
+    if isinstance(period, dict):
+        start = period.get("start") or ""
+        end = period.get("end") or ""
+        period_str = f"{start} ~ {end}" if (start or end) else ""
+    else:
+        period_str = str(period)
+
+    currency = payload.get("결제_통화") or {}
+    if isinstance(currency, dict):
+        kind = currency.get("kind") or ""
+        custom = currency.get("custom") or ""
+        currency_str = f"기타({custom})" if kind == "기타" else kind
+    else:
+        currency_str = str(currency)
+
+    ws.append([
+        payload.get("관련_프로젝트", "") or "",
+        payload.get("API_사용_목적", "") or "",
+        services_str,
+        period_str,
+        currency_str,
+        payload.get("총_예상_비용", "") or "",
+    ])
+
+    widths = [22, 40, 30, 24, 14, 18]
+    for i, w in enumerate(widths):
+        col_letter = chr(ord("A") + i)
+        ws.column_dimensions[col_letter].width = w
+
+
 @router.get("/{form_id}/export")
 def export_form(
     form_id: int,
@@ -301,6 +346,8 @@ def export_form(
 
     if form.form_type == "productivity_tool":
         _render_productivity_tool_table(ws, form.payload)
+    elif form.form_type == "api_usage_plan":
+        _render_api_usage_plan_table(ws, form.payload)
     else:
         ws.append(("--- 상세 ---", ""))
         for k, v in form.payload.items():
