@@ -216,6 +216,12 @@ def change_form_status(
     form = db.query(Form).filter(Form.id == form_id).first()
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+    # 자기 결재 방지 — admin 이라도 본인이 제출한 신청서는 본인이 처리 X
+    if form.submitter_id == user.id:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="본인이 제출한 신청서의 상태는 변경할 수 없습니다.",
+        )
 
     history = list(form.approval_history or [])
     history.append({

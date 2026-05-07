@@ -19,6 +19,8 @@ interface Props {
   status: FormStatus | string;
   history: ApprovalEntry[] | null;
   me: Me | null;
+  /** 신청서 제출자 이메일 — admin 이라도 본인 신청서에는 액션 숨김 (자기 결재 방지) */
+  submitterEmail?: string | null;
   onChanged: () => void;
 }
 
@@ -28,8 +30,10 @@ const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Pl
   { to: "rejected", label: "반려", cls: "bg-red-500 hover:bg-red-600", icon: X },
 ];
 
-export function FormStatusPanel({ formId, status, history, me, onChanged }: Props) {
+export function FormStatusPanel({ formId, status, history, me, submitterEmail, onChanged }: Props) {
   const isAdmin = me?.user.role === "admin";
+  const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
+  const canActAsAdmin = isAdmin && !isOwnSubmission;
   const [target, setTarget] = useState<FormStatus | null>(null);
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
@@ -89,8 +93,8 @@ export function FormStatusPanel({ formId, status, history, me, onChanged }: Prop
         </p>
       )}
 
-      {/* admin 상태 변경 액션 */}
-      {isAdmin && (
+      {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청서에는 숨김 */}
+      {canActAsAdmin && (
         <div className="mt-5 border-t border-gray-100 pt-4">
           <div className="text-xs font-bold uppercase tracking-wider text-gray-500">
             관리자 액션
