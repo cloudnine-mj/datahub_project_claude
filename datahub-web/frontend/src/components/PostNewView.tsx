@@ -88,6 +88,28 @@ export function PostNewView({ board }: { board: BoardType }) {
     }
   }, [me, board, router]);
 
+  // 정책 메타데이터 → 내용 실시간 자동 합성.
+  // 작성자가 메타데이터 필드를 채우면 '내용' 필드에 자동으로 구조화된 본문이 들어감.
+  // 메타데이터를 수정하면 내용도 즉시 갱신 (덮어쓰기).
+  useEffect(() => {
+    if (!isPolicy) return;
+    const parts: string[] = [];
+    if (summary.trim()) parts.push(summary.trim());
+    if (tldr.trim()) parts.push(`## 핵심 요약\n${tldr.trim()}`);
+    if (appliesTo.trim()) parts.push(`## 적용 대상\n${appliesTo.trim()}`);
+    if (actionItemsText.trim()) {
+      const items = actionItemsText
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => `- ${s}`)
+        .join("\n");
+      parts.push(`## 확인 사항\n${items}`);
+    }
+    if (examples.trim()) parts.push(`## 예시\n${examples.trim()}`);
+    setContent(parts.join("\n\n"));
+  }, [isPolicy, summary, tldr, appliesTo, actionItemsText, examples]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -169,13 +191,21 @@ export function PostNewView({ board }: { board: BoardType }) {
               </select>
             </Field>
 
-            <Field label="내용" required>
+            <Field
+              label="내용"
+              required
+              hint={
+                isPolicy
+                  ? "정책 메타데이터를 입력하면 자동으로 합성됩니다. 직접 수정해도 메타데이터 변경 시 덮어쓰여집니다."
+                  : undefined
+              }
+            >
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
                 rows={8}
-                placeholder="내용을 입력하세요"
+                placeholder={isPolicy ? "정책 메타데이터를 채우면 이 영역이 자동으로 채워집니다." : "내용을 입력하세요"}
                 className={inputCls}
               />
             </Field>
