@@ -948,7 +948,7 @@ function ServiceBlockCard({
               type="text"
               value={block.service_name}
               onChange={(e) => onChange({ service_name: e.target.value })}
-              placeholder="서비스명을 입력하세요"
+              placeholder="예: Claude API"
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
           </BlockRow>
@@ -957,7 +957,7 @@ function ServiceBlockCard({
               rows={2}
               value={block.usage}
               onChange={(e) => onChange({ usage: e.target.value })}
-              placeholder="활용 방안을 입력하세요"
+              placeholder="예: 내부 데이터 분석 자동화 및 AI 리포트 생성"
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
             />
           </BlockRow>
@@ -971,7 +971,7 @@ function ServiceBlockCard({
             <AmountWithCurrencyInput
               value={block.cost}
               onChange={(v) => onChange({ cost: v })}
-              placeholder="예상 비용을 입력하세요"
+              placeholder="예: 5,000"
               currency={block.currency}
             />
           </BlockRow>
