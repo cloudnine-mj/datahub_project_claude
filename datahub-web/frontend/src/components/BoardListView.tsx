@@ -21,6 +21,25 @@ interface Props {
 
 type CategoryFilter = "all" | (typeof PROCESS_CATEGORIES)[number];
 
+// 카테고리별 색 — 칩(active)과 표 배지에 공통 사용
+const CATEGORY_COLORS: Record<
+  string,
+  { chipActive: string; pill: string; dot: string; label: string }
+> = {
+  "제작 프로세스": {
+    chipActive: "bg-blue-500 text-white",
+    pill: "bg-blue-50 text-blue-700 border-blue-200",
+    dot: "bg-blue-500",
+    label: "제작 프로세스",
+  },
+  "활용 요청 프로세스": {
+    chipActive: "bg-emerald-500 text-white",
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-500",
+    label: "활용 요청 프로세스",
+  },
+};
+
 export function BoardListView({ board }: Props) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
@@ -62,17 +81,38 @@ export function BoardListView({ board }: Props) {
       <div className="mt-8 flex flex-wrap items-center gap-3">
         {isProcess && (
           <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
-            <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
-              전체 {counts.all > 0 && <span className="ml-1 text-gray-400">({counts.all})</span>}
+            <FilterChip
+              active={filter === "all"}
+              activeCls="bg-gray-800 text-white"
+              onClick={() => setFilter("all")}
+            >
+              전체
+              {counts.all > 0 && (
+                <span className={"ml-1 " + (filter === "all" ? "text-gray-300" : "text-gray-400")}>
+                  ({counts.all})
+                </span>
+              )}
             </FilterChip>
-            {PROCESS_CATEGORIES.map((c) => (
-              <FilterChip key={c} active={filter === c} onClick={() => setFilter(c)}>
-                {c}
-                {(counts[c] ?? 0) > 0 && (
-                  <span className="ml-1 text-gray-400">({counts[c]})</span>
-                )}
-              </FilterChip>
-            ))}
+            {PROCESS_CATEGORIES.map((c) => {
+              const colors = CATEGORY_COLORS[c];
+              const isActive = filter === c;
+              return (
+                <FilterChip
+                  key={c}
+                  active={isActive}
+                  activeCls={colors?.chipActive ?? "bg-brand text-white"}
+                  onClick={() => setFilter(c)}
+                >
+                  <span className={"mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle " + (colors?.dot ?? "bg-gray-400")} />
+                  {c}
+                  {(counts[c] ?? 0) > 0 && (
+                    <span className={"ml-1 " + (isActive ? "text-white/75" : "text-gray-400")}>
+                      ({counts[c]})
+                    </span>
+                  )}
+                </FilterChip>
+              );
+            })}
           </div>
         )}
 
@@ -136,9 +176,7 @@ export function BoardListView({ board }: Props) {
                   {isProcess && (
                     <td className="px-6 py-4">
                       {p.category ? (
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                          {p.category}
-                        </span>
+                        <CategoryPill category={p.category} />
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
                       )}
@@ -157,10 +195,12 @@ export function BoardListView({ board }: Props) {
 
 function FilterChip({
   active,
+  activeCls = "bg-brand text-white",
   onClick,
   children,
 }: {
   active: boolean;
+  activeCls?: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -170,11 +210,30 @@ function FilterChip({
       onClick={onClick}
       className={
         "rounded px-3 py-1.5 text-xs font-semibold transition " +
-        (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
+        (active ? activeCls : "text-gray-600 hover:bg-gray-100")
       }
     >
       {children}
     </button>
+  );
+}
+
+/** 카테고리별 색을 가진 pill — 정책 보드의 SeverityBadge 와 같은 룩. */
+function CategoryPill({ category }: { category: string }) {
+  const c = CATEGORY_COLORS[category];
+  if (!c) {
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-600">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
+        {category}
+      </span>
+    );
+  }
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${c.pill}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.dot}`} />
+      {c.label}
+    </span>
   );
 }
 
