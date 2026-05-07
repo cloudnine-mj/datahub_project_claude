@@ -22,7 +22,9 @@ export type FieldType =
   /** API 활용 계획서 — USD/KRW/기타(+직접 입력) */
   | "currency"
   /** 업무생산성 도구 신청서 — 서비스 블록 동적 리스트 (서비스 N + 내부 다중 필드) */
-  | "service_blocks";
+  | "service_blocks"
+  /** 통화 단위(currencyKey 가 가리키는 필드)에 맞춰 prefix/suffix 가 붙는 금액 입력 */
+  | "amount_with_currency";
 
 export interface FieldDef {
   key: string;
@@ -45,6 +47,11 @@ export interface FieldDef {
    * 예: 목표 데이터 수량(number) → 단위(text) 를 한 줄에.
    */
   inlineWithNext?: boolean;
+  /**
+   * amount_with_currency 타입 전용 — 통화를 가져올 다른 필드의 key.
+   * 해당 필드는 currency 타입이어야 함 ({kind?: 'USD'|'KRW'|'기타', custom?: string}).
+   */
+  currencyKey?: string;
 }
 
 /**
@@ -290,7 +297,8 @@ const apiUsagePlan: FormSchema = {
         {
           key: "총_예상_비용",
           label: "총 예상 비용",
-          type: "text",
+          type: "amount_with_currency",
+          currencyKey: "결제_통화",
           placeholder: "총 예상 비용을 입력하세요",
         },
       ],

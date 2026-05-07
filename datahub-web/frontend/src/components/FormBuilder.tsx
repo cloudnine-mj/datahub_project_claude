@@ -280,6 +280,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                   field={f}
                   value={values[f.key]}
                   onChange={(v) => setField(f.key, v)}
+                  allValues={values}
                 />
               </section>
             );
@@ -313,7 +314,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                         return (
                           <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
                             <td colSpan={2} className="px-5 py-3">
-                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} allValues={values} />
                             </td>
                           </tr>
                         );
@@ -327,7 +328,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                             {inline ? (
                               <div className="flex items-center gap-3">
                                 <div className="flex-1">
-                                  <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                                  <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} allValues={values} />
                                 </div>
                                 <span className="shrink-0 text-sm text-gray-600">{inline.label}</span>
                                 <div className="flex-1">
@@ -335,11 +336,12 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                                     field={inline}
                                     value={values[inline.key]}
                                     onChange={(v) => setField(inline.key, v)}
+                                    allValues={values}
                                   />
                                 </div>
                               </div>
                             ) : (
-                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} />
+                              <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} allValues={values} />
                             )}
                             <FieldHint field={f} />
                             {inline && <FieldHint field={inline} />}
@@ -488,10 +490,13 @@ function FieldInput({
   field,
   value,
   onChange,
+  allValues,
 }: {
   field: FieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
+  /** amount_with_currency 처럼 다른 필드의 값을 참조하는 타입에 사용 */
+  allValues?: Record<string, unknown>;
 }) {
   const common = "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none";
   switch (field.type) {
@@ -602,6 +607,19 @@ function FieldInput({
           onChange={(v) => onChange(v)}
         />
       );
+    case "amount_with_currency": {
+      const currency = field.currencyKey
+        ? (allValues?.[field.currencyKey] as { kind?: string; custom?: string } | undefined)
+        : undefined;
+      return (
+        <AmountWithCurrencyInput
+          value={(value as string) ?? ""}
+          onChange={(v) => onChange(v)}
+          placeholder={field.placeholder}
+          currency={currency}
+        />
+      );
+    }
     default:
       return (
         <input
@@ -950,12 +968,11 @@ function ServiceBlockCard({
             />
           </BlockRow>
           <BlockRow label="예상 비용">
-            <input
-              type="text"
+            <AmountWithCurrencyInput
               value={block.cost}
-              onChange={(e) => onChange({ cost: e.target.value })}
+              onChange={(v) => onChange({ cost: v })}
               placeholder="예상 비용을 입력하세요"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              currency={block.currency}
             />
           </BlockRow>
           <BlockRow label="결제 방식">
@@ -1016,6 +1033,60 @@ function BlockRow({ label, children }: { label: string; children: React.ReactNod
 }
 
 /** 사용 인원 — 이름 칩 + 추가 input. Enter 로 추가, 칩 클릭으로 제거. */
+/**
+ * 통화 단위에 맞는 prefix/suffix 가 붙는 금액 입력.
+ *
+ *  - USD : 좌측에 '$' prefix
+ *  - KRW : 우측에 '원' suffix
+ *  - 기타 + custom 입력값 : 우측에 그 값 suffix (예: 'EUR')
+ *  - 미선택 : 일반 input
+ */
+function AmountWithCurrencyInput({
+  value,
+  onChange,
+  placeholder,
+  currency,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  currency: { kind?: string; custom?: string } | undefined;
+}) {
+  const kind = currency?.kind;
+  let prefix: string | null = null;
+  let suffix: string | null = null;
+  if (kind === "USD") prefix = "$";
+  else if (kind === "KRW") suffix = "원";
+  else if (kind === "기타" && currency?.custom?.trim()) suffix = currency.custom.trim();
+
+  const base =
+    "w-full rounded-md border border-gray-200 py-2 text-sm focus:border-brand focus:outline-none";
+  const padX =
+    (prefix ? "pl-7 " : "pl-3 ") + (suffix ? "pr-12" : "pr-3");
+
+  return (
+    <div className="relative">
+      {prefix && (
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+          {prefix}
+        </span>
+      )}
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${base} ${padX}`}
+      />
+      {suffix && (
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 max-w-[80px] truncate text-sm text-gray-500">
+          {suffix}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function MemberChipsField({
   members,
   onChange,
