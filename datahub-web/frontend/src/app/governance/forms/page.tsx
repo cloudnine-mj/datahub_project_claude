@@ -48,19 +48,27 @@ export default function FormsIndexPage() {
       </p>
 
       <div className="mt-6 space-y-3">
-        {TYPES.map((t) => (
-          <Link
-            key={t}
-            href={`/governance/forms/${t}/new`}
-            className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-5 py-4 transition hover:border-brand/40 hover:shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <FileText size={18} className="text-brand" />
-              <span className="font-semibold">{FORM_TYPE_LABELS[t]}</span>
-            </div>
-            <ChevronRight size={16} className="shrink-0 text-gray-400" />
-          </Link>
-        ))}
+        {TYPES.map((t) => {
+          const schema = FORM_SCHEMAS[t];
+          return (
+            <Link
+              key={t}
+              href={`/governance/forms/${t}/new`}
+              className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-5 py-4 transition hover:border-brand/40 hover:shadow-sm"
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <FileText size={18} className="mt-0.5 shrink-0 text-brand" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">{FORM_TYPE_LABELS[t]}</div>
+                  {schema.description && (
+                    <p className="mt-1 text-xs text-gray-500">{schema.description}</p>
+                  )}
+                </div>
+              </div>
+              <ChevronRight size={16} className="shrink-0 text-gray-400" />
+            </Link>
+          );
+        })}
       </div>
 
       <div className="mt-12 flex items-center justify-between">
