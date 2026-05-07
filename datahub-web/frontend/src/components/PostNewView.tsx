@@ -118,22 +118,22 @@ export function PostNewView({ board }: { board: BoardType }) {
               />
             </Field>
 
-            <Field label="카테고리">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                className={inputCls}
-              >
-                <option value="">카테고리를 선택하세요</option>
-                {/* 정책 게시판은 카테고리 옵션 미정 — 팀 논의 후 추가 예정. 그 전까지 빈 dropdown.
-                    다른 게시판은 기존 옵션 그대로. */}
-                {!isPolicy &&
-                  CATEGORIES.map((c) => (
+            {/* 카테고리 — 정책 게시판에는 노출하지 않음 (다른 게시판만) */}
+            {!isPolicy && (
+              <Field label="카테고리">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  required
+                  className={inputCls}
+                >
+                  <option value="">카테고리를 선택하세요</option>
+                  {CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
-              </select>
-            </Field>
+                </select>
+              </Field>
+            )}
 
             {isPolicy && (
               <Field label="중요도">

@@ -17,10 +17,10 @@ import { formatDate } from "@/lib/utils";
 const PAGE_SIZES = [10, 20, 50, 100];
 
 // 표시 가능한 컬럼 정의 — 정책명은 필수(숨길 수 없음).
+// 카테고리는 정책 페이지에서 의미가 없어 제외 (작성 폼에서도 노출하지 않음).
 const COLUMNS = [
   { key: "title", label: "정책명", required: true },
   { key: "author", label: "작성자" },
-  { key: "category", label: "카테고리" },
   { key: "created_at", label: "등록일" },
   { key: "updated_at", label: "수정일" },
   { key: "severity", label: "중요도" },
@@ -144,7 +144,6 @@ export function PolicyBoardView() {
             <tr>
               {isVisible("title") && <th className="px-5 py-3">정책명</th>}
               {isVisible("author") && <th className="w-32 px-5 py-3">작성자</th>}
-              {isVisible("category") && <th className="w-40 px-5 py-3">카테고리</th>}
               {isVisible("created_at") && <th className="w-32 px-5 py-3">등록일</th>}
               {isVisible("updated_at") && <th className="w-32 px-5 py-3">수정일</th>}
               {isVisible("severity") && <th className="w-32 px-5 py-3">중요도</th>}
@@ -185,15 +184,6 @@ export function PolicyBoardView() {
                   )}
                   {isVisible("author") && (
                     <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
-                  )}
-                  {isVisible("category") && (
-                    <td className="px-5 py-3">
-                      {p.category ? (
-                        <span className="text-gray-700">{p.category}</span>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
                   )}
                   {isVisible("created_at") && (
                     <td className="px-5 py-3 text-gray-500">{formatDate(p.created_at)}</td>
