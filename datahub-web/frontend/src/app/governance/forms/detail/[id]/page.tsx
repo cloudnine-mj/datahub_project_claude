@@ -111,7 +111,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
       <div className="mt-4 flex justify-end gap-2">
         <Link
-          href="/governance/forms"
+          href="/governance/forms/my"
           className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
         >
           ☰ 내 문서 목록 보기

@@ -33,7 +33,7 @@ export default function Page() {
             <span className="font-mono text-gray-400">3.</span>
             <span>
               진행 상황은{" "}
-              <Link href="/governance/forms" className="font-semibold text-blue-600 hover:underline">
+              <Link href="/governance/forms/my" className="font-semibold text-blue-600 hover:underline">
                 내 문서 목록
               </Link>{" "}
               의 상태 컬럼에서 확인 가능합니다.
@@ -55,7 +55,7 @@ export default function Page() {
 
       <div className="mt-6 flex gap-2">
         <Link
-          href="/governance/forms"
+          href="/governance/forms/my"
           className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
         >
           <List size={14} /> 내 문서 목록 보기
