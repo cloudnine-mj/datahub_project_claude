@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
+import { POLICY_TEMPLATE } from "@/lib/policyExample";
 import { PolicyExampleModal } from "./PolicyExampleModal";
 import { SEVERITIES } from "./SeverityBadge";
 
@@ -57,6 +58,29 @@ export function PostNewView({ board }: { board: BoardType }) {
 
   // 예시 보기 모달
   const [exampleOpen, setExampleOpen] = useState(false);
+
+  /** '템플릿 사용' — 정책 작성 골격(skeleton) 을 모든 필드에 일괄 입력.
+   *  이미 입력한 내용이 있으면 사용자가 의도치 않게 덮어쓰지 않도록 confirm.
+   */
+  function applyTemplate() {
+    const hasContent =
+      title.trim() || content.trim() || summary.trim() || tldr.trim() ||
+      tagsInput.trim() || appliesTo.trim() || actionItemsText.trim() || examples.trim();
+    if (hasContent) {
+      const ok = window.confirm("이미 입력한 내용이 모두 템플릿으로 덮어쓰여집니다. 계속하시겠습니까?");
+      if (!ok) return;
+    }
+    const t = POLICY_TEMPLATE;
+    setTitle(t.title);
+    setCategory(t.category);
+    setContent(t.content);
+    setSummary(t.summary);
+    setTagsInput(t.tags.join(", "));
+    setAppliesTo(t.applies_to);
+    setTldr(t.tldr);
+    setActionItemsText(t.action_items.join("\n"));
+    setExamples(t.examples);
+  }
 
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -188,13 +212,22 @@ export function PostNewView({ board }: { board: BoardType }) {
             <div className="mb-1 flex items-center gap-2">
               <h2 className="text-sm font-bold text-blue-900">정책 메타데이터</h2>
               <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">선택</span>
-              <button
-                type="button"
-                onClick={() => setExampleOpen(true)}
-                className="ml-auto inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                예시 보기
-              </button>
+              <div className="ml-auto flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={applyTemplate}
+                  className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                >
+                  템플릿 사용
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExampleOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                >
+                  예시 보기
+                </button>
+              </div>
             </div>
             <p className="mb-4 text-xs text-blue-800/70">
               정책을 읽는 사람이 빠르게 파악하고 행동으로 옮길 수 있도록 도와주는 정보입니다. 비워둔 항목은 화면에 표시되지 않습니다.
