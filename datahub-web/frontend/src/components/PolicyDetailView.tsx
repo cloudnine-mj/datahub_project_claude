@@ -13,7 +13,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2, FileText, Lightbulb, Lock, Pencil, Users, X } from "lucide-react";
+import { CheckCircle2, Lightbulb, Lock, Pencil, Users, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { SeverityBadge } from "./SeverityBadge";
@@ -204,11 +204,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
       {/* 본문 */}
       {post.content && (
         <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold">
-            <FileText size={18} className="text-gray-500" />
-            정책 본문
-          </h2>
-          <div className="mt-3 text-sm leading-relaxed text-gray-800">
+          <div className="text-sm leading-relaxed text-gray-800">
             <PolicyContent text={post.content} />
           </div>
         </section>
