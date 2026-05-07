@@ -272,13 +272,17 @@ function DiffCell({
   );
 }
 
-/** diff 값을 사람이 보기 좋은 문자열로 변환. 객체/배열은 JSON 으로 표시. */
+/** diff 값을 사람이 보기 좋은 문자열로 변환. 알려진 패턴 우선, 그 외만 JSON fallback. */
 function formatDiffValue(v: unknown): string {
   if (v === null || v === undefined) return "—";
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
-  // 알려진 패턴 — date_range / currency / service_blocks / service_list
   if (Array.isArray(v)) {
+    // service_blocks (객체 배열) — service_name 키로 휴리스틱 감지
+    if (v.length > 0 && typeof v[0] === "object" && v[0] !== null && "service_name" in (v[0] as object)) {
+      return formatServiceBlocks(v as Record<string, unknown>[]);
+    }
+    // 단순 문자열 배열 (예: service_list)
     if (v.every((x) => typeof x === "string")) return v.join(", ") || "—";
     return JSON.stringify(v, null, 2);
   }
@@ -292,6 +296,35 @@ function formatDiffValue(v: unknown): string {
     return JSON.stringify(v, null, 2);
   }
   return String(v);
+}
+
+/** 업무생산성 도구 신청서 service_blocks — 각 블록을 줄단위 요약. */
+function formatServiceBlocks(blocks: Record<string, unknown>[]): string {
+  if (blocks.length === 0) return "—";
+  return blocks
+    .map((b, i) => {
+      const lines: string[] = [];
+      if (b.service_name) lines.push(`서비스명: ${b.service_name}`);
+      if (b.usage) lines.push(`활용 방안: ${b.usage}`);
+      const cur = b.currency as { kind?: string; custom?: string } | undefined;
+      if (cur?.kind) {
+        const display = cur.kind === "기타" ? `기타(${cur.custom ?? "-"})` : cur.kind;
+        lines.push(`결제 통화: ${display}`);
+      }
+      const cost = b.cost as string | undefined;
+      if (cost) {
+        const sym = cur?.kind === "USD" ? "$" : cur?.kind === "KRW" ? "₩" : "";
+        lines.push(`예상 비용: ${sym}${cost}`);
+      }
+      if (b.payment_method) lines.push(`결제 방식: ${b.payment_method}`);
+      const members = b.members as string[] | undefined;
+      if (Array.isArray(members) && members.length > 0) {
+        lines.push(`사용자: ${members.join(", ")} (${members.length}명)`);
+      }
+      const body = lines.length > 0 ? lines.map((l) => `  ${l}`).join("\n") : "  (빈 서비스)";
+      return `▸ 서비스 ${i + 1}\n${body}`;
+    })
+    .join("\n\n");
 }
 
 /**
