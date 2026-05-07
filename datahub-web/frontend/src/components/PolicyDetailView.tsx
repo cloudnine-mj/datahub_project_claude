@@ -113,15 +113,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
       />
 
       <div className="mt-2 flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-            <SeverityBadge severity={post.severity} />
-            {(post.tags ?? []).map((t) => (
-              <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">#{t}</span>
-            ))}
-          </div>
-        </div>
+        <h1 className="min-w-0 flex-1 text-3xl font-bold tracking-tight">{post.title}</h1>
         <div className="flex shrink-0 items-center gap-1.5">
           {isAdmin ? (
             <Link
@@ -198,9 +190,19 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         </section>
       )}
 
-      {/* 본문 */}
+      {/* 본문 — 우상단에 중요도/태그 작게 표시 */}
       {post.content && (
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
+        <section className="relative mt-6 rounded-lg border border-gray-200 bg-white p-6">
+          {(post.severity || (post.tags ?? []).length > 0) && (
+            <div className="absolute right-4 top-4 flex flex-wrap items-center justify-end gap-1.5 text-[11px]">
+              {post.severity && <SeverityBadge severity={post.severity} />}
+              {(post.tags ?? []).map((t) => (
+                <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="text-sm leading-relaxed text-gray-800">
             <PolicyContent text={post.content} />
           </div>
