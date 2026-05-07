@@ -40,6 +40,7 @@ class Post(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     board_type: Mapped[str] = mapped_column(String(40), index=True)
     doc_no: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    doc_type: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(300))
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     content: Mapped[str] = mapped_column(Text)

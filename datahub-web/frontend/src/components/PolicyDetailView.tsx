@@ -24,7 +24,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { MarkdownView } from "./MarkdownEditor";
 import { SeverityBadge } from "./SeverityBadge";
 import { DeletePostButton } from "./DeletePostButton";
-import { formatDate } from "@/lib/utils";
+import { DOC_TYPE_STYLES, formatDate } from "@/lib/utils";
 
 export function PolicyDetailView({ postId }: { postId: number }) {
   const [post, setPost] = useState<PostDetail | null>(null);
@@ -81,6 +81,18 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+          {post.doc_type && (() => {
+            const s = DOC_TYPE_STYLES[post.doc_type] ?? {
+              pill: "bg-gray-50 text-gray-700 border-gray-200",
+              dot: "bg-gray-400",
+            };
+            return (
+              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${s.pill}`}>
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+                {post.doc_type}
+              </span>
+            );
+          })()}
           {post.severity && <SeverityBadge severity={post.severity} size="sm" />}
           {(post.tags ?? []).map((t) => (
             <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">

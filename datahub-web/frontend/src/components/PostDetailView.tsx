@@ -8,7 +8,7 @@ import { api, type BoardType, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DeletePostButton } from "./DeletePostButton";
 import { MarkdownView } from "./MarkdownEditor";
-import { BOARD_LABELS, formatDate } from "@/lib/utils";
+import { BOARD_LABELS, DOC_TYPE_STYLES, formatDate } from "@/lib/utils";
 import { boardSegment } from "./BoardListView";
 
 export function PostDetailView({ board, postId }: { board: BoardType; postId: number }) {
@@ -69,7 +69,19 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
               )}
             </div>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            {post.doc_type && (() => {
+              const s = DOC_TYPE_STYLES[post.doc_type] ?? {
+                pill: "bg-gray-50 text-gray-700 border-gray-200",
+                dot: "bg-gray-400",
+              };
+              return (
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${s.pill}`}>
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+                  {post.doc_type}
+                </span>
+              );
+            })()}
             {post.doc_no && (
               <span className="rounded bg-blue-50 px-2 py-0.5 font-mono text-blue-700">
                 {post.doc_no}

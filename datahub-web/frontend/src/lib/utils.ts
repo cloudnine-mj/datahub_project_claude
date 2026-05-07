@@ -31,3 +31,13 @@ export const BOARD_LABELS: Record<string, string> = {
 /** 통합된 process 보드의 카테고리 옵션 (제작 / 활용 요청). */
 export const PROCESS_CATEGORIES = ["제작 프로세스", "활용 요청 프로세스"] as const;
 export type ProcessCategory = (typeof PROCESS_CATEGORIES)[number];
+
+/** 게시글 문서 유형 — 카테고리와 독립된 작은 분류 축. */
+export const DOC_TYPES = ["가이드", "공지"] as const;
+export type DocType = (typeof DOC_TYPES)[number];
+
+/** 문서 유형별 뱃지 색 — Severity 와 같은 룩. */
+export const DOC_TYPE_STYLES: Record<string, { pill: string; dot: string }> = {
+  가이드: { pill: "bg-gray-50 text-gray-700 border-gray-200", dot: "bg-gray-400" },
+  공지: { pill: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+};

@@ -14,6 +14,7 @@ import { api, type BoardType, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { EmptyState } from "./EmptyState";
 import { BOARD_LABELS, PROCESS_CATEGORIES, formatDate } from "@/lib/utils";
+import { DocTypePill } from "./DocTypePill";
 
 interface Props {
   board: BoardType;
@@ -169,8 +170,9 @@ export function BoardListView({ board }: Props) {
                 <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                   <td className="px-6 py-4 text-gray-400">{filtered.length - i}</td>
                   <td className="px-6 py-4">
-                    <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="font-medium hover:text-brand">
-                      {p.title}
+                    <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
+                      {p.doc_type && <DocTypePill docType={p.doc_type} />}
+                      <span>{p.title}</span>
                     </Link>
                   </td>
                   {isProcess && (

@@ -81,6 +81,7 @@ export interface PostListItem extends PolicyMeta {
   id: number;
   title: string;
   doc_no: string | null;
+  doc_type: string | null;
   category: string | null;
   created_at: string;
   updated_at: string;
@@ -156,6 +157,7 @@ export const api = {
     body: {
       title: string;
       doc_no?: string | null;
+      doc_type?: string | null;
       category?: string;
       content: string;
     } & Partial<PolicyMeta>,
@@ -172,6 +174,7 @@ export const api = {
     body: Partial<{
       title: string;
       doc_no: string | null;
+      doc_type: string | null;
       category: string | null;
       content: string;
     }> &

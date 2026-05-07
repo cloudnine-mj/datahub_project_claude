@@ -8,7 +8,7 @@ import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { SEVERITIES } from "./SeverityBadge";
-import { PROCESS_CATEGORIES } from "@/lib/utils";
+import { DOC_TYPES, PROCESS_CATEGORIES } from "@/lib/utils";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -28,6 +28,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [me, setMe] = useState<Me | null>(null);
   const [title, setTitle] = useState("");
   const [docNo, setDocNo] = useState("");
+  const [docType, setDocType] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
   const [severity, setSeverity] = useState<Severity | "">("");
@@ -55,6 +56,7 @@ export function PostNewView({ board }: { board: BoardType }) {
       .then((p) => {
         setTitle(p.title);
         setDocNo(p.doc_no ?? "");
+        setDocType(p.doc_type ?? "");
         setCategory(p.category ?? "");
         setContent(p.content ?? "");
         setSeverity((p.severity as Severity | null) ?? "");
@@ -94,6 +96,7 @@ export function PostNewView({ board }: { board: BoardType }) {
       const body = {
         title,
         doc_no: docNo.trim() || null,
+        doc_type: docType || null,
         category: category || undefined,
         content,
         ...(isPolicy && {
@@ -155,6 +158,19 @@ export function PostNewView({ board }: { board: BoardType }) {
                 maxLength={50}
                 className={inputCls}
               />
+            </Field>
+
+            <Field label="유형" hint="가이드 / 공지 등 문서의 성격">
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">유형을 선택하세요</option>
+                {DOC_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </Field>
 
             {/* 카테고리 — 정책 게시판에는 노출하지 않음 (다른 게시판만) */}

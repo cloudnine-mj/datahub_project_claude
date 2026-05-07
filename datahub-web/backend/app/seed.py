@@ -47,6 +47,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
         Post(
             board_type="process",
             title="용역 제작 요청 방법",
+            doc_type="가이드",
             category="제작 프로세스",
             content="외주 업체를 통한 데이터 용역 제작을 요청하는 절차를 안내합니다.\n\n"
                     "1. 데이터 거버넌스 문서 서식에서 '데이터 용역 제작 신청서' 작성\n"
@@ -59,6 +60,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
         Post(
             board_type="process",
             title="구매/구독 요청 방법",
+            doc_type="가이드",
             category="제작 프로세스",
             content="외부 데이터셋 구매 또는 구독 신청 절차입니다.\n\n"
                     "- 일회성 구매 → 데이터 구매 신청서\n"
@@ -77,6 +79,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
         Post(
             board_type="process",
             title="Product 서비스 로그 데이터 활용 방법",
+            doc_type="가이드",
             category="활용 요청 프로세스",
             content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
                     "신청서: 'Product 로그 데이터 활용 신청서'",
@@ -87,6 +90,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
         Post(
             board_type="process",
             title="다운로드 불가능한 구매 데이터 활용 방법",
+            doc_type="가이드",
             category="활용 요청 프로세스",
             content="라이선스 제약으로 다운로드가 불가능한 구매 데이터는 보안 워크스페이스에서만 사용 가능합니다.",
             author_id=admin.id,
@@ -207,7 +211,12 @@ def _migrate_board_types(db: Session) -> None:
     for p in legacy:
         new_cat = "제작 프로세스" if p.board_type == "production_process" else "활용 요청 프로세스"
         # 옛 카테고리가 일반적이면 새 카테고리로 덮어쓰기. 사용자가 지정한 의미있는 값은 보존.
-        if p.category in (None, "", "가이드"):
+        # 옛 'category=가이드' 는 doc_type 으로 이전.
+        if p.category == "가이드":
+            if not getattr(p, "doc_type", None):
+                p.doc_type = "가이드"
+            p.category = new_cat
+        elif p.category in (None, ""):
             p.category = new_cat
         p.board_type = "process"
 

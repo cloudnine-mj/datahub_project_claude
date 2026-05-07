@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Search } from "lucide-react";
 import { api, type Me, type PostListItem, type Severity } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
+import { DocTypePill } from "./DocTypePill";
 import { SeverityBadge } from "./SeverityBadge";
 import { EmptyState } from "./EmptyState";
 import { formatDate } from "@/lib/utils";
@@ -191,9 +192,10 @@ export function PolicyBoardView() {
                   <td className="px-5 py-3">
                     <Link
                       href={`/governance/policy/${p.id}`}
-                      className="font-medium text-gray-900 hover:text-brand"
+                      className="inline-flex items-center gap-2 font-medium text-gray-900 hover:text-brand"
                     >
-                      {p.title}
+                      {p.doc_type && <DocTypePill docType={p.doc_type} />}
+                      <span>{p.title}</span>
                     </Link>
                     {p.summary && (
                       <div className="mt-0.5 truncate text-xs text-gray-500">{p.summary}</div>
