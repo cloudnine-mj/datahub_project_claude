@@ -124,7 +124,7 @@ export function PostNewView({ board }: { board: BoardType }) {
               <input
                 value={docNo}
                 onChange={(e) => setDocNo(e.target.value)}
-                placeholder="관리 번호를 입력하세요 (선택)"
+                placeholder="관리 번호를 입력하세요"
                 maxLength={50}
                 className={inputCls}
               />
