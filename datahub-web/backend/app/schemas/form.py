@@ -39,6 +39,11 @@ class ApprovalEntry(BaseModel):
     comment: str | None = None
 
 
+class EditHistoryEntry(BaseModel):
+    edited_by: str
+    edited_at: datetime
+
+
 class FormListItem(BaseModel):
     """내 문서 목록 row — 화면 5/8 의 (신청서 종류 / 프로젝트명 / 제출일 / 상태 / Export)."""
 
@@ -66,6 +71,7 @@ class FormDetail(BaseModel):
     submitter_department: str | None
     status: str
     approval_history: list[ApprovalEntry] | None = None
+    edit_history: list[EditHistoryEntry] | None = None
     payload: dict[str, Any]
     submitted_at: datetime
     updated_at: datetime

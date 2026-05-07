@@ -2,7 +2,7 @@
 
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
@@ -18,6 +18,11 @@ function formatBytes(n: number): string {
 
 export function FormBuilder({ formType }: { formType: FormType }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // ?id=N 가 있으면 수정 모드 — 기존 신청서를 읽어 폼 prefill 후 PATCH 로 저장.
+  const editId = searchParams?.get("id");
+  const isEdit = !!editId;
+
   const schema = FORM_SCHEMAS[formType];
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
@@ -32,6 +37,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
   useEffect(() => {
+    if (isEdit) return; // 수정 모드는 기존 신청서 값 우선
     api
       .me()
       .then((m) => {
@@ -44,7 +50,21 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       .catch(() => {
         /* 로그인 정보 없으면 빈 상태 유지 */
       });
-  }, []);
+  }, [isEdit]);
+
+  // 수정 모드 — 기존 신청서 prefill
+  useEffect(() => {
+    if (!editId) return;
+    api
+      .getForm(Number(editId))
+      .then((f) => {
+        setValues(f.payload || {});
+        setSubmitterName(f.submitter_name || "");
+        setSubmitterDepartment(f.submitter_department || "");
+        setSubmitterEmail(f.submitter_email || "");
+      })
+      .catch((e) => setError((e as Error).message));
+  }, [editId]);
 
   // 작성 예시 모달
   const [exampleOpen, setExampleOpen] = useState(false);
@@ -119,17 +139,23 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       } else if (rawProject) {
         projectName = String(rawProject);
       }
-      setProgress("신청서 저장 중...");
-      const result = await api.submitForm({
+      setProgress(isEdit ? "신청서 수정 중..." : "신청서 저장 중...");
+
+      const body = {
         form_type: formType,
         project_name: projectName,
         payload: values,
         submitter_name: submitterName || undefined,
         submitter_email: submitterEmail || undefined,
         submitter_department: submitterDepartment || undefined,
-      });
+      };
 
-      // 파일은 신청서 생성 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도
+      const result = isEdit
+        ? await api.updateForm(Number(editId), body)
+        : await api.submitForm(body);
+
+      // 파일은 신청서 저장 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도.
+      // 수정 모드에서도 새로 추가한 파일만 업로드 (기존 첨부는 그대로).
       for (let i = 0; i < files.length; i++) {
         setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
         try {
@@ -140,7 +166,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         }
       }
 
-      router.push(`/governance/forms/submitted?id=${result.id}`);
+      if (isEdit) {
+        router.push(`/governance/forms/detail/${result.id}`);
+      } else {
+        router.push(`/governance/forms/submitted?id=${result.id}`);
+      }
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
@@ -160,7 +190,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">{schema.label}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {schema.label}
+            {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
+          </h1>
           <button
             type="button"
             onClick={() => setExampleOpen(true)}
@@ -402,7 +435,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
-            <Save size={14} /> {submitting ? "저장 중..." : "저장"}
+            <Save size={14} /> {submitting ? (isEdit ? "수정 중..." : "저장 중...") : (isEdit ? "수정 저장" : "저장")}
           </button>
         </div>
       </form>

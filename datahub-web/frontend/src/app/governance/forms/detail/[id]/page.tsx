@@ -77,6 +77,34 @@ export default function Page({ params }: { params: { id: string } }) {
         </table>
       </div>
 
+      {form.edit_history && form.edit_history.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="border-b border-gray-100 bg-gray-50/40 px-5 py-3">
+            <h3 className="text-sm font-bold">수정 이력 ({form.edit_history.length})</h3>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {[...form.edit_history].reverse().map((e, i) => (
+              <li key={i} className="flex items-center justify-between px-5 py-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Pencil size={14} className="text-gray-400" />
+                  <span className="font-medium text-gray-800">{e.edited_by}</span>
+                  <span className="text-gray-500">님이 수정함</span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {new Date(e.edited_at).toLocaleString("ko-KR", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {form.attachments.length > 0 && (
         <div className="mt-4">
           <h3 className="mb-2 text-sm font-semibold">첨부 파일 ({form.attachments.length})</h3>

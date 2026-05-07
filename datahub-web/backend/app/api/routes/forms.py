@@ -141,6 +141,15 @@ def update_form(
         form.submitter_email = payload.submitter_email
     if payload.submitter_department is not None:
         form.submitter_department = payload.submitter_department
+
+    # 수정 이력 누적 — 누가 / 언제 수정했는지만 기록 (diff 는 보관 X)
+    history = list(form.edit_history or [])
+    history.append({
+        "edited_by": user.name,
+        "edited_at": datetime.utcnow().isoformat(),
+    })
+    form.edit_history = history
+
     db.commit()
     db.refresh(form)
     return form

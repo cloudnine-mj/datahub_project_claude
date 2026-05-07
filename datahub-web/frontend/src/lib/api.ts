@@ -122,6 +122,11 @@ export interface ApprovalEntry {
   comment: string | null;
 }
 
+export interface EditHistoryEntry {
+  edited_by: string;
+  edited_at: string;
+}
+
 export interface FormDetail extends FormListItem {
   submitter_name: string;
   submitter_email: string;
@@ -130,6 +135,7 @@ export interface FormDetail extends FormListItem {
   updated_at: string;
   attachments: { id: number; filename: string; size_bytes: number }[];
   approval_history: ApprovalEntry[] | null;
+  edit_history: EditHistoryEntry[] | null;
 }
 
 // ── API 함수 ────────────────────────────────────────────
@@ -187,6 +193,21 @@ export const api = {
     submitter_department?: string;
   }) =>
     request<FormDetail>("/forms", { method: "POST", body: JSON.stringify(body) }),
+
+  /** 신청서 수정 — 작성자 본인 또는 admin. 매 호출마다 edit_history 에 한 줄 누적. */
+  updateForm: (
+    id: number,
+    body: {
+      form_type: FormType;
+      project_name: string;
+      payload: Record<string, unknown>;
+      status?: string;
+      submitter_name?: string;
+      submitter_email?: string;
+      submitter_department?: string;
+    },
+  ) =>
+    request<FormDetail>(`/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   exportFormUrl: (id: number) => `${BASE}/forms/${id}/export`,
 
   /** 신청서 삭제 — 제출자 본인 또는 admin 만 가능 (백엔드에서 검증). */

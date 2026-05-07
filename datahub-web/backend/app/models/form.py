@@ -53,6 +53,8 @@ class Form(Base):
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     # 상태 변경 이력 — [{status, changed_by, changed_at, comment}, ...]
     approval_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # 본문 수정 이력 — [{edited_by, edited_at}, ...]
+    edit_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)  # 타입별 자유 필드
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
