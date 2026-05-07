@@ -44,13 +44,14 @@ class PostUpdate(BaseModel):
 class PostListItem(BaseModel):
     """게시판 목록 row.
 
-    정책 게시판은 카드형이라 메타필드도 함께 노출 — 단순 게시판은 None 들이 와서 무시됨.
+    정책 게시판은 표/카드형이라 메타필드도 함께 노출 — 단순 게시판은 None 들이 와서 무시됨.
     """
 
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     title: str
+    category: str | None = None
     created_at: datetime
     updated_at: datetime
     author_name: str

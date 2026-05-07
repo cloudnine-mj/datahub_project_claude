@@ -81,6 +81,7 @@ export interface PolicyMeta {
 export interface PostListItem extends PolicyMeta {
   id: number;
   title: string;
+  category: string | null;
   created_at: string;
   updated_at: string;
   author_name: string;
