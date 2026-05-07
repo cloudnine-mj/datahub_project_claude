@@ -115,13 +115,47 @@ export function MarkdownEditor({ value, onChange, height = 400, placeholder }: P
     for (const f of imgs) insertImage(f);
   }
 
+  // Tab / Shift+Tab — 현재 줄의 시작에 2칸 들여쓰기 / 들여쓰기 해제.
+  // 마크다운 nested 리스트 작성에 필요. 기본 Tab(focus 이동) 을 가로챔.
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Tab") return;
+    e.preventDefault();
+    const ta = e.currentTarget;
+    const { selectionStart, selectionEnd } = ta;
+    const v = value ?? "";
+    const before = v.slice(0, selectionStart);
+    const lineStartIdx = before.lastIndexOf("\n") + 1;
+
+    if (e.shiftKey) {
+      // 줄머리 2칸 공백 제거 — 1~2칸까지 유연하게
+      const head = v.slice(lineStartIdx, lineStartIdx + 2);
+      const removeCount = head === "  " ? 2 : v[lineStartIdx] === " " ? 1 : 0;
+      if (removeCount === 0) return;
+      const next = v.slice(0, lineStartIdx) + v.slice(lineStartIdx + removeCount);
+      onChange(next);
+      requestAnimationFrame(() => {
+        const newPos = Math.max(lineStartIdx, selectionStart - removeCount);
+        ta.selectionStart = newPos;
+        ta.selectionEnd = Math.max(newPos, selectionEnd - removeCount);
+      });
+    } else {
+      // 줄머리에 2칸 삽입
+      const next = v.slice(0, lineStartIdx) + "  " + v.slice(lineStartIdx);
+      onChange(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = selectionStart + 2;
+        ta.selectionEnd = selectionEnd + 2;
+      });
+    }
+  }
+
   return (
     <div onPaste={onPaste} onDrop={onDrop} data-color-mode="light">
       <MDEditor
         value={value}
         onChange={(v) => onChange(v ?? "")}
         height={height}
-        textareaProps={{ placeholder }}
+        textareaProps={{ placeholder, onKeyDown }}
         commands={[
           commands.bold,
           commands.italic,
