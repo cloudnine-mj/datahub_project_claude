@@ -1,7 +1,9 @@
 "use client";
 
 // 게시글 상세 — 화면 캡처에는 명시적 디자인 없으나 자연스러운 read-only 뷰.
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Pencil } from "lucide-react";
 import { api, type BoardType, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DeletePostButton } from "./DeletePostButton";
@@ -20,6 +22,8 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
 
   const label = BOARD_LABELS[board];
   const canDelete = !!post && !!me && (me.user.role === "admin" || me.user.name === post.author_name);
+  // 수정은 정책 게시판만, 어드민 한정.
+  const canEdit = !!post && !!me && board === "policy" && me.user.role === "admin";
 
   return (
     <div>
@@ -35,13 +39,23 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
         <div className="mt-2 rounded-lg border border-gray-200 bg-white p-8">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold tracking-tight">{post.title}</h1>
-            {canDelete && (
-              <DeletePostButton
-                board={board}
-                postId={post.id}
-                redirectTo={`/governance/${boardSegment(board)}`}
-              />
-            )}
+            <div className="flex items-center gap-1.5">
+              {canEdit && (
+                <Link
+                  href={`/governance/${boardSegment(board)}/new?id=${post.id}`}
+                  className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+                >
+                  <Pencil size={12} /> 수정
+                </Link>
+              )}
+              {canDelete && (
+                <DeletePostButton
+                  board={board}
+                  postId={post.id}
+                  redirectTo={`/governance/${boardSegment(board)}`}
+                />
+              )}
+            </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
             {post.doc_no && (

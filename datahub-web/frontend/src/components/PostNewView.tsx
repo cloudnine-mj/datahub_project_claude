@@ -3,7 +3,7 @@
 // 화면 7: 새 글 작성 폼 — 모든 게시판 공통 (제목/카테고리/내용 + 첨부).
 // 정책 게시판은 추가로 '중요도(severity)' 칩 선택을 노출 → 표 중요도 컬럼에 반영.
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
@@ -20,6 +20,9 @@ function formatBytes(n: number): string {
 
 export function PostNewView({ board }: { board: BoardType }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams?.get("id");
+  const isEdit = !!editId;
   const isPolicy = board === "policy";
 
   const [me, setMe] = useState<Me | null>(null);
@@ -43,6 +46,22 @@ export function PostNewView({ board }: { board: BoardType }) {
   useEffect(() => {
     api.me().then(setMe);
   }, []);
+
+  // 수정 모드 — 기존 게시글 prefill
+  useEffect(() => {
+    if (!editId) return;
+    api
+      .getPost(board, Number(editId))
+      .then((p) => {
+        setTitle(p.title);
+        setDocNo(p.doc_no ?? "");
+        setCategory(p.category ?? "");
+        setContent(p.content ?? "");
+        setSeverity((p.severity as Severity | null) ?? "");
+        setTags(p.tags ?? []);
+      })
+      .catch((e) => setError((e as Error).message));
+  }, [editId, board]);
 
   function addFiles(list: FileList | File[]) {
     const arr = Array.from(list);
@@ -71,8 +90,8 @@ export function PostNewView({ board }: { board: BoardType }) {
     setError(null);
     setSubmitting(true);
     try {
-      setProgress("게시글 저장 중...");
-      const post = await api.createPost(board, {
+      setProgress(isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
+      const body = {
         title,
         doc_no: docNo.trim() || null,
         category: category || undefined,
@@ -81,9 +100,13 @@ export function PostNewView({ board }: { board: BoardType }) {
           severity: severity || null,
           tags: tags.length > 0 ? tags : null,
         }),
-      });
+      };
+      const post = isEdit
+        ? await api.updatePost(board, Number(editId), body)
+        : await api.createPost(board, body);
 
-      // 게시글 생성 후 파일 순차 업로드 — 일부 실패해도 계속 시도
+      // 신규 첨부 파일은 그대로 순차 업로드 — 수정 모드에서도 동일.
+      // 기존 첨부는 수정 흐름에서 건드리지 않음 (별도 삭제 UI 미구현).
       for (let i = 0; i < files.length; i++) {
         setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
         try {
@@ -93,7 +116,11 @@ export function PostNewView({ board }: { board: BoardType }) {
         }
       }
 
-      router.push(`/governance/${boardSegment(board)}`);
+      if (isEdit) {
+        router.push(`/governance/${boardSegment(board)}/${post.id}`);
+      } else {
+        router.push(`/governance/${boardSegment(board)}`);
+      }
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
@@ -103,7 +130,7 @@ export function PostNewView({ board }: { board: BoardType }) {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold tracking-tight">새 글 작성</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{isEdit ? "글 수정" : "새 글 작성"}</h1>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6">
         {/* 기본 입력 */}
@@ -276,7 +303,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             disabled={submitting}
             className="rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
           >
-            {submitting ? "등록 중..." : "등록"}
+            {submitting ? (isEdit ? "수정 중..." : "등록 중...") : (isEdit ? "수정 저장" : "등록")}
           </button>
         </div>
       </form>

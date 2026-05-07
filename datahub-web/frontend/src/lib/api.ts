@@ -166,6 +166,23 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  /** 게시글 수정 — 작성자 본인 또는 admin (백엔드에서 검증). */
+  updatePost: (
+    board: BoardType,
+    postId: number,
+    body: Partial<{
+      title: string;
+      doc_no: string | null;
+      category: string | null;
+      content: string;
+    }> &
+      Partial<PolicyMeta>,
+  ) =>
+    request<PostDetail>(`/boards/${board}/posts/${postId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
   /** 게시글에 파일 1개 업로드 (multipart/form-data). */
   uploadPostAttachment: (board: BoardType, postId: number, file: File) => {
     const fd = new FormData();
