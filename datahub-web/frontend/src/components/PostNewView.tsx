@@ -1,7 +1,7 @@
 "use client";
 
 // 화면 7: 새 글 작성 폼 — 모든 게시판 공통 (제목/카테고리/내용 + 첨부).
-// 정책 게시판은 추가로 '진행상태(severity)' 칩 선택을 노출 → 표 진행상태 컬럼에 반영.
+// 정책 게시판은 추가로 '중요도(severity)' 칩 선택을 노출 → 표 중요도 컬럼에 반영.
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
@@ -138,7 +138,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             </Field>
 
             {isPolicy && (
-              <Field label="진행상태">
+              <Field label="중요도">
                 <div className="flex gap-1 rounded-md border border-gray-200 bg-white p-1">
                   <button
                     type="button"

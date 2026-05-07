@@ -127,7 +127,7 @@ export function PolicyBoardView() {
               <th className="w-40 px-5 py-3">카테고리</th>
               <th className="w-32 px-5 py-3">등록일</th>
               <th className="w-32 px-5 py-3">수정일</th>
-              <th className="w-32 px-5 py-3">진행상태</th>
+              <th className="w-32 px-5 py-3">중요도</th>
             </tr>
           </thead>
           <tbody>
