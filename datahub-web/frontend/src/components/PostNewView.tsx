@@ -133,7 +133,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                   <button
                     type="button"
                     onClick={() => setSeverity("")}
-                    className={chipCls(severity === "")}
+                    className={severityChipCls("none", severity === "")}
                   >
                     미지정
                   </button>
@@ -142,7 +142,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                       key={s.value}
                       type="button"
                       onClick={() => setSeverity(s.value)}
-                      className={chipCls(severity === s.value)}
+                      className={severityChipCls(s.value, severity === s.value)}
                     >
                       {s.label}
                     </button>
@@ -266,6 +266,18 @@ function chipCls(active: boolean) {
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
   );
+}
+
+/**
+ * severity 칩 색상 — SeverityBadge 와 일관성:
+ *   none(미지정) → 회색, required(필수) → 빨강, recommended(권장) → 황색
+ */
+function severityChipCls(kind: "none" | "required" | "recommended", active: boolean) {
+  const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
+  if (!active) return base + "text-gray-600 hover:bg-gray-100";
+  if (kind === "required") return base + "bg-red-500 text-white";
+  if (kind === "recommended") return base + "bg-amber-500 text-white";
+  return base + "bg-gray-500 text-white"; // none / 미지정
 }
 
 function Field({
