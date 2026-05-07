@@ -1,43 +1,35 @@
 "use client";
 
 /**
- * 정책 상세 — 사용자 여정 Step 4 의 Opportunity 반영.
+ * 정책 상세 — 첨부 이미지의 일반 게시글 상세와 동일한 단순 레이아웃.
  *
- *  ┌─ 핵심 요약 박스 ────────────────────────────┐  ← '결국 내가 해야 하는 건 뭐지?'
- *  ├─ ✅ 이 정책을 지키려면 (체크리스트)         │  ← '행동으로 번역'
- *  ├─ 본문                                       │
- *  └─ 💡 예시                                     │
+ *  ┌─ Card ──────────────────────────────┐
+ *  │ 제목                  [수정][삭제]    │
+ *  │ 필수 #보안 · 작성자 · 등록일          │
+ *  │ ──────                                │
+ *  │ Markdown 본문                         │
+ *  │                                       │
+ *  │ 첨부 파일                             │
+ *  └───────────────────────────────────────┘
  *
- * 메타필드가 비어있으면 해당 섹션은 자동으로 사라짐 — 단순 게시글에도 호환.
+ * 이전 버전의 핵심 요약 / 체크리스트 / 예시 / 적용 대상 / summary 섹션은 제거.
+ * (마크다운 본문 안에 자유롭게 작성)
  */
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Lightbulb, Lock, Pencil, Users, X } from "lucide-react";
+import { Lock, Pencil, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { MarkdownView } from "./MarkdownEditor";
 import { SeverityBadge } from "./SeverityBadge";
 import { DeletePostButton } from "./DeletePostButton";
-
-/**
- * 예시 본문에서 ✅/❌ 같은 선두 이모지 1자만 제거.
- * 기존 시드에 들어간 데이터를 DB 재생성 없이 깔끔하게 보이기 위함.
- *
- * 예: "✅ 올바른 사례\n- ..."  →  "올바른 사례\n- ..."
- */
-function stripExampleEmojis(text: string): string {
-  return text
-    .split("\n")
-    .map((line) => line.replace(/^[✅❌✨⭐⚠️]\s*/u, ""))
-    .join("\n");
-}
+import { formatDate } from "@/lib/utils";
 
 export function PolicyDetailView({ postId }: { postId: number }) {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [forbiddenOpen, setForbiddenOpen] = useState(false);
 
   useEffect(() => {
@@ -52,9 +44,6 @@ export function PolicyDetailView({ postId }: { postId: number }) {
   const canDelete = !!me && (me.user.role === "admin" || me.user.name === post.author_name);
   const isAdmin = me?.user.role === "admin";
 
-  const items = post.action_items ?? [];
-  const doneCount = Object.values(checked).filter(Boolean).length;
-
   return (
     <div className="max-w-4xl">
       <Breadcrumb
@@ -65,115 +54,78 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         ]}
       />
 
-      <div className="mt-2 flex items-start justify-between gap-4">
-        <h1 className="min-w-0 flex-1 text-3xl font-bold tracking-tight">{post.title}</h1>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isAdmin ? (
-            <Link
-              href={`/governance/policy/new?id=${post.id}`}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-            >
-              <Pencil size={12} /> 수정
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setForbiddenOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-            >
-              <Pencil size={12} /> 수정
-            </button>
-          )}
-          {canDelete && (
-            <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
-          )}
+      <div className="mt-2 rounded-lg border border-gray-200 bg-white p-8">
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="min-w-0 flex-1 text-2xl font-bold tracking-tight">{post.title}</h1>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {isAdmin ? (
+              <Link
+                href={`/governance/policy/new?id=${post.id}`}
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+              >
+                <Pencil size={12} /> 수정
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setForbiddenOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+              >
+                <Pencil size={12} /> 수정
+              </button>
+            )}
+            {canDelete && (
+              <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
+            )}
+          </div>
         </div>
-      </div>
-      {post.summary && <p className="mt-2 text-base text-gray-600">{post.summary}</p>}
 
-      {post.applies_to && (
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-50 px-3 py-1.5 text-xs text-gray-600">
-          <Users size={12} />
-          <span>적용 대상: <strong className="font-semibold text-gray-800">{post.applies_to}</strong></span>
-        </div>
-      )}
-
-      {/* 핵심 요약 */}
-      {post.tldr && (
-        <section className="mt-6 rounded-lg border-l-4 border-brand bg-red-50/40 p-5">
-          <div className="text-xs font-bold uppercase tracking-wider text-brand">핵심 요약</div>
-          <p className="mt-1.5 text-[15px] font-medium leading-relaxed text-gray-900">{post.tldr}</p>
-        </section>
-      )}
-
-      {/* 체크리스트 */}
-      {items.length > 0 && (
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              <CheckCircle2 size={18} className="text-emerald-500" />
-              이 정책을 지키려면
-            </h2>
-            <span className="text-xs text-gray-400">
-              {doneCount} / {items.length} 완료
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+          {post.severity && <SeverityBadge severity={post.severity} size="sm" />}
+          {(post.tags ?? []).map((t) => (
+            <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">
+              #{t}
             </span>
+          ))}
+          <span>{post.author_name}</span>
+          <span>·</span>
+          <span>{formatDate(post.created_at)}</span>
+        </div>
+
+        {post.content && (
+          <div className="mt-6">
+            <MarkdownView source={post.content} />
           </div>
-          <ul className="space-y-2">
-            {items.map((it, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <input
-                  type="checkbox"
-                  id={`act-${i}`}
-                  checked={!!checked[i]}
-                  onChange={(e) => setChecked((prev) => ({ ...prev, [i]: e.target.checked }))}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                />
-                <label
-                  htmlFor={`act-${i}`}
-                  className={
-                    "flex-1 cursor-pointer text-sm leading-relaxed " +
-                    (checked[i] ? "text-gray-400 line-through" : "text-gray-800")
-                  }
+        )}
+
+        {post.attachments.length > 0 && (
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            <h3 className="mb-2 text-sm font-bold">첨부 파일 ({post.attachments.length})</h3>
+            <ul className="space-y-1.5">
+              {post.attachments.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between rounded border border-gray-100 px-3 py-2 text-sm"
                 >
-                  {it}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* 본문 — 우상단에 중요도/태그 작게 표시 */}
-      {post.content && (
-        <section className="relative mt-6 rounded-lg border border-gray-200 bg-white p-6">
-          {(post.severity || (post.tags ?? []).length > 0) && (
-            <div className="absolute right-4 top-4 flex flex-wrap items-center justify-end gap-1 text-[10px]">
-              {post.severity && <SeverityBadge severity={post.severity} size="sm" />}
-              {(post.tags ?? []).map((t) => (
-                <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
-                  #{t}
-                </span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-gray-400">📎</span>
+                    <span className="truncate">{a.filename}</span>
+                    <span className="shrink-0 text-xs text-gray-400">
+                      ({Math.round(a.size_bytes / 1024)} KB)
+                    </span>
+                  </div>
+                  <a
+                    href={api.postAttachmentUrl("policy", post.id, a.id)}
+                    className="shrink-0 rounded border border-gray-200 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+                  >
+                    다운로드
+                  </a>
+                </li>
               ))}
-            </div>
-          )}
-          <MarkdownView source={post.content} />
-        </section>
-      )}
-
-      {/* 예시 */}
-      {post.examples && (
-        <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50/40 p-5">
-          <h2 className="flex items-center gap-2 text-base font-bold text-amber-900">
-            <Lightbulb size={18} />
-            예시
-          </h2>
-          <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-amber-900/90">
-            {stripExampleEmojis(post.examples)}
+            </ul>
           </div>
-        </section>
-      )}
-
-      {/* 본문 렌더 끝 */}
+        )}
+      </div>
 
       {forbiddenOpen && (
         <div
@@ -214,35 +166,6 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             </div>
           </div>
         </div>
-      )}
-
-      {/* 첨부 */}
-      {post.attachments.length > 0 && (
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-bold">첨부 파일 ({post.attachments.length})</h2>
-          <ul className="mt-2 space-y-1.5">
-            {post.attachments.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between rounded border border-gray-100 px-3 py-2 text-sm"
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-gray-400">📎</span>
-                  <span className="truncate">{a.filename}</span>
-                  <span className="shrink-0 text-xs text-gray-400">
-                    ({Math.round(a.size_bytes / 1024)} KB)
-                  </span>
-                </div>
-                <a
-                  href={api.postAttachmentUrl("policy", post.id, a.id)}
-                  className="shrink-0 rounded border border-gray-200 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
-                >
-                  다운로드
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
     </div>
   );
