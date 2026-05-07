@@ -114,7 +114,7 @@ export function PostNewView({ board }: { board: BoardType }) {
               />
             </Field>
 
-            <Field label="카테고리" required>
+            <Field label="카테고리">
               {isPolicy ? (
                 <div
                   className="cursor-not-allowed rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
