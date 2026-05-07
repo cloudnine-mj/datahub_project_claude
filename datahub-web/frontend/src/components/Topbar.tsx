@@ -3,6 +3,7 @@
 import { Bell, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api, type Me } from "@/lib/api";
+import { UserMenu } from "./UserMenu";
 
 export function Topbar() {
   const [me, setMe] = useState<Me | null>(null);
@@ -26,23 +27,11 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="text-gray-500 hover:text-gray-700">
+        <button className="text-gray-500 hover:text-gray-700" aria-label="알림">
           <Bell size={18} />
         </button>
         <div className="h-6 w-px bg-gray-200" />
-        <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-gray-900 text-xs font-bold text-white">
-            {me?.user.name
-              .split(" ")
-              .map((p) => p[0])
-              .slice(0, 2)
-              .join("") || "?"}
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-semibold leading-tight">{me?.user.name ?? "..."}</div>
-            <div className="text-xs capitalize text-gray-500">{me?.user.role ?? ""}</div>
-          </div>
-        </div>
+        <UserMenu me={me} />
       </div>
     </header>
   );
