@@ -62,20 +62,6 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  /** "이 예시로 채우기" — 모달에서 시드 예시를 받아 모든 폼 필드에 일괄 입력. */
-  function applyExample(ex: import("@/lib/policyExample").PolicyExample) {
-    setTitle(ex.title);
-    setCategory(ex.category);
-    setContent(ex.content);
-    setSummary(ex.summary);
-    setTagsInput(ex.tags.join(", "));
-    setSeverity(ex.severity);
-    setAppliesTo(ex.applies_to);
-    setTldr(ex.tldr);
-    setActionItemsText(ex.action_items.join("\n"));
-    setExamples(ex.examples);
-  }
-
   useEffect(() => {
     api.me().then(setMe);
   }, []);
@@ -390,14 +376,13 @@ export function PostNewView({ board }: { board: BoardType }) {
         </div>
       </form>
 
-      {/* 정책 게시판 한정 — 예시 보기 모달.
+      {/* 정책 게시판 한정 — 예시 보기 모달 (read-only).
           현재 폼의 severity 가 설정돼 있으면 그 탭을 기본으로, 아니면 url 의 severity, 둘 다 없으면 '필수'. */}
       {isPolicy && (
         <PolicyExampleModal
           open={exampleOpen}
           onClose={() => setExampleOpen(false)}
           defaultSeverity={(severity || initialSeverity || "required") as Severity}
-          onApply={applyExample}
         />
       )}
     </div>

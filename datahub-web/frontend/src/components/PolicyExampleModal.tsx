@@ -1,17 +1,15 @@
 "use client";
 
 /**
- * 정책 작성 폼의 "예시 보기" 모달.
+ * 정책 작성 폼의 "예시 보기" 모달 — read-only 미리보기.
  *
  * severity 별 2종 예시 (필수/권장) 를 탭으로 전환하며 볼 수 있고,
  * 진입 시 `defaultSeverity` 에 해당하는 예시가 기본 선택된다.
- *
- * "이 예시로 채우기" 클릭 시 현재 보고 있는 예시를 부모(PostNewView) 폼에 일괄 입력.
  */
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { POLICY_EXAMPLES, type PolicyExample } from "@/lib/policyExample";
+import { POLICY_EXAMPLES } from "@/lib/policyExample";
 import type { Severity } from "@/lib/api";
 import { SeverityBadge, SEVERITIES } from "./SeverityBadge";
 
@@ -20,11 +18,9 @@ interface Props {
   onClose: () => void;
   /** 기본으로 보여줄 예시의 severity — 보통 작성 폼이 진입할 때의 컨텍스트 */
   defaultSeverity?: Severity;
-  /** 클릭 시 호출 — 부모(PostNewView)가 받은 값으로 form state 를 채운다 */
-  onApply: (example: PolicyExample) => void;
 }
 
-export function PolicyExampleModal({ open, onClose, defaultSeverity = "required", onApply }: Props) {
+export function PolicyExampleModal({ open, onClose, defaultSeverity = "required" }: Props) {
   const [tab, setTab] = useState<Severity>(defaultSeverity);
 
   // 모달이 새로 열릴 때마다 컨텍스트 severity 로 초기화
@@ -131,30 +127,15 @@ export function PolicyExampleModal({ open, onClose, defaultSeverity = "required"
           </Row>
         </div>
 
-        {/* 푸터 — 액션 버튼 */}
-        <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-gray-200 bg-white px-6 py-3">
-          <p className="text-xs text-gray-400">
-            ※ &quot;이 예시로 채우기&quot; 클릭 시 현재 입력한 내용이 모두 덮어써집니다.
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold hover:bg-gray-50"
-            >
-              닫기
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onApply(ex);
-                onClose();
-              }}
-              className="inline-flex items-center rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
-            >
-              이 예시로 채우기
-            </button>
-          </div>
+        {/* 푸터 — 닫기 */}
+        <div className="sticky bottom-0 flex justify-end border-t border-gray-200 bg-white px-6 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+          >
+            닫기
+          </button>
         </div>
       </div>
     </div>
