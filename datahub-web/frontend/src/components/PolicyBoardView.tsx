@@ -1,31 +1,27 @@
 "use client";
 
 /**
- * 정책 게시판 — 사용자 여정 Step 1~3 의 Opportunity 를 모두 반영한 카드뷰.
- *
- *  Step 1) 상단 가이드 배너 — '이 페이지에서 확인할 수 있는 것'
- *  Step 2) 한 줄 설명 + 태그 + severity 뱃지 + 검색·필터 (인지 부하 ↓)
- *  Step 3) 카드 안에 적용 대상·갱신일 노출 (클릭 전 preview)
- *
- * 다른 게시판(production_process, usage_process) 은 BoardListView 를 그대로 씀.
+ * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색.
+ * 사용자가 첨부한 자문 목록 화면 패턴을 차용.
  */
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Info, Pencil, Search, Users } from "lucide-react";
-import { api, type Me, type PostListItem, type Severity } from "@/lib/api";
+import { ChevronLeft, ChevronRight, Info, Pencil, Search } from "lucide-react";
+import { api, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
-import { SeverityBadge, SEVERITIES } from "./SeverityBadge";
+import { SeverityBadge } from "./SeverityBadge";
 import { EmptyState } from "./EmptyState";
 import { formatDate } from "@/lib/utils";
 
-type SeverityFilter = "all" | Severity;
+const PAGE_SIZES = [10, 20, 50, 100];
 
 export function PolicyBoardView() {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
-  const [filter, setFilter] = useState<SeverityFilter>("all");
   const [query, setQuery] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1); // 1-based
 
   useEffect(() => {
     api.listPosts("policy").then(setPosts).catch(() => setPosts([]));
@@ -34,19 +30,30 @@ export function PolicyBoardView() {
 
   const canWrite = me?.permissions.can_write_policy ?? false;
 
-  // Step 2 의 검색·필터 — 클라이언트 사이드. 데이터가 늘어나면 서버 쿼리로 옮길 것.
+  // 검색 필터링 (제목·설명·태그·적용 대상). 클라이언트 사이드.
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
+    if (!q) return posts;
     return posts.filter((p) => {
-      if (filter !== "all" && p.severity !== filter) return false;
-      if (!q) return true;
       const haystack = [p.title, p.summary ?? "", (p.tags ?? []).join(" "), p.applies_to ?? ""]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, filter, query]);
+  }, [posts, query]);
+
+  // 검색·페이지 크기 바뀔 때 1페이지로 리셋
+  useEffect(() => {
+    setPage(1);
+  }, [query, pageSize]);
+
+  const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+  const pageItems = useMemo(() => {
+    if (!filtered) return null;
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   return (
     <div>
@@ -58,7 +65,7 @@ export function PolicyBoardView() {
       />
       <h1 className="text-3xl font-bold tracking-tight">데이터 관리 정책</h1>
 
-      {/* Step 1 — 가이드 배너 */}
+      {/* 가이드 배너 */}
       <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
         <div className="flex items-start gap-3 text-sm">
           <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
@@ -69,15 +76,18 @@ export function PolicyBoardView() {
         </div>
       </div>
 
-      {/* 필터 + 검색 + 글쓰기 */}
+      {/* 상단 툴바 */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
-          <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>전체</FilterChip>
-          {SEVERITIES.map((s) => (
-            <FilterChip key={s.value} active={filter === s.value} onClick={() => setFilter(s.value)}>
-              {s.label}
-            </FilterChip>
-          ))}
+        <div className="relative">
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm focus:border-brand focus:outline-none"
+          >
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>{n}개씩 보기</option>
+            ))}
+          </select>
         </div>
 
         <div className="relative flex-1 min-w-[220px] max-w-md">
@@ -90,101 +100,167 @@ export function PolicyBoardView() {
           />
         </div>
 
-        {filter !== "all" && (
-          canWrite ? (
-            <Link
-              href={`/governance/policy/new?severity=${filter}`}
-              className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
-            >
-              <Pencil size={14} /> 글쓰기
-            </Link>
-          ) : (
-            <span
-              className="ml-auto inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
-              title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
-            >
-              <Pencil size={14} /> 글쓰기
-            </span>
-          )
-        )}
-      </div>
-
-      {/* 카드 목록 */}
-      <div className="mt-4 space-y-3">
-        {filtered === null ? (
-          <div className="rounded-lg border border-gray-200 bg-white py-12 text-center text-sm text-gray-400">
-            불러오는 중...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-white">
-            <EmptyState
-              message={
-                posts && posts.length > 0
-                  ? "검색 결과가 없습니다. 다른 키워드로 다시 시도해 보세요."
-                  : "등록된 정책이 없습니다 — 곧 추가될 예정입니다."
-              }
-            />
-          </div>
+        {canWrite ? (
+          <Link
+            href="/governance/policy/new"
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+          >
+            <Pencil size={14} /> 글쓰기
+          </Link>
         ) : (
-          filtered.map((p) => <PolicyCard key={p.id} post={p} />)
+          <span
+            className="ml-auto inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
+            title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
+          >
+            <Pencil size={14} /> 글쓰기
+          </span>
         )}
       </div>
 
-      {posts && posts.length > 0 && filtered && (
-        <div className="mt-3 text-right text-xs text-gray-400">
-          {filtered.length} / {posts.length} 건
+      {/* 표 */}
+      <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-xs font-medium text-gray-500">
+            <tr>
+              <th className="px-5 py-3">정책명</th>
+              <th className="w-32 px-5 py-3">작성자</th>
+              <th className="w-40 px-5 py-3">카테고리</th>
+              <th className="w-32 px-5 py-3">등록일</th>
+              <th className="w-32 px-5 py-3">수정일</th>
+              <th className="w-32 px-5 py-3">진행상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageItems === null ? (
+              <tr>
+                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
+              </tr>
+            ) : pageItems.length === 0 ? (
+              <tr>
+                <td colSpan={6}>
+                  <EmptyState
+                    message={
+                      posts && posts.length > 0
+                        ? "검색 결과가 없습니다. 다른 키워드로 다시 시도해 보세요."
+                        : "등록된 정책이 없습니다 — 곧 추가될 예정입니다."
+                    }
+                  />
+                </td>
+              </tr>
+            ) : (
+              pageItems.map((p) => (
+                <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/governance/policy/${p.id}`}
+                      className="font-medium text-gray-900 hover:text-brand"
+                    >
+                      {p.title}
+                    </Link>
+                    {p.summary && (
+                      <div className="mt-0.5 truncate text-xs text-gray-500">{p.summary}</div>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
+                  <td className="px-5 py-3">
+                    {(p.tags ?? []).length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {(p.tags ?? []).slice(0, 3).map((t) => (
+                          <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-gray-500">{formatDate(p.created_at)}</td>
+                  <td className="px-5 py-3 text-gray-500">{formatDate(p.updated_at)}</td>
+                  <td className="px-5 py-3">
+                    {p.severity ? (
+                      <SeverityBadge severity={p.severity} />
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 페이지네이션 + 합계 */}
+      {pageItems && pageItems.length > 0 && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-gray-500">총 {filtered?.length ?? 0} 건</span>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
       )}
     </div>
   );
 }
 
-function PolicyCard({ post }: { post: PostListItem }) {
-  return (
-    <Link
-      href={`/governance/policy/${post.id}`}
-      className="block rounded-lg border border-gray-200 bg-white p-5 transition hover:border-brand/40 hover:shadow-sm"
-    >
-      <div className="flex items-center gap-2 text-xs text-gray-500">
-        <SeverityBadge severity={post.severity} />
-        {(post.tags ?? []).map((t) => (
-          <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">#{t}</span>
-        ))}
-        <span className="ml-auto text-gray-400">갱신: {formatDate(post.updated_at)}</span>
-      </div>
-
-      <h3 className="mt-2 text-base font-bold tracking-tight">{post.title}</h3>
-      {post.summary && <p className="mt-1 text-sm text-gray-600">{post.summary}</p>}
-
-      {post.applies_to && (
-        <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-gray-500">
-          <Users size={12} />
-          <span>적용 대상: {post.applies_to}</span>
-        </div>
-      )}
-    </Link>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
+function Pagination({
+  page,
+  totalPages,
+  onChange,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
+  page: number;
+  totalPages: number;
+  onChange: (n: number) => void;
 }) {
+  if (totalPages <= 1) return null;
+
+  // 표시할 페이지 번호 — 현재 페이지 주변 + 처음/끝
+  const pages: (number | "...")[] = [];
+  const window = 1;
+  pages.push(1);
+  if (page - window > 2) pages.push("...");
+  for (let i = Math.max(2, page - window); i <= Math.min(totalPages - 1, page + window); i++) {
+    pages.push(i);
+  }
+  if (page + window < totalPages - 1) pages.push("...");
+  if (totalPages > 1) pages.push(totalPages);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded px-3 py-1.5 text-xs font-semibold transition " +
-        (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
-      }
-    >
-      {children}
-    </button>
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="이전 페이지"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span key={`gap-${i}`} className="px-2 text-xs text-gray-400">...</span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            className={
+              "min-w-[28px] rounded px-2 py-1 text-xs font-semibold transition " +
+              (p === page ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100")
+            }
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="다음 페이지"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
   );
 }
