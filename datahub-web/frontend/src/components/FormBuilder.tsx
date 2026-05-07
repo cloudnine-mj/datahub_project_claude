@@ -1025,6 +1025,8 @@ function MemberChipsField({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
+          // 한글 IME 조합 중 Enter — composition 종료용이므로 무시
+          if (e.nativeEvent.isComposing || e.key === "Process") return;
           if (e.key === "Enter") {
             e.preventDefault();
             commit();
