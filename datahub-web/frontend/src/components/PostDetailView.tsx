@@ -7,6 +7,7 @@ import { Lock, Pencil, X } from "lucide-react";
 import { api, type BoardType, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DeletePostButton } from "./DeletePostButton";
+import { MarkdownView } from "./MarkdownEditor";
 import { BOARD_LABELS, formatDate } from "@/lib/utils";
 import { boardSegment } from "./BoardListView";
 
@@ -81,7 +82,9 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
             <span>·</span>
             <span>{formatDate(post.created_at)}</span>
           </div>
-          <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{post.content}</div>
+          <div className="mt-6">
+            <MarkdownView source={post.content} />
+          </div>
 
           {post.attachments.length > 0 && (
             <div className="mt-6 border-t border-gray-100 pt-4">
