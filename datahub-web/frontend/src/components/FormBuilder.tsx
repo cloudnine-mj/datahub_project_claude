@@ -776,26 +776,23 @@ function ServiceListField({
             placeholder={placeholder}
             className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
-          {i === list.length - 1 ? (
-            <button
-              type="button"
-              onClick={add}
-              className="shrink-0 rounded-md border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
-            >
-              + 서비스 추가
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              aria-label="서비스 제거"
-              className="shrink-0 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
-            >
-              <X size={14} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            aria-label="서비스 제거"
+            className="shrink-0 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+          >
+            <X size={14} />
+          </button>
         </div>
       ))}
+      <button
+        type="button"
+        onClick={add}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 px-5 py-2.5 text-xs font-semibold text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+      >
+        + 서비스 추가
+      </button>
     </div>
   );
 }
