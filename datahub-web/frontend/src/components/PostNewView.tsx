@@ -276,7 +276,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                 </Field>
               </div>
 
-              <Field label="적용 대상 (applies_to)" hint="누가 이 정책을 봐야 하는가 — 클릭 전 preview 로 사용">
+              <Field label="적용 대상 (applies_to)" hint="누가 이 정책을 봐야 하는가">
                 <input
                   value={appliesTo}
                   onChange={(e) => setAppliesTo(e.target.value)}
