@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
+import { Markdown } from "./Markdown";
 import { SEVERITIES } from "./SeverityBadge";
 
 const CATEGORIES = ["데이터 관리 정책", "데이터 제작 프로세스", "데이터 활용 요청 프로세스"];
@@ -42,6 +43,9 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 정책 게시판: 마크다운 에디터의 작성/미리보기 탭
+  const [contentTab, setContentTab] = useState<"write" | "preview">("write");
 
   useEffect(() => {
     api.me().then(setMe);
@@ -204,15 +208,50 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            <Field label="내용" required>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                rows={8}
-                placeholder="내용을 입력하세요"
-                className={inputCls}
-              />
+            <Field
+              label="내용"
+              required
+              hint={isPolicy ? "마크다운 지원 — 헤딩(##), 목록(-), **굵게**, 표, 체크리스트 등" : undefined}
+            >
+              {isPolicy ? (
+                <div className="overflow-hidden rounded-md border border-gray-200">
+                  <div className="flex items-center gap-1 border-b border-gray-200 bg-gray-50 px-2 py-1.5">
+                    <TabButton active={contentTab === "write"} onClick={() => setContentTab("write")}>
+                      작성
+                    </TabButton>
+                    <TabButton active={contentTab === "preview"} onClick={() => setContentTab("preview")}>
+                      미리보기
+                    </TabButton>
+                  </div>
+                  {contentTab === "write" ? (
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      required
+                      rows={14}
+                      placeholder={"## 정책 개요\n\n- 적용 대상\n- 주요 원칙\n\n**중요**: 마크다운으로 작성하세요."}
+                      className="block w-full resize-y border-0 bg-white px-3 py-3 font-mono text-sm focus:outline-none"
+                    />
+                  ) : (
+                    <div className="min-h-[280px] bg-white px-4 py-3">
+                      {content.trim() ? (
+                        <Markdown source={content} />
+                      ) : (
+                        <p className="text-sm text-gray-400">미리볼 내용이 없습니다.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  required
+                  rows={8}
+                  placeholder="내용을 입력하세요"
+                  className={inputCls}
+                />
+              )}
             </Field>
           </div>
         </section>
@@ -331,6 +370,29 @@ function severityChipCls(kind: "none" | "required" | "recommended", active: bool
   if (kind === "required") return base + "bg-red-500 text-white";
   if (kind === "recommended") return base + "bg-amber-500 text-white";
   return base + "bg-gray-500 text-white"; // none / 미지정
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded px-3 py-1 text-xs font-semibold transition " +
+        (active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700")
+      }
+    >
+      {children}
+    </button>
+  );
 }
 
 function Field({

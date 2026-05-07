@@ -10,3 +10,57 @@ html, body {
 * {
   box-sizing: border-box;
 }
+
+/* 마크다운 렌더 — react-markdown 결과에 적용. @tailwindcss/typography 없이 최소 스타일링. */
+.markdown-body {
+  color: #1f2937;
+  line-height: 1.7;
+  font-size: 0.875rem;
+}
+.markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+.markdown-body h2 { font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+.markdown-body h3 { font-size: 1.05rem; font-weight: 700; margin-top: 1rem;   margin-bottom: 0.5rem; }
+.markdown-body h4 { font-size: 1rem;    font-weight: 700; margin-top: 0.75rem; margin-bottom: 0.25rem; }
+.markdown-body p  { margin: 0.5rem 0; }
+.markdown-body ul { list-style: disc;    padding-left: 1.5rem; margin: 0.5rem 0; }
+.markdown-body ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.markdown-body li { margin: 0.2rem 0; }
+.markdown-body a  { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body code {
+  background: #f3f4f6;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.markdown-body pre {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+.markdown-body blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75rem;
+  color: #4b5563;
+  margin: 0.75rem 0;
+}
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85em;
+}
+.markdown-body th, .markdown-body td {
+  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.6rem;
+}
+.markdown-body th { background: #f9fafb; font-weight: 600; }
+.markdown-body hr { border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+.markdown-body strong { font-weight: 600; color: #111827; }
+.markdown-body input[type="checkbox"] { margin-right: 0.4rem; }
