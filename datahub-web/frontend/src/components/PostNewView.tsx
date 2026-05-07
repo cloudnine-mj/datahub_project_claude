@@ -305,7 +305,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                 />
               </Field>
 
-              <Field label="예시 (examples)" hint="올바른/잘못된 사례 — 행동의 구체화">
+              <Field label="예시 (examples)" hint="올바른/잘못된 사례">
                 <textarea
                   value={examples}
                   onChange={(e) => setExamples(e.target.value)}
