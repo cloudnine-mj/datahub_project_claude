@@ -26,6 +26,7 @@ FORM_TYPES = (
     "product_log_usage",
     "data_production_plan",
     "api_usage_plan",
+    "productivity_tool",
 )
 
 # 신청서 상태 — 전자결재 시스템과 연동되기 전 mock 워크플로우.

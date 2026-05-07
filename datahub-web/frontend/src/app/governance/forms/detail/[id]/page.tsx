@@ -219,5 +219,42 @@ function FieldValue({ field, value }: { field: FieldDef; value: unknown }) {
     return <span>{v.kind || "-"}</span>;
   }
 
+  if (field.type === "service_blocks" && Array.isArray(value)) {
+    type Block = {
+      service_name?: string;
+      usage?: string;
+      currency?: { kind?: string; custom?: string };
+      cost?: string;
+      payment_method?: string;
+      members?: string[];
+    };
+    const blocks = (value as Block[]).filter((b) => b && (b.service_name || b.usage || b.cost));
+    if (blocks.length === 0) return <span className="text-gray-400">-</span>;
+    return (
+      <div className="space-y-3">
+        {blocks.map((b, i) => (
+          <div key={i} className="rounded-md border border-gray-200 bg-gray-50/40 px-3 py-2 text-sm">
+            <div className="font-semibold text-gray-900">
+              서비스 {i + 1}{b.service_name ? ` · ${b.service_name}` : ""}
+            </div>
+            {b.usage && <div className="mt-1 text-gray-700">{b.usage}</div>}
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
+              {b.cost && <span>비용: {b.cost}</span>}
+              {b.currency?.kind && (
+                <span>
+                  통화: {b.currency.kind === "기타" ? `기타(${b.currency.custom || "-"})` : b.currency.kind}
+                </span>
+              )}
+              {b.payment_method && <span>결제: {b.payment_method}</span>}
+              {b.members && b.members.length > 0 && (
+                <span>인원: {b.members.length}명 ({b.members.join(", ")})</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return <span className="whitespace-pre-wrap">{String(value)}</span>;
 }

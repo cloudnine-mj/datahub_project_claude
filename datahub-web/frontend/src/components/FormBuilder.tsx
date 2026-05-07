@@ -109,7 +109,16 @@ export function FormBuilder({ formType }: { formType: FormType }) {
     setError(null);
     setSubmitting(true);
     try {
-      const projectName = String(values[schema.projectField] || "(미입력)");
+      // projectField 가 service_blocks 같은 array 라면 첫 항목의 service_name 으로 매핑
+      const rawProject = values[schema.projectField];
+      let projectName = "(미입력)";
+      if (Array.isArray(rawProject) && rawProject.length > 0 && typeof rawProject[0] === "object") {
+        const first = rawProject[0] as Record<string, unknown>;
+        const name = first.service_name;
+        if (typeof name === "string" && name.trim()) projectName = name.trim();
+      } else if (rawProject) {
+        projectName = String(rawProject);
+      }
       setProgress("신청서 저장 중...");
       const result = await api.submitForm({
         form_type: formType,
@@ -225,7 +234,24 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </div>
         </section>
 
-        {schema.sections.map((section) => {
+        {schema.sections.map((section, sectionIdx) => {
+          // 풀 와이드 단독 필드 (service_blocks 등) — 표/섹션헤더 없이 렌더
+          if (
+            section.fields.length === 1 &&
+            section.fields[0].type === "service_blocks"
+          ) {
+            const f = section.fields[0];
+            return (
+              <section key={`bare-${sectionIdx}`}>
+                <FieldInput
+                  field={f}
+                  value={values[f.key]}
+                  onChange={(v) => setField(f.key, v)}
+                />
+              </section>
+            );
+          }
+
           // inlineWithNext 적용 — 두 필드를 같은 행에 묶기 위한 사전 그룹핑.
           type Row = { primary: FieldDef; inline?: FieldDef };
           const rows: Row[] = [];
@@ -240,7 +266,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           }
 
           return (
-            <section key={section.title}>
+            <section key={section.title || `s-${sectionIdx}`}>
               <div className="mb-3 flex items-center gap-2">
                 <span className="block h-5 w-1 rounded-sm bg-brand" />
                 <h2 className="text-base font-bold">{section.title}</h2>
@@ -536,6 +562,13 @@ function FieldInput({
           onChange={(v) => onChange(v)}
         />
       );
+    case "service_blocks":
+      return (
+        <ServiceBlocksField
+          value={Array.isArray(value) ? (value as ServiceBlock[]) : []}
+          onChange={(v) => onChange(v)}
+        />
+      );
     default:
       return (
         <input
@@ -753,6 +786,278 @@ function CurrencyField({
       />
     </div>
   );
+}
+
+/**
+ * 업무생산성 도구 신청서 — 서비스 블록 동적 리스트.
+ *
+ * 각 블록: 서비스명 / 활용 방안 / 결제 통화 / 예상 비용 / 결제 방식 / 사용 인원(이름 칩) / 인원 수(자동) / 총 비용(자동).
+ * 인원 수 = members.length, 총 비용 = parse(예상 비용 숫자) × 인원 수.
+ */
+type ServiceBlock = {
+  service_name: string;
+  usage: string;
+  currency: { kind?: string; custom?: string };
+  cost: string;
+  payment_method: string;
+  members: string[];
+};
+
+const EMPTY_BLOCK: ServiceBlock = {
+  service_name: "",
+  usage: "",
+  currency: {},
+  cost: "",
+  payment_method: "",
+  members: [],
+};
+
+function ServiceBlocksField({
+  value,
+  onChange,
+}: {
+  value: ServiceBlock[];
+  onChange: (next: ServiceBlock[]) => void;
+}) {
+  const list = value.length > 0 ? value : [EMPTY_BLOCK];
+
+  function update(idx: number, patch: Partial<ServiceBlock>) {
+    const next = list.map((b, i) => (i === idx ? { ...b, ...patch } : b));
+    onChange(next);
+  }
+
+  function add() {
+    onChange([...list, { ...EMPTY_BLOCK }]);
+  }
+
+  function remove(idx: number) {
+    if (list.length <= 1) {
+      onChange([{ ...EMPTY_BLOCK }]);
+      return;
+    }
+    onChange(list.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="space-y-4">
+      {list.map((block, idx) => (
+        <ServiceBlockCard
+          key={idx}
+          index={idx}
+          block={block}
+          onChange={(patch) => update(idx, patch)}
+          onRemove={() => remove(idx)}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+      >
+        + 서비스 추가
+      </button>
+    </div>
+  );
+}
+
+function ServiceBlockCard({
+  index,
+  block,
+  onChange,
+  onRemove,
+}: {
+  index: number;
+  block: ServiceBlock;
+  onChange: (patch: Partial<ServiceBlock>) => void;
+  onRemove: () => void;
+}) {
+  const memberCount = block.members.length;
+  const totalCost = computeTotal(block.cost, memberCount, block.currency.kind);
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/40 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <span className="block h-5 w-1 rounded-sm bg-brand" />
+          <h3 className="text-sm font-bold">서비스 {index + 1}</h3>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="서비스 제거"
+          className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <table className="w-full text-sm">
+        <tbody>
+          <BlockRow label="서비스명">
+            <input
+              type="text"
+              value={block.service_name}
+              onChange={(e) => onChange({ service_name: e.target.value })}
+              placeholder="서비스명을 입력하세요"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+          </BlockRow>
+          <BlockRow label="활용 방안">
+            <textarea
+              rows={2}
+              value={block.usage}
+              onChange={(e) => onChange({ usage: e.target.value })}
+              placeholder="활용 방안을 입력하세요"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+          </BlockRow>
+          <BlockRow label="결제 통화">
+            <CurrencyField
+              value={block.currency}
+              onChange={(c) => onChange({ currency: c })}
+            />
+          </BlockRow>
+          <BlockRow label="예상 비용">
+            <input
+              type="text"
+              value={block.cost}
+              onChange={(e) => onChange({ cost: e.target.value })}
+              placeholder="예상 비용을 입력하세요"
+              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            />
+          </BlockRow>
+          <BlockRow label="결제 방식">
+            <div className="flex flex-wrap items-center gap-5">
+              {["월 구독", "연 구독", "구매"].map((opt) => (
+                <label key={opt} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name={`payment-${index}`}
+                    value={opt}
+                    checked={block.payment_method === opt}
+                    onChange={() => onChange({ payment_method: opt })}
+                    className="text-brand focus:ring-brand"
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
+          </BlockRow>
+          <BlockRow label="사용 인원">
+            <MemberChipsField
+              members={block.members}
+              onChange={(members) => onChange({ members })}
+            />
+          </BlockRow>
+          <BlockRow label="인원 수">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold text-gray-900">{memberCount}</span>
+              <span className="text-gray-500">명</span>
+              <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                이름 수 자동 계산
+              </span>
+            </div>
+          </BlockRow>
+          <BlockRow label="총 비용">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold text-gray-900">
+                {totalCost ?? <span className="text-gray-300">—</span>}
+              </span>
+              <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                예상 비용 × 인원 수
+              </span>
+            </div>
+          </BlockRow>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function BlockRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <tr className="border-b border-gray-100 last:border-b-0">
+      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-gray-700">{label}</td>
+      <td className="px-5 py-3">{children}</td>
+    </tr>
+  );
+}
+
+/** 사용 인원 — 이름 칩 + 추가 input. Enter 로 추가, 칩 클릭으로 제거. */
+function MemberChipsField({
+  members,
+  onChange,
+}: {
+  members: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function commit() {
+    const v = draft.trim();
+    if (!v) return;
+    if (members.includes(v)) {
+      setDraft("");
+      return;
+    }
+    onChange([...members, v]);
+    setDraft("");
+  }
+
+  function remove(idx: number) {
+    onChange(members.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {members.map((m, i) => (
+        <button
+          key={`${m}-${i}`}
+          type="button"
+          onClick={() => remove(i)}
+          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+          title="클릭하여 제거"
+        >
+          {m}
+        </button>
+      ))}
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+        }}
+        onBlur={commit}
+        placeholder={members.length === 0 ? "이름을 추가하세요" : ""}
+        className="min-w-[140px] flex-1 rounded-md border-0 bg-transparent px-2 py-1 text-sm placeholder:text-gray-400 focus:outline-none"
+      />
+      <button
+        type="button"
+        onClick={commit}
+        aria-label="이름 추가"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+/** "예상 비용" 문자열에서 숫자 부분을 추출해 인원 수와 곱한 뒤 통화 기호와 함께 포맷. */
+function computeTotal(costStr: string, count: number, currencyKind?: string): string | null {
+  if (!costStr || count <= 0) return null;
+  const match = costStr.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const n = Number(match[0]);
+  if (!Number.isFinite(n)) return null;
+  const total = Math.round(n * count);
+  const formatted = total.toLocaleString();
+  if (currencyKind === "USD") return `$${formatted}`;
+  if (currencyKind === "KRW") return `${formatted}원`;
+  return formatted;
 }
 
 function SubmitterInputRow({

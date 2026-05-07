@@ -20,6 +20,7 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
   product_log_usage: "Product 로그 데이터 활용 신청서",
   data_production_plan: "데이터 제작 계획서",
   api_usage_plan: "API 활용 계획서",
+  productivity_tool: "업무생산성 도구 신청서",
 };
 
 export const BOARD_LABELS: Record<string, string> = {

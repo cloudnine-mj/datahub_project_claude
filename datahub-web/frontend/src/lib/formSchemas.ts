@@ -20,7 +20,9 @@ export type FieldType =
   /** API 활용 계획서 — 시작일 ~ 종료일 한 행 입력 */
   | "date_range"
   /** API 활용 계획서 — USD/KRW/기타(+직접 입력) */
-  | "currency";
+  | "currency"
+  /** 업무생산성 도구 신청서 — 서비스 블록 동적 리스트 (서비스 N + 내부 다중 필드) */
+  | "service_blocks";
 
 export interface FieldDef {
   key: string;
@@ -295,6 +297,23 @@ const apiUsagePlan: FormSchema = {
   ],
 };
 
+// 업무생산성 도구 신청서 — 서비스 블록 동적 리스트 1개로 구성
+const productivityTool: FormSchema = {
+  type: "productivity_tool",
+  label: "업무생산성 도구 신청서",
+  // 서비스 블록 첫 항목의 service_name 을 project_name 으로 매핑
+  // (FormBuilder.onSubmit 에서 array 타입을 특별 처리)
+  projectField: "서비스_목록",
+  sections: [
+    {
+      title: "",
+      fields: [
+        { key: "서비스_목록", label: "", type: "service_blocks" },
+      ],
+    },
+  ],
+};
+
 export const FORM_SCHEMAS: Record<FormType, FormSchema> = {
   data_production: dataProduction,
   data_purchase: dataPurchase,
@@ -302,4 +321,5 @@ export const FORM_SCHEMAS: Record<FormType, FormSchema> = {
   product_log_usage: productLogUsage,
   data_production_plan: dataProductionPlan,
   api_usage_plan: apiUsagePlan,
+  productivity_tool: productivityTool,
 };
