@@ -27,5 +27,12 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def can_write_board(self, board_type: str) -> bool:
-        """글쓰기 권한 — 화면 12 (글쓰기 권한 없음) 분기에 사용."""
-        return self.role in ("admin", "editor")
+        """게시판별 글쓰기 권한 — 화면 12 (글쓰기 권한 없음) 분기에 사용.
+
+        정책 게시판은 admin 전용. 제작·활용 프로세스 게시판은 admin·editor 둘 다 가능.
+        """
+        if self.role == "admin":
+            return True
+        if self.role == "editor":
+            return board_type in ("production_process", "usage_process")
+        return False  # viewer
