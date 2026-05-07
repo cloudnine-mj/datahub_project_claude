@@ -14,13 +14,23 @@ const STYLES: Record<Severity, { label: string; cls: string; dot: string }> = {
   },
 };
 
-export function SeverityBadge({ severity }: { severity: Severity | string | null | undefined }) {
+export function SeverityBadge({
+  severity,
+  size = "md",
+}: {
+  severity: Severity | string | null | undefined;
+  size?: "sm" | "md";
+}) {
   if (!severity) return null;
+  const sizeCls =
+    size === "sm" ? "px-1.5 py-0 text-[10px]" : "px-2 py-0.5 text-xs";
   const s = STYLES[severity as Severity];
   // 옛 데이터(예: 'security', 'approval_required', 'reference') 호환 — 회색 fallback
   if (!s) {
     return (
-      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-600">
+      <span
+        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 font-semibold text-gray-600 ${sizeCls}`}
+      >
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
         {String(severity)}
       </span>
@@ -28,7 +38,7 @@ export function SeverityBadge({ severity }: { severity: Severity | string | null
   }
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-semibold ${s.cls}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border font-semibold ${sizeCls} ${s.cls}`}
     >
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
       {s.label}

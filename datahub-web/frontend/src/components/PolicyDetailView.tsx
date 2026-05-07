@@ -194,10 +194,10 @@ export function PolicyDetailView({ postId }: { postId: number }) {
       {post.content && (
         <section className="relative mt-6 rounded-lg border border-gray-200 bg-white p-6">
           {(post.severity || (post.tags ?? []).length > 0) && (
-            <div className="absolute right-4 top-4 flex flex-wrap items-center justify-end gap-1.5 text-[11px]">
-              {post.severity && <SeverityBadge severity={post.severity} />}
+            <div className="absolute right-4 top-4 flex flex-wrap items-center justify-end gap-1 text-[10px]">
+              {post.severity && <SeverityBadge severity={post.severity} size="sm" />}
               {(post.tags ?? []).map((t) => (
-                <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
                   #{t}
                 </span>
               ))}
