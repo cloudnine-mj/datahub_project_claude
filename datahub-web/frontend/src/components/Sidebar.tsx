@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
       { href: "/governance/process/production", label: "데이터 제작 프로세스" },
       { href: "/governance/process/usage", label: "데이터 활용 요청 프로세스" },
       { href: "/governance/forms", label: "데이터 제작 / 활용 신청서 작성" },
+      { href: "/governance/forms/my", label: "내 문서 목록" },
     ],
   },
 ];
@@ -60,13 +61,16 @@ export function Sidebar() {
                 <Icon size={18} />
                 <span>{item.label}</span>
               </Link>
-              {expanded && item.children && (
+              {expanded && item.children && (() => {
+                // 가장 긴 prefix 매치 child 만 active 표시
+                // (예: /governance/forms/my 는 /governance/forms 가 아니라 /governance/forms/my 만 active)
+                const activeChildHref = [...item.children]
+                  .sort((a, b) => b.href.length - a.href.length)
+                  .find((c) => pathname === c.href || pathname.startsWith(c.href + "/"))?.href;
+                return (
                 <ul className="ml-3 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                   {item.children.map((c) => {
-                    const childActive =
-                      pathname === c.href ||
-                      // /governance/policy/[id] 같은 하위 경로도 active 로 간주
-                      pathname.startsWith(c.href + "/");
+                    const childActive = c.href === activeChildHref;
                     return (
                       <li key={c.href}>
                         <Link
@@ -84,7 +88,8 @@ export function Sidebar() {
                     );
                   })}
                 </ul>
-              )}
+                );
+              })()}
             </div>
           );
         })}
