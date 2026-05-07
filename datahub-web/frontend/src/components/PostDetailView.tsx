@@ -46,7 +46,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
                 (isAdmin ? (
                   <Link
                     href={`/governance/${boardSegment(board)}/new?id=${post.id}`}
-                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
                   >
                     <Pencil size={12} /> 수정
                   </Link>
@@ -54,7 +54,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
                   <button
                     type="button"
                     onClick={() => setForbiddenOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
                   >
                     <Pencil size={12} /> 수정
                   </button>

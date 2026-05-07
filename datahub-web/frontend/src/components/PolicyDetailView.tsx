@@ -129,7 +129,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
           {isAdmin ? (
             <Link
               href={`/governance/policy/new?id=${post.id}`}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
             >
               <Pencil size={12} /> 수정
             </Link>
@@ -137,7 +137,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             <button
               type="button"
               onClick={() => setForbiddenOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
             >
               <Pencil size={12} /> 수정
             </button>
