@@ -24,7 +24,8 @@ export function PostNewView({ board }: { board: BoardType }) {
 
   const [me, setMe] = useState<Me | null>(null);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  // 정책 게시판은 카테고리가 '데이터 관리 정책' 으로 고정 — 작성자가 바꿀 수 없음.
+  const [category, setCategory] = useState(isPolicy ? "데이터 관리 정책" : "");
   const [content, setContent] = useState("");
   const [severity, setSeverity] = useState<Severity | "">("");
 
@@ -114,17 +115,26 @@ export function PostNewView({ board }: { board: BoardType }) {
             </Field>
 
             <Field label="카테고리" required>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                className={inputCls}
-              >
-                <option value="">카테고리를 선택하세요</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              {isPolicy ? (
+                <div
+                  className="cursor-not-allowed rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                  title="정책 게시판의 카테고리는 고정값입니다."
+                >
+                  데이터 관리 정책
+                </div>
+              ) : (
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  required
+                  className={inputCls}
+                >
+                  <option value="">카테고리를 선택하세요</option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
             </Field>
 
             {isPolicy && (
