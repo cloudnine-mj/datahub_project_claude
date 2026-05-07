@@ -10,3 +10,14 @@ html, body {
 * {
   box-sizing: border-box;
 }
+
+/* @uiw/react-md-editor 의 read-only 마크다운 뷰가 내부 overflow 를 잡는 것을 해제.
+   페이지 자체 스크롤로 자연스럽게 흐르도록. */
+.wmde-markdown {
+  background: transparent !important;
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+  font-family: inherit !important;
+  color: inherit !important;
+}
