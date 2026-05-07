@@ -18,7 +18,6 @@ import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { SeverityBadge } from "./SeverityBadge";
 import { DeletePostButton } from "./DeletePostButton";
-import { formatDate } from "@/lib/utils";
 
 /**
  * 예시 본문에서 ✅/❌ 같은 선두 이모지 1자만 제거.
@@ -121,8 +120,6 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             {(post.tags ?? []).map((t) => (
               <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">#{t}</span>
             ))}
-            <span className="text-gray-400">갱신: {formatDate(post.updated_at)}</span>
-            <span className="text-gray-400">· {post.author_name}</span>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
