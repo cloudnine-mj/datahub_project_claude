@@ -295,7 +295,7 @@ export function PostNewView({ board }: { board: BoardType }) {
                 />
               </Field>
 
-              <Field label="해야 할 것 — 체크리스트 (action items)" hint="한 줄에 하나씩 입력 — 사용자가 체크하면서 따라가는 항목">
+              <Field label="해야 할 것 — 체크리스트 (action items)" hint="정책 준수에 필요한 확인 사항을 한 줄에 하나씩 입력하세요.">
                 <textarea
                   value={actionItemsText}
                   onChange={(e) => setActionItemsText(e.target.value)}
