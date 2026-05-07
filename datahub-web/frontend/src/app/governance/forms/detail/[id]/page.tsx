@@ -188,5 +188,36 @@ function FieldValue({ field, value }: { field: FieldDef; value: unknown }) {
     return <span>{value ? "✅ 확인 완료" : "확인 필요"}</span>;
   }
 
+  if (field.type === "service_list" && Array.isArray(value)) {
+    const items = (value as string[]).filter((s) => s && s.trim().length > 0);
+    if (items.length === 0) return <span className="text-gray-400">-</span>;
+    return (
+      <ul className="space-y-1">
+        {items.map((s, i) => (
+          <li key={i} className="text-sm">
+            <span className="text-xs text-gray-500">서비스명 {i + 1}</span>
+            <span className="ml-2">{s}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (field.type === "date_range" && value && typeof value === "object") {
+    const v = value as { start?: string; end?: string };
+    if (!v.start && !v.end) return <span className="text-gray-400">-</span>;
+    return (
+      <span>
+        {v.start || "?"} ~ {v.end || "?"}
+      </span>
+    );
+  }
+
+  if (field.type === "currency" && value && typeof value === "object") {
+    const v = value as { kind?: string; custom?: string };
+    if (v.kind === "기타") return <span>기타 ({v.custom || "-"})</span>;
+    return <span>{v.kind || "-"}</span>;
+  }
+
   return <span className="whitespace-pre-wrap">{String(value)}</span>;
 }

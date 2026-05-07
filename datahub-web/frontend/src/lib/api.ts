@@ -100,7 +100,8 @@ export type FormType =
   | "data_purchase"
   | "data_subscription"
   | "product_log_usage"
-  | "data_production_plan";
+  | "data_production_plan"
+  | "api_usage_plan";
 
 export interface FormListItem {
   id: number;

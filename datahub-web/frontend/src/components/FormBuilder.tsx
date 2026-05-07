@@ -59,6 +59,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       if (v === undefined || v === null) return false;
       if (typeof v === "string") return v.trim().length > 0;
       if (typeof v === "boolean") return v === true;
+      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().length > 0);
+      if (typeof v === "object") return Object.values(v).some((x) => typeof x === "string" && x.trim().length > 0);
       return true;
     }).length;
     const filledSubmitter = [submitterName, submitterDepartment, submitterEmail]
@@ -505,6 +507,35 @@ function FieldInput({
           />
         </div>
       );
+    case "service_list":
+      return (
+        <ServiceListField
+          value={Array.isArray(value) ? (value as string[]) : []}
+          onChange={(v) => onChange(v)}
+          placeholder={field.placeholder}
+        />
+      );
+    case "date_range": {
+      const v = (value as { start?: string; end?: string }) ?? {};
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <DateField value={v.start ?? ""} onChange={(s) => onChange({ ...v, start: s })} />
+          </div>
+          <span className="shrink-0 text-sm text-gray-400">~</span>
+          <div className="flex-1">
+            <DateField value={v.end ?? ""} onChange={(s) => onChange({ ...v, end: s })} />
+          </div>
+        </div>
+      );
+    }
+    case "currency":
+      return (
+        <CurrencyField
+          value={(value as { kind?: string; custom?: string }) ?? {}}
+          onChange={(v) => onChange(v)}
+        />
+      );
     default:
       return (
         <input
@@ -612,6 +643,114 @@ function FieldHint({ field }: { field: FieldDef }) {
     <div className="mt-1.5">
       {field.hint && <p className="text-xs font-semibold text-gray-500">{field.hint}</p>}
       {link && <div className="mt-1 text-xs">{link} ↗</div>}
+    </div>
+  );
+}
+
+/**
+ * 동적 서비스명 리스트 — '+ 서비스 추가' 로 row 추가, X 로 제거.
+ * 빈 row 도 항상 1개는 유지 (사용자가 입력할 자리).
+ */
+function ServiceListField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const list = value.length > 0 ? value : [""];
+
+  function update(idx: number, v: string) {
+    const next = [...list];
+    next[idx] = v;
+    onChange(next);
+  }
+
+  function add() {
+    onChange([...list, ""]);
+  }
+
+  function remove(idx: number) {
+    if (list.length <= 1) {
+      onChange([""]);
+      return;
+    }
+    onChange(list.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="space-y-2">
+      {list.map((v, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="w-16 shrink-0 text-xs text-gray-500">서비스명 {i + 1}</span>
+          <input
+            type="text"
+            value={v}
+            onChange={(e) => update(i, e.target.value)}
+            placeholder={placeholder}
+            className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          />
+          {i === list.length - 1 ? (
+            <button
+              type="button"
+              onClick={add}
+              className="shrink-0 rounded-md border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              + 서비스 추가
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              aria-label="서비스 제거"
+              className="shrink-0 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * 결제 통화 — USD / KRW / 기타 라디오.
+ * 기타 선택 시 옆에 직접 입력 input 활성화.
+ */
+function CurrencyField({
+  value,
+  onChange,
+}: {
+  value: { kind?: string; custom?: string };
+  onChange: (next: { kind?: string; custom?: string }) => void;
+}) {
+  const kind = value.kind ?? "";
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      {(["USD", "KRW", "기타"] as const).map((opt) => (
+        <label key={opt} className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="currency"
+            value={opt}
+            checked={kind === opt}
+            onChange={() => onChange({ ...value, kind: opt })}
+            className="text-brand focus:ring-brand"
+          />
+          {opt}
+        </label>
+      ))}
+      <input
+        type="text"
+        value={value.custom ?? ""}
+        onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value })}
+        placeholder="직접 입력"
+        disabled={kind !== "기타"}
+        className="w-32 rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+      />
     </div>
   );
 }

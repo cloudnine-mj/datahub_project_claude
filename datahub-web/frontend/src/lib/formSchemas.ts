@@ -7,7 +7,20 @@
 
 import type { FormType } from "./api";
 
-export type FieldType = "text" | "textarea" | "date" | "number" | "select" | "radio" | "checkbox";
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "date"
+  | "number"
+  | "select"
+  | "radio"
+  | "checkbox"
+  /** API 활용 계획서 — 동적 서비스명 리스트 (+서비스 추가) */
+  | "service_list"
+  /** API 활용 계획서 — 시작일 ~ 종료일 한 행 입력 */
+  | "date_range"
+  /** API 활용 계획서 — USD/KRW/기타(+직접 입력) */
+  | "currency";
 
 export interface FieldDef {
   key: string;
@@ -232,10 +245,62 @@ const dataProductionPlan: FormSchema = {
   ],
 };
 
+// API 활용 계획서 — 외부 API/SaaS 사용 품의용
+const apiUsagePlan: FormSchema = {
+  type: "api_usage_plan",
+  label: "API 활용 계획서",
+  description: "외부 API / SaaS (Claude API, Notion AI 등) 사용을 사전 품의할 때",
+  projectField: "관련_프로젝트",
+  sections: [
+    {
+      title: "신청 정보",
+      fields: [
+        {
+          key: "관련_프로젝트",
+          label: "항목 연관 프로젝트",
+          type: "text",
+          placeholder: "예: 2024 고객 행동 분석 플랫폼 구축",
+          required: true,
+        },
+        {
+          key: "API_사용_목적",
+          label: "API 사용 목적",
+          type: "textarea",
+          placeholder: "예: LLM 기반 리포트 자동 생성 및 데이터 분석 워크플로우 효율화",
+          required: true,
+        },
+        {
+          key: "서비스_목록",
+          label: "서비스명",
+          type: "service_list",
+          placeholder: "예: Claude API",
+        },
+        {
+          key: "사용_기간",
+          label: "사용 기간",
+          type: "date_range",
+        },
+        {
+          key: "결제_통화",
+          label: "결제 통화",
+          type: "currency",
+        },
+        {
+          key: "총_예상_비용",
+          label: "총 예상 비용",
+          type: "text",
+          placeholder: "총 예상 비용을 입력하세요",
+        },
+      ],
+    },
+  ],
+};
+
 export const FORM_SCHEMAS: Record<FormType, FormSchema> = {
   data_production: dataProduction,
   data_purchase: dataPurchase,
   data_subscription: dataSubscription,
   product_log_usage: productLogUsage,
   data_production_plan: dataProductionPlan,
+  api_usage_plan: apiUsagePlan,
 };
