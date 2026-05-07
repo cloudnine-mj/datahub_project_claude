@@ -11,6 +11,19 @@ html, body {
   box-sizing: border-box;
 }
 
-/* Toast UI Editor — 페이지 흐름과 충돌 방지. 컨테이너 자체 height 는 prop 으로
-   지정되니 그대로 두되, viewer 영역의 색·배경만 부모에 맞춤. */
+/* Toast UI Editor / Viewer 본문 — 페이지 폰트·색상에 맞춤 */
 .toastui-editor-contents { font-family: inherit; color: inherit; }
+
+/* 표 헤더 — Toast UI 기본 테마는 진한 회색이라 GitHub 스타일 옅은 회색으로 변경 */
+.toastui-editor-contents table th {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  font-weight: 600 !important;
+  border: 1px solid #e5e7eb !important;
+}
+.toastui-editor-contents table td {
+  border: 1px solid #e5e7eb !important;
+}
+.toastui-editor-contents table tr:nth-child(even) td {
+  background: #fafafa;
+}
