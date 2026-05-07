@@ -281,7 +281,7 @@ def _compute_total_cost(cost_str: str, count: int, currency_kind: str | None) ->
     if currency_kind == "USD":
         return f"${formatted}"
     if currency_kind == "KRW":
-        return f"{formatted}원"
+        return f"₩{formatted}"
     return formatted
 
 

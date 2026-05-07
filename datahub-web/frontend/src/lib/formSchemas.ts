@@ -299,7 +299,7 @@ const apiUsagePlan: FormSchema = {
           label: "총 예상 비용",
           type: "amount_with_currency",
           currencyKey: "결제_통화",
-          placeholder: "총 예상 비용을 입력하세요",
+          placeholder: "예: 5,000",
         },
       ],
     },

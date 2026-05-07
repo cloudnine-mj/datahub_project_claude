@@ -1054,20 +1054,18 @@ function AmountWithCurrencyInput({
 }) {
   const kind = currency?.kind;
   let prefix: string | null = null;
-  let suffix: string | null = null;
   if (kind === "USD") prefix = "$";
-  else if (kind === "KRW") suffix = "원";
-  else if (kind === "기타" && currency?.custom?.trim()) suffix = currency.custom.trim();
+  else if (kind === "KRW") prefix = "₩";
+  else if (kind === "기타" && currency?.custom?.trim()) prefix = currency.custom.trim();
 
   const base =
     "w-full rounded-md border border-gray-200 py-2 text-sm focus:border-brand focus:outline-none";
-  const padX =
-    (prefix ? "pl-7 " : "pl-3 ") + (suffix ? "pr-12" : "pr-3");
+  const padX = (prefix ? "pl-8 " : "pl-3 ") + "pr-3";
 
   return (
     <div className="relative">
       {prefix && (
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 max-w-[60px] truncate text-sm text-gray-500">
           {prefix}
         </span>
       )}
@@ -1078,11 +1076,6 @@ function AmountWithCurrencyInput({
         placeholder={placeholder}
         className={`${base} ${padX}`}
       />
-      {suffix && (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 max-w-[80px] truncate text-sm text-gray-500">
-          {suffix}
-        </span>
-      )}
     </div>
   );
 }
@@ -1162,7 +1155,7 @@ function computeTotal(costStr: string, count: number, currencyKind?: string): st
   const total = Math.round(n * count);
   const formatted = total.toLocaleString();
   if (currencyKind === "USD") return `$${formatted}`;
-  if (currencyKind === "KRW") return `${formatted}원`;
+  if (currencyKind === "KRW") return `₩${formatted}`;
   return formatted;
 }
 
