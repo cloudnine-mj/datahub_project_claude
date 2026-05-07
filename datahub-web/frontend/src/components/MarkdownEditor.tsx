@@ -71,6 +71,26 @@ export function MarkdownEditor({ value, onChange, height = 400, placeholder }: P
     },
   };
 
+  // 툴바 표 삽입 — 3행 3열 기본 템플릿을 커서 위치에 삽입
+  const tableCommand: ICommand = {
+    name: "table",
+    keyCommand: "table",
+    buttonProps: { "aria-label": "표 삽입", title: "표 삽입 (3×3)" },
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 20 20">
+        <path
+          fill="currentColor"
+          d="M3 4h14v12H3V4zm1 1v3h4V5H4zm5 0v3h4V5H9zm5 0v3h3V5h-3zM4 9v3h4V9H4zm5 0v3h4V9H9zm5 0v3h3V9h-3zM4 13v2h4v-2H4zm5 0v2h4v-2H9zm5 0v2h3v-2h-3z"
+        />
+      </svg>
+    ),
+    execute: (_state, api) => {
+      const tableMd =
+        "\n| 헤더 1 | 헤더 2 | 헤더 3 |\n| --- | --- | --- |\n| 셀 1 | 셀 2 | 셀 3 |\n| 셀 4 | 셀 5 | 셀 6 |\n";
+      api.replaceSelection(tableMd);
+    },
+  };
+
   // 붙여넣기/드롭 이벤트에서 이미지 추출 — onPaste/onDrop 가 wrapping div 에 걸린다.
   function onPaste(e: React.ClipboardEvent<HTMLDivElement>) {
     const items = e.clipboardData.items;
@@ -114,6 +134,7 @@ export function MarkdownEditor({ value, onChange, height = 400, placeholder }: P
           commands.code,
           commands.codeBlock,
           imageCommand,
+          tableCommand,
           commands.unorderedListCommand,
           commands.orderedListCommand,
           commands.checkedListCommand,
