@@ -88,29 +88,3 @@ export const POLICY_EXAMPLES: Record<Severity, PolicyExample> = {
 
 /** 후방 호환 — 단일 예시가 필요한 곳에서 사용 (기본은 필수). */
 export const POLICY_EXAMPLE: PolicyExample = REQUIRED_EXAMPLE;
-
-/**
- * 정책 작성 템플릿 — '템플릿 사용' 버튼 클릭 시 폼에 자동으로 불러오는 골격.
- * 모든 필드에 `[ ]` 형식의 placeholder 가 들어가 있어 작성자가 자리를 채워 가면 됨.
- */
-export const POLICY_TEMPLATE = {
-  title: "[정책 이름을 입력하세요]",
-  category: "데이터 관리 정책",
-  summary: "[한 문장으로 무엇에 관한 정책인지 설명하세요]",
-  tags: [] as string[],
-  applies_to: "[누가 이 정책을 따라야 하는지 명시하세요]",
-  tldr:
-    "[2-3 문장으로 핵심 내용을 요약하세요. 정책의 목적과 가장 중요한 요구사항을 포함하세요.]",
-  action_items: [
-    "[구체적 행동 1 — 무엇을 해야 하는지 동사로 시작]",
-    "[구체적 행동 2]",
-    "[구체적 행동 3]",
-  ],
-  content:
-    "1. 적용 대상\n[누가 이 정책의 영향을 받는지 명시]\n\n" +
-    "2. 절차 / 요구사항\n[단계별 구체적 행동을 번호 매겨 나열]\n\n" +
-    "3. 예외 / 추가 안내\n[특수 케이스, FAQ, 참고할 다른 정책 등]",
-  examples:
-    "올바른 사례\n- [올바른 행동의 구체적 사례]\n\n" +
-    "주의 사례\n- [피해야 할 행동의 구체적 사례]",
-};
