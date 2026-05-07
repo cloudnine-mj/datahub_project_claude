@@ -207,18 +207,14 @@ export function PostNewView({ board }: { board: BoardType }) {
             <Field
               label="내용"
               required
-              hint={isPolicy ? "마크다운 지원 — 헤딩(##), 목록(-), 표(| | |), 굵게(**), 코드(``)" : undefined}
+              hint={isPolicy ? "마크다운 지원" : undefined}
             >
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
                 rows={isPolicy ? 16 : 8}
-                placeholder={
-                  isPolicy
-                    ? "마크다운으로 자유롭게 작성하세요.\n\n## 정책 개요\n\n- 적용 대상\n- 주요 원칙"
-                    : "내용을 입력하세요"
-                }
+                placeholder={isPolicy ? "" : "내용을 입력하세요"}
                 className={inputCls + (isPolicy ? " font-mono" : "")}
               />
             </Field>
