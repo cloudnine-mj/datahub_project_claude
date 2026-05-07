@@ -169,10 +169,11 @@ export function PostNewView({ board }: { board: BoardType }) {
               />
             </Field>
 
-            <Field label="카테고리">
+            <Field label="카테고리" required>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                required
                 className={inputCls}
               >
                 <option value="">카테고리를 선택하세요</option>
