@@ -27,6 +27,8 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
   const [severity, setSeverity] = useState<Severity | "">("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagDraft, setTagDraft] = useState(""); // 입력 중인 태그 텍스트
 
   // 파일 첨부 (글 등록 후 순차 업로드)
   const [files, setFiles] = useState<File[]>([]);
@@ -73,7 +75,10 @@ export function PostNewView({ board }: { board: BoardType }) {
         title,
         category: category || undefined,
         content,
-        ...(isPolicy && { severity: severity || null }),
+        ...(isPolicy && {
+          severity: severity || null,
+          tags: tags.length > 0 ? tags : null,
+        }),
       });
 
       // 게시글 생성 후 파일 순차 업로드 — 일부 실패해도 계속 시도
@@ -151,6 +156,12 @@ export function PostNewView({ board }: { board: BoardType }) {
                     </button>
                   ))}
                 </div>
+              </Field>
+            )}
+
+            {isPolicy && (
+              <Field label="태그">
+                <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
               </Field>
             )}
 
@@ -304,6 +315,75 @@ function Field({
         {hint && <span className="text-xs text-gray-400">{hint}</span>}
       </label>
       {children}
+    </div>
+  );
+}
+
+/**
+ * 태그 입력 — Enter/콤마로 새 태그 추가, 칩 X 로 제거.
+ * Backspace 누르면 마지막 태그 제거 (입력 중 텍스트가 비어있을 때만).
+ */
+function TagInput({
+  value,
+  onChange,
+  draft,
+  onDraft,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  draft: string;
+  onDraft: (s: string) => void;
+}) {
+  function commit() {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    if (value.includes(trimmed)) {
+      onDraft("");
+      return;
+    }
+    onChange([...value, trimmed]);
+    onDraft("");
+  }
+
+  function remove(idx: number) {
+    onChange(value.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1.5 focus-within:border-brand">
+      {value.map((t, i) => (
+        <span
+          key={`${t}-${i}`}
+          className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+        >
+          #{t}
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            className="rounded text-gray-400 hover:bg-gray-200 hover:text-red-500"
+            aria-label="태그 제거"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => onDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commit();
+          } else if (e.key === "Backspace" && draft === "" && value.length > 0) {
+            e.preventDefault();
+            remove(value.length - 1);
+          }
+        }}
+        onBlur={commit}
+        placeholder={value.length === 0 ? "태그를 입력하고 Enter (예: 보안)" : ""}
+        className="min-w-[120px] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0"
+      />
     </div>
   );
 }
