@@ -43,7 +43,12 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
               />
             )}
           </div>
-          <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+            {post.doc_no && (
+              <span className="rounded bg-blue-50 px-2 py-0.5 font-mono text-blue-700">
+                {post.doc_no}
+              </span>
+            )}
             {post.category && (
               <span className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">{post.category}</span>
             )}

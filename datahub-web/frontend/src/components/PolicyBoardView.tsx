@@ -56,7 +56,13 @@ export function PolicyBoardView() {
 
       // 2) 검색
       if (!q) return true;
-      const haystack = [p.title, p.summary ?? "", (p.tags ?? []).join(" "), p.applies_to ?? ""]
+      const haystack = [
+        p.title,
+        p.doc_no ?? "",
+        p.summary ?? "",
+        (p.tags ?? []).join(" "),
+        p.applies_to ?? "",
+      ]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
@@ -115,7 +121,7 @@ export function PolicyBoardView() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="제목, 설명, 태그, 적용 대상으로 검색"
+            placeholder="관리 번호, 제목, 설명, 태그로 검색"
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
@@ -177,6 +183,11 @@ export function PolicyBoardView() {
                       href={`/governance/policy/${p.id}`}
                       className="font-medium text-gray-900 hover:text-brand"
                     >
+                      {p.doc_no && (
+                        <span className="mr-2 rounded bg-blue-50 px-1.5 py-0.5 font-mono text-xs text-blue-700">
+                          {p.doc_no}
+                        </span>
+                      )}
                       {p.title}
                     </Link>
                     {p.summary && (

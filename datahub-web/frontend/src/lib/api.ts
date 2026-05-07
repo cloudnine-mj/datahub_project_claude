@@ -81,6 +81,7 @@ export interface PolicyMeta {
 export interface PostListItem extends PolicyMeta {
   id: number;
   title: string;
+  doc_no: string | null;
   category: string | null;
   created_at: string;
   updated_at: string;
@@ -138,7 +139,12 @@ export const api = {
   getPost: (board: BoardType, id: number) => request<PostDetail>(`/boards/${board}/posts/${id}`),
   createPost: (
     board: BoardType,
-    body: { title: string; category?: string; content: string } & Partial<PolicyMeta>,
+    body: {
+      title: string;
+      doc_no?: string | null;
+      category?: string;
+      content: string;
+    } & Partial<PolicyMeta>,
   ) =>
     request<PostDetail>(`/boards/${board}/posts`, {
       method: "POST",

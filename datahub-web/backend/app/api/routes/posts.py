@@ -69,6 +69,7 @@ def create_post(
     post = Post(
         board_type=board_type,
         title=payload.title,
+        doc_no=payload.doc_no,
         category=payload.category,
         content=payload.content,
         author_id=user.id,

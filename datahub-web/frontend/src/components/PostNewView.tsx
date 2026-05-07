@@ -24,6 +24,7 @@ export function PostNewView({ board }: { board: BoardType }) {
 
   const [me, setMe] = useState<Me | null>(null);
   const [title, setTitle] = useState("");
+  const [docNo, setDocNo] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
   const [severity, setSeverity] = useState<Severity | "">("");
@@ -73,6 +74,7 @@ export function PostNewView({ board }: { board: BoardType }) {
       setProgress("게시글 저장 중...");
       const post = await api.createPost(board, {
         title,
+        doc_no: docNo.trim() || null,
         category: category || undefined,
         content,
         ...(isPolicy && {
@@ -114,6 +116,16 @@ export function PostNewView({ board }: { board: BoardType }) {
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="제목을 입력하세요"
+                className={inputCls}
+              />
+            </Field>
+
+            <Field label="관리 번호" hint="문서 식별용 번호 (예: POL-2026-001)">
+              <input
+                value={docNo}
+                onChange={(e) => setDocNo(e.target.value)}
+                placeholder="관리 번호를 입력하세요 (선택)"
+                maxLength={50}
                 className={inputCls}
               />
             </Field>

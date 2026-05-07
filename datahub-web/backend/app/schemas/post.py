@@ -15,6 +15,7 @@ class PostAttachmentOut(BaseModel):
 
 class PostCreate(BaseModel):
     title: str = Field(min_length=1, max_length=300)
+    doc_no: str | None = Field(default=None, max_length=50)
     category: str | None = None
     content: str = ""
 
@@ -30,6 +31,7 @@ class PostCreate(BaseModel):
 
 class PostUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=300)
+    doc_no: str | None = Field(default=None, max_length=50)
     category: str | None = None
     content: str | None = None
     summary: str | None = None
@@ -51,6 +53,7 @@ class PostListItem(BaseModel):
 
     id: int
     title: str
+    doc_no: str | None = None
     category: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -67,6 +70,7 @@ class PostDetail(BaseModel):
     id: int
     board_type: str
     title: str
+    doc_no: str | None = None
     category: str | None
     content: str
     author_name: str
