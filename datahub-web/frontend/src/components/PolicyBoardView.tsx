@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색 + 컬럼 토글.
- * 사용자가 첨부한 자문 목록 화면 패턴을 차용.
+ * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색 + 중요도 필터.
+ *
+ * 컬럼은 항상 전체 표시. 우측 상단 드롭다운은 '중요도(필수/권장/미지정)' 로
+ * row 를 필터링.
  */
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Search } from "lucide-react";
-import { api, type Me, type PostListItem } from "@/lib/api";
+import { api, type Me, type PostListItem, type Severity } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { SeverityBadge } from "./SeverityBadge";
 import { EmptyState } from "./EmptyState";
@@ -16,18 +18,13 @@ import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
-// 표시 가능한 컬럼 정의 — 정책명은 필수(숨길 수 없음).
-// 카테고리는 정책 페이지에서 의미가 없어 제외 (작성 폼에서도 노출하지 않음).
-const COLUMNS = [
-  { key: "title", label: "정책명", required: true },
-  { key: "author", label: "작성자" },
-  { key: "created_at", label: "등록일" },
-  { key: "updated_at", label: "수정일" },
-  { key: "severity", label: "중요도" },
-  { key: "tags", label: "태그" },
-] as const;
-
-type ColumnKey = (typeof COLUMNS)[number]["key"];
+// 중요도 필터 옵션 — 'unspecified' 는 severity 가 null/빈값인 row 매칭.
+type SeverityFilterKey = Severity | "unspecified";
+const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
+  { key: "required", label: "필수" },
+  { key: "recommended", label: "권장" },
+  { key: "unspecified", label: "미지정" },
+];
 
 export function PolicyBoardView() {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
@@ -36,11 +33,10 @@ export function PolicyBoardView() {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1); // 1-based
 
-  // 컬럼 토글 — 기본은 전체 표시
-  const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(
-    () => new Set(COLUMNS.map((c) => c.key)),
+  // 중요도 필터 — 기본은 전체 선택
+  const [severityFilter, setSeverityFilter] = useState<Set<SeverityFilterKey>>(
+    () => new Set(SEVERITY_FILTERS.map((f) => f.key)),
   );
-  const isVisible = (k: ColumnKey) => visibleCols.has(k);
 
   useEffect(() => {
     api.listPosts("policy").then(setPosts).catch(() => setPosts([]));
@@ -49,23 +45,28 @@ export function PolicyBoardView() {
 
   const canWrite = me?.permissions.can_write_policy ?? false;
 
-  // 검색 필터링 (제목·설명·태그·적용 대상). 클라이언트 사이드.
+  // 검색 + 중요도 필터 (클라이언트 사이드)
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
-    if (!q) return posts;
     return posts.filter((p) => {
+      // 1) 중요도 필터
+      const sevKey: SeverityFilterKey = (p.severity as Severity) || "unspecified";
+      if (!severityFilter.has(sevKey)) return false;
+
+      // 2) 검색
+      if (!q) return true;
       const haystack = [p.title, p.summary ?? "", (p.tags ?? []).join(" "), p.applies_to ?? ""]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, query]);
+  }, [posts, query, severityFilter]);
 
-  // 검색·페이지 크기 바뀔 때 1페이지로 리셋
+  // 검색·페이지 크기·필터 바뀔 때 1페이지로 리셋
   useEffect(() => {
     setPage(1);
-  }, [query, pageSize]);
+  }, [query, pageSize, severityFilter]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -119,7 +120,7 @@ export function PolicyBoardView() {
           />
         </div>
 
-        <ColumnToggle visible={visibleCols} onChange={setVisibleCols} />
+        <SeverityFilterDropdown selected={severityFilter} onChange={setSeverityFilter} />
 
         {canWrite ? (
           <Link
@@ -138,31 +139,31 @@ export function PolicyBoardView() {
         )}
       </div>
 
-      {/* 표 */}
+      {/* 표 — 컬럼은 항상 전체 표시 */}
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-xs font-medium text-gray-500">
             <tr>
-              {isVisible("title") && <th className="px-5 py-3">정책명</th>}
-              {isVisible("author") && <th className="w-32 px-5 py-3">작성자</th>}
-              {isVisible("created_at") && <th className="w-32 px-5 py-3">등록일</th>}
-              {isVisible("updated_at") && <th className="w-32 px-5 py-3">수정일</th>}
-              {isVisible("severity") && <th className="w-32 px-5 py-3">중요도</th>}
-              {isVisible("tags") && <th className="w-48 px-5 py-3">태그</th>}
+              <th className="px-5 py-3">정책명</th>
+              <th className="w-32 px-5 py-3">작성자</th>
+              <th className="w-32 px-5 py-3">등록일</th>
+              <th className="w-32 px-5 py-3">수정일</th>
+              <th className="w-32 px-5 py-3">중요도</th>
+              <th className="w-48 px-5 py-3">태그</th>
             </tr>
           </thead>
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={visibleCols.size} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
+                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={visibleCols.size}>
+                <td colSpan={6}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
-                        ? "검색 결과가 없습니다. 다른 키워드로 다시 시도해 보세요."
+                        ? "필터·검색 결과가 없습니다."
                         : "등록된 정책이 없습니다 — 곧 추가될 예정입니다."
                     }
                   />
@@ -171,58 +172,46 @@ export function PolicyBoardView() {
             ) : (
               pageItems.map((p) => (
                 <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
-                  {isVisible("title") && (
-                    <td className="px-5 py-3">
-                      <Link
-                        href={`/governance/policy/${p.id}`}
-                        className="font-medium text-gray-900 hover:text-brand"
-                      >
-                        {p.title}
-                      </Link>
-                      {p.summary && (
-                        <div className="mt-0.5 truncate text-xs text-gray-500">{p.summary}</div>
-                      )}
-                    </td>
-                  )}
-                  {isVisible("author") && (
-                    <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
-                  )}
-                  {isVisible("created_at") && (
-                    <td className="px-5 py-3 text-gray-500">{formatDate(p.created_at)}</td>
-                  )}
-                  {isVisible("updated_at") && (
-                    <td className="px-5 py-3 text-gray-500">{formatDate(p.updated_at)}</td>
-                  )}
-                  {isVisible("severity") && (
-                    <td className="px-5 py-3">
-                      {p.severity ? (
-                        <SeverityBadge severity={p.severity} />
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                          미지정
-                        </span>
-                      )}
-                    </td>
-                  )}
-                  {isVisible("tags") && (
-                    <td className="px-5 py-3">
-                      {(p.tags ?? []).length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {(p.tags ?? []).slice(0, 3).map((t) => (
-                            <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                              #{t}
-                            </span>
-                          ))}
-                          {(p.tags ?? []).length > 3 && (
-                            <span className="text-xs text-gray-400">+{(p.tags ?? []).length - 3}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
-                  )}
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/governance/policy/${p.id}`}
+                      className="font-medium text-gray-900 hover:text-brand"
+                    >
+                      {p.title}
+                    </Link>
+                    {p.summary && (
+                      <div className="mt-0.5 truncate text-xs text-gray-500">{p.summary}</div>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
+                  <td className="px-5 py-3 text-gray-500">{formatDate(p.created_at)}</td>
+                  <td className="px-5 py-3 text-gray-500">{formatDate(p.updated_at)}</td>
+                  <td className="px-5 py-3">
+                    {p.severity ? (
+                      <SeverityBadge severity={p.severity} />
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
+                        미지정
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    {(p.tags ?? []).length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {(p.tags ?? []).slice(0, 3).map((t) => (
+                          <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                            #{t}
+                          </span>
+                        ))}
+                        {(p.tags ?? []).length > 3 && (
+                          <span className="text-xs text-gray-400">+{(p.tags ?? []).length - 3}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
@@ -252,7 +241,6 @@ function Pagination({
 }) {
   if (totalPages <= 1) return null;
 
-  // 표시할 페이지 번호 — 현재 페이지 주변 + 처음/끝
   const pages: (number | "...")[] = [];
   const window = 1;
   pages.push(1);
@@ -305,21 +293,19 @@ function Pagination({
 }
 
 /**
- * 컬럼 숨김/표시 드롭다운.
- * 버튼에 현재 표시 중인 컬럼들을 콤마로 나열, 클릭 시 패널 열림.
- * 외부 클릭으로 자동 닫힘.
+ * 중요도 필터 드롭다운 — 체크된 severity 만 row 로 표시.
+ * 외부 클릭 자동 닫힘. 전체 체크 시 모든 row 표시 (필터 비활성과 동일).
  */
-function ColumnToggle({
-  visible,
+function SeverityFilterDropdown({
+  selected,
   onChange,
 }: {
-  visible: Set<ColumnKey>;
-  onChange: (next: Set<ColumnKey>) => void;
+  selected: Set<SeverityFilterKey>;
+  onChange: (next: Set<SeverityFilterKey>) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // 바깥 클릭 → 닫기
   useEffect(() => {
     if (!open) return;
     function onClickOutside(e: MouseEvent) {
@@ -329,25 +315,22 @@ function ColumnToggle({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  function toggle(key: ColumnKey) {
-    const col = COLUMNS.find((c) => c.key === key);
-    // required 컬럼(정책명) 은 끌 수 없음
-    if ("required" in (col ?? {}) && (col as { required?: boolean }).required) return;
-    const next = new Set(visible);
+  function toggle(key: SeverityFilterKey) {
+    const next = new Set(selected);
     if (next.has(key)) next.delete(key);
     else next.add(key);
     onChange(next);
   }
 
   function selectAll() {
-    onChange(new Set(COLUMNS.map((c) => c.key)));
+    onChange(new Set(SEVERITY_FILTERS.map((f) => f.key)));
   }
 
-  // 버튼 라벨 — 표시 중 컬럼 라벨을 콤마로 (정책명 제외 — 항상 켜져있어 노이즈)
-  const summary = COLUMNS
-    .filter((c) => !("required" in c && c.required) && visible.has(c.key))
-    .map((c) => c.label)
-    .join(", ") || "컬럼 선택";
+  // 버튼 라벨
+  const isAll = selected.size === SEVERITY_FILTERS.length;
+  const summary = isAll
+    ? "중요도: 전체"
+    : "중요도: " + SEVERITY_FILTERS.filter((f) => selected.has(f.key)).map((f) => f.label).join(", ") || "중요도: 없음";
 
   return (
     <div ref={ref} className="relative">
@@ -361,9 +344,9 @@ function ColumnToggle({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-bold text-gray-700">컬럼 숨김/표시</span>
+            <span className="text-xs font-bold text-gray-700">중요도 필터</span>
             <button
               type="button"
               onClick={selectAll}
@@ -373,25 +356,22 @@ function ColumnToggle({
             </button>
           </div>
           <ul>
-            {COLUMNS.map((c) => {
-              const checked = visible.has(c.key);
-              const isRequired = "required" in c && c.required;
+            {SEVERITY_FILTERS.map((f) => {
+              const checked = selected.has(f.key);
               return (
-                <li key={c.key}>
+                <li key={f.key}>
                   <label
                     className={
                       "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
-                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50") +
-                      (isRequired ? " cursor-not-allowed opacity-70" : "")
+                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
                     }
                   >
-                    <span>{c.label}</span>
+                    <span>{f.label}</span>
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() => toggle(c.key)}
-                      disabled={isRequired}
-                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500 disabled:opacity-50"
+                      onChange={() => toggle(f.key)}
+                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
                     />
                   </label>
                 </li>
