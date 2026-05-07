@@ -11,8 +11,9 @@
  * 메타필드가 비어있으면 해당 섹션은 자동으로 사라짐 — 단순 게시글에도 호환.
  */
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2, FileText, Lightbulb, Users } from "lucide-react";
+import { CheckCircle2, FileText, Lightbulb, Lock, Pencil, Users, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { SeverityBadge } from "./SeverityBadge";
@@ -85,6 +86,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
+  const [forbiddenOpen, setForbiddenOpen] = useState(false);
 
   useEffect(() => {
     api.getPost("policy", postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -96,6 +98,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
 
   // 삭제 권한: admin 이거나 작성자 본인. 백엔드도 동일하게 검증함.
   const canDelete = !!me && (me.user.role === "admin" || me.user.name === post.author_name);
+  const isAdmin = me?.user.role === "admin";
 
   const items = post.action_items ?? [];
   const doneCount = Object.values(checked).filter(Boolean).length;
@@ -122,9 +125,27 @@ export function PolicyDetailView({ postId }: { postId: number }) {
 
       <div className="mt-2 flex items-start justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
-        {canDelete && (
-          <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
-        )}
+        <div className="flex items-center gap-1.5">
+          {isAdmin ? (
+            <Link
+              href={`/governance/policy/new?id=${post.id}`}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+            >
+              <Pencil size={12} /> 수정
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setForbiddenOpen(true)}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
+            >
+              <Pencil size={12} /> 수정
+            </button>
+          )}
+          {canDelete && (
+            <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
+          )}
+        </div>
       </div>
       {post.summary && <p className="mt-2 text-base text-gray-600">{post.summary}</p>}
 
@@ -207,6 +228,47 @@ export function PolicyDetailView({ postId }: { postId: number }) {
       )}
 
       {/* 본문 렌더 끝 */}
+
+      {forbiddenOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setForbiddenOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-red-50 text-red-500">
+                  <Lock size={18} />
+                </span>
+                <h3 className="text-base font-bold">수정 권한 없음</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForbiddenOpen(false)}
+                aria-label="닫기"
+                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              데이터 관리 정책 문서는 <strong className="font-semibold text-gray-800">관리자</strong>만 수정할 수 있습니다. 수정이 필요하면 거버넌스 관리자에게 요청해 주세요.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setForbiddenOpen(false)}
+                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 첨부 */}
       {post.attachments.length > 0 && (
