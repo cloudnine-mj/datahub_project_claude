@@ -528,7 +528,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
               <strong className="font-semibold text-gray-800">&apos;{missingField.label}&apos;</strong> 항목을 입력해주세요.
               {!missingField.blocking && (
                 <span className="mt-1 block text-xs text-gray-500">
-                  비워둔 채로 저장하면 임시저장 상태로 보관됩니다. 제출 시 다시 채워야 합니다.
+                  비워둔 채로 저장하면 임시저장 상태로 보관됩니다.
                 </span>
               )}
             </p>
