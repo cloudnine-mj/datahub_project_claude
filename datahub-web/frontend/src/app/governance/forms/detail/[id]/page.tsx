@@ -146,7 +146,7 @@ export default function Page({ params }: { params: { id: string } }) {
         >
           <Pencil size={12} /> 수정
         </button>
-        {form.status === "draft" ? (
+        {form.status === "draft" && (
           <button
             type="button"
             onClick={submitDraft}
@@ -155,13 +155,6 @@ export default function Page({ params }: { params: { id: string } }) {
           >
             <Send size={12} /> {submitting ? "제출 중..." : "제출"}
           </button>
-        ) : (
-          <a
-            href={api.exportFormUrl(form.id)}
-            className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
-          >
-            📄 Excel Export
-          </a>
         )}
       </div>
     </div>
