@@ -202,16 +202,25 @@ export function PostNewView({ board }: { board: BoardType }) {
 
             {isPolicy && (
               <Field label="중요도">
-                <select
-                  value={severity}
-                  onChange={(e) => setSeverity(e.target.value as Severity | "")}
-                  className={inputCls}
-                >
-                  <option value="">미지정</option>
+                <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
+                  <button
+                    type="button"
+                    onClick={() => setSeverity("")}
+                    className={severityChipCls("none", severity === "")}
+                  >
+                    미지정
+                  </button>
                   {SEVERITIES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setSeverity(s.value)}
+                      className={severityChipCls(s.value, severity === s.value)}
+                    >
+                      {s.label}
+                    </button>
                   ))}
-                </select>
+                </div>
               </Field>
             )}
 
@@ -344,6 +353,20 @@ function chipCls(active: boolean) {
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
   );
+}
+
+/**
+ * severity 칩 색상 — SeverityBadge 4단계 (Low/Medium/High/Critical) 와 일관.
+ * 미지정 (none) 은 회색.
+ */
+function severityChipCls(kind: "none" | Severity, active: boolean) {
+  const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
+  if (!active) return base + "text-gray-600 hover:bg-gray-100";
+  if (kind === "low") return base + "bg-gray-500 text-white";
+  if (kind === "medium") return base + "bg-blue-500 text-white";
+  if (kind === "high") return base + "bg-amber-500 text-white";
+  if (kind === "critical") return base + "bg-red-500 text-white";
+  return base + "bg-gray-500 text-white"; // none / 미지정
 }
 
 function Field({
