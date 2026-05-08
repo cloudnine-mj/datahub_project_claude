@@ -19,14 +19,13 @@ import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
-// 중요도 필터 옵션 — 'unspecified' 는 severity 가 null/빈값인 row 매칭.
-type SeverityFilterKey = Severity | "unspecified";
+// 중요도 필터 옵션 — 4단계만. severity 가 비어있는 옛 row 는 필터 통과(항상 노출).
+type SeverityFilterKey = Severity;
 const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
   { key: "low", label: "Low" },
   { key: "medium", label: "Medium" },
   { key: "high", label: "High" },
   { key: "critical", label: "Critical" },
-  { key: "unspecified", label: "미지정" },
 ];
 
 export function PolicyBoardView() {
@@ -54,8 +53,9 @@ export function PolicyBoardView() {
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
       // 1) 중요도 필터
-      const sevKey: SeverityFilterKey = (p.severity as Severity) || "unspecified";
-      if (!severityFilter.has(sevKey)) return false;
+      // severity 가 있으면 필터 매칭 검사, 없으면 통과 (옛 데이터 호환)
+      const sevKey = p.severity as Severity | undefined | null;
+      if (sevKey && !severityFilter.has(sevKey)) return false;
 
       // 2) 검색
       if (!q) return true;
