@@ -14,7 +14,9 @@ class PostAttachmentOut(BaseModel):
 
 
 class PostCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=300)
+    # 임시저장(is_draft=True) 케이스는 빈 제목 허용 → min_length 제거.
+    # 정식 등록 시점의 빈 제목 차단은 프론트의 required 속성으로 처리.
+    title: str = Field(default="", max_length=300)
     doc_no: str | None = Field(default=None, max_length=50)
     doc_type: str | None = Field(default=None, max_length=20)  # '가이드' / '공지' 등
     category: str | None = None
