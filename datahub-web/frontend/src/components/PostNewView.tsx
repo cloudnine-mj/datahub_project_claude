@@ -220,7 +220,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {isPolicy && (
-              <Field label="태그" required>
+              <Field label="태그">
                 <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
               </Field>
             )}
