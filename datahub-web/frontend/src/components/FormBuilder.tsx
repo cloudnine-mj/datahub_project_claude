@@ -31,7 +31,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [missingField, setMissingField] = useState<string | null>(null);
+  // missingField: { label, blocking }
+  // - blocking=true: 신규 정식 제출에서 빈 필드 발견 → 저장 차단 (확인만)
+  // - blocking=false: 수정 저장에서 빈 필드 발견 → 저장 가능, '그대로 저장' 옵션
+  const [missingField, setMissingField] = useState<{ label: string; blocking: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 신청자 정보 — 로그인 사용자 정보로 자동 입력. 사용자가 직접 수정 가능.
@@ -126,21 +129,25 @@ export function FormBuilder({ formType }: { formType: FormType }) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function save(asDraft: boolean) {
+  async function save(asDraft: boolean, force: boolean = false) {
     setError(null);
 
     // 수정 모드는 항상 draft 로 저장 — 사용자가 detail 에서 '제출' 버튼으로 명시적으로 재제출
     const willBeDraft = asDraft || isEdit;
 
-    // 정식 제출(즉, 신규 작성에서 '제출' 클릭) 일 때만 필수 필드 검증
-    if (!willBeDraft) {
+    // 검증:
+    //  - 신규 정식 제출: 누락 시 차단 (blocking)
+    //  - 수정 저장: 누락 시 경고만 (non-blocking) — '그대로 저장' 으로 진행 가능
+    //  - 신규 임시저장(asDraft): 검증 없음
+    const shouldValidate = !asDraft;
+    if (shouldValidate && !force) {
       const missing = findFirstEmptyRequired(schema, values, {
         submitterName,
         submitterDepartment,
         submitterEmail,
       });
       if (missing) {
-        setMissingField(missing);
+        setMissingField({ label: missing, blocking: !willBeDraft });
         return;
       }
     }
@@ -489,7 +496,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         </div>
       </form>
 
-      {/* 필수 항목 누락 알림 모달 */}
+      {/* 필수 항목 누락 알림 모달
+            blocking=true (신규 제출): 확인만 — 저장 차단
+            blocking=false (수정 저장): '그대로 저장' 으로 부분 저장 가능 */}
       {missingField && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
@@ -516,16 +525,44 @@ export function FormBuilder({ formType }: { formType: FormType }) {
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-600">
-              <strong className="font-semibold text-gray-800">&apos;{missingField}&apos;</strong> 항목을 입력해주세요.
+              <strong className="font-semibold text-gray-800">&apos;{missingField.label}&apos;</strong> 항목을 입력해주세요.
+              {!missingField.blocking && (
+                <span className="mt-1 block text-xs text-gray-500">
+                  비워둔 채로 저장하면 임시저장 상태로 보관됩니다. 제출 시 다시 채워야 합니다.
+                </span>
+              )}
             </p>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setMissingField(null)}
-                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
-              >
-                확인
-              </button>
+            <div className="mt-5 flex justify-end gap-2">
+              {missingField.blocking ? (
+                <button
+                  type="button"
+                  onClick={() => setMissingField(null)}
+                  className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+                >
+                  확인
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setMissingField(null)}
+                    className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+                  >
+                    돌아가서 입력
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMissingField(null);
+                      // force=true 로 검증 우회하고 그대로 저장 (수정 저장 = draft)
+                      save(false, true);
+                    }}
+                    className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+                  >
+                    그대로 저장
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
