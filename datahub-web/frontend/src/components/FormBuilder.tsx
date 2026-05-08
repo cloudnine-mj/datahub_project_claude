@@ -804,21 +804,21 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
 
   return (
     <div className="relative">
+      <button
+        type="button"
+        onClick={openPicker}
+        aria-label="달력 열기"
+        className="absolute left-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+      >
+        <Calendar size={14} />
+      </button>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="날짜를 선택하세요"
-        className="w-full rounded-md border border-gray-200 px-3 py-2 pr-9 text-sm focus:border-brand focus:outline-none"
+        className="w-full rounded-md border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-brand focus:outline-none"
       />
-      <button
-        type="button"
-        onClick={openPicker}
-        aria-label="달력 열기"
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-      >
-        <Calendar size={14} />
-      </button>
       <input
         ref={dateInputRef}
         type="date"
