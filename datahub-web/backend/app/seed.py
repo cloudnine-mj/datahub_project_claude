@@ -7,10 +7,44 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.db.session import Base
 from app.models import Form, Post, User
+
+
+def _ensure_schema_up_to_date(db: Session) -> None:
+    """SQLite 한정 — 모델이 선언한 컬럼이 실제 테이블에 없으면 ALTER TABLE ADD COLUMN.
+
+    Alembic 도입 전까지 dev 편의용. 운영 DB 는 정식 마이그레이션으로 전환.
+    PK / FK / unique 제약은 ADD COLUMN 으로 못 만드니 type 만 적용.
+    """
+    if not str(db.bind.url).startswith("sqlite"):
+        return
+    insp = inspect(db.bind)
+    for table_name, table in Base.metadata.tables.items():
+        if not insp.has_table(table_name):
+            continue  # create_all 이 새로 만들 테이블
+        existing = {c["name"] for c in insp.get_columns(table_name)}
+        for col in table.columns:
+            if col.name in existing:
+                continue
+            col_type = col.type.compile(db.bind.dialect)
+            nullable = "" if col.nullable else " NOT NULL"
+            default_clause = ""
+            if col.default is not None and getattr(col.default, "is_scalar", False):
+                v = col.default.arg
+                if isinstance(v, bool):
+                    default_clause = f" DEFAULT {1 if v else 0}"
+                elif isinstance(v, (int, float)):
+                    default_clause = f" DEFAULT {v}"
+                elif isinstance(v, str):
+                    default_clause = f" DEFAULT '{v}'"
+            ddl = f'ALTER TABLE "{table_name}" ADD COLUMN "{col.name}" {col_type}{default_clause}{nullable}'
+            db.execute(text(ddl))
+    db.commit()
 
 
 def _ensure_users(db: Session) -> dict[str, User]:
@@ -241,6 +275,7 @@ def _migrate_category_values(db: Session) -> None:
 
 
 def run_seed(db: Session) -> None:
+    _ensure_schema_up_to_date(db)
     users = _ensure_users(db)
     _migrate_board_types(db)
     _migrate_severity_values(db)
