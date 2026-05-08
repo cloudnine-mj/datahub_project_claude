@@ -942,8 +942,13 @@ function ServiceListField({
 
 /**
  * 결제 통화 — USD / KRW / 기타 라디오.
- * 기타 선택 시 옆에 직접 입력 input 활성화.
+ * 기타 선택 시 옆에 통화 dropdown (주요 ISO 4217) 활성화.
  */
+const OTHER_CURRENCIES = [
+  "EUR", "JPY", "CNY", "GBP", "AUD", "CAD", "CHF", "HKD",
+  "SGD", "TWD", "INR", "VND", "THB", "IDR", "MYR", "PHP",
+] as const;
+
 function CurrencyField({
   value,
   onChange,
@@ -961,20 +966,23 @@ function CurrencyField({
             name="currency"
             value={opt}
             checked={kind === opt}
-            onChange={() => onChange({ ...value, kind: opt })}
+            onChange={() => onChange({ ...value, kind: opt, custom: opt === "기타" ? value.custom : undefined })}
             className="text-brand focus:ring-brand"
           />
           {opt}
         </label>
       ))}
-      <input
-        type="text"
+      <select
         value={value.custom ?? ""}
         onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value })}
-        placeholder="예: EUR"
         disabled={kind !== "기타"}
-        className="w-32 rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-      />
+        className="w-32 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+      >
+        <option value="">선택하세요</option>
+        {OTHER_CURRENCIES.map((c) => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
     </div>
   );
 }
