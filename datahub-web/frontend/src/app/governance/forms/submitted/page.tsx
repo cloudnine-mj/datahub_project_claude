@@ -2,9 +2,13 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ExternalLink, FileEdit, List } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Check, Download, ExternalLink, FileEdit, List } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function Page() {
+  const sp = useSearchParams();
+  const formId = sp?.get("id");
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center text-center">
       <div className="grid h-20 w-20 place-items-center rounded-full bg-emerald-500 text-white">
@@ -53,13 +57,21 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="mt-6 flex gap-2">
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Link
           href="/governance/forms/my"
           className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
         >
           <List size={14} /> 내 문서 목록 보기
         </Link>
+        {formId && (
+          <a
+            href={api.exportFormUrl(Number(formId))}
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+          >
+            <Download size={14} /> Excel 다운로드
+          </a>
+        )}
         <Link
           href="/governance/forms"
           className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
