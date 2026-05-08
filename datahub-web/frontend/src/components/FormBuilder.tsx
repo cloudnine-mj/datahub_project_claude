@@ -138,7 +138,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       } else if (rawProject) {
         projectName = String(rawProject);
       }
-      setProgress(asDraft ? "임시저장 중..." : isEdit ? "신청서 수정 중..." : "신청서 저장 중...");
+      setProgress(asDraft ? "임시저장 중..." : isEdit ? "신청서 수정 중..." : "신청서 제출 중...");
 
       const body = {
         form_type: formType,
@@ -451,7 +451,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
-            <Save size={14} /> {submitting ? (isEdit ? "수정 중..." : "저장 중...") : (isEdit ? "수정 저장" : "저장")}
+            <Save size={14} /> {submitting ? (isEdit ? "수정 중..." : "제출 중...") : (isEdit ? "수정 저장" : "제출")}
           </button>
         </div>
       </form>
