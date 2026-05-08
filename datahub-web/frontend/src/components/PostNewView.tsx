@@ -203,13 +203,6 @@ export function PostNewView({ board }: { board: BoardType }) {
             {isPolicy && (
               <Field label="중요도">
                 <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
-                  <button
-                    type="button"
-                    onClick={() => setSeverity("")}
-                    className={severityChipCls("none", severity === "")}
-                  >
-                    미지정
-                  </button>
                   {SEVERITIES.map((s) => (
                     <button
                       key={s.value}
@@ -355,18 +348,14 @@ function chipCls(active: boolean) {
   );
 }
 
-/**
- * severity 칩 색상 — SeverityBadge 4단계 (Low/Medium/High/Critical) 와 일관.
- * 미지정 (none) 은 회색.
- */
-function severityChipCls(kind: "none" | Severity, active: boolean) {
+/** severity 칩 색상 — SeverityBadge 4단계 (Low/Medium/High/Critical) 와 일관. */
+function severityChipCls(kind: Severity, active: boolean) {
   const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
   if (!active) return base + "text-gray-600 hover:bg-gray-100";
   if (kind === "low") return base + "bg-gray-500 text-white";
   if (kind === "medium") return base + "bg-blue-500 text-white";
   if (kind === "high") return base + "bg-amber-500 text-white";
-  if (kind === "critical") return base + "bg-red-500 text-white";
-  return base + "bg-gray-500 text-white"; // none / 미지정
+  return base + "bg-red-500 text-white"; // critical
 }
 
 function Field({
