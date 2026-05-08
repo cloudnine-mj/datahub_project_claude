@@ -1071,7 +1071,7 @@ function ServiceBlockCard({
   onRemove: () => void;
 }) {
   const memberCount = block.members.length;
-  const totalCost = computeTotal(block.cost, memberCount, block.currency.kind);
+  const totalCost = computeTotal(block.cost, memberCount, block.currency);
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -1189,6 +1189,43 @@ function BlockRow({ label, children }: { label: string; children: React.ReactNod
  *  - 기타 + custom 입력값 : 우측에 그 값 suffix (예: 'EUR')
  *  - 미선택 : 일반 input
  */
+/**
+ * 통화 코드 → 표시 prefix 매핑.
+ * 매핑이 없으면 코드 자체 (e.g., "AUD ").
+ */
+const CURRENCY_SYMBOL: Record<string, string> = {
+  USD: "$",
+  KRW: "₩",
+  EUR: "€",
+  JPY: "¥",
+  CNY: "¥",
+  GBP: "£",
+  HKD: "HK$",
+  AUD: "A$",
+  CAD: "C$",
+  SGD: "S$",
+  CHF: "CHF",
+  TWD: "NT$",
+  INR: "₹",
+  VND: "₫",
+  THB: "฿",
+  IDR: "Rp",
+  MYR: "RM",
+  PHP: "₱",
+};
+
+/** kind/custom 조합으로 prefix 문자열 결정. 빈값/매칭 안되면 null. */
+function currencyPrefix(currency: { kind?: string; custom?: string } | undefined): string | null {
+  const kind = currency?.kind;
+  if (!kind) return null;
+  if (kind === "기타") {
+    const code = currency?.custom?.trim();
+    if (!code) return null;
+    return CURRENCY_SYMBOL[code] ?? code;
+  }
+  return CURRENCY_SYMBOL[kind] ?? kind;
+}
+
 function AmountWithCurrencyInput({
   value,
   onChange,
@@ -1200,11 +1237,7 @@ function AmountWithCurrencyInput({
   placeholder?: string;
   currency: { kind?: string; custom?: string } | undefined;
 }) {
-  const kind = currency?.kind;
-  let prefix: string | null = null;
-  if (kind === "USD") prefix = "$";
-  else if (kind === "KRW") prefix = "₩";
-  else if (kind === "기타" && currency?.custom?.trim()) prefix = currency.custom.trim();
+  const prefix = currencyPrefix(currency);
 
   const base =
     "w-full rounded-md border border-gray-200 py-2 text-sm focus:border-brand focus:outline-none";
@@ -1297,7 +1330,11 @@ function MemberChipsField({
 }
 
 /** "예상 비용" 문자열에서 숫자 부분을 추출해 인원 수와 곱한 뒤 통화 기호와 함께 포맷. */
-function computeTotal(costStr: string, count: number, currencyKind?: string): string | null {
+function computeTotal(
+  costStr: string,
+  count: number,
+  currency?: { kind?: string; custom?: string },
+): string | null {
   if (!costStr || count <= 0) return null;
   const match = costStr.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
   if (!match) return null;
@@ -1305,9 +1342,10 @@ function computeTotal(costStr: string, count: number, currencyKind?: string): st
   if (!Number.isFinite(n)) return null;
   const total = Math.round(n * count);
   const formatted = total.toLocaleString();
-  if (currencyKind === "USD") return `$${formatted}`;
-  if (currencyKind === "KRW") return `₩${formatted}`;
-  return formatted;
+  const prefix = currencyPrefix(currency);
+  if (!prefix) return formatted;
+  // 짧은 심볼($, ₩, € 등) 은 붙이고, 긴 심볼(HK$, A$, 'CHF' 등) 은 공백 한 칸
+  return prefix.length <= 1 ? `${prefix}${formatted}` : `${prefix} ${formatted}`;
 }
 
 function SubmitterInputRow({

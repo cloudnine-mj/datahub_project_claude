@@ -280,11 +280,31 @@ def delete_form(
     db.commit()
 
 
-def _compute_total_cost(cost_str: str, count: int, currency_kind: str | None) -> str:
-    """예상 비용 문자열의 첫 숫자 × 인원 수 → 통화 기호와 함께 포맷.
+_CURRENCY_SYMBOL = {
+    "USD": "$", "KRW": "₩", "EUR": "€", "JPY": "¥", "CNY": "¥",
+    "GBP": "£", "HKD": "HK$", "AUD": "A$", "CAD": "C$", "SGD": "S$",
+    "CHF": "CHF", "TWD": "NT$", "INR": "₹", "VND": "₫", "THB": "฿",
+    "IDR": "Rp", "MYR": "RM", "PHP": "₱",
+}
 
-    프론트의 computeTotal 과 동일 로직 (USD: $N, KRW: N원, 그 외: 숫자만).
-    """
+
+def _currency_prefix(currency: dict | None) -> str:
+    """프론트 currencyPrefix 와 동일 — kind/custom 조합으로 prefix."""
+    if not currency:
+        return ""
+    kind = currency.get("kind") if isinstance(currency, dict) else None
+    if not kind:
+        return ""
+    if kind == "기타":
+        code = (currency.get("custom") or "").strip()
+        if not code:
+            return ""
+        return _CURRENCY_SYMBOL.get(code, code)
+    return _CURRENCY_SYMBOL.get(kind, kind)
+
+
+def _compute_total_cost(cost_str: str, count: int, currency: dict | None) -> str:
+    """예상 비용 첫 숫자 × 인원 수 → 통화 prefix 포함 문자열. 프론트 computeTotal 과 동일."""
     import re
     if not cost_str or count <= 0:
         return ""
@@ -297,11 +317,10 @@ def _compute_total_cost(cost_str: str, count: int, currency_kind: str | None) ->
         return ""
     total = round(n * count)
     formatted = f"{total:,}"
-    if currency_kind == "USD":
-        return f"${formatted}"
-    if currency_kind == "KRW":
-        return f"₩{formatted}"
-    return formatted
+    prefix = _currency_prefix(currency)
+    if not prefix:
+        return formatted
+    return f"{prefix}{formatted}" if len(prefix) <= 1 else f"{prefix} {formatted}"
 
 
 def _render_productivity_tool_table(ws, payload: dict) -> None:
@@ -321,11 +340,10 @@ def _render_productivity_tool_table(ws, payload: dict) -> None:
         members = b.get("members") or []
         if not isinstance(members, list):
             members = []
-        currency = b.get("currency") or {}
-        kind = currency.get("kind") if isinstance(currency, dict) else None
+        currency = b.get("currency") if isinstance(b.get("currency"), dict) else None
         cost = b.get("cost") or ""
         count = len(members)
-        total = _compute_total_cost(cost, count, kind)
+        total = _compute_total_cost(cost, count, currency)
         ws.append([
             b.get("service_name", "") or "",
             b.get("usage", "") or "",
