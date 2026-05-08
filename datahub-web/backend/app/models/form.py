@@ -51,6 +51,10 @@ class Form(Base):
     submitter_department: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     status: Mapped[str] = mapped_column(String(20), default="submitted")
+    # 버전 — 신규 제출은 1, '수정 저장' 마다 새 row + 1 증가.
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    # 부모 row id — 같은 문서의 이전 버전. None 이면 최초 제출.
+    parent_form_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     # 상태 변경 이력 — [{status, changed_by, changed_at, comment}, ...]
     approval_history: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # 본문 수정 이력 — [{edited_by, edited_at}, ...]

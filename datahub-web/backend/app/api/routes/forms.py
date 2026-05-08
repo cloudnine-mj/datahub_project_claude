@@ -127,37 +127,56 @@ def update_form(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    form = db.query(Form).filter(Form.id == form_id).first()
-    if not form:
+    """수정 — 기존 row 를 mutate 하지 않고 **새 버전 row 를 생성**.
+
+    내 문서 목록에 모든 버전이 누적 표시됨. request_no 는 base 에 -vN 접미.
+    """
+    import re
+
+    parent = db.query(Form).filter(Form.id == form_id).first()
+    if not parent:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
-    if form.submitter_id != user.id and user.role != "admin":
+    if parent.submitter_id != user.id and user.role != "admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
-    # 변경 diff 계산 — 저장 전 before snapshot 캡처
-    changes = _compute_form_diff(form, payload)
 
-    form.project_name = payload.project_name
-    form.payload = payload.payload
-    form.status = payload.status
-    if payload.submitter_name is not None:
-        form.submitter_name = payload.submitter_name
-    if payload.submitter_email is not None:
-        form.submitter_email = payload.submitter_email
-    if payload.submitter_department is not None:
-        form.submitter_department = payload.submitter_department
+    # 변경 diff 계산 — 새 row 의 edit_history 첫 entry 로 기록
+    changes = _compute_form_diff(parent, payload)
 
-    # 변경된 게 하나도 없으면 이력에 추가 X (불필요한 noise 방지)
-    if changes:
-        history = list(form.edit_history or [])
-        history.append({
-            "edited_by": user.name,
-            "edited_at": datetime.utcnow().isoformat(),
-            "changes": changes,
-        })
-        form.edit_history = history
+    new_version = (parent.version or 1) + 1
+    base_request_no = re.sub(r"-v\d+$", "", parent.request_no)
+    new_request_no = f"{base_request_no}-v{new_version}"
 
+    new_form = Form(
+        request_no=new_request_no,
+        form_type=parent.form_type,
+        project_name=payload.project_name,
+        submitter_id=parent.submitter_id,
+        submitter_name=payload.submitter_name or parent.submitter_name,
+        submitter_email=payload.submitter_email or parent.submitter_email,
+        submitter_department=(
+            payload.submitter_department
+            if payload.submitter_department is not None
+            else parent.submitter_department
+        ),
+        status=payload.status,
+        version=new_version,
+        parent_form_id=parent.id,
+        payload=payload.payload,
+        approval_history=None,  # 새 버전은 결재 이력 초기화
+        edit_history=(
+            [{
+                "edited_by": user.name,
+                "edited_at": datetime.utcnow().isoformat(),
+                "changes": changes,
+            }]
+            if changes
+            else None
+        ),
+    )
+    db.add(new_form)
     db.commit()
-    db.refresh(form)
-    return form
+    db.refresh(new_form)
+    return new_form
 
 
 def _compute_form_diff(form: Form, payload: FormCreate) -> list[dict]:

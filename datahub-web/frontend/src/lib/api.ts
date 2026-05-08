@@ -139,6 +139,8 @@ export interface FormListItem {
   project_name: string;
   submitted_at: string;
   status: string;
+  version: number;
+  parent_form_id: number | null;
 }
 
 export type FormStatus = "draft" | "submitted" | "reviewing" | "approved" | "rejected";
@@ -171,6 +173,8 @@ export interface FormDetail extends FormListItem {
   attachments: { id: number; filename: string; size_bytes: number }[];
   approval_history: ApprovalEntry[] | null;
   edit_history: EditHistoryEntry[] | null;
+  version: number;
+  parent_form_id: number | null;
 }
 
 // ── API 함수 ────────────────────────────────────────────

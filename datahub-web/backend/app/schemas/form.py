@@ -68,6 +68,8 @@ class FormListItem(BaseModel):
     project_name: str
     submitted_at: datetime
     status: str
+    version: int = 1
+    parent_form_id: int | None = None
 
 
 class FormDetail(BaseModel):
@@ -83,6 +85,8 @@ class FormDetail(BaseModel):
     submitter_email: EmailStr
     submitter_department: str | None
     status: str
+    version: int = 1
+    parent_form_id: int | None = None
     approval_history: list[ApprovalEntry] | None = None
     edit_history: list[EditHistoryEntry] | None = None
     payload: dict[str, Any]
