@@ -42,6 +42,7 @@ export function StatusBadge({ status }: { status: FormStatus | string }) {
 }
 
 export const STATUSES: { value: FormStatus; label: string }[] = [
+  { value: "draft", label: "임시저장" },
   { value: "submitted", label: "제출됨" },
   { value: "reviewing", label: "검토 중" },
   { value: "approved", label: "승인 완료" },
