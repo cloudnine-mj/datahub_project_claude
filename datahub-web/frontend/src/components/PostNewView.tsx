@@ -320,14 +320,6 @@ export function PostNewView({ board }: { board: BoardType }) {
             취소
           </button>
           <button
-            type="button"
-            onClick={() => save(true)}
-            disabled={submitting}
-            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            임시저장
-          </button>
-          <button
             type="submit"
             disabled={submitting}
             className="rounded-md bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
