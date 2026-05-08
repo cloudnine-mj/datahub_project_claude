@@ -230,18 +230,14 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            <Field
-              label="내용"
-              required
-              hint={isPolicy ? "마크다운 지원" : undefined}
-            >
+            <Field label="내용" required hint="마크다운 지원">
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required
-                rows={isPolicy ? 16 : 8}
-                placeholder={isPolicy ? "" : "내용을 입력하세요"}
-                className={inputCls + (isPolicy ? " font-mono" : "")}
+                rows={16}
+                placeholder=""
+                className={inputCls + " font-mono"}
               />
             </Field>
           </div>
