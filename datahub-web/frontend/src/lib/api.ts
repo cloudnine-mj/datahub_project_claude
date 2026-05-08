@@ -58,11 +58,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    let detail: unknown;
+    // body 를 한 번만 읽고 JSON parse 시도 — 실패 시 텍스트 그대로 사용.
+    // (이전엔 res.json() → res.text() 2단 시도하다 'body stream already read' 발생)
+    const raw = await res.text();
+    let detail: unknown = raw;
     try {
-      detail = await res.json();
+      detail = JSON.parse(raw);
     } catch {
-      detail = await res.text();
+      /* 텍스트 응답 그대로 유지 */
     }
     const err = new Error(`API ${res.status}: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`);
     (err as Error & { status?: number; detail?: unknown }).status = res.status;
