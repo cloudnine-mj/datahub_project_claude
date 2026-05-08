@@ -941,14 +941,9 @@ function ServiceListField({
 }
 
 /**
- * 결제 통화 — USD / KRW / 기타 라디오.
- * 기타 선택 시 옆에 통화 dropdown (주요 ISO 4217) 활성화.
+ * 결제 통화 — USD / KRW / EUR / JPY / 기타 라디오.
+ * 기타 선택 시 옆에 자유 입력 텍스트 (그 외 통화 코드 직접 입력).
  */
-const OTHER_CURRENCIES = [
-  "EUR", "JPY", "CNY", "GBP", "AUD", "CAD", "CHF", "HKD",
-  "SGD", "TWD", "INR", "VND", "THB", "IDR", "MYR", "PHP",
-] as const;
-
 function CurrencyField({
   value,
   onChange,
@@ -959,7 +954,7 @@ function CurrencyField({
   const kind = value.kind ?? "";
   return (
     <div className="flex flex-wrap items-center gap-4">
-      {(["USD", "KRW", "기타"] as const).map((opt) => (
+      {(["USD", "KRW", "EUR", "JPY", "기타"] as const).map((opt) => (
         <label key={opt} className="flex items-center gap-2 text-sm">
           <input
             type="radio"
@@ -972,17 +967,15 @@ function CurrencyField({
           {opt}
         </label>
       ))}
-      <select
+      <input
+        type="text"
         value={value.custom ?? ""}
-        onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value })}
+        onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value.toUpperCase() })}
         disabled={kind !== "기타"}
-        className="w-32 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-      >
-        <option value="">선택하세요</option>
-        {OTHER_CURRENCIES.map((c) => (
-          <option key={c} value={c}>{c}</option>
-        ))}
-      </select>
+        placeholder="예: GBP"
+        maxLength={5}
+        className="w-28 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+      />
     </div>
   );
 }
