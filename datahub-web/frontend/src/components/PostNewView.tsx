@@ -157,10 +157,11 @@ export function PostNewView({ board }: { board: BoardType }) {
             </Field>
 
             {isPolicy && (
-              <Field label="관리 번호" hint="문서 식별용 번호 (예: POL-2026-001)">
+              <Field label="관리 번호" required hint="문서 식별용 번호 (예: POL-2026-001)">
                 <input
                   value={docNo}
                   onChange={(e) => setDocNo(e.target.value)}
+                  required
                   placeholder="관리 번호를 입력하세요"
                   maxLength={50}
                   className={inputCls}
@@ -169,10 +170,11 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {!isPolicy && (
-              <Field label="유형" hint="가이드 / 공지 등 문서의 성격">
+              <Field label="유형" required hint="가이드 / 공지 등 문서의 성격">
                 <select
                   value={docType}
                   onChange={(e) => setDocType(e.target.value)}
+                  required
                   className={inputCls}
                 >
                   <option value="">유형을 선택하세요</option>
@@ -185,7 +187,7 @@ export function PostNewView({ board }: { board: BoardType }) {
 
             {/* 카테고리 — 정책 게시판에는 노출하지 않음 (다른 게시판만) */}
             {!isPolicy && (
-              <Field label="카테고리">
+              <Field label="카테고리" required>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
@@ -201,7 +203,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {isPolicy && (
-              <Field label="중요도">
+              <Field label="중요도" required>
                 <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
                   {SEVERITIES.map((s) => (
                     <button
@@ -218,7 +220,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {isPolicy && (
-              <Field label="태그">
+              <Field label="태그" required>
                 <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
               </Field>
             )}
