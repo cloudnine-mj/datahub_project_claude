@@ -1,16 +1,22 @@
-// 정책 분류 뱃지 — 2단계 (필수/권장). 보안·승인 등은 tags 로 분류.
+// 정책 분류 뱃지 — 4단계 (Low / Medium / High / Critical).
 import type { Severity } from "@/lib/api";
 
-const STYLES: Record<Severity, { label: string; cls: string; dot: string }> = {
-  required: {
-    label: "필수",
-    cls: "bg-red-50 text-red-700 border-red-200",
-    dot: "bg-red-500",
+const STYLES: Record<Severity, { label: string; cls: string }> = {
+  low: {
+    label: "Low",
+    cls: "bg-gray-50 text-gray-700 border-gray-200",
   },
-  recommended: {
-    label: "권장",
+  medium: {
+    label: "Medium",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  high: {
+    label: "High",
     cls: "bg-amber-50 text-amber-700 border-amber-200",
-    dot: "bg-amber-500",
+  },
+  critical: {
+    label: "Critical",
+    cls: "bg-red-50 text-red-700 border-red-200",
   },
 };
 
@@ -25,7 +31,7 @@ export function SeverityBadge({
   const sizeCls =
     size === "sm" ? "px-1.5 py-0 text-[10px]" : "px-2 py-0.5 text-xs";
   const s = STYLES[severity as Severity];
-  // 옛 데이터(예: 'security', 'approval_required', 'reference') 호환 — 회색 fallback
+  // 옛 데이터(예: 'required', 'recommended', 'security') 호환 — 회색 fallback
   if (!s) {
     return (
       <span
@@ -45,6 +51,8 @@ export function SeverityBadge({
 }
 
 export const SEVERITIES: { value: Severity; label: string }[] = [
-  { value: "required", label: "필수" },
-  { value: "recommended", label: "권장" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "critical", label: "Critical" },
 ];

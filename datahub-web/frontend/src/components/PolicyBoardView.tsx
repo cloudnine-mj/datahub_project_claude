@@ -22,8 +22,10 @@ const PAGE_SIZES = [10, 20, 50, 100];
 // 중요도 필터 옵션 — 'unspecified' 는 severity 가 null/빈값인 row 매칭.
 type SeverityFilterKey = Severity | "unspecified";
 const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
-  { key: "required", label: "필수" },
-  { key: "recommended", label: "권장" },
+  { key: "low", label: "Low" },
+  { key: "medium", label: "Medium" },
+  { key: "high", label: "High" },
+  { key: "critical", label: "Critical" },
   { key: "unspecified", label: "미지정" },
 ];
 

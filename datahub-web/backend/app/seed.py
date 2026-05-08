@@ -207,7 +207,7 @@ def _migrate_board_types(db: Session) -> None:
         .all()
     )
     if not legacy:
-        return
+        pass
     for p in legacy:
         new_cat = "제작 프로세스" if p.board_type == "production_process" else "활용 요청 프로세스"
         # 옛 카테고리가 일반적이면 새 카테고리로 덮어쓰기. 사용자가 지정한 의미있는 값은 보존.
@@ -221,9 +221,18 @@ def _migrate_board_types(db: Session) -> None:
         p.board_type = "process"
 
 
+def _migrate_severity_values(db: Session) -> None:
+    """severity 4단계 도입에 따라 옛 'required' / 'recommended' 를 새 값으로 변환."""
+    mapping = {"required": "critical", "recommended": "medium"}
+    legacy = db.query(Post).filter(Post.severity.in_(tuple(mapping.keys()))).all()
+    for p in legacy:
+        p.severity = mapping[p.severity]
+
+
 def run_seed(db: Session) -> None:
     users = _ensure_users(db)
     _migrate_board_types(db)
+    _migrate_severity_values(db)
     _ensure_posts(db, users)
     _ensure_forms(db, users)
     db.commit()

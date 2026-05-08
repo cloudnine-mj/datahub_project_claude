@@ -64,7 +64,7 @@ export interface Me {
   };
 }
 
-export type Severity = "required" | "recommended";
+export type Severity = "low" | "medium" | "high" | "critical";
 
 /** 정책 게시판에서만 활용되는 메타필드 — Step 2,3,4 의 Opportunity 매핑. */
 export interface PolicyMeta {

@@ -202,25 +202,16 @@ export function PostNewView({ board }: { board: BoardType }) {
 
             {isPolicy && (
               <Field label="중요도">
-                <div className="flex gap-1 rounded-md border border-gray-200 bg-white p-1">
-                  <button
-                    type="button"
-                    onClick={() => setSeverity("")}
-                    className={severityChipCls("none", severity === "")}
-                  >
-                    미지정
-                  </button>
+                <select
+                  value={severity}
+                  onChange={(e) => setSeverity(e.target.value as Severity | "")}
+                  className={inputCls}
+                >
+                  <option value="">미지정</option>
                   {SEVERITIES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setSeverity(s.value)}
-                      className={severityChipCls(s.value, severity === s.value)}
-                    >
-                      {s.label}
-                    </button>
+                    <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
-                </div>
+                </select>
               </Field>
             )}
 
@@ -353,18 +344,6 @@ function chipCls(active: boolean) {
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
   );
-}
-
-/**
- * severity 칩 색상 — SeverityBadge 와 일관성:
- *   none(미지정) → 회색, required(필수) → 빨강, recommended(권장) → 황색
- */
-function severityChipCls(kind: "none" | "required" | "recommended", active: boolean) {
-  const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
-  if (!active) return base + "text-gray-600 hover:bg-gray-100";
-  if (kind === "required") return base + "bg-red-500 text-white";
-  if (kind === "recommended") return base + "bg-amber-500 text-white";
-  return base + "bg-gray-500 text-white"; // none / 미지정
 }
 
 function Field({

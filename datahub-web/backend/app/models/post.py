@@ -27,11 +27,12 @@ from app.db.session import Base
 # 게시판 종류 — Governance 인덱스의 4개 카드 중 게시판형 3개
 BOARD_TYPES = ("policy", "process")
 
-# 정책 분류 — Step 2 의 사용자 판단 보조 (2단계).
-# 보안·승인 필요 등은 자유 tags 로 분류 (예: tags=["보안", "PII"]).
-#   required    : 필수 (반드시 지켜야)
-#   recommended : 권장 (지키면 좋음)
-SEVERITY_VALUES = ("required", "recommended")
+# 정책 분류 — 4단계 표준 척도.
+#   low      : 권장 사항, 영향도 낮음
+#   medium   : 권장이지만 가능한 한 준수
+#   high     : 사실상 필수, 미준수 시 별도 검토 필요
+#   critical : 반드시 준수, 위반 시 즉시 조치 대상
+SEVERITY_VALUES = ("low", "medium", "high", "critical")
 
 
 class Post(Base):
