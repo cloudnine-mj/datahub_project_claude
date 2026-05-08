@@ -94,8 +94,9 @@ export function PostNewView({ board }: { board: BoardType }) {
       setProgress(asDraft ? "임시저장 중..." : isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
       const body = {
         title,
-        doc_no: docNo.trim() || null,
-        ...(isPolicy ? {} : { doc_type: docType || null }),
+        ...(isPolicy
+          ? { doc_no: docNo.trim() || null }
+          : { doc_type: docType || null }),
         category: category || undefined,
         content,
         is_draft: asDraft,
@@ -155,15 +156,17 @@ export function PostNewView({ board }: { board: BoardType }) {
               />
             </Field>
 
-            <Field label="관리 번호" hint="문서 식별용 번호 (예: POL-2026-001)">
-              <input
-                value={docNo}
-                onChange={(e) => setDocNo(e.target.value)}
-                placeholder="관리 번호를 입력하세요"
-                maxLength={50}
-                className={inputCls}
-              />
-            </Field>
+            {isPolicy && (
+              <Field label="관리 번호" hint="문서 식별용 번호 (예: POL-2026-001)">
+                <input
+                  value={docNo}
+                  onChange={(e) => setDocNo(e.target.value)}
+                  placeholder="관리 번호를 입력하세요"
+                  maxLength={50}
+                  className={inputCls}
+                />
+              </Field>
+            )}
 
             {!isPolicy && (
               <Field label="유형" hint="가이드 / 공지 등 문서의 성격">
