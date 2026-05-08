@@ -124,8 +124,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save(asDraft: boolean) {
     setError(null);
     setSubmitting(true);
     try {
@@ -139,12 +138,13 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       } else if (rawProject) {
         projectName = String(rawProject);
       }
-      setProgress(isEdit ? "신청서 수정 중..." : "신청서 저장 중...");
+      setProgress(asDraft ? "임시저장 중..." : isEdit ? "신청서 수정 중..." : "신청서 저장 중...");
 
       const body = {
         form_type: formType,
         project_name: projectName,
         payload: values,
+        status: asDraft ? "draft" : "submitted",
         submitter_name: submitterName || undefined,
         submitter_email: submitterEmail || undefined,
         submitter_department: submitterDepartment || undefined,
@@ -166,7 +166,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         }
       }
 
-      if (isEdit) {
+      if (asDraft || isEdit) {
+        // 임시저장 / 수정 모두 상세 페이지로
         router.push(`/governance/forms/detail/${result.id}`);
       } else {
         router.push(`/governance/forms/submitted?id=${result.id}`);
@@ -176,6 +177,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       setSubmitting(false);
       setProgress(null);
     }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await save(false);
   }
 
   return (
@@ -431,7 +437,15 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
         {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => save(true)}
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            임시저장
+          </button>
           <button
             type="submit"
             disabled={submitting}

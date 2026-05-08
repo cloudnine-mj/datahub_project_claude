@@ -87,18 +87,18 @@ export function PostNewView({ board }: { board: BoardType }) {
     }
   }, [me, board, router]);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save(asDraft: boolean) {
     setError(null);
     setSubmitting(true);
     try {
-      setProgress(isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
+      setProgress(asDraft ? "임시저장 중..." : isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
       const body = {
         title,
         doc_no: docNo.trim() || null,
         ...(isPolicy ? {} : { doc_type: docType || null }),
         category: category || undefined,
         content,
+        is_draft: asDraft,
         ...(isPolicy && {
           severity: severity || null,
           tags: tags.length > 0 ? tags : null,
@@ -109,7 +109,6 @@ export function PostNewView({ board }: { board: BoardType }) {
         : await api.createPost(board, body);
 
       // 신규 첨부 파일은 그대로 순차 업로드 — 수정 모드에서도 동일.
-      // 기존 첨부는 수정 흐름에서 건드리지 않음 (별도 삭제 UI 미구현).
       for (let i = 0; i < files.length; i++) {
         setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
         try {
@@ -119,7 +118,8 @@ export function PostNewView({ board }: { board: BoardType }) {
         }
       }
 
-      if (isEdit) {
+      if (asDraft || isEdit) {
+        // 임시저장 / 수정 모두 상세 페이지로 이동해 결과 확인
         router.push(`/governance/${boardSegment(board)}/${post.id}`);
       } else {
         router.push(`/governance/${boardSegment(board)}`);
@@ -129,6 +129,11 @@ export function PostNewView({ board }: { board: BoardType }) {
       setSubmitting(false);
       setProgress(null);
     }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await save(false);
   }
 
   return (
@@ -319,6 +324,14 @@ export function PostNewView({ board }: { board: BoardType }) {
             className="rounded-md border border-gray-200 px-5 py-2 text-sm font-semibold hover:bg-gray-50"
           >
             취소
+          </button>
+          <button
+            type="button"
+            onClick={() => save(true)}
+            disabled={submitting}
+            className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            임시저장
           </button>
           <button
             type="submit"

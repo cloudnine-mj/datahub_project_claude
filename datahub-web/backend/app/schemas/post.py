@@ -19,6 +19,7 @@ class PostCreate(BaseModel):
     doc_type: str | None = Field(default=None, max_length=20)  # '가이드' / '공지' 등
     category: str | None = None
     content: str = ""
+    is_draft: bool = False
 
     # 정책 메타 (모두 선택)
     summary: str | None = None
@@ -35,6 +36,7 @@ class PostUpdate(BaseModel):
     doc_no: str | None = Field(default=None, max_length=50)
     doc_type: str | None = Field(default=None, max_length=20)
     category: str | None = None
+    is_draft: bool | None = None
     content: str | None = None
     summary: str | None = None
     tags: list[str] | None = None
@@ -61,6 +63,7 @@ class PostListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     author_name: str
+    is_draft: bool = False
     summary: str | None = None
     tags: list[str] | None = None
     severity: str | None = None
@@ -77,6 +80,7 @@ class PostDetail(BaseModel):
     doc_type: str | None = None
     category: str | None
     content: str
+    is_draft: bool = False
     author_name: str
     created_at: datetime
     updated_at: datetime

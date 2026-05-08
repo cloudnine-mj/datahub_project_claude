@@ -44,14 +44,14 @@ def _validate_board(board_type: str) -> str:
 def list_posts(
     board_type: str = PathParam(...),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> list[Post]:
+    """게시판 목록 — 임시저장(is_draft) 글은 작성자 본인 또는 admin 에게만 노출."""
     _validate_board(board_type)
-    return (
-        db.query(Post)
-        .filter(Post.board_type == board_type)
-        .order_by(Post.created_at.desc())
-        .all()
-    )
+    q = db.query(Post).filter(Post.board_type == board_type)
+    if user.role != "admin":
+        q = q.filter((Post.is_draft == False) | (Post.author_id == user.id))  # noqa: E712
+    return q.order_by(Post.created_at.desc()).all()
 
 
 @router.post("", response_model=PostDetail, status_code=status.HTTP_201_CREATED)
@@ -75,6 +75,7 @@ def create_post(
         content=payload.content,
         author_id=user.id,
         author_name=user.name,
+        is_draft=payload.is_draft,
         summary=payload.summary,
         tags=payload.tags,
         severity=payload.severity,
@@ -90,10 +91,18 @@ def create_post(
 
 
 @router.get("/{post_id}", response_model=PostDetail)
-def get_post(post_id: int, board_type: str = PathParam(...), db: Session = Depends(get_db)) -> Post:
+def get_post(
+    post_id: int,
+    board_type: str = PathParam(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Post:
     _validate_board(board_type)
     post = db.query(Post).filter(Post.id == post_id, Post.board_type == board_type).first()
     if not post:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
+    # 임시저장 글은 작성자 / admin 만 조회 가능
+    if post.is_draft and post.author_id != user.id and user.role != "admin":
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
     return post
 

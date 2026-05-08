@@ -86,6 +86,7 @@ export interface PostListItem extends PolicyMeta {
   created_at: string;
   updated_at: string;
   author_name: string;
+  is_draft: boolean;
 }
 
 export interface PostDetail extends PostListItem {
@@ -160,6 +161,7 @@ export const api = {
       doc_type?: string | null;
       category?: string;
       content: string;
+      is_draft?: boolean;
     } & Partial<PolicyMeta>,
   ) =>
     request<PostDetail>(`/boards/${board}/posts`, {
@@ -177,6 +179,7 @@ export const api = {
       doc_type: string | null;
       category: string | null;
       content: string;
+      is_draft: boolean;
     }> &
       Partial<PolicyMeta>,
   ) =>

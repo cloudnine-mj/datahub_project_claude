@@ -70,6 +70,11 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
             </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            {post.is_draft && (
+              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                임시저장
+              </span>
+            )}
             {post.doc_type && (() => {
               const s = DOC_TYPE_STYLES[post.doc_type] ?? {
                 pill: "bg-gray-50 text-gray-700 border-gray-200",

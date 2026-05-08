@@ -170,6 +170,11 @@ export function BoardListView({ board }: Props) {
                   <td className="px-6 py-4 text-gray-400">{filtered.length - i}</td>
                   <td className="px-6 py-4">
                     <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
+                      {p.is_draft && (
+                        <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
+                          임시저장
+                        </span>
+                      )}
                       {p.doc_type && <DocTypePill docType={p.doc_type} />}
                       <span>{p.title}</span>
                     </Link>
