@@ -107,7 +107,7 @@ export default function MyFormsPage() {
                         href={api.exportFormUrl(it.id)}
                         className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
                       >
-                        📄 Excel
+                        📄 Excel Export
                       </a>
                       <DeleteFormButton
                         formId={it.id}
