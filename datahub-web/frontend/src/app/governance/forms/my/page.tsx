@@ -3,6 +3,7 @@
 // 내 문서 목록 — 사이드바 별도 카테고리. 본인이 제출한 모든 신청서.
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { api, type FormListItem, type FormStatus } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
@@ -107,7 +108,7 @@ export default function MyFormsPage() {
                         href={api.exportFormUrl(it.id)}
                         className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
                       >
-                        📄 Excel Export
+                        <Download size={12} /> Excel
                       </a>
                       <DeleteFormButton
                         formId={it.id}
