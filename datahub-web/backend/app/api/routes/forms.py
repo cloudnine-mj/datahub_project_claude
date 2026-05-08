@@ -42,23 +42,30 @@ MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB (UI hint 와 일치)
 def _next_request_no(db: Session) -> str:
     """REQ-YYYY-NNNNN — 연도별 카운터.
 
-    SQLite max() 로 단순 처리. 동시성 충돌 가능성 있으나 단일 사용자 시나리오에서는 무해.
+    versioning 으로 인한 '-vN' 접미는 무시하고 base 시퀀스 max + 1.
+    예: REQ-2026-00001, REQ-2026-00001-v2, REQ-2026-00002 가 있으면 다음은 00003.
     """
+    import re
+
     year = datetime.utcnow().year
     prefix = f"REQ-{year}-"
-    last = (
-        db.query(Form)
+    rows = (
+        db.query(Form.request_no)
         .filter(Form.request_no.like(f"{prefix}%"))
-        .order_by(Form.id.desc())
-        .first()
+        .all()
     )
-    seq = 1
-    if last:
+    max_seq = 0
+    for (rn,) in rows:
+        # '-vN' suffix 제거
+        base = re.sub(r"-v\d+$", "", rn)
+        # base 가 'REQ-YYYY-NNNNN' 형태인지 — 마지막 토큰이 정수면 비교
         try:
-            seq = int(last.request_no.rsplit("-", 1)[-1]) + 1
+            n = int(base.rsplit("-", 1)[-1])
         except ValueError:
-            seq = 1
-    return f"{prefix}{seq:05d}"
+            continue
+        if n > max_seq:
+            max_seq = n
+    return f"{prefix}{max_seq + 1:05d}"
 
 
 @router.get("", response_model=list[FormListItem])
