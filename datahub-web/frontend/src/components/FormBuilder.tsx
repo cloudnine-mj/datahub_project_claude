@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
+import { findFirstEmptyRequired } from "@/lib/formValidation";
 import { Breadcrumb } from "./Breadcrumb";
 
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -572,60 +573,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       )}
     </div>
   );
-}
-
-/**
- * 정식 제출 시 첫번째 비어있는 필수 필드 라벨 반환. 모두 채워져 있으면 null.
- * 신청자 정보 + 모든 schema 섹션의 필드(체크박스 제외) 검사.
- */
-function findFirstEmptyRequired(
-  schema: { sections: { fields: FieldDef[]; optional?: boolean }[] },
-  values: Record<string, unknown>,
-  submitter: { submitterName: string; submitterDepartment: string; submitterEmail: string },
-): string | null {
-  if (!submitter.submitterName.trim()) return "신청자 이름";
-  if (!submitter.submitterDepartment.trim()) return "소속";
-  if (!submitter.submitterEmail.trim()) return "이메일";
-
-  for (const section of schema.sections) {
-    if (section.optional) continue; // 선택 섹션은 검증 skip
-    for (const f of section.fields) {
-      if (f.type === "checkbox") continue;
-      if (isFieldEmpty(f, values[f.key])) return f.label || f.key;
-    }
-  }
-  return null;
-}
-
-function isFieldEmpty(field: FieldDef, v: unknown): boolean {
-  if (v === undefined || v === null) return true;
-  if (typeof v === "string") return v.trim().length === 0;
-  if (Array.isArray(v)) {
-    if (v.length === 0) return true;
-    if (field.type === "service_blocks") {
-      // 첫 블록의 서비스명 정도는 채워져 있어야 함
-      const first = v[0] as Record<string, unknown> | undefined;
-      const name = first?.service_name;
-      return !(typeof name === "string" && name.trim());
-    }
-    if (field.type === "service_list") {
-      return !v.some((x) => typeof x === "string" && x.trim());
-    }
-    return false;
-  }
-  if (typeof v === "object") {
-    if (field.type === "date_range") {
-      const r = v as { start?: string; end?: string };
-      return !r.start?.trim() || !r.end?.trim();
-    }
-    if (field.type === "currency") {
-      const c = v as { kind?: string; custom?: string };
-      if (!c.kind) return true;
-      if (c.kind === "기타" && !c.custom?.trim()) return true;
-      return false;
-    }
-  }
-  return false;
 }
 
 function FieldInput({

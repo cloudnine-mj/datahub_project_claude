@@ -4,12 +4,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckSquare, Database, Eye, Pencil, Send, Square } from "lucide-react";
+import { AlertCircle, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
+import { findFirstEmptyRequired } from "@/lib/formValidation";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [missingField, setMissingField] = useState<string | null>(null);
 
   const refetch = useCallback(() => {
     api.getForm(Number(params.id)).then(setForm).catch((e) => setError((e as Error).message));
@@ -27,6 +29,19 @@ export default function Page({ params }: { params: { id: string } }) {
   async function submitDraft() {
     if (!form) return;
     setError(null);
+
+    // 정식 제출 검증 — FormBuilder 와 동일 규칙 (필수 섹션 / 비-checkbox 필드)
+    const schema = FORM_SCHEMAS[form.form_type];
+    const missing = findFirstEmptyRequired(schema, form.payload, {
+      submitterName: form.submitter_name || "",
+      submitterDepartment: form.submitter_department || "",
+      submitterEmail: form.submitter_email || "",
+    });
+    if (missing) {
+      setMissingField(missing);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await api.updateForm(form.id, {
@@ -165,6 +180,57 @@ export default function Page({ params }: { params: { id: string } }) {
           </button>
         )}
       </div>
+
+      {missingField && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setMissingField(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-amber-50 text-amber-600">
+                  <AlertCircle size={18} />
+                </span>
+                <h3 className="text-base font-bold">필수 항목 누락</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMissingField(null)}
+                aria-label="닫기"
+                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              <strong className="font-semibold text-gray-800">&apos;{missingField}&apos;</strong> 항목을 입력해주세요. 신청서를 수정한 뒤 다시 제출해 주세요.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setMissingField(null)}
+                className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMissingField(null);
+                  if (form) router.push(`/governance/forms/${form.form_type}/new?id=${form.id}`);
+                }}
+                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+              >
+                수정하러 가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
