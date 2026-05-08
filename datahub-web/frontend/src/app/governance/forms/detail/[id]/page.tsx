@@ -36,10 +36,9 @@ export default function Page({ params }: { params: { id: string } }) {
         submitter_email: form.submitter_email,
         submitter_department: form.submitter_department ?? undefined,
       });
-      refetch();
+      router.push(`/governance/forms/submitted?id=${form.id}`);
     } catch (e) {
       setError((e as Error).message);
-    } finally {
       setSubmitting(false);
     }
   }
