@@ -819,12 +819,13 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
         placeholder="날짜를 선택하세요"
         className="w-full rounded-md border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-brand focus:outline-none"
       />
+      {/* hidden native date — left:0 으로 명시해 picker 가 좌측(아이콘 옆)에 뜨도록 */}
       <input
         ref={dateInputRef}
         type="date"
         value={/^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ""}
         onChange={(e) => onChange(e.target.value)}
-        className="pointer-events-none absolute h-0 w-0 opacity-0"
+        className="pointer-events-none absolute left-2 top-1/2 h-0 w-0 -translate-y-1/2 opacity-0"
         tabIndex={-1}
         aria-hidden="true"
       />
