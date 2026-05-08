@@ -4,11 +4,23 @@
  * Next.js rewrites 가 /api/* → http://localhost:8000/* 로 프록시하므로
  * 클라이언트에서 호출 시 항상 `/api` prefix 를 사용한다.
  *
- * 임시 인증: localStorage 의 X-User-Email 을 헤더로 자동 첨부.
- * 미설정 시 백엔드가 default_admin_email (Karlo Lee) 로 fallback.
+ * 인증:
+ *   - 운영: data-platform-api 의 `platform_token` httpOnly cookie 사용
+ *     (credentials: 'include' 로 자동 전송)
+ *   - 로컬 mock: localStorage 의 X-User-Email 헤더 (개발 편의)
+ *   - 401 응답 시 자동으로 /auth/expired 로 리다이렉트
  */
 
 const BASE = "/api";
+
+/** plat-api OAuth 시작 URL — 환경변수로 base 주입, fallback 은 same-origin /api */
+export const PLATFORM_AUTH_LOGIN_URL = (() => {
+  const base =
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_PLATFORM_API_BASE) || "";
+  return base
+    ? `${base.replace(/\/$/, "")}/api/v1/auth/login`
+    : `/api/v1/auth/login`;
+})();
 
 function getUserEmail(): string | null {
   if (typeof window === "undefined") return null;
@@ -26,10 +38,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!headers.has("Content-Type") && init?.body && typeof init.body === "string") {
     headers.set("Content-Type", "application/json");
   }
+  // mock 모드 — localStorage email
   const email = getUserEmail();
   if (email) headers.set("X-User-Email", email);
 
-  const res = await fetch(`${BASE}${path}`, { ...init, headers, cache: "no-store" });
+  const res = await fetch(`${BASE}${path}`, {
+    ...init,
+    headers,
+    // plat-api platform_token 쿠키 자동 전송 (cross-origin 인 경우)
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  // 세션 만료 / 미인증 — 전역 처리
+  if (res.status === 401 && typeof window !== "undefined") {
+    if (!window.location.pathname.startsWith("/auth/") && window.location.pathname !== "/signin") {
+      window.location.href = "/auth/expired";
+    }
+  }
+
   if (!res.ok) {
     let detail: unknown;
     try {
@@ -262,6 +289,21 @@ export const api = {
   formAttachmentUrl: (formId: number, attId: number) => `${BASE}/forms/${formId}/attachments/${attId}`,
   deleteFormAttachment: (formId: number, attId: number) =>
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
+
+  /** 로그아웃 — plat-api 의 refresh_token 폐기 + 쿠키 삭제. mock 모드면 X-User-Email 만 비움. */
+  logout: async () => {
+    setUserEmail(null);
+    // plat-api logout endpoint 가 동일 origin (rewrites 경유) 이라 같은 BASE 로 호출.
+    // 로컬 mock backend 에는 이 endpoint 가 없으니 실패해도 무시.
+    try {
+      await fetch(`${BASE}/api/v1/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      /* mock backend 에는 endpoint 없음 — 무시 */
+    }
+  },
 
   /** 이미지 업로드 — 마크다운 본문 삽입용. 글 저장 전에도 호출 가능. */
   uploadImage: (file: File) => {

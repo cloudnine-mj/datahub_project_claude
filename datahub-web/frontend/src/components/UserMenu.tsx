@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Key, LogOut, Settings as SettingsIcon, User as UserIcon } from "lucide-react";
-import { setUserEmail, type Me } from "@/lib/api";
+import { api, type Me } from "@/lib/api";
 
 interface Props {
   me: Me | null;
@@ -31,9 +31,9 @@ export function UserMenu({ me }: Props) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  function handleSignOut() {
-    setUserEmail(null);
+  async function handleSignOut() {
     setOpen(false);
+    await api.logout();
     router.push("/signin");
   }
 
