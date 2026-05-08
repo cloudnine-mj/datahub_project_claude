@@ -50,7 +50,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             doc_type="가이드",
             category="제작 프로세스",
             content="외주 업체를 통한 데이터 용역 제작을 요청하는 절차를 안내합니다.\n\n"
-                    "1. 데이터 거버넌스 문서 서식에서 '데이터 용역 제작 신청서' 작성\n"
+                    "1. 데이터 거버넌스 문서 서식 모음에서 '데이터 용역 제작 신청서' 작성\n"
                     "2. 작성 완료 후 전자결재 상신\n"
                     "3. 승인 후 외주 업체 매칭 및 작업 착수",
             author_id=admin.id,
