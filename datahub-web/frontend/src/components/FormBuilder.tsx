@@ -194,8 +194,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         // 수정 저장 후 detail 로 — just-edited 플래그로 detail 의 '제출' 버튼 노출 트리거
         router.push(`/governance/forms/detail/${result.id}?just-edited=1`);
       } else if (asDraft) {
-        // 신규 임시저장 → detail (제출 버튼은 detail 의 just-edited 플래그가 없어 미노출)
-        router.push(`/governance/forms/detail/${result.id}`);
+        // 신규 임시저장 → 바로 내 문서 목록으로. detail 은 어차피 거기서 수정 가능.
+        router.push(`/governance/forms/my`);
       } else {
         router.push(`/governance/forms/submitted?id=${result.id}`);
       }
