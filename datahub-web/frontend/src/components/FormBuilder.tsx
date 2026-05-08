@@ -3,7 +3,7 @@
 // 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
+import { AlertCircle, ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { Breadcrumb } from "./Breadcrumb";
@@ -30,6 +30,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [missingField, setMissingField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 신청자 정보 — 로그인 사용자 정보로 자동 입력. 사용자가 직접 수정 가능.
@@ -135,7 +136,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         submitterEmail,
       });
       if (missing) {
-        setError(`'${missing}' 항목을 입력해주세요.`);
+        setMissingField(missing);
         return;
       }
     }
@@ -472,6 +473,48 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </button>
         </div>
       </form>
+
+      {/* 필수 항목 누락 알림 모달 */}
+      {missingField && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setMissingField(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-amber-50 text-amber-600">
+                  <AlertCircle size={18} />
+                </span>
+                <h3 className="text-base font-bold">필수 항목 누락</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMissingField(null)}
+                aria-label="닫기"
+                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              <strong className="font-semibold text-gray-800">&apos;{missingField}&apos;</strong> 항목을 입력해주세요.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMissingField(null)}
+                className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 작성 예시 모달 — 현재 placeholder, 향후 신청서별 예시 데이터 연결 */}
       {exampleOpen && (
