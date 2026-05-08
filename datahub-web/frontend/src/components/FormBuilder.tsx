@@ -128,8 +128,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   async function save(asDraft: boolean) {
     setError(null);
 
-    // 정식 제출이면 모든 필수 필드 검증 (체크박스 제외)
-    if (!asDraft) {
+    // 수정 모드는 항상 draft 로 저장 — 사용자가 detail 에서 '제출' 버튼으로 명시적으로 재제출
+    const willBeDraft = asDraft || isEdit;
+
+    // 정식 제출(즉, 신규 작성에서 '제출' 클릭) 일 때만 필수 필드 검증
+    if (!willBeDraft) {
       const missing = findFirstEmptyRequired(schema, values, {
         submitterName,
         submitterDepartment,
@@ -153,13 +156,19 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       } else if (rawProject) {
         projectName = String(rawProject);
       }
-      setProgress(asDraft ? "임시저장 중..." : isEdit ? "신청서 수정 중..." : "신청서 제출 중...");
+      setProgress(
+        willBeDraft
+          ? isEdit
+            ? "수정 저장 중..."
+            : "임시저장 중..."
+          : "신청서 제출 중...",
+      );
 
       const body = {
         form_type: formType,
         project_name: projectName,
         payload: values,
-        status: asDraft ? "draft" : "submitted",
+        status: willBeDraft ? "draft" : "submitted",
         submitter_name: submitterName || undefined,
         submitter_email: submitterEmail || undefined,
         submitter_department: submitterDepartment || undefined,
@@ -456,14 +465,16 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => save(true)}
-            disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            임시저장
-          </button>
+          {!isEdit && (
+            <button
+              type="button"
+              onClick={() => save(true)}
+              disabled={submitting}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              임시저장
+            </button>
+          )}
           <button
             type="submit"
             disabled={submitting}
