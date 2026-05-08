@@ -1266,17 +1266,9 @@ function MemberChipsField({
           }
         }}
         onBlur={commit}
-        placeholder={members.length === 0 ? "여러 명 추가 가능 — 이름 입력 후 Enter 또는 + 버튼 클릭 (예: 홍길동)" : ""}
+        placeholder={members.length === 0 ? "여러 명 추가 가능 — 이름 입력 후 Enter (예: 홍길동)" : ""}
         className="min-w-[140px] flex-1 rounded-md border-0 bg-transparent px-2 py-1 text-sm placeholder:text-gray-400 focus:outline-none"
       />
-      <button
-        type="button"
-        onClick={commit}
-        aria-label="이름 추가"
-        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
-      >
-        +
-      </button>
     </div>
   );
 }
