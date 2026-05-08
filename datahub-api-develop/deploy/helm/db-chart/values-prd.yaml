@@ -1,0 +1,42 @@
+# =============================================================================
+# prd 환경 오버라이드 — lgair-datahub-prd 클러스터
+# Cluster  : gke_lgair-dg-data-hub_us-central1_lgair-datahub-prd
+# Namespace: lgair-datahub-db
+# Helm     : release = dh-db, chart = db-chart
+# 진입(외부): db.datahub.lgair-data.com:5432
+#
+# 시크릿은 모두 CI에서 --set으로 주입 (environment scope=prd).
+# =============================================================================
+
+postgresql:
+  persistence:
+    size: 50Gi
+
+  externalService:
+    enabled: true
+    loadBalancerSourceRanges:
+      - "203.247.149.40/29"       # LG 사내망
+      - "61.100.40.18/32"
+      - "10.1.251.0/24"           # 내부 VPN
+      - "165.85.218.127/32"
+      - "165.85.218.128/32"
+      - "140.209.203.20/32"
+      - "140.209.203.114/32"
+      - "134.231.208.126/32"
+      - "134.231.208.21/32"
+      - "210.98.176.131/32"
+      - "34.56.23.209/32"         # GCP 내부 서비스
+      - "34.69.21.196/32"
+      - "34.44.90.1/32"
+      - "35.222.144.28/32"
+      - "35.222.221.89/32"
+      - "34.170.180.252/32"
+      - "10.128.0.0/16"           # VPC 내부
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"

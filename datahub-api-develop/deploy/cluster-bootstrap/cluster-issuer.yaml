@@ -1,0 +1,36 @@
+# Let's Encrypt ClusterIssuer — dev / stg / prd 공통
+# 설치: kubectl --context $CTX apply -f deploy/cluster-bootstrap/cluster-issuer.yaml
+#
+# 방식: ACME DNS-01 solver (Google Cloud DNS)
+#
+# 장점 대비 HTTP-01:
+#   - 외부에서 LB:80 으로 접근할 필요가 없어, nginx ingress 의
+#     loadBalancerSourceRanges 를 사내 CIDR 로 완전히 닫아둘 수 있다.
+#   - 와일드카드 인증서 발급도 가능 (필요 시 `*.datahub.lgair-data.com`).
+#
+# 사전 조건:
+#   1. Cloud DNS zone `lgair-data-com` (dnsName=lgair-data.com.) 가 존재
+#   2. 서비스 계정 `cert-manager-dns01@lgair-dg-data-hub.iam.gserviceaccount.com`
+#      이 존재하고, 프로젝트 `lgair-dg-data-hub` 에서 `roles/dns.admin` 보유
+#   3. 해당 SA 의 JSON key 가 `cert-manager` 네임스페이스의
+#      Secret `cert-manager-dns01-key` 의 `key.json` 필드에 저장되어 있음
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: karlo.lee+datahub@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+      - dns01:
+          cloudDNS:
+            project: lgair-dg-data-hub
+            serviceAccountSecretRef:
+              name: cert-manager-dns01-key
+              key: key.json
+        selector:
+          dnsZones:
+            - "lgair-data.com"

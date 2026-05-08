@@ -1,0 +1,45 @@
+{{- if .Values.uploadSessionCleanup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-upload-session-cleanup
+  labels:
+    app: {{ .Release.Name }}-upload-session-cleanup
+spec:
+  schedule: {{ .Values.uploadSessionCleanup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.uploadSessionCleanup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.uploadSessionCleanup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.uploadSessionCleanup.backoffLimit }}
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: cleanup
+              image: "{{ .Values.platform.image.repository }}:{{ .Values.platform.image.tag }}"
+              imagePullPolicy: {{ .Values.platform.image.pullPolicy }}
+              command:
+                - python
+                - -m
+                - app.services.upload_session_cleanup
+                - --batch-size
+                - {{ .Values.uploadSessionCleanup.batchSize | quote }}
+              envFrom:
+                - configMapRef:
+                    name: {{ .Release.Name }}-platform-config
+                - secretRef:
+                    name: {{ .Release.Name }}-platform-secret
+              env:
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: {{ .Values.gcs.keyPath | quote }}
+              volumeMounts:
+                - name: gcs-credentials
+                  mountPath: /secrets
+                  readOnly: true
+          volumes:
+            - name: gcs-credentials
+              secret:
+                secretName: {{ .Values.gcs.secretName }}
+{{- end }}

@@ -1,0 +1,50 @@
+{{- if and .Values.postgresqlBackup.enabled .Values.postgresqlBackup.bucket }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-postgresql-backup
+  labels:
+    app: {{ .Release.Name }}-postgresql-backup
+spec:
+  schedule: {{ .Values.postgresqlBackup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.postgresqlBackup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.postgresqlBackup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.postgresqlBackup.backoffLimit }}
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -lc
+                - |
+                  set -eu
+                  apk add --no-cache python3 py3-pip
+                  pip install --no-cache-dir --break-system-packages google-cloud-storage
+                  export PGPASSWORD="$POSTGRES_PASSWORD"
+                  export GOOGLE_APPLICATION_CREDENTIALS={{ .Values.gcs.keyPath }}
+                  for db in {{ .Values.postgresql.auth.platformDatabase }} {{ .Values.postgresql.auth.lakefsDatabase }} {{ .Values.postgresql.auth.ucDatabase }}; do
+                    pg_dump -h {{ .Values.postgresqlBackup.host | default (printf "%s-postgresql" .Release.Name) }} -p {{ .Values.postgresqlBackup.port }} -U postgres -d "$db" -f "/tmp/${db}.sql"
+                    gzip -f "/tmp/${db}.sql"
+                    python3 -c 'from google.cloud import storage; import sys; db_name, file_path, bucket_name, release_name = sys.argv[1:5]; storage.Client().bucket(bucket_name).blob(f"{release_name}/{db_name}.sql.gz").upload_from_filename(file_path)' "$db" "/tmp/${db}.sql.gz" "{{ .Values.postgresqlBackup.bucket }}" "{{ .Release.Name }}"
+                  done
+              env:
+                - name: POSTGRES_PASSWORD
+                  value: {{ .Values.postgresql.auth.postgresPassword | quote }}
+                - name: GOOGLE_APPLICATION_CREDENTIALS
+                  value: {{ .Values.gcs.keyPath | quote }}
+              volumeMounts:
+                - name: gcs-credentials
+                  mountPath: /secrets
+                  readOnly: true
+          volumes:
+            - name: gcs-credentials
+              secret:
+                secretName: {{ .Values.gcs.secretName }}
+{{- end }}

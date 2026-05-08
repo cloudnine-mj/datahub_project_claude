@@ -1,0 +1,189 @@
+{{- if .Values.unityCatalog.enabled }}
+# =============================================================================
+# Unity Catalog — Hibernate ConfigMap
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-unity-catalog-hibernate
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+data:
+  hibernate.properties: |
+    hibernate.connection.driver_class={{ .Values.unityCatalog.hibernate.driverClass }}
+    hibernate.connection.url=jdbc:postgresql://{{ .Values.unityCatalog.database.host | default (printf "%s-postgresql" .Release.Name) }}:{{ .Values.unityCatalog.database.port }}/{{ .Values.unityCatalog.database.name | default .Values.postgresql.auth.ucDatabase }}
+    hibernate.connection.username={{ .Values.unityCatalog.database.user | default .Values.postgresql.auth.ucUser }}
+    hibernate.connection.password={{ .Values.unityCatalog.database.password | default .Values.postgresql.auth.ucPassword }}
+    hibernate.dialect={{ .Values.unityCatalog.hibernate.dialect }}
+    hibernate.hbm2ddl.auto={{ .Values.unityCatalog.hibernate.hbm2ddlAuto }}
+    hibernate.show_sql=false
+    hibernate.archive.autodetection=class
+    hibernate.use_sql_comments=true
+    org.hibernate.SQL=INFO
+    org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+
+---
+# =============================================================================
+# Unity Catalog — Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-unity-catalog
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+spec:
+  replicas: {{ .Values.unityCatalog.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-unity-catalog
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-unity-catalog
+    spec:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - server
+      containers:
+        - name: unity-catalog
+          image: "{{ .Values.unityCatalog.image.repository }}:{{ .Values.unityCatalog.image.tag }}"
+          imagePullPolicy: {{ .Values.unityCatalog.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.unityCatalog.server.port }}
+              protocol: TCP
+          volumeMounts:
+            - name: hibernate-config
+              mountPath: /home/unitycatalog/etc/conf/hibernate.properties
+              subPath: hibernate.properties
+            - name: gcs-credentials
+              mountPath: /secrets
+              readOnly: true
+          resources:
+            requests:
+              cpu: {{ .Values.unityCatalog.resources.requests.cpu | quote }}
+              memory: {{ .Values.unityCatalog.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.unityCatalog.resources.limits.cpu | quote }}
+              memory: {{ .Values.unityCatalog.resources.limits.memory | quote }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.unityCatalog.server.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.unityCatalog.server.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+        {{- if .Values.unityCatalog.ui.enabled }}
+        - name: unity-catalog-ui
+          image: "{{ .Values.unityCatalog.ui.image.repository }}:{{ .Values.unityCatalog.ui.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.unityCatalog.ui.service.port }}
+              protocol: TCP
+          env:
+            - name: DANGEROUSLY_DISABLE_HOST_CHECK
+              value: "true"
+        {{- end }}
+      volumes:
+        - name: hibernate-config
+          configMap:
+            name: {{ .Release.Name }}-unity-catalog-hibernate
+        - name: gcs-credentials
+          secret:
+            secretName: {{ .Values.gcs.secretName }}
+
+---
+# =============================================================================
+# Unity Catalog — Service (API)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-unity-catalog
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.unityCatalog.server.port }}
+      targetPort: {{ .Values.unityCatalog.server.port }}
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-unity-catalog
+
+{{- if .Values.unityCatalog.ui.enabled }}
+---
+# =============================================================================
+# Unity Catalog — Service (UI)
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-unity-catalog-ui
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+spec:
+  type: {{ .Values.unityCatalog.ui.service.type }}
+  ports:
+    - port: {{ .Values.unityCatalog.ui.service.port }}
+      targetPort: {{ .Values.unityCatalog.ui.service.port }}
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-unity-catalog
+{{- end }}
+
+{{- if .Values.unityCatalog.ingress.enabled }}
+---
+# =============================================================================
+# Unity Catalog — Ingress (API)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-unity-catalog
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+spec:
+  ingressClassName: {{ .Values.unityCatalog.ingress.className }}
+  rules:
+    - host: {{ .Values.unityCatalog.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-unity-catalog
+                port:
+                  number: {{ .Values.unityCatalog.server.port }}
+{{- end }}
+
+{{- if .Values.unityCatalog.uiIngress.enabled }}
+---
+# =============================================================================
+# Unity Catalog — Ingress (UI)
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-unity-catalog-ui
+  labels:
+    app: {{ .Release.Name }}-unity-catalog
+spec:
+  ingressClassName: {{ .Values.unityCatalog.uiIngress.className }}
+  rules:
+    - host: {{ .Values.unityCatalog.uiIngress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-unity-catalog-ui
+                port:
+                  number: {{ .Values.unityCatalog.ui.service.port }}
+{{- end }}
+{{- end }}

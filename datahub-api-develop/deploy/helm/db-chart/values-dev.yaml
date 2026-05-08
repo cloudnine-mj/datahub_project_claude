@@ -1,0 +1,45 @@
+# =============================================================================
+# dev 환경 오버라이드 — lgair-datahub-dev 클러스터
+# Cluster  : gke_lgair-dg-data-hub_us-central1_lgair-datahub-dev
+# Namespace: lgair-datahub-db
+# Helm     : release = dh-db, chart = db-chart
+# 진입(외부): db-dev.datahub.lgair-data.com:5432
+#
+# 시크릿은 모두 CI에서 --set으로 주입 (environment scope=dev).
+# 0.0.0.0/0 절대 사용 금지.
+# =============================================================================
+
+postgresql:
+  persistence:
+    size: 10Gi
+
+  externalService:
+    enabled: true
+    # ⚠️ 방화벽: 허용 IP 대역만 명시 (0.0.0.0/0 금지)
+    # 아래 기본값은 LG 사내망 + VPN + GCP 내부. 추가 IP는 CI Variable DB_ALLOWED_CIDRS 또는 values 수정.
+    loadBalancerSourceRanges:
+      - "203.247.149.40/29"       # LG 사내망
+      - "61.100.40.18/32"
+      - "10.1.251.0/24"           # 내부 VPN
+      - "165.85.218.127/32"
+      - "165.85.218.128/32"
+      - "140.209.203.20/32"
+      - "140.209.203.114/32"
+      - "134.231.208.126/32"
+      - "134.231.208.21/32"
+      - "210.98.176.131/32"
+      - "34.56.23.209/32"         # GCP 내부 서비스 / GitLab runner
+      - "34.69.21.196/32"
+      - "34.44.90.1/32"
+      - "35.222.144.28/32"
+      - "35.222.221.89/32"
+      - "34.170.180.252/32"
+      - "10.128.0.0/16"           # VPC 내부
+
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"

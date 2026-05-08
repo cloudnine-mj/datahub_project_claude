@@ -1,0 +1,6 @@
+deploy/helm/dp-chart/secrets/*.json
+deploy/helm/dp-chart/secrets/*.key
+__pycache__/
+*.pyc
+.venv/
+.venv-*/

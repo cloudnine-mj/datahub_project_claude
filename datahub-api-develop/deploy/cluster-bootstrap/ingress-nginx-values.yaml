@@ -1,0 +1,39 @@
+# ingress-nginx values — dev / stg / prd 공통
+# 설치: helm install ingress-nginx ingress-nginx/ingress-nginx \
+#         --namespace ingress-nginx --create-namespace \
+#         --version 4.15.1 \
+#         -f deploy/cluster-bootstrap/ingress-nginx-values.yaml
+#
+# 외부 LB(Google Cloud Network LoadBalancer)의 source ranges 로 사내망만 허용한다.
+# (GCP 방화벽은 GKE 가 LB 를 만들 때 이 값을 기반으로 자동 생성)
+#
+# externalTrafficPolicy: Local 반드시 유지.
+#   - 기본값 Cluster 로 두면 노드 간 포워딩 시 SNAT 가 일어나 nginx 가
+#     client IP 로 GKE 내부 노드 IP (예: 10.78.128.1) 를 보게 된다.
+#   - 그 결과 ingress 의 `nginx.ingress.kubernetes.io/whitelist-source-range`
+#     가 실제 사용자 사내 IP 를 매칭하지 못해 모든 요청이 403 으로 거부된다.
+#   - Local 로 두면 LB 가 ingress-nginx pod 이 있는 노드로 직접 라우팅해
+#     client IP 가 보존된다.
+controller:
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    loadBalancerSourceRanges:
+      - "203.247.149.40/29"          # LG 사내망
+      - "61.100.40.18/32"
+      - "10.1.251.0/24"              # 내부 VPN
+      - "165.85.218.127/32"
+      - "165.85.218.128/32"
+      - "140.209.203.20/32"
+      - "140.209.203.114/32"
+      - "134.231.208.126/32"
+      - "134.231.208.21/32"
+      - "34.56.23.209/32"            # GCP 내부 서비스
+      - "34.69.21.196/32"
+      - "34.44.90.1/32"
+      - "210.98.176.131/32"
+      - "10.128.0.102/32"
+      - "35.222.144.28/32"
+      - "35.222.221.89/32"
+      - "34.170.180.252/32"
+      - "10.105.0.0/16"              # VPC 내부 대역
