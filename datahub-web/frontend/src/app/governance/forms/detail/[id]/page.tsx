@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, Database, Eye, Pencil, Square } from "lucide-react";
+import { CheckSquare, Database, Eye, Pencil, Send, Square } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
@@ -16,10 +16,33 @@ export default function Page({ params }: { params: { id: string } }) {
   const [form, setForm] = useState<FormDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const refetch = useCallback(() => {
     api.getForm(Number(params.id)).then(setForm).catch((e) => setError((e as Error).message));
   }, [params.id]);
+
+  async function submitDraft() {
+    if (!form) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.updateForm(form.id, {
+        form_type: form.form_type,
+        project_name: form.project_name,
+        payload: form.payload,
+        status: "submitted",
+        submitter_name: form.submitter_name,
+        submitter_email: form.submitter_email,
+        submitter_department: form.submitter_department ?? undefined,
+      });
+      refetch();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     refetch();
@@ -123,12 +146,23 @@ export default function Page({ params }: { params: { id: string } }) {
         >
           <Pencil size={12} /> 수정
         </button>
-        <a
-          href={api.exportFormUrl(form.id)}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
-        >
-          📄 Excel Export
-        </a>
+        {form.status === "draft" ? (
+          <button
+            type="button"
+            onClick={submitDraft}
+            disabled={submitting}
+            className="inline-flex items-center gap-1 rounded-md bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
+          >
+            <Send size={12} /> {submitting ? "제출 중..." : "제출"}
+          </button>
+        ) : (
+          <a
+            href={api.exportFormUrl(form.id)}
+            className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
+          >
+            📄 Excel Export
+          </a>
+        )}
       </div>
     </div>
   );
