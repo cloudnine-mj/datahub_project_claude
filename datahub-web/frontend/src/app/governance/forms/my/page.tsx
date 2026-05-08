@@ -99,14 +99,7 @@ export default function MyFormsPage() {
                   <td className="px-6 py-4">{FORM_TYPE_LABELS[it.form_type]}</td>
                   <td className="px-6 py-4">
                     <Link href={`/governance/forms/detail/${it.id}`} className="block hover:text-brand">
-                      <div className="flex items-center gap-1.5 font-semibold">
-                        <span>{it.project_name}</span>
-                        {it.version > 1 && (
-                          <span className="rounded bg-blue-50 px-1.5 py-0 text-[10px] font-semibold text-blue-700">
-                            v{it.version}
-                          </span>
-                        )}
-                      </div>
+                      <div className="font-semibold">{it.project_name}</div>
                       <div className="text-xs text-gray-400">{it.request_no}</div>
                     </Link>
                   </td>

@@ -83,14 +83,7 @@ export default function Page({ params }: { params: { id: string } }) {
       />
 
       <div className="mb-6 flex items-center gap-3">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          {label}
-          {form.version > 1 && (
-            <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-              v{form.version}
-            </span>
-          )}
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">{label}</h1>
         <button className="inline-flex items-center gap-1 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50">
           <Eye size={12} /> 미리보기
         </button>
