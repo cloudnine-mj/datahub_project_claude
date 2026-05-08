@@ -33,11 +33,11 @@ const CATEGORY_COLORS: Record<
     dot: "bg-blue-500",
     label: "제작 프로세스",
   },
-  "활용 요청 프로세스": {
+  "요청 프로세스": {
     chipActive: "bg-emerald-500 text-white",
     pill: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
-    label: "활용 요청 프로세스",
+    label: "요청 프로세스",
   },
 };
 

@@ -12,8 +12,8 @@ const CARDS = [
   {
     href: "/governance/process",
     icon: Layers,
-    title: "데이터 제작 / 활용 요청 프로세스",
-    desc: "데이터 제작 및 활용 요청 프로세스를 한곳에서 확인합니다.",
+    title: "데이터 제작 / 요청 프로세스",
+    desc: "데이터 제작 및 요청 프로세스를 한곳에서 확인합니다.",
   },
   {
     href: "/governance/forms",

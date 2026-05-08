@@ -25,11 +25,11 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
 
 export const BOARD_LABELS: Record<string, string> = {
   policy: "데이터 관리 정책",
-  process: "데이터 제작 / 활용 요청 프로세스",
+  process: "데이터 제작 / 요청 프로세스",
 };
 
-/** 통합된 process 보드의 카테고리 옵션 (제작 / 활용 요청). */
-export const PROCESS_CATEGORIES = ["제작 프로세스", "활용 요청 프로세스"] as const;
+/** 통합된 process 보드의 카테고리 옵션 (제작 / 요청). */
+export const PROCESS_CATEGORIES = ["제작 프로세스", "요청 프로세스"] as const;
 export type ProcessCategory = (typeof PROCESS_CATEGORIES)[number];
 
 /** 게시글 문서 유형 — 카테고리와 독립된 작은 분류 축. */

@@ -74,13 +74,13 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
     # 화면 2 — 데이터 관리 정책: 빈 상태로 두어 empty state UX (작성 요청 CTA) 검증.
     # 정책은 거버넌스 관리자가 직접 작성하는 컨텐츠라 시드 자체를 비움.
 
-    # 화면 4 — 데이터 활용 요청 프로세스 (2 건, 2025.01.15)
+    # 화면 4 — 데이터 요청 프로세스 (2 건, 2025.01.15)
     db.add_all([
         Post(
             board_type="process",
             title="Product 서비스 로그 데이터 활용 방법",
             doc_type="가이드",
-            category="활용 요청 프로세스",
+            category="요청 프로세스",
             content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
                     "신청서: 'Product 로그 데이터 활용 신청서'",
             author_id=admin.id,
@@ -91,7 +91,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             board_type="process",
             title="다운로드 불가능한 구매 데이터 활용 방법",
             doc_type="가이드",
-            category="활용 요청 프로세스",
+            category="요청 프로세스",
             content="라이선스 제약으로 다운로드가 불가능한 구매 데이터는 보안 워크스페이스에서만 사용 가능합니다.",
             author_id=admin.id,
             author_name=admin.name,
@@ -209,7 +209,7 @@ def _migrate_board_types(db: Session) -> None:
     if not legacy:
         pass
     for p in legacy:
-        new_cat = "제작 프로세스" if p.board_type == "production_process" else "활용 요청 프로세스"
+        new_cat = "제작 프로세스" if p.board_type == "production_process" else "요청 프로세스"
         # 옛 카테고리가 일반적이면 새 카테고리로 덮어쓰기. 사용자가 지정한 의미있는 값은 보존.
         # 옛 'category=가이드' 는 doc_type 으로 이전.
         if p.category == "가이드":
@@ -229,10 +229,22 @@ def _migrate_severity_values(db: Session) -> None:
         p.severity = mapping[p.severity]
 
 
+def _migrate_category_values(db: Session) -> None:
+    """프로세스 보드 category 라벨 단순화: '활용 요청 프로세스' → '요청 프로세스'."""
+    legacy = (
+        db.query(Post)
+        .filter(Post.board_type == "process", Post.category == "활용 요청 프로세스")
+        .all()
+    )
+    for p in legacy:
+        p.category = "요청 프로세스"
+
+
 def run_seed(db: Session) -> None:
     users = _ensure_users(db)
     _migrate_board_types(db)
     _migrate_severity_values(db)
+    _migrate_category_values(db)
     _ensure_posts(db, users)
     _ensure_forms(db, users)
     db.commit()
