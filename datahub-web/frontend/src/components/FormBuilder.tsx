@@ -941,8 +941,8 @@ function ServiceListField({
 }
 
 /**
- * 결제 통화 — USD / KRW / EUR / JPY / 기타 라디오.
- * 기타 선택 시 옆에 자유 입력 텍스트 (그 외 통화 코드 직접 입력).
+ * 결제 통화 — USD / KRW / [EUR·JPY·기타 dropdown].
+ * '그 외' 라디오 선택 시 dropdown 활성. dropdown 에서 '기타' 고르면 자유 입력 텍스트.
  */
 function CurrencyField({
   value,
@@ -952,30 +952,56 @@ function CurrencyField({
   onChange: (next: { kind?: string; custom?: string }) => void;
 }) {
   const kind = value.kind ?? "";
+  const isFromDropdown = kind === "EUR" || kind === "JPY" || kind === "기타";
+
   return (
     <div className="flex flex-wrap items-center gap-4">
-      {(["USD", "KRW", "EUR", "JPY", "기타"] as const).map((opt) => (
+      {(["USD", "KRW"] as const).map((opt) => (
         <label key={opt} className="flex items-center gap-2 text-sm">
           <input
             type="radio"
             name="currency"
             value={opt}
             checked={kind === opt}
-            onChange={() => onChange({ ...value, kind: opt, custom: opt === "기타" ? value.custom : undefined })}
+            onChange={() => onChange({ kind: opt })}
             className="text-brand focus:ring-brand"
           />
           {opt}
         </label>
       ))}
-      <input
-        type="text"
-        value={value.custom ?? ""}
-        onChange={(e) => onChange({ ...value, kind: "기타", custom: e.target.value.toUpperCase() })}
-        disabled={kind !== "기타"}
-        placeholder="예: GBP"
-        maxLength={5}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="radio"
+          name="currency"
+          checked={isFromDropdown}
+          onChange={() => onChange({ kind: "EUR" })} // dropdown 활성화 후 default = EUR
+          className="text-brand focus:ring-brand"
+        />
+        그 외
+      </label>
+      <select
+        value={isFromDropdown ? kind : ""}
+        disabled={!isFromDropdown}
+        onChange={(e) => {
+          const v = e.target.value;
+          onChange({ kind: v, custom: v === "기타" ? "" : undefined });
+        }}
         className="w-28 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-brand focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
-      />
+      >
+        <option value="EUR">EUR</option>
+        <option value="JPY">JPY</option>
+        <option value="기타">기타</option>
+      </select>
+      {kind === "기타" && (
+        <input
+          type="text"
+          value={value.custom ?? ""}
+          onChange={(e) => onChange({ ...value, custom: e.target.value.toUpperCase() })}
+          placeholder="예: GBP"
+          maxLength={5}
+          className="w-24 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+      )}
     </div>
   );
 }
