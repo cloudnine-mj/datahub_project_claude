@@ -190,8 +190,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         }
       }
 
-      if (asDraft || isEdit) {
-        // 임시저장 / 수정 모두 상세 페이지로
+      if (isEdit) {
+        // 수정 저장 후 detail 로 — just-edited 플래그로 detail 의 '제출' 버튼 노출 트리거
+        router.push(`/governance/forms/detail/${result.id}?just-edited=1`);
+      } else if (asDraft) {
+        // 신규 임시저장 → detail (제출 버튼은 detail 의 just-edited 플래그가 없어 미노출)
         router.push(`/governance/forms/detail/${result.id}`);
       } else {
         router.push(`/governance/forms/submitted?id=${result.id}`);

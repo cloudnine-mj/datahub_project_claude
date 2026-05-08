@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckSquare, Database, Eye, Pencil, Send, Square } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -13,6 +13,8 @@ import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justEdited = searchParams?.get("just-edited") === "1";
   const [form, setForm] = useState<FormDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export default function Page({ params }: { params: { id: string } }) {
         >
           <Pencil size={12} /> 수정
         </button>
-        {form.status === "draft" && (
+        {form.status === "draft" && justEdited && (
           <button
             type="button"
             onClick={submitDraft}
