@@ -126,6 +126,20 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   async function save(asDraft: boolean) {
     setError(null);
+
+    // 정식 제출이면 모든 필수 필드 검증 (체크박스 제외)
+    if (!asDraft) {
+      const missing = findFirstEmptyRequired(schema, values, {
+        submitterName,
+        submitterDepartment,
+        submitterEmail,
+      });
+      if (missing) {
+        setError(`'${missing}' 항목을 입력해주세요.`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       // projectField 가 service_blocks 같은 array 라면 첫 항목의 service_name 으로 매핑
@@ -309,7 +323,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             <section key={section.title || `s-${sectionIdx}`}>
               <div className="mb-3 flex items-center gap-2">
                 <span className="block h-5 w-1 rounded-sm bg-brand" />
-                <h2 className="text-base font-bold">{section.title}</h2>
+                <h2 className="text-base font-bold">
+                  {section.title}
+                  <span className="ml-1 text-brand">*</span>
+                </h2>
+                <span className="text-xs text-gray-400">모든 항목 필수</span>
               </div>
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                 <table className="w-full text-sm">
@@ -498,6 +516,59 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       )}
     </div>
   );
+}
+
+/**
+ * 정식 제출 시 첫번째 비어있는 필수 필드 라벨 반환. 모두 채워져 있으면 null.
+ * 신청자 정보 + 모든 schema 섹션의 필드(체크박스 제외) 검사.
+ */
+function findFirstEmptyRequired(
+  schema: { sections: { fields: FieldDef[] }[] },
+  values: Record<string, unknown>,
+  submitter: { submitterName: string; submitterDepartment: string; submitterEmail: string },
+): string | null {
+  if (!submitter.submitterName.trim()) return "신청자 이름";
+  if (!submitter.submitterDepartment.trim()) return "소속";
+  if (!submitter.submitterEmail.trim()) return "이메일";
+
+  for (const section of schema.sections) {
+    for (const f of section.fields) {
+      if (f.type === "checkbox") continue;
+      if (isFieldEmpty(f, values[f.key])) return f.label || f.key;
+    }
+  }
+  return null;
+}
+
+function isFieldEmpty(field: FieldDef, v: unknown): boolean {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return v.trim().length === 0;
+  if (Array.isArray(v)) {
+    if (v.length === 0) return true;
+    if (field.type === "service_blocks") {
+      // 첫 블록의 서비스명 정도는 채워져 있어야 함
+      const first = v[0] as Record<string, unknown> | undefined;
+      const name = first?.service_name;
+      return !(typeof name === "string" && name.trim());
+    }
+    if (field.type === "service_list") {
+      return !v.some((x) => typeof x === "string" && x.trim());
+    }
+    return false;
+  }
+  if (typeof v === "object") {
+    if (field.type === "date_range") {
+      const r = v as { start?: string; end?: string };
+      return !r.start?.trim() || !r.end?.trim();
+    }
+    if (field.type === "currency") {
+      const c = v as { kind?: string; custom?: string };
+      if (!c.kind) return true;
+      if (c.kind === "기타" && !c.custom?.trim()) return true;
+      return false;
+    }
+  }
+  return false;
 }
 
 function FieldInput({
