@@ -325,9 +325,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                 <span className="block h-5 w-1 rounded-sm bg-brand" />
                 <h2 className="text-base font-bold">
                   {section.title}
-                  <span className="ml-1 text-brand">*</span>
+                  {!section.optional && <span className="ml-1 text-brand">*</span>}
                 </h2>
-                <span className="text-xs text-gray-400">모든 항목 필수</span>
+                <span className="text-xs text-gray-400">
+                  {section.optional ? "선택" : "모든 항목 필수"}
+                </span>
               </div>
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                 <table className="w-full text-sm">
@@ -523,7 +525,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
  * 신청자 정보 + 모든 schema 섹션의 필드(체크박스 제외) 검사.
  */
 function findFirstEmptyRequired(
-  schema: { sections: { fields: FieldDef[] }[] },
+  schema: { sections: { fields: FieldDef[]; optional?: boolean }[] },
   values: Record<string, unknown>,
   submitter: { submitterName: string; submitterDepartment: string; submitterEmail: string },
 ): string | null {
@@ -532,6 +534,7 @@ function findFirstEmptyRequired(
   if (!submitter.submitterEmail.trim()) return "이메일";
 
   for (const section of schema.sections) {
+    if (section.optional) continue; // 선택 섹션은 검증 skip
     for (const f of section.fields) {
       if (f.type === "checkbox") continue;
       if (isFieldEmpty(f, values[f.key])) return f.label || f.key;

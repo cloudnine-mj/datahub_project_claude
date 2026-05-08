@@ -71,6 +71,8 @@ export const DATASET_REPOSITORIES = [
 
 export interface SectionDef {
   title: string;
+  /** true 면 섹션 전체가 선택사항 — 헤더에 * 미표시, 빈 필드여도 제출 가능. 기본 false. */
+  optional?: boolean;
   fields: FieldDef[];
 }
 
@@ -134,6 +136,7 @@ const dataProduction: FormSchema = {
     },
     {
       title: "기타 유의 사항",
+      optional: true,
       fields: [
         {
           key: "기타_유의_사항",
@@ -146,6 +149,7 @@ const dataProduction: FormSchema = {
     },
     {
       title: "파일 첨부 체크 리스트",
+      optional: true,
       fields: [
         { key: "체크_샘플_데이터", label: "다양성이 있는 샘플 데이터를 직접 제작하여 최소 5개 보내주세요. (작업자 분들의 이해도가 올라가 데이터의 품질이 향상됩니다.)", type: "checkbox" },
         { key: "체크_가이드라인", label: "작업자 분들에게 전달할 작업 가이드라인을 보내주세요. 데이터 팀에 요청할 별도 사항이 있으시면 별도의 파일을 첨부해 주세요.", type: "checkbox" },
