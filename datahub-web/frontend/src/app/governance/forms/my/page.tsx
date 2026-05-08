@@ -44,7 +44,12 @@ export default function MyFormsPage() {
         ]}
       />
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">내 문서 목록</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">내 문서 목록</h1>
+          <p className="mt-1.5 text-sm text-gray-500">
+            프로젝트명을 클릭하면 신청서 상세를 확인하고 수정할 수 있습니다.
+          </p>
+        </div>
         <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
           <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
             전체 {counts.all > 0 && <span className="ml-1 text-gray-400">({counts.all})</span>}
