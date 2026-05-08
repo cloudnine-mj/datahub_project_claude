@@ -327,9 +327,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                   {section.title}
                   {!section.optional && <span className="ml-1 text-brand">*</span>}
                 </h2>
-                <span className="text-xs text-gray-400">
-                  {section.optional ? "선택" : "모든 항목 필수"}
-                </span>
               </div>
               <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                 <table className="w-full text-sm">
