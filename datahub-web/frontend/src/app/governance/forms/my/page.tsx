@@ -2,20 +2,12 @@
 
 // 내 문서 목록 — 본인이 제출한 모든 신청서.
 //
-// request_no 가 같은 base ( '-vN' 접미사 제거한 값 ) 끼리 그룹핑.
-// 그룹 안에서 가장 최근 row 1개만 메인 테이블에 노출하고, 나머지는 페이지
-// 하단의 '수정 이력' 섹션에 정리해서 보여준다 — 화면 노이즈 감소.
+// request_no 가 같은 base ( '-vN' 접미사 제거한 값 ) 끼리 그룹핑해
+// 그룹당 가장 '확정도 높은' row 1개만 메인 테이블에 노출.
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Download,
-  FileText,
-  History,
-  XCircle,
-} from "lucide-react";
-import { api, type AuditEvent, type FormListItem, type FormStatus } from "@/lib/api";
+import { Download } from "lucide-react";
+import { api, type FormListItem, type FormStatus } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
@@ -44,16 +36,10 @@ function statusPriority(status: string): number {
 
 export default function MyFormsPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[] | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
 
   const refetch = useCallback(() => {
     api.listForms({ mine: true }).then(setItems).catch(() => setItems([]));
-    // 본인 활동 audit 이벤트 — 90일 보관. 실패 시 빈 배열로 묻고 메인 목록만 표시.
-    api
-      .listAuditEvents({ mine: true, days: 90 })
-      .then(setAuditEvents)
-      .catch(() => setAuditEvents([]));
   }, []);
 
   useEffect(() => {
@@ -61,7 +47,6 @@ export default function MyFormsPage() {
   }, [refetch]);
 
   // base request_no 별 그룹핑 → 그룹당 최신 1개만 메인에 노출.
-  // (이전 버전들은 별도 테이블 대신 하단 audit 활동 기록 섹션으로 자연스럽게 흡수)
   const latestItems = useMemo(() => {
     if (!items) return null;
     const byBase = new Map<string, FormListItem[]>();
@@ -191,137 +176,8 @@ export default function MyFormsPage() {
           </tbody>
         </table>
       </div>
-
-      {/* 활동 기록 — audit trail 스타일. 본인 신청서 제출/수정/검토/승인/반려 이벤트 시간순. */}
-      <ActivityLogSection events={auditEvents} />
     </div>
   );
-}
-
-/**
- * 활동 기록 — 개인용 timeline. Audit Trail(테이블·검색·CSV) 과 명확히 분리하기 위해
- * 서술형(자연어 문장 + 상대시간) + 좌측 세로선 + 아이콘 배지로 표현.
- *
- *   ✓ Karlo Lee 가 REQ-2024-04291 에 대한 검토를 시작했습니다.   5일 전
- *   ⬆ 본인이 데이터 구매 신청서를 제출했습니다.                  6일 전
- *
- * Audit Trail = 분석/감사용 데이터 테이블 / 활동 기록 = '내 신청서가 어떻게 흘러왔나' 회고용.
- */
-function ActivityLogSection({ events }: { events: AuditEvent[] | null }) {
-  return (
-    <section className="mt-10">
-      <div className="flex items-baseline gap-2">
-        <History size={16} className="text-gray-500" />
-        <h2 className="text-base font-bold tracking-tight">활동 기록</h2>
-        <span className="text-xs text-gray-400">
-          {events === null ? "..." : `최근 ${events.length}건`}
-        </span>
-      </div>
-      <p className="mt-1 text-xs text-gray-500">
-        내 신청서가 어떤 흐름을 거쳤는지 시간순으로 모았어요. (최근 90일)
-      </p>
-
-      <div className="mt-4">
-        {events === null ? (
-          <div className="px-3 py-8 text-center text-xs text-gray-400">불러오는 중...</div>
-        ) : events.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/40 px-4 py-10 text-center text-xs text-gray-500">
-            최근 활동이 없습니다. 새 신청서를 제출하면 여기에 흐름이 쌓입니다.
-          </div>
-        ) : (
-          <ol className="relative space-y-4 border-l border-gray-200 pl-6">
-            {events.map((e, i) => (
-              <TimelineItem key={i} event={e} />
-            ))}
-          </ol>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function TimelineItem({ event }: { event: AuditEvent }) {
-  const { icon: Icon, dotCls, verb } = describeEvent(event.action);
-  return (
-    <li className="relative">
-      {/* 점/아이콘 (왼쪽 세로선 위에 얹힘) */}
-      <span
-        className={
-          "absolute -left-[34px] top-0.5 grid h-6 w-6 place-items-center rounded-full border-2 border-white " +
-          dotCls
-        }
-      >
-        <Icon size={12} />
-      </span>
-
-      <p className="text-sm leading-relaxed text-gray-800">
-        <span className="font-semibold">{event.actor}</span>
-        <span className="text-gray-500"> {verb} </span>
-        <span className="font-mono text-xs text-gray-600">{event.target}</span>
-        <span className="ml-2 text-[11px] text-gray-400">· {formatRelative(event.timestamp)}</span>
-      </p>
-      {event.detail && (
-        <p className="mt-0.5 text-xs text-gray-500">{event.detail}</p>
-      )}
-    </li>
-  );
-}
-
-function describeEvent(action: string): {
-  icon: typeof FileText;
-  dotCls: string;
-  verb: string;
-} {
-  // action 예: 'form.created' / 'form.reviewing' / 'form.approved' / 'form.rejected' / 'form.edited' / 'post.policy.created'
-  if (action === "form.created") {
-    return { icon: FileText, dotCls: "bg-blue-100 text-blue-600", verb: "신청서를 제출했습니다 —" };
-  }
-  if (action === "form.reviewing") {
-    return {
-      icon: CheckCircle2,
-      dotCls: "bg-amber-100 text-amber-600",
-      verb: "검토를 시작했습니다 —",
-    };
-  }
-  if (action === "form.approved") {
-    return {
-      icon: CheckCircle2,
-      dotCls: "bg-emerald-100 text-emerald-600",
-      verb: "신청을 승인했습니다 —",
-    };
-  }
-  if (action === "form.rejected") {
-    return { icon: XCircle, dotCls: "bg-red-100 text-red-600", verb: "신청을 반려했습니다 —" };
-  }
-  if (action === "form.edited") {
-    return { icon: FileText, dotCls: "bg-gray-100 text-gray-500", verb: "내용을 수정했습니다 —" };
-  }
-  if (action.startsWith("post.")) {
-    const isUpdate = action.endsWith(".updated");
-    return {
-      icon: FileText,
-      dotCls: "bg-indigo-100 text-indigo-600",
-      verb: isUpdate ? "게시글을 수정했습니다 —" : "게시글을 작성했습니다 —",
-    };
-  }
-  return { icon: AlertTriangle, dotCls: "bg-gray-100 text-gray-500", verb: action };
-}
-
-function formatRelative(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const diffMs = Date.now() - d.getTime();
-    const min = Math.floor(diffMs / 60000);
-    if (min < 1) return "방금 전";
-    if (min < 60) return `${min}분 전`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}시간 전`;
-    const day = Math.floor(hr / 24);
-    if (day < 7) return `${day}일 전`;
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
-  } catch {
-    return iso;
-  }
 }
 
 function FilterChip({
