@@ -190,14 +190,13 @@ function formatTimeline(iso: string): string {
 }
 
 /**
- * 워크플로우 stepper — 4단계 + 반려 분기.
- *   임시저장 → 제출됨 → 검토 중 → 승인 완료
- *   (반려 상태면 마지막 단계가 빨간색 '반려' 로 교체)
+ * 워크플로우 stepper — 제출 이후 결재 흐름 3단계.
+ *   제출됨 → 검토 중 → 승인 완료 (반려 시 마지막이 '반려')
+ * 임시저장(draft) 은 작성자가 보관 중인 비-워크플로우 상태라 모든 단계 미도달.
  */
 function WorkflowStepper({ status }: { status: FormStatus | string }) {
   const isRejected = status === "rejected";
   const steps = [
-    { key: "draft", label: "임시저장" },
     { key: "submitted", label: "제출됨" },
     { key: "reviewing", label: "검토 중" },
     isRejected
@@ -206,20 +205,20 @@ function WorkflowStepper({ status }: { status: FormStatus | string }) {
   ];
 
   const order: Record<string, number> = {
-    draft: 0,
-    submitted: 1,
-    reviewing: 2,
-    approved: 3,
-    rejected: 3,
+    submitted: 0,
+    reviewing: 1,
+    approved: 2,
+    rejected: 2,
   };
-  const currentIdx = order[status as string] ?? 0;
+  // draft 면 -1 → 어떤 단계도 도달 X
+  const currentIdx = order[status as string] ?? -1;
 
   return (
     <ol className="mt-4 flex w-full items-center">
       {steps.map((s, i) => {
         const reached = i <= currentIdx;
         const isCurrent = i === currentIdx;
-        const stepRejected = isRejected && i === 3;
+        const stepRejected = isRejected && i === 2;
         return (
           <li
             key={s.key}
