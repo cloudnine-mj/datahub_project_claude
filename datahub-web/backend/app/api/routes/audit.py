@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
-from app.models import Form, FormComment, Post, User
+from app.models import Form, Post, User
 from app.schemas.audit import AuditEvent
 
 router = APIRouter(prefix="/audit", tags=["audit"])
@@ -135,25 +135,9 @@ def list_audit_events(
                 }
             )
 
-    # 2) 댓글
-    comments = (
-        db.query(FormComment, Form.request_no, Form.project_name)
-        .join(Form, FormComment.form_id == Form.id)
-        .filter(FormComment.created_at >= since)
-        .all()
-    )
-    for c, request_no, project_name in comments:
-        body_snippet = (c.body[:80] + "...") if len(c.body) > 80 else c.body
-        events.append(
-            {
-                "timestamp": c.created_at,
-                "actor": c.author_name,
-                "action": "form.commented",
-                "target": request_no,
-                "detail": f"{project_name} — {body_snippet}",
-                "severity": "info",
-            }
-        )
+    # 2) 댓글(form_comments / Discussions) — 감사 로그에서 일단 제외.
+    # 비공식 의사소통이라 거버넌스 추적 대상으로는 노이즈가 크다고 판단.
+    # 필요해지면 위 forms 루프와 동일 패턴으로 다시 수집하면 됨.
 
     # 3) 게시글 — 생성/수정
     posts = db.query(Post).filter(Post.created_at >= since).all()
