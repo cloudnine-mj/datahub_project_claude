@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { Check, MessageSquare, Play, X } from "lucide-react";
+import { AlertTriangle, Check, MessageSquare, Play, X } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/api";
 import { StatusBadge } from "./StatusBadge";
 
@@ -61,6 +61,9 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
         <h2 className="text-base font-bold">진행 상태</h2>
         <StatusBadge status={status} />
       </div>
+
+      {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
+      <WorkflowStepper status={status} />
 
       {/* 타임라인 */}
       {history && history.length > 0 ? (
@@ -184,4 +187,89 @@ function formatTimeline(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+/**
+ * 워크플로우 stepper — 4단계 + 반려 분기.
+ *   임시저장 → 제출됨 → 검토 중 → 승인 완료
+ *   (반려 상태면 마지막 단계가 빨간색 '반려' 로 교체)
+ */
+function WorkflowStepper({ status }: { status: FormStatus | string }) {
+  const isRejected = status === "rejected";
+  const steps = [
+    { key: "draft", label: "임시저장" },
+    { key: "submitted", label: "제출됨" },
+    { key: "reviewing", label: "검토 중" },
+    isRejected
+      ? { key: "rejected", label: "반려" }
+      : { key: "approved", label: "승인 완료" },
+  ];
+
+  const order: Record<string, number> = {
+    draft: 0,
+    submitted: 1,
+    reviewing: 2,
+    approved: 3,
+    rejected: 3,
+  };
+  const currentIdx = order[status as string] ?? 0;
+
+  return (
+    <ol className="mt-4 flex w-full items-center">
+      {steps.map((s, i) => {
+        const reached = i <= currentIdx;
+        const isCurrent = i === currentIdx;
+        const stepRejected = isRejected && i === 3;
+        return (
+          <li
+            key={s.key}
+            className={"flex items-center " + (i < steps.length - 1 ? "flex-1" : "")}
+          >
+            <div className="flex flex-col items-center">
+              <span
+                className={
+                  "grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold transition " +
+                  (stepRejected
+                    ? "border-red-500 bg-red-500 text-white"
+                    : reached
+                    ? "border-blue-500 bg-blue-500 text-white"
+                    : "border-gray-200 bg-white text-gray-400")
+                }
+              >
+                {stepRejected ? (
+                  <AlertTriangle size={13} />
+                ) : reached && !isCurrent ? (
+                  <Check size={13} />
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span
+                className={
+                  "mt-1.5 whitespace-nowrap text-[11px] font-semibold " +
+                  (stepRejected
+                    ? "text-red-600"
+                    : isCurrent
+                    ? "text-blue-700"
+                    : reached
+                    ? "text-gray-700"
+                    : "text-gray-400")
+                }
+              >
+                {s.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <span
+                className={
+                  "mx-2 mt-[-18px] h-0.5 flex-1 " +
+                  (i < currentIdx ? "bg-blue-500" : "bg-gray-200")
+                }
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
