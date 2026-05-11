@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import forms, me, posts, uploads
+from app.api.routes import audit, forms, me, posts, uploads
 from app.config import settings
 from app.db.session import Base, SessionLocal, engine
 from app.seed import run_seed
@@ -46,6 +46,7 @@ app.include_router(me.router)
 app.include_router(posts.router)
 app.include_router(forms.router)
 app.include_router(uploads.router)
+app.include_router(audit.router)
 
 
 @app.get("/health")

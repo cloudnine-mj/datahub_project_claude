@@ -39,6 +39,7 @@ const NAV: NavItem[] = [
       { href: "/governance/forms", label: "데이터 거버넌스 문서 서식 모음" },
       { href: "/governance/forms/my", label: "내 문서 목록" },
       { href: "/governance/admin/forms", label: "신청서 관리", adminOnly: true },
+      { href: "/governance/admin/audit", label: "Audit Trail", adminOnly: true },
     ],
   },
 ];
