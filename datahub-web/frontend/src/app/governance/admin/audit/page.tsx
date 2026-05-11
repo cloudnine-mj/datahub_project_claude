@@ -271,15 +271,34 @@ function formatTimestamp(iso: string): string {
 }
 
 function SeverityBadge({ severity }: { severity: AuditSeverity }) {
-  const map: Record<AuditSeverity, { cls: string; icon: typeof FileText }> = {
-    info: { cls: "bg-blue-50 text-blue-600", icon: FileText },
-    success: { cls: "bg-emerald-50 text-emerald-600", icon: CheckCircle2 },
-    warning: { cls: "bg-amber-50 text-amber-600", icon: AlertTriangle },
-    danger: { cls: "bg-red-50 text-red-600", icon: XCircle },
+  const map: Record<AuditSeverity, { cls: string; icon: typeof FileText; tip: string }> = {
+    info: {
+      cls: "bg-blue-50 text-blue-600",
+      icon: FileText,
+      tip: "일반 활동 — 신청서 제출, 수정, 게시글 작성/수정 등 결과 색채가 없는 기록",
+    },
+    success: {
+      cls: "bg-emerald-50 text-emerald-600",
+      icon: CheckCircle2,
+      tip: "결재 흐름 진행/완료 — 검토 시작, 승인 등 긍정적 결과",
+    },
+    warning: {
+      cls: "bg-amber-50 text-amber-600",
+      icon: AlertTriangle,
+      tip: "주의 — 임계 알림, 정책 위반 경고 등 (현재 발생 이벤트 없음 · 향후 사용 예약)",
+    },
+    danger: {
+      cls: "bg-red-50 text-red-600",
+      icon: XCircle,
+      tip: "실패/거절 — 반려, 삭제 등 부정적·되돌릴 수 없는 사건",
+    },
   };
-  const { cls, icon: Icon } = map[severity];
+  const { cls, icon: Icon, tip } = map[severity];
   return (
-    <span className={"inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold " + cls}>
+    <span
+      title={tip}
+      className={"inline-flex cursor-help items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold " + cls}
+    >
       <Icon size={11} /> {SEVERITY_LABELS[severity]}
     </span>
   );
