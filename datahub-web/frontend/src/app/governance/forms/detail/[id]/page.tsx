@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { FormCommentSection } from "@/components/FormCommentSection";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
@@ -226,8 +225,9 @@ export default function Page({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* 신청서별 단일 댓글 스레드 — 신청자 + admin 간 비공식 논의 공간 */}
-      <FormCommentSection formId={form.id} me={me} />
+      {/* Discussions(댓글 스레드) — 일단 제외. 백엔드와 FormCommentSection 컴포넌트는 그대로 유지.
+          재노출이 필요해지면 아래 한 줄 복구:
+          <FormCommentSection formId={form.id} me={me} /> */}
     </div>
   );
 }
