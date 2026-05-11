@@ -116,7 +116,7 @@ export default function AdminFormsPage() {
                 <tr key={it.id} className="border-t border-gray-100 hover:bg-gray-50">
                   <td className="px-6 py-4">{FORM_TYPE_LABELS[it.form_type]}</td>
                   <td className="px-6 py-4">
-                    <Link href={`/governance/forms/detail/${it.id}`} className="block hover:text-brand">
+                    <Link href={`/governance/forms/detail/${it.id}?from=admin`} className="block hover:text-brand">
                       <div className="font-semibold">{it.project_name}</div>
                       <div className="text-xs text-gray-400">{it.request_no}</div>
                     </Link>
