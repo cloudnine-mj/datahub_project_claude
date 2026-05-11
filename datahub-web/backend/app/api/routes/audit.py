@@ -60,10 +60,12 @@ def list_audit_events(
     days: int = Query(7, ge=1, le=90, description="조회 기간 (일). 최대 90일."),
     search: str | None = Query(None, description="actor/target/detail 부분 일치"),
     severity: str | None = Query(None, description="info/success/warning/danger"),
+    mine: bool = Query(False, description="True 면 본인 신청서/본인 행위 이벤트만 — admin 권한 불필요."),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[AuditEvent]:
-    if user.role != "admin":
+    # admin 모드 (전체 로그) 만 admin 권한 필요. mine 모드는 본인 데이터라 모두 가능.
+    if not mine and user.role != "admin":
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, detail="감사 로그는 관리자만 조회할 수 있습니다."
         )
@@ -71,8 +73,12 @@ def list_audit_events(
     since = datetime.utcnow() - timedelta(days=days)
     events: list[dict[str, Any]] = []
 
-    # 1) 신청서 — 제출 / 상태 변경(approval_history) / 수정(edit_history)
-    forms = db.query(Form).all()
+    # 1) 신청서 — 제출 / 상태 변경(approval_history) / 수정(edit_history).
+    # mine 모드면 본인 제출분만 후보로.
+    forms_q = db.query(Form)
+    if mine:
+        forms_q = forms_q.filter(Form.submitter_id == user.id)
+    forms = forms_q.all()
     for form in forms:
         type_label = _FORM_LABEL.get(form.form_type, form.form_type)
 
@@ -139,8 +145,13 @@ def list_audit_events(
     # 비공식 의사소통이라 거버넌스 추적 대상으로는 노이즈가 크다고 판단.
     # 필요해지면 위 forms 루프와 동일 패턴으로 다시 수집하면 됨.
 
-    # 3) 게시글 — 생성/수정
-    posts = db.query(Post).filter(Post.created_at >= since).all()
+    # 3) 게시글 — 생성/수정. mine 모드면 본인 작성분만, 일반 사용자는 게시글 작성 권한 없으니
+    # 실질적으로 mine=True 한정에선 결과가 비어있을 수 있음 — 그래도 admin 본인이 mine 으로
+    # 조회할 경우는 본인 작성글이 노출되어야 자연스러움.
+    posts_q = db.query(Post).filter(Post.created_at >= since)
+    if mine:
+        posts_q = posts_q.filter(Post.author_id == user.id)
+    posts = posts_q.all()
     for p in posts:
         target = p.doc_no or f"POST-{p.id}"
         events.append(

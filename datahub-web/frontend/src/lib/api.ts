@@ -319,12 +319,17 @@ export const api = {
   deleteFormAttachment: (formId: number, attId: number) =>
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
 
-  /** Audit Trail — admin 전용 거버넌스 활동 로그 (90일 보관). */
-  listAuditEvents: (params: { days?: number; search?: string; severity?: string } = {}) => {
+  /** Audit Trail — 거버넌스 활동 로그.
+   *  - 기본(admin 전용): 전체 이벤트
+   *  - mine=true: 본인 신청서/본인 행위 이벤트만 (모든 사용자 가능). */
+  listAuditEvents: (
+    params: { days?: number; search?: string; severity?: string; mine?: boolean } = {},
+  ) => {
     const q = new URLSearchParams();
     if (params.days !== undefined) q.set("days", String(params.days));
     if (params.search) q.set("search", params.search);
     if (params.severity) q.set("severity", params.severity);
+    if (params.mine) q.set("mine", "true");
     const qs = q.toString();
     return request<AuditEvent[]>(`/audit${qs ? `?${qs}` : ""}`);
   },

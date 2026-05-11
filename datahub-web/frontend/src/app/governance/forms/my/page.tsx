@@ -7,8 +7,21 @@
 // 하단의 '수정 이력' 섹션에 정리해서 보여준다 — 화면 노이즈 감소.
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, History } from "lucide-react";
-import { api, type FormListItem, type FormStatus } from "@/lib/api";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileText,
+  History,
+  XCircle,
+} from "lucide-react";
+import {
+  api,
+  type AuditEvent,
+  type AuditSeverity,
+  type FormListItem,
+  type FormStatus,
+} from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
@@ -37,19 +50,26 @@ function statusPriority(status: string): number {
 
 export default function MyFormsPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[] | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
 
   const refetch = useCallback(() => {
     api.listForms({ mine: true }).then(setItems).catch(() => setItems([]));
+    // 본인 활동 audit 이벤트 — 90일 보관. 실패 시 빈 배열로 묻고 메인 목록만 표시.
+    api
+      .listAuditEvents({ mine: true, days: 90 })
+      .then(setAuditEvents)
+      .catch(() => setAuditEvents([]));
   }, []);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  // base request_no 별 그룹핑 → 최신 1개 + 나머지(수정 이력) 분리.
-  const { latestItems, historyItems } = useMemo(() => {
-    if (!items) return { latestItems: null as FormListItem[] | null, historyItems: [] as FormListItem[] };
+  // base request_no 별 그룹핑 → 그룹당 최신 1개만 메인에 노출.
+  // (이전 버전들은 별도 테이블 대신 하단 audit 활동 기록 섹션으로 자연스럽게 흡수)
+  const latestItems = useMemo(() => {
+    if (!items) return null;
     const byBase = new Map<string, FormListItem[]>();
     for (const it of items) {
       const base = getBaseRequestNo(it.request_no);
@@ -58,7 +78,6 @@ export default function MyFormsPage() {
       byBase.set(base, arr);
     }
     const latest: FormListItem[] = [];
-    const history: FormListItem[] = [];
     for (const [, group] of byBase) {
       // 1순위: 상태 우선순위(확정도), 2순위: 시각 역순
       group.sort((a, b) => {
@@ -67,12 +86,11 @@ export default function MyFormsPage() {
         return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
       });
       latest.push(group[0]);
-      history.push(...group.slice(1));
     }
-    // 메인 리스트는 제출/수정 시각 역순
-    latest.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
-    history.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
-    return { latestItems: latest, historyItems: history };
+    latest.sort(
+      (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
+    );
+    return latest;
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -180,73 +198,112 @@ export default function MyFormsPage() {
         </table>
       </div>
 
-      {/* 수정 이력 — 같은 base request_no 의 이전 버전(들) 노출. 메인에 없는 것만. */}
-      {historyItems.length > 0 && (
-        <EditHistorySection items={historyItems} onChanged={refetch} />
-      )}
+      {/* 활동 기록 — audit trail 스타일. 본인 신청서 제출/수정/검토/승인/반려 이벤트 시간순. */}
+      <ActivityLogSection events={auditEvents} />
     </div>
   );
 }
 
-function EditHistorySection({
-  items,
-  onChanged,
-}: {
-  items: FormListItem[];
-  onChanged: () => void;
-}) {
+/**
+ * 활동 기록 — audit trail 형식.
+ *
+ * 신청서 row 1줄 = 이벤트 1개. 같은 신청서라도 제출 → 검토 시작 → 승인 처럼
+ * 상태가 바뀔 때마다 별도 row 가 시간순으로 쌓임. 메인 테이블이 '지금 상태' 를
+ * 보여준다면, 여기는 '거기까지 어떻게 왔는가' 를 보여줌.
+ */
+function ActivityLogSection({ events }: { events: AuditEvent[] | null }) {
   return (
     <section className="mt-8">
       <div className="flex items-center gap-2">
         <History size={16} className="text-gray-500" />
-        <h2 className="text-base font-bold tracking-tight">수정 이력</h2>
-        <span className="text-xs text-gray-400">이전 버전 {items.length}건</span>
+        <h2 className="text-base font-bold tracking-tight">활동 기록</h2>
+        <span className="text-xs text-gray-400">
+          {events === null ? "..." : `${events.length}건`}
+        </span>
       </div>
       <p className="mt-1 text-xs text-gray-500">
-        같은 신청서의 이전 수정본입니다. 메인 목록에는 가장 최근 버전만 노출됩니다.
+        내 신청서 제출 · 수정 · 검토 · 승인/반려 이벤트의 시간순 기록입니다. 최근 90일.
       </p>
 
-      <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="mt-3 rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wider text-gray-500">
             <tr>
-              <th className="px-6 py-3 font-medium">신청서 종류</th>
-              <th className="px-6 py-3 font-medium">프로젝트명</th>
-              <th className="w-28 px-6 py-3 font-medium">상태</th>
-              <th className="w-32 px-6 py-3 font-medium">기록 시각</th>
-              <th className="w-40 px-6 py-3 font-medium">관리</th>
+              <th className="w-48 px-6 py-3 font-medium">Timestamp</th>
+              <th className="w-40 px-6 py-3 font-medium">Actor</th>
+              <th className="w-56 px-6 py-3 font-medium">Action</th>
+              <th className="w-48 px-6 py-3 font-medium">Target</th>
+              <th className="px-6 py-3 font-medium">Detail</th>
+              <th className="w-28 px-6 py-3 font-medium">Severity</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((it) => (
-              <tr key={it.id} className="border-t border-gray-100 hover:bg-gray-50/50">
-                <td className="px-6 py-4 text-gray-500">{FORM_TYPE_LABELS[it.form_type]}</td>
-                <td className="px-6 py-4">
-                  <Link
-                    href={`/governance/forms/detail/${it.id}?from=my`}
-                    className="block hover:text-brand"
-                  >
-                    <div className="font-medium text-gray-700">{it.project_name}</div>
-                    <div className="text-xs text-gray-400">{it.request_no}</div>
-                  </Link>
-                </td>
-                <td className="px-6 py-4">
-                  <StatusBadge status={it.status} />
-                </td>
-                <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
-                <td className="px-6 py-4">
-                  <DeleteFormButton
-                    formId={it.id}
-                    contextLabel={it.project_name}
-                    onDeleted={onChanged}
-                  />
+            {events === null ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                  불러오는 중...
                 </td>
               </tr>
-            ))}
+            ) : events.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                  최근 활동 기록이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              events.map((e, i) => (
+                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/60">
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500">
+                    {formatAuditTimestamp(e.timestamp)}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-800">{e.actor}</td>
+                  <td className="px-6 py-4">
+                    <code className="rounded bg-blue-50 px-2 py-1 font-mono text-[11px] font-semibold text-blue-700">
+                      {e.action}
+                    </code>
+                  </td>
+                  <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.target}</td>
+                  <td className="px-6 py-4 text-gray-700">{e.detail}</td>
+                  <td className="px-6 py-4">
+                    <AuditSeverityBadge severity={e.severity} />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
     </section>
+  );
+}
+
+function formatAuditTimestamp(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+  } catch {
+    return iso;
+  }
+}
+
+function AuditSeverityBadge({ severity }: { severity: AuditSeverity }) {
+  const map: Record<AuditSeverity, { cls: string; icon: typeof FileText; label: string }> = {
+    info: { cls: "bg-blue-50 text-blue-600", icon: FileText, label: "info" },
+    success: { cls: "bg-emerald-50 text-emerald-600", icon: CheckCircle2, label: "success" },
+    warning: { cls: "bg-amber-50 text-amber-600", icon: AlertTriangle, label: "warning" },
+    danger: { cls: "bg-red-50 text-red-600", icon: XCircle, label: "danger" },
+  };
+  const { cls, icon: Icon, label } = map[severity];
+  return (
+    <span className={"inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold " + cls}>
+      <Icon size={11} /> {label}
+    </span>
   );
 }
 
