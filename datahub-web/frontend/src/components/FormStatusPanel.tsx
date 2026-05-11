@@ -191,9 +191,10 @@ function formatTimeline(iso: string): string {
 
 /**
  * 워크플로우 stepper — 제출 이후 결재 흐름.
- *   제출됨 → 검토 중 → [승인 완료 / 반려]
- * 마지막 단계가 분기 (승인 / 반려). 현재 상태에 따라 한쪽이 활성.
- * draft 상태면 모든 단계 미도달.
+ *   제출됨 ── 검토 중 ──┬── 승인 완료
+ *                       └── 반려
+ * 종착 분기 (승인/반려) 는 항상 표시 — 현재 상태에 따라 한쪽이 활성, 다른 쪽 muted.
+ * draft 면 모든 단계 미도달.
  */
 function WorkflowStepper({ status }: { status: FormStatus | string }) {
   const reachedSubmitted = ["submitted", "reviewing", "approved", "rejected"].includes(status as string);
@@ -203,27 +204,21 @@ function WorkflowStepper({ status }: { status: FormStatus | string }) {
   const reachedTerminal = isApproved || isRejected;
 
   return (
-    <ol className="mt-4 flex items-center">
+    <div className="mt-4 inline-flex items-center gap-3">
       {/* 1) 제출됨 */}
       <StepNode label="제출됨" reached={reachedSubmitted} current={status === "submitted"} index={1} />
-      <StepConnector active={reachedReviewing} />
+      <span className={"h-0.5 w-14 " + (reachedReviewing ? "bg-blue-500" : "bg-gray-200")} />
 
       {/* 2) 검토 중 */}
       <StepNode label="검토 중" reached={reachedReviewing} current={status === "reviewing"} index={2} />
+      <span className={"h-0.5 w-14 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")} />
 
-      {/* 분기 connector — 검토 중 → 승인/반려 */}
-      <span
-        className={
-          "mx-2 mt-[-18px] h-0.5 flex-1 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")
-        }
-      />
-
-      {/* 3) 종착 — 승인 / 반려 두 줄로 stacked */}
-      <div className="flex flex-col items-center gap-2">
+      {/* 3) 종착 분기 — 승인 / 반려 stacked */}
+      <div className="flex flex-col gap-1.5">
         <TerminalNode label="승인 완료" tone="approved" active={isApproved} muted={isRejected} />
         <TerminalNode label="반려" tone="rejected" active={isRejected} muted={isApproved} />
       </div>
-    </ol>
+    </div>
   );
 }
 
@@ -252,19 +247,13 @@ function StepNode({
       </span>
       <span
         className={
-          "mt-1.5 whitespace-nowrap text-[11px] font-semibold " +
+          "mt-1 whitespace-nowrap text-[11px] font-semibold " +
           (current ? "text-blue-700" : reached ? "text-gray-700" : "text-gray-400")
         }
       >
         {label}
       </span>
     </div>
-  );
-}
-
-function StepConnector({ active }: { active: boolean }) {
-  return (
-    <span className={"mx-2 mt-[-18px] h-0.5 flex-1 " + (active ? "bg-blue-500" : "bg-gray-200")} />
   );
 }
 
