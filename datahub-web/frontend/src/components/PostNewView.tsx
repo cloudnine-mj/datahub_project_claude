@@ -140,7 +140,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-bold tracking-tight">
-        {isEdit ? "글 수정" : isPolicy ? "새 정책 작성" : "새 글 작성"}
+        {isEdit ? "글 수정" : isPolicy ? "새 정책 작성" : "새 프로세스 작성"}
       </h1>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6">
