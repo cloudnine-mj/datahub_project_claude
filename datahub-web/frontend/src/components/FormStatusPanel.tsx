@@ -214,10 +214,12 @@ function WorkflowStepper({ status }: { status: FormStatus | string }) {
       <StepNode label="검토 중" reached={reachedReviewing} current={status === "reviewing"} index={2} />
       <span className={"h-0.5 w-14 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")} />
 
-      {/* 3) 종착 분기 — 승인 / 반려 stacked */}
+      {/* 3) 종착 — 기본은 '승인 완료' 단독 노출. 실제로 반려된 신청서일 때만 '반려' 노드를 보여 사실 반영. */}
       <div className="flex flex-col gap-1.5">
         <TerminalNode label="승인 완료" tone="approved" active={isApproved} muted={isRejected} />
-        <TerminalNode label="반려" tone="rejected" active={isRejected} muted={isApproved} />
+        {isRejected && (
+          <TerminalNode label="반려" tone="rejected" active={isRejected} muted={isApproved} />
+        )}
       </div>
     </div>
   );
