@@ -275,7 +275,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
-        {/* 신청자 정보 — 기본은 로그인 사용자, 직접 수정 가능 */}
+        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly) */}
         <section>
           <div className="mb-3 flex items-center gap-2">
             <span className="block h-5 w-1 rounded-sm bg-brand" />
@@ -284,25 +284,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
             <table className="w-full text-sm">
               <tbody>
-                <SubmitterInputRow
-                  label="신청자 이름"
-                  value={submitterName}
-                  onChange={setSubmitterName}
-                  placeholder="이름을 입력하세요"
-                />
-                <SubmitterInputRow
-                  label="소속"
-                  value={submitterDepartment}
-                  onChange={setSubmitterDepartment}
-                  placeholder="소속을 입력하세요"
-                />
-                <SubmitterInputRow
-                  label="이메일"
-                  value={submitterEmail}
-                  onChange={setSubmitterEmail}
-                  placeholder="이메일을 입력하세요"
-                  type="email"
-                />
+                <SubmitterInputRow label="신청자 이름" value={submitterName} />
+                <SubmitterInputRow label="소속" value={submitterDepartment} />
+                <SubmitterInputRow label="이메일" value={submitterEmail} type="email" />
               </tbody>
             </table>
           </div>
@@ -1354,14 +1338,11 @@ function computeTotal(
 function SubmitterInputRow({
   label,
   value,
-  onChange,
-  placeholder,
   type = "text",
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
+  // SSO 로그인으로 자동 입력되는 값 — onChange/placeholder 제거, readOnly 표시.
   type?: "text" | "email";
 }) {
   return (
@@ -1371,9 +1352,11 @@ function SubmitterInputRow({
         <input
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          readOnly
+          tabIndex={-1}
+          aria-readonly="true"
+          title="SSO 로그인 정보로 자동 입력됩니다"
+          className="w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 focus:outline-none"
         />
       </td>
     </tr>
