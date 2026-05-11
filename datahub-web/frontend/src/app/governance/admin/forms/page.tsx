@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Lock } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { FORM_TYPE_LABELS, formatDate } from "@/lib/utils";
 
@@ -94,7 +95,7 @@ export default function AdminFormsPage() {
               <th className="w-32 px-6 py-3 font-medium">신청자</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
               <th className="w-32 px-6 py-3 font-medium">제출일</th>
-              <th className="w-32 px-6 py-3 font-medium">관리</th>
+              <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -124,12 +125,19 @@ export default function AdminFormsPage() {
                   <td className="px-6 py-4"><StatusBadge status={it.status} /></td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
                   <td className="px-6 py-4">
-                    <a
-                      href={api.exportFormUrl(it.id)}
-                      className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
-                    >
-                      <Download size={12} /> Excel
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      <a
+                        href={api.exportFormUrl(it.id)}
+                        className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                      >
+                        <Download size={12} /> Excel
+                      </a>
+                      <DeleteFormButton
+                        formId={it.id}
+                        contextLabel={it.project_name}
+                        onDeleted={refetch}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
