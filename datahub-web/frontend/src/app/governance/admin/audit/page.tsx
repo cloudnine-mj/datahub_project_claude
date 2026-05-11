@@ -196,12 +196,12 @@ export default function AuditPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wider text-gray-500">
             <tr>
-              <th className="w-48 px-6 py-3 font-medium">발생 시각</th>
-              <th className="w-40 px-6 py-3 font-medium">사용자</th>
-              <th className="w-56 px-6 py-3 font-medium">활동</th>
-              <th className="w-48 px-6 py-3 font-medium">대상</th>
-              <th className="px-6 py-3 font-medium">상세</th>
-              <th className="w-28 px-6 py-3 font-medium">중요도</th>
+              <th className="w-48 px-6 py-3 font-medium">Timestamp</th>
+              <th className="w-40 px-6 py-3 font-medium">Actor</th>
+              <th className="w-56 px-6 py-3 font-medium">Action</th>
+              <th className="w-48 px-6 py-3 font-medium">Target</th>
+              <th className="px-6 py-3 font-medium">Detail</th>
+              <th className="w-28 px-6 py-3 font-medium">Severity</th>
             </tr>
           </thead>
           <tbody>
