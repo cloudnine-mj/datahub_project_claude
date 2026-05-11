@@ -65,8 +65,8 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
       <WorkflowStepper status={status} />
 
-      {/* 타임라인 */}
-      {history && history.length > 0 ? (
+      {/* 타임라인 — 이력 있을 때만 노출 (없으면 stepper 만으로 충분) */}
+      {history && history.length > 0 && (
         <ol className="mt-4 space-y-3 border-l-2 border-gray-100 pl-5">
           {history.map((h, i) => (
             <li key={i} className="relative">
@@ -90,10 +90,6 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
             </li>
           ))}
         </ol>
-      ) : (
-        <p className="mt-3 text-xs text-gray-400">
-          승인 이력이 없습니다 — 제출 후 거버넌스 관리자의 검토를 기다리고 있습니다.
-        </p>
       )}
 
       {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청서에는 숨김 */}
