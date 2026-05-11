@@ -274,6 +274,24 @@ def _migrate_category_values(db: Session) -> None:
         p.category = "요청 프로세스"
 
 
+def _backfill_initial_approval_entry(db: Session) -> None:
+    """approval_history 가 비어있는 제출/검토/승인/반려 신청서에 '최초 제출' 엔트리 보강.
+
+    초기 코드가 제출 시점 엔트리를 만들지 않아 사용자 화면에 타임라인이
+    안 보이던 문제 해결용 일회성 마이그레이션.
+    """
+    forms = db.query(Form).filter(Form.status != "draft").all()
+    for f in forms:
+        if f.approval_history:
+            continue
+        f.approval_history = [{
+            "status": "submitted",
+            "changed_by": f.submitter_name,
+            "changed_at": f.submitted_at.isoformat() if f.submitted_at else None,
+            "comment": "최초 제출",
+        }]
+
+
 def run_seed(db: Session) -> None:
     _ensure_schema_up_to_date(db)
     users = _ensure_users(db)
@@ -282,4 +300,5 @@ def run_seed(db: Session) -> None:
     _migrate_category_values(db)
     _ensure_posts(db, users)
     _ensure_forms(db, users)
+    _backfill_initial_approval_entry(db)
     db.commit()

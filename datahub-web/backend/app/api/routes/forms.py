@@ -107,6 +107,14 @@ def submit_form(
         status=payload.status,
         payload=payload.payload,
     )
+    # 제출 상태로 생성되는 경우 — 사용자에게도 보이도록 '최초 제출' 이력을 자동 추가
+    if payload.status == "submitted":
+        form.approval_history = [{
+            "status": "submitted",
+            "changed_by": user.name,
+            "changed_at": datetime.utcnow().isoformat(),
+            "comment": "최초 제출",
+        }]
     db.add(form)
     db.commit()
     db.refresh(form)
@@ -145,10 +153,20 @@ def update_form(
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
 
     changes = _compute_form_diff(form, payload)
+    prev_status = form.status
 
     form.project_name = payload.project_name
     form.payload = payload.payload
     form.status = payload.status
+
+    # 임시저장(draft) → 제출(submitted) 첫 전환 시 '최초 제출' 이력 자동 추가
+    if prev_status != "submitted" and payload.status == "submitted" and not (form.approval_history or []):
+        form.approval_history = [{
+            "status": "submitted",
+            "changed_by": user.name,
+            "changed_at": datetime.utcnow().isoformat(),
+            "comment": "최초 제출",
+        }]
     if payload.submitter_name is not None:
         form.submitter_name = payload.submitter_name
     if payload.submitter_email is not None:
