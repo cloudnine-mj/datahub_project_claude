@@ -2,17 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Database, Brain, Folder, LayoutGrid, ShieldCheck } from "lucide-react";
+import { api, type Me } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 // 사이드바 — Datasets / Models / Workspace / Dashboard / Governance.
-// Governance 는 4개 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
+// Governance 는 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
+// '신청서 관리' 자식은 admin role 사용자에게만 노출.
+
+interface NavChild {
+  href: string;
+  label: string;
+  adminOnly?: boolean;
+}
 
 interface NavItem {
   href: string;
   label: string;
   icon: typeof Database;
-  children?: { href: string; label: string }[];
+  children?: NavChild[];
 }
 
 const NAV: NavItem[] = [
@@ -29,12 +38,20 @@ const NAV: NavItem[] = [
       { href: "/governance/process", label: "데이터 제작 / 요청 프로세스" },
       { href: "/governance/forms", label: "데이터 거버넌스 문서 서식 모음" },
       { href: "/governance/forms/my", label: "내 문서 목록" },
+      { href: "/governance/admin/forms", label: "신청서 관리", adminOnly: true },
     ],
   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname() ?? "";
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    api.me().then(setMe).catch(() => setMe(null));
+  }, []);
+
+  const isAdmin = me?.user.role === "admin";
 
   return (
     <aside className="w-60 shrink-0 border-r border-gray-200 bg-white">
@@ -61,14 +78,16 @@ export function Sidebar() {
                 <span>{item.label}</span>
               </Link>
               {expanded && item.children && (() => {
+                // adminOnly child 는 admin 에게만 노출
+                const visibleChildren = item.children.filter((c) => !c.adminOnly || isAdmin);
                 // 가장 긴 prefix 매치 child 만 active 표시
                 // (예: /governance/forms/my 는 /governance/forms 가 아니라 /governance/forms/my 만 active)
-                const activeChildHref = [...item.children]
+                const activeChildHref = [...visibleChildren]
                   .sort((a, b) => b.href.length - a.href.length)
                   .find((c) => pathname === c.href || pathname.startsWith(c.href + "/"))?.href;
                 return (
                 <ul className="ml-3 mt-0.5 mb-1 border-l border-gray-100 pl-3">
-                  {item.children.map((c) => {
+                  {visibleChildren.map((c) => {
                     const childActive = c.href === activeChildHref;
                     return (
                       <li key={c.href}>

@@ -58,7 +58,10 @@ class EditHistoryEntry(BaseModel):
 
 
 class FormListItem(BaseModel):
-    """내 문서 목록 row — 화면 5/8 의 (신청서 종류 / 프로젝트명 / 제출일 / 상태 / Export)."""
+    """내 문서 목록 row — 화면 5/8 의 (신청서 종류 / 프로젝트명 / 제출일 / 상태 / Export).
+
+    admin 검토 페이지에서는 submitter_name 도 사용.
+    """
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -66,6 +69,7 @@ class FormListItem(BaseModel):
     request_no: str
     form_type: str
     project_name: str
+    submitter_name: str
     submitted_at: datetime
     status: str
     version: int = 1
