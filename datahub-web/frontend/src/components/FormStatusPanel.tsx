@@ -190,85 +190,118 @@ function formatTimeline(iso: string): string {
 }
 
 /**
- * 워크플로우 stepper — 제출 이후 결재 흐름 3단계.
- *   제출됨 → 검토 중 → 승인 완료 (반려 시 마지막이 '반려')
- * 임시저장(draft) 은 작성자가 보관 중인 비-워크플로우 상태라 모든 단계 미도달.
+ * 워크플로우 stepper — 제출 이후 결재 흐름.
+ *   제출됨 → 검토 중 → [승인 완료 / 반려]
+ * 마지막 단계가 분기 (승인 / 반려). 현재 상태에 따라 한쪽이 활성.
+ * draft 상태면 모든 단계 미도달.
  */
 function WorkflowStepper({ status }: { status: FormStatus | string }) {
+  const reachedSubmitted = ["submitted", "reviewing", "approved", "rejected"].includes(status as string);
+  const reachedReviewing = ["reviewing", "approved", "rejected"].includes(status as string);
+  const isApproved = status === "approved";
   const isRejected = status === "rejected";
-  const steps = [
-    { key: "submitted", label: "제출됨" },
-    { key: "reviewing", label: "검토 중" },
-    isRejected
-      ? { key: "rejected", label: "반려" }
-      : { key: "approved", label: "승인 완료" },
-  ];
-
-  const order: Record<string, number> = {
-    submitted: 0,
-    reviewing: 1,
-    approved: 2,
-    rejected: 2,
-  };
-  // draft 면 -1 → 어떤 단계도 도달 X
-  const currentIdx = order[status as string] ?? -1;
+  const reachedTerminal = isApproved || isRejected;
 
   return (
-    <ol className="mt-4 flex w-full items-center">
-      {steps.map((s, i) => {
-        const reached = i <= currentIdx;
-        const isCurrent = i === currentIdx;
-        const stepRejected = isRejected && i === 2;
-        return (
-          <li
-            key={s.key}
-            className={"flex items-center " + (i < steps.length - 1 ? "flex-1" : "")}
-          >
-            <div className="flex flex-col items-center">
-              <span
-                className={
-                  "grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold transition " +
-                  (stepRejected
-                    ? "border-red-500 bg-red-500 text-white"
-                    : reached
-                    ? "border-blue-500 bg-blue-500 text-white"
-                    : "border-gray-200 bg-white text-gray-400")
-                }
-              >
-                {stepRejected ? (
-                  <AlertTriangle size={13} />
-                ) : reached && !isCurrent ? (
-                  <Check size={13} />
-                ) : (
-                  i + 1
-                )}
-              </span>
-              <span
-                className={
-                  "mt-1.5 whitespace-nowrap text-[11px] font-semibold " +
-                  (stepRejected
-                    ? "text-red-600"
-                    : isCurrent
-                    ? "text-blue-700"
-                    : reached
-                    ? "text-gray-700"
-                    : "text-gray-400")
-                }
-              >
-                {s.label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <span
-                className={
-                  "mx-2 mt-[-18px] h-0.5 flex-1 " +
-                  (i < currentIdx ? "bg-blue-500" : "bg-gray-200")
-                }
-              />
-            )}
-          </li>
-        );
-      })}
+    <ol className="mt-4 flex items-center">
+      {/* 1) 제출됨 */}
+      <StepNode label="제출됨" reached={reachedSubmitted} current={status === "submitted"} index={1} />
+      <StepConnector active={reachedReviewing} />
+
+      {/* 2) 검토 중 */}
+      <StepNode label="검토 중" reached={reachedReviewing} current={status === "reviewing"} index={2} />
+
+      {/* 분기 connector — 검토 중 → 승인/반려 */}
+      <span
+        className={
+          "mx-2 mt-[-18px] h-0.5 flex-1 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")
+        }
+      />
+
+      {/* 3) 종착 — 승인 / 반려 두 줄로 stacked */}
+      <div className="flex flex-col items-center gap-2">
+        <TerminalNode label="승인 완료" tone="approved" active={isApproved} muted={isRejected} />
+        <TerminalNode label="반려" tone="rejected" active={isRejected} muted={isApproved} />
+      </div>
     </ol>
+  );
+}
+
+function StepNode({
+  label,
+  reached,
+  current,
+  index,
+}: {
+  label: string;
+  reached: boolean;
+  current: boolean;
+  index: number;
+}) {
+  return (
+    <div className="flex flex-col items-center">
+      <span
+        className={
+          "grid h-7 w-7 place-items-center rounded-full border text-xs font-semibold transition " +
+          (reached
+            ? "border-blue-500 bg-blue-500 text-white"
+            : "border-gray-200 bg-white text-gray-400")
+        }
+      >
+        {reached && !current ? <Check size={13} /> : index}
+      </span>
+      <span
+        className={
+          "mt-1.5 whitespace-nowrap text-[11px] font-semibold " +
+          (current ? "text-blue-700" : reached ? "text-gray-700" : "text-gray-400")
+        }
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function StepConnector({ active }: { active: boolean }) {
+  return (
+    <span className={"mx-2 mt-[-18px] h-0.5 flex-1 " + (active ? "bg-blue-500" : "bg-gray-200")} />
+  );
+}
+
+function TerminalNode({
+  label,
+  tone,
+  active,
+  muted,
+}: {
+  label: string;
+  tone: "approved" | "rejected";
+  active: boolean;
+  muted: boolean;
+}) {
+  let dotCls: string;
+  let labelCls: string;
+  if (active && tone === "approved") {
+    dotCls = "border-emerald-500 bg-emerald-500 text-white";
+    labelCls = "text-emerald-600";
+  } else if (active && tone === "rejected") {
+    dotCls = "border-red-500 bg-red-500 text-white";
+    labelCls = "text-red-600";
+  } else if (muted) {
+    dotCls = "border-gray-100 bg-gray-50 text-gray-300";
+    labelCls = "text-gray-300";
+  } else {
+    dotCls = "border-gray-200 bg-white text-gray-400";
+    labelCls = "text-gray-400";
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className={"grid h-6 w-6 place-items-center rounded-full border text-xs font-semibold transition " + dotCls}>
+        {active && tone === "approved" && <Check size={12} />}
+        {active && tone === "rejected" && <AlertTriangle size={12} />}
+      </span>
+      <span className={"whitespace-nowrap text-[11px] font-semibold " + labelCls}>{label}</span>
+    </div>
   );
 }
