@@ -131,13 +131,15 @@ export function PolicyBoardView() {
 
         <SeverityFilterDropdown selected={severityFilter} onChange={setSeverityFilter} />
 
-        {/* 작성하기 — 권한 없으면 forbidden 페이지로 라우팅. 회색 비활성 대신 안내 화면을 통해 차단 사유 명시. */}
-        <Link
-          href={canWrite ? "/governance/policy/new" : "/governance/policy/forbidden"}
-          className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
-        >
-          <Pencil size={14} /> 작성하기
-        </Link>
+        {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
+        {canWrite && (
+          <Link
+            href="/governance/policy/new"
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+          >
+            <Pencil size={14} /> 작성하기
+          </Link>
+        )}
       </div>
 
       {/* 표 — 컬럼은 항상 전체 표시 */}
