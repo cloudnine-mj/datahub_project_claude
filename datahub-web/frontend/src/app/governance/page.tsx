@@ -1,6 +1,6 @@
-// Governance 인덱스 — 3개 카드
+// Governance 인덱스 — 4개 카드
 import Link from "next/link";
-import { ShieldCheck, Layers, FileEdit, ArrowRight } from "lucide-react";
+import { ShieldCheck, Layers, FileEdit, FolderOpen, ArrowRight } from "lucide-react";
 
 const CARDS = [
   {
@@ -20,6 +20,12 @@ const CARDS = [
     icon: FileEdit,
     title: "데이터 거버넌스 문서 서식 모음",
     desc: "각종 신청서 및 품의서 양식을 작성합니다.",
+  },
+  {
+    href: "/governance/forms/my",
+    icon: FolderOpen,
+    title: "내 문서 목록",
+    desc: "내가 제출한 신청서의 진행 상태를 확인합니다.",
   },
 ];
 
