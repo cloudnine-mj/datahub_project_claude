@@ -192,7 +192,7 @@ export default function AuditPage() {
         </div>
       )}
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="mt-4 rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wider text-gray-500">
             <tr>
@@ -295,11 +295,18 @@ function SeverityBadge({ severity }: { severity: AuditSeverity }) {
   };
   const { cls, icon: Icon, tip } = map[severity];
   return (
-    <span
-      title={tip}
-      className={"inline-flex cursor-help items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold " + cls}
-    >
-      <Icon size={11} /> {SEVERITY_LABELS[severity]}
+    <span className="group relative inline-block">
+      <span
+        className={
+          "inline-flex cursor-help items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold " + cls
+        }
+      >
+        <Icon size={11} /> {SEVERITY_LABELS[severity]}
+      </span>
+      {/* 커스텀 툴팁 — 즉시 노출. 마지막 컬럼이라 right-0 기준, 행 하단 잘림 방지로 위쪽(bottom-full)에 띄움. */}
+      <span className="pointer-events-none absolute right-0 bottom-full z-20 mb-1.5 hidden w-64 rounded-md bg-gray-900 px-3 py-2 text-[11px] leading-relaxed text-white shadow-lg group-hover:block">
+        {tip}
+      </span>
     </span>
   );
 }
