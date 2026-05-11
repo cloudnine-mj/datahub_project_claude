@@ -54,7 +54,7 @@ export default function MyFormsPage() {
           <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
             전체 {counts.all > 0 && <span className="ml-1 text-gray-400">({counts.all})</span>}
           </FilterChip>
-          {STATUSES.map((s) => (
+          {STATUSES.filter((s) => s.value !== "rejected").map((s) => (
             <FilterChip
               key={s.value}
               active={filter === s.value}
