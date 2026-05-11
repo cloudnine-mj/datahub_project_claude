@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { FormCommentSection } from "@/components/FormCommentSection";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
@@ -224,6 +225,9 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+
+      {/* 신청서별 단일 댓글 스레드 — 신청자 + admin 간 비공식 논의 공간 */}
+      <FormCommentSection formId={form.id} me={me} />
     </div>
   );
 }

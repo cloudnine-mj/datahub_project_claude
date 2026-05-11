@@ -168,6 +168,16 @@ export interface EditHistoryEntry {
   changes: FieldChange[];
 }
 
+export interface FormCommentItem {
+  id: number;
+  form_id: number;
+  author_id: number;
+  author_name: string;
+  author_role: "admin" | "editor" | "viewer";
+  body: string;
+  created_at: string;
+}
+
 export interface FormDetail extends FormListItem {
   submitter_name: string;
   submitter_email: string;
@@ -297,6 +307,17 @@ export const api = {
   formAttachmentUrl: (formId: number, attId: number) => `${BASE}/forms/${formId}/attachments/${attId}`,
   deleteFormAttachment: (formId: number, attId: number) =>
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
+
+  /** 신청서 단일 댓글 스레드 — 신청자 + admin 만 접근. */
+  listFormComments: (formId: number) =>
+    request<FormCommentItem[]>(`/forms/${formId}/comments`),
+  createFormComment: (formId: number, body: string) =>
+    request<FormCommentItem>(`/forms/${formId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    }),
+  deleteFormComment: (formId: number, commentId: number) =>
+    request<void>(`/forms/${formId}/comments/${commentId}`, { method: "DELETE" }),
 
   /** 로그아웃 — plat-api 의 refresh_token 폐기 + 쿠키 삭제. mock 모드면 X-User-Email 만 비움. */
   logout: async () => {

@@ -104,3 +104,19 @@ class StatusChange(BaseModel):
 
     status: str  # STATUS_VALUES 중 하나
     comment: str | None = None
+
+
+class FormCommentCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class FormCommentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    form_id: int
+    author_id: int
+    author_name: str
+    author_role: str
+    body: str
+    created_at: datetime

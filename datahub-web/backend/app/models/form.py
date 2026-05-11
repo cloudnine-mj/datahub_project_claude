@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -78,3 +78,21 @@ class FormAttachment(Base):
     size_bytes: Mapped[int] = mapped_column(Integer, default=0)
 
     form: Mapped[Form] = relationship(back_populates="attachments")
+
+
+class FormComment(Base):
+    """신청서 1건에 대한 단일 댓글 스레드 — 신청자/관리자 간 논의 기록.
+
+    승인 이력(approval_history)이 '공식 결재 기록' 이라면, 이 모델은 검토 과정의
+    질의/응답을 담는 비공식 의사소통 공간. HuggingFace Discussion 형태와 유사.
+    """
+
+    __tablename__ = "form_comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    form_id: Mapped[int] = mapped_column(ForeignKey("forms.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    author_name: Mapped[str] = mapped_column(String(100))
+    author_role: Mapped[str] = mapped_column(String(20))  # snapshot — 향후 role 이 바뀌어도 작성 당시 표시
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

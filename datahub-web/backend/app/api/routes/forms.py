@@ -29,10 +29,18 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.config import settings
 from app.db.session import get_db
-from app.models import Form, FormAttachment, User
+from app.models import Form, FormAttachment, FormComment, User
 from app.models.form import FORM_TYPES
 from app.models.form import STATUS_VALUES
-from app.schemas.form import FormAttachmentOut, FormCreate, FormDetail, FormListItem, StatusChange
+from app.schemas.form import (
+    FormAttachmentOut,
+    FormCommentCreate,
+    FormCommentOut,
+    FormCreate,
+    FormDetail,
+    FormListItem,
+    StatusChange,
+)
 
 router = APIRouter(prefix="/forms", tags=["forms"])
 
@@ -569,4 +577,72 @@ def delete_attachment(
     except OSError:
         pass
     db.delete(att)
+    db.commit()
+
+
+# ── 댓글 — 신청서별 단일 스레드 ─────────────────────────────────
+# 권한: form 조회 가능한 사용자 (제출자 본인 또는 admin) 만 작성/조회 가능.
+# '권한 부여된 검토자' 컨셉은 향후 ACL 모델 도입 시 _check_form_owner 를 확장하면
+# 댓글에도 자동 반영됨.
+
+
+@router.get("/{form_id}/comments", response_model=list[FormCommentOut])
+def list_form_comments(
+    form_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[FormComment]:
+    _check_form_owner(form_id, db, user)
+    return (
+        db.query(FormComment)
+        .filter(FormComment.form_id == form_id)
+        .order_by(FormComment.created_at.asc())
+        .all()
+    )
+
+
+@router.post(
+    "/{form_id}/comments",
+    response_model=FormCommentOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_form_comment(
+    form_id: int,
+    payload: FormCommentCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _check_form_owner(form_id, db, user)
+    comment = FormComment(
+        form_id=form_id,
+        author_id=user.id,
+        author_name=user.name,
+        author_role=user.role,
+        body=payload.body.strip(),
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+@router.delete("/{form_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_form_comment(
+    form_id: int,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    _check_form_owner(form_id, db, user)
+    comment = (
+        db.query(FormComment)
+        .filter(FormComment.id == comment_id, FormComment.form_id == form_id)
+        .first()
+    )
+    if not comment:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="comment not found")
+    # 작성자 본인 또는 admin 만 삭제 가능
+    if comment.author_id != user.id and user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="삭제 권한이 없습니다.")
+    db.delete(comment)
     db.commit()
