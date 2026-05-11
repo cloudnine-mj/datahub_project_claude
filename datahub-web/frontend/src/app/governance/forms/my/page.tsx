@@ -21,6 +21,20 @@ function getBaseRequestNo(rn: string): string {
   return rn.replace(/-v\d+$/, "");
 }
 
+/**
+ * 그룹 내 '가장 최신 버전' 판정 우선순위.
+ *
+ * 단순 timestamp 만 비교하면 '제출됨 v1 → 편집해서 임시저장 v2 → 방치' 일 때
+ * 미완성 임시저장본이 최신으로 잡혀 사용자에게 혼란을 줌. 따라서 상태 자체의
+ * '확정도' 를 1순위로 두고, 동일 상태 안에서 시각 역순으로 정렬.
+ */
+function statusPriority(status: string): number {
+  if (status === "approved" || status === "rejected") return 4; // terminal
+  if (status === "reviewing") return 3;
+  if (status === "submitted") return 2;
+  return 1; // draft
+}
+
 export default function MyFormsPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -46,9 +60,12 @@ export default function MyFormsPage() {
     const latest: FormListItem[] = [];
     const history: FormListItem[] = [];
     for (const [, group] of byBase) {
-      group.sort(
-        (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
-      );
+      // 1순위: 상태 우선순위(확정도), 2순위: 시각 역순
+      group.sort((a, b) => {
+        const dp = statusPriority(b.status) - statusPriority(a.status);
+        if (dp !== 0) return dp;
+        return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
+      });
       latest.push(group[0]);
       history.push(...group.slice(1));
     }
