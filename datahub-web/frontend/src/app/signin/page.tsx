@@ -8,6 +8,7 @@
  *   (env NEXT_PUBLIC_PLATFORM_API_BASE 미지정 시 same-origin 으로 호출)
  * - 로컬 mock 모드: localhost:8000 backend 가 OAuth endpoint 없으면 즉시
  *   기본 admin 으로 로그인하는 `mock=1` 분기 (개발 편의)
+ * - 로컬 mock 모드에서는 SSO 버튼 아래에 시드된 테스트 계정 선택 UI 노출
  */
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,19 +17,28 @@ import { PLATFORM_AUTH_LOGIN_URL, setUserEmail } from "@/lib/api";
 
 const MOCK_DEMO_EMAIL = "karlo.lee@example.com";
 
+// mock 모드 — 시드된 테스트 계정. 백엔드 seed.py 와 동기화 유지.
+const MOCK_TEST_ACCOUNTS: { email: string; name: string; role: string; note?: string }[] = [
+  { email: "karlo.lee@example.com", name: "Karlo Lee", role: "admin", note: "기본 관리자" },
+  { email: "jun.lee@company.com", name: "이준혁", role: "editor", note: "시드 신청서 3건의 제출자" },
+  { email: "siu@example.com", name: "Siu", role: "editor" },
+  { email: "doyun@example.com", name: "Doyun", role: "editor" },
+  { email: "viewer@example.com", name: "Viewer Lee", role: "viewer", note: "권한 거부 화면 확인용" },
+];
+
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorParam = searchParams?.get("error");
   const [busy, setBusy] = useState(false);
 
+  // 환경 변수가 plat-api 를 가리키지 않으면 (= 로컬 mock 환경) 시드 계정 선택 UI 노출
+  const usingMock =
+    typeof process !== "undefined" && !process.env?.NEXT_PUBLIC_PLATFORM_API_BASE;
+
   function handleSso() {
     setBusy(true);
 
-    // 환경 변수가 plat-api 를 가리키지 않으면 (= 로컬 mock 환경) 즉시 mock 로그인.
-    // 향후 NEXT_PUBLIC_PLATFORM_API_BASE 가 설정되면 자연스럽게 OAuth 흐름으로 전환.
-    const usingMock =
-      typeof process !== "undefined" && !process.env?.NEXT_PUBLIC_PLATFORM_API_BASE;
     if (usingMock) {
       setUserEmail(MOCK_DEMO_EMAIL);
       router.push("/");
@@ -38,6 +48,11 @@ export default function SignInPage() {
     // plat-api OAuth — 콜백이 platform_token 쿠키를 세팅하고 state 로 redirect 해줌
     const back = window.location.origin;
     window.location.href = `${PLATFORM_AUTH_LOGIN_URL}?redirect_uri=${encodeURIComponent(back)}`;
+  }
+
+  function loginAs(email: string) {
+    setUserEmail(email);
+    router.push("/");
   }
 
   return (
@@ -88,7 +103,46 @@ export default function SignInPage() {
             <span className="h-px flex-1 bg-gray-100" />
           </div>
 
-          <p className="text-center text-xs text-gray-400">SSO 자동 로그인이 설정되어 있습니다.</p>
+          {usingMock ? (
+            <div>
+              <p className="text-center text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                개발용 — 테스트 계정으로 로그인
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {MOCK_TEST_ACCOUNTS.map((acc) => (
+                  <li key={acc.email}>
+                    <button
+                      type="button"
+                      onClick={() => loginAs(acc.email)}
+                      className="flex w-full items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-left text-xs hover:border-brand/30 hover:bg-gray-50"
+                    >
+                      <span className="flex flex-col">
+                        <span className="font-semibold text-gray-800">
+                          {acc.name}
+                          <span
+                            className={
+                              "ml-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold " +
+                              (acc.role === "admin"
+                                ? "bg-red-50 text-red-600"
+                                : acc.role === "viewer"
+                                ? "bg-gray-100 text-gray-500"
+                                : "bg-blue-50 text-blue-600")
+                            }
+                          >
+                            {acc.role}
+                          </span>
+                        </span>
+                        <span className="text-[10px] text-gray-400">{acc.email}</span>
+                        {acc.note && <span className="text-[10px] text-gray-500">— {acc.note}</span>}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-center text-xs text-gray-400">SSO 자동 로그인이 설정되어 있습니다.</p>
+          )}
 
           <p className="mt-8 text-center text-[11px] text-gray-400">
             Powered by LG AI Research · Data Governance Team
