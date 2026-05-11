@@ -124,12 +124,13 @@ def list_audit_events(
                 }
             )
 
-        # 1-c) 수정 이력
+        # 1-c) 수정 이력 — 필드 단위 changes 도 함께 실어 UI 에서 펼침 가능
         for entry in form.edit_history or []:
             ts = _parse_iso(entry.get("edited_at"))
             if not ts or ts < since:
                 continue
-            n = len(entry.get("changes") or [])
+            changes_raw = entry.get("changes") or []
+            n = len(changes_raw)
             events.append(
                 {
                     "timestamp": ts,
@@ -138,6 +139,15 @@ def list_audit_events(
                     "target": form.request_no,
                     "detail": f"{form.project_name} — {n}개 필드 수정",
                     "severity": "info",
+                    "changes": [
+                        {
+                            "field": c.get("field", "?"),
+                            "before": c.get("before"),
+                            "after": c.get("after"),
+                        }
+                        for c in changes_raw
+                        if isinstance(c, dict)
+                    ],
                 }
             )
 

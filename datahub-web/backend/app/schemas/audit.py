@@ -3,8 +3,19 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class AuditFieldChange(BaseModel):
+    """form.edited 이벤트의 필드 단위 변경. before/after 는 임의 JSON 값.
+
+    field 는 백엔드 키 (예: 'project_name' 또는 payload 의 한국어 key)."""
+
+    field: str
+    before: Any = None
+    after: Any = None
 
 
 class AuditEvent(BaseModel):
@@ -16,6 +27,9 @@ class AuditEvent(BaseModel):
       - success  : approved / reviewing 진입
       - warning  : (예약) 향후 임계 알림 등
       - danger   : rejected / deleted
+
+    changes 는 form.edited 같이 구조화된 변경 내역이 있는 이벤트에서만 채워짐.
+    그 외 이벤트는 None (UI 에서 펼침 비활성).
     """
 
     timestamp: datetime
@@ -24,3 +38,4 @@ class AuditEvent(BaseModel):
     target: str  # request_no, doc_no, board path 등
     detail: str
     severity: str  # 'info' | 'success' | 'warning' | 'danger'
+    changes: list[AuditFieldChange] | None = Field(default=None)

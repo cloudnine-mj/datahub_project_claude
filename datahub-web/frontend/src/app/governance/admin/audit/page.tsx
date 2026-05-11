@@ -9,10 +9,11 @@
  */
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   Download,
   FileText,
   Filter,
@@ -20,7 +21,13 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
-import { api, type AuditEvent, type AuditSeverity, type Me } from "@/lib/api";
+import {
+  api,
+  type AuditEvent,
+  type AuditFieldChange,
+  type AuditSeverity,
+  type Me,
+} from "@/lib/api";
 
 const PAGE_SIZE = 8;
 
@@ -47,6 +54,8 @@ export default function AuditPage() {
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<AuditSeverity | "">("");
   const [page, setPage] = useState(1);
+  // 펼친 행 index (현재 페이지 내 0-based). 한 번에 하나만 펼치도록 단일 값.
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   const refetch = useCallback(() => {
     setEvents(null);
@@ -86,7 +95,13 @@ export default function AuditPage() {
 
   useEffect(() => {
     setPage(1);
+    setExpandedIdx(null);
   }, [search, severityFilter, days]);
+
+  // 페이지 이동 시에도 펼침 해제
+  useEffect(() => {
+    setExpandedIdx(null);
+  }, [page]);
 
   const total = filtered?.length ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -218,26 +233,58 @@ export default function AuditPage() {
                 </td>
               </tr>
             ) : (
-              pageItems.map((e, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/60">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">
-                    {formatTimestamp(e.timestamp)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-gray-800">{e.actor}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <code className="rounded bg-blue-50 px-2 py-1 font-mono text-[11px] font-semibold text-blue-700">
-                      {e.action}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.target}</td>
-                  <td className="px-6 py-4 text-gray-700">{e.detail}</td>
-                  <td className="px-6 py-4">
-                    <SeverityBadge severity={e.severity} />
-                  </td>
-                </tr>
-              ))
+              pageItems.map((e, i) => {
+                const hasChanges = !!(e.changes && e.changes.length > 0);
+                const isExpanded = expandedIdx === i;
+                return (
+                  <Fragment key={i}>
+                    <tr
+                      className={
+                        "border-t border-gray-100 " +
+                        (hasChanges ? "cursor-pointer hover:bg-gray-50/60 " : "hover:bg-gray-50/60 ") +
+                        (isExpanded ? "bg-gray-50/60" : "")
+                      }
+                      onClick={hasChanges ? () => setExpandedIdx(isExpanded ? null : i) : undefined}
+                    >
+                      <td className="px-6 py-4 font-mono text-xs text-gray-500">
+                        {formatTimestamp(e.timestamp)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-gray-800">{e.actor}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <code className="rounded bg-blue-50 px-2 py-1 font-mono text-[11px] font-semibold text-blue-700">
+                          {e.action}
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.target}</td>
+                      <td className="px-6 py-4 text-gray-700">
+                        <div className="flex items-center gap-1.5">
+                          <span>{e.detail}</span>
+                          {hasChanges && (
+                            <ChevronDown
+                              size={14}
+                              className={
+                                "shrink-0 text-gray-400 transition " + (isExpanded ? "rotate-180" : "")
+                              }
+                            />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <SeverityBadge severity={e.severity} />
+                      </td>
+                    </tr>
+                    {hasChanges && isExpanded && (
+                      <tr className="bg-gray-50/50">
+                        <td colSpan={6} className="px-6 pb-5 pt-1">
+                          <ChangesDetail changes={e.changes ?? []} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -252,6 +299,62 @@ export default function AuditPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * form.edited 이벤트의 필드별 변경을 표 형식으로 표시. before → after 형태.
+ * 값 직렬화: object/array 는 JSON 한 줄, 그 외는 String. 빈 값은 '(없음)'.
+ */
+function ChangesDetail({ changes }: { changes: AuditFieldChange[] }) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white">
+      <div className="border-b border-gray-100 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+        변경 상세 ({changes.length})
+      </div>
+      <table className="w-full text-xs">
+        <thead className="bg-gray-50 text-left text-gray-500">
+          <tr>
+            <th className="w-56 px-4 py-2 font-medium">필드</th>
+            <th className="px-4 py-2 font-medium">이전 값</th>
+            <th className="w-6 px-1 py-2"></th>
+            <th className="px-4 py-2 font-medium">변경 후</th>
+          </tr>
+        </thead>
+        <tbody>
+          {changes.map((c, idx) => (
+            <tr key={idx} className="border-t border-gray-100 align-top">
+              <td className="px-4 py-2 font-mono text-[11px] text-gray-700">{c.field}</td>
+              <td className="px-4 py-2 text-gray-500">
+                <ValueCell value={c.before} tone="before" />
+              </td>
+              <td className="px-1 py-2 text-center text-gray-400">→</td>
+              <td className="px-4 py-2 text-gray-800">
+                <ValueCell value={c.after} tone="after" />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ValueCell({ value, tone }: { value: unknown; tone: "before" | "after" }) {
+  if (value === null || value === undefined || value === "") {
+    return <span className="italic text-gray-300">(없음)</span>;
+  }
+  const display = typeof value === "object" ? JSON.stringify(value) : String(value);
+  const bg =
+    tone === "before"
+      ? "bg-red-50 text-red-700 line-through decoration-red-200"
+      : "bg-emerald-50 text-emerald-800";
+  return (
+    <span
+      className={"inline-block max-w-full whitespace-pre-wrap break-words rounded px-1.5 py-0.5 " + bg}
+    >
+      {display}
+    </span>
   );
 }
 

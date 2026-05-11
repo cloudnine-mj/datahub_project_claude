@@ -170,6 +170,12 @@ export interface EditHistoryEntry {
 
 export type AuditSeverity = "info" | "success" | "warning" | "danger";
 
+export interface AuditFieldChange {
+  field: string;
+  before: unknown;
+  after: unknown;
+}
+
 export interface AuditEvent {
   timestamp: string;
   actor: string;
@@ -177,6 +183,8 @@ export interface AuditEvent {
   target: string;
   detail: string;
   severity: AuditSeverity;
+  /** form.edited 같이 구조화된 변경 내역이 있을 때만 채워짐 */
+  changes?: AuditFieldChange[] | null;
 }
 
 export interface FormCommentItem {
