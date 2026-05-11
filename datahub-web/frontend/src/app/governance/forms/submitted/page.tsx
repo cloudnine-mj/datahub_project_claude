@@ -47,7 +47,7 @@ export default function Page() {
 
         <div className="mt-4 border-t border-gray-200 pt-3">
           <a
-            href="https://gportal.lgresearch.ai/portal/main/portalMain.do"
+            href="https://eas.lgmdi.com/service/contents.ncd"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline"
