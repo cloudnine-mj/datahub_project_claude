@@ -1,9 +1,9 @@
 """User model.
 
 권한 모델은 단순화: role 만 가짐. 향후 board 별 ACL 이 필요하면 별도 join 테이블로 확장.
-  - admin: 모든 게시판에 글 작성 가능
-  - editor: 모든 게시판에 글 작성 가능
-  - viewer: 글 작성 불가 (read-only)
+  - admin: 모든 게시판에 글 작성 가능 (정책 / 프로세스 게시판은 admin 전용)
+  - editor: 신청서 제출은 가능하나 게시판 글 작성은 불가
+  - viewer: read-only
 """
 
 from __future__ import annotations
@@ -27,12 +27,5 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def can_write_board(self, board_type: str) -> bool:
-        """게시판별 글쓰기 권한.
-
-        정책 게시판은 admin 전용. 통합된 프로세스 게시판은 admin·editor 둘 다 가능.
-        """
-        if self.role == "admin":
-            return True
-        if self.role == "editor":
-            return board_type == "process"
-        return False  # viewer
+        """게시판별 글쓰기 권한 — 정책/프로세스 모두 admin 전용."""
+        return self.role == "admin"

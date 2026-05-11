@@ -117,21 +117,14 @@ export function BoardListView({ board }: Props) {
         )}
 
         <div className="ml-auto">
-          {canWrite ? (
-            <Link
-              href={`/governance/${boardSegment(board)}/new`}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
-            >
-              <Pencil size={14} /> 작성하기
-            </Link>
-          ) : (
-            <span
-              className="inline-flex cursor-not-allowed items-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
-              title="관리자 전용 — 권한이 없으면 글을 작성할 수 없습니다"
-            >
-              <Pencil size={14} /> 작성하기
-            </span>
-          )}
+          {/* 작성하기 — 권한 없으면 forbidden 페이지로, 있으면 신규 작성 폼으로 이동.
+              버튼 색상은 항상 brand 로 보여 클릭 가능함을 명시 (forbidden 안내 화면이 권한 부재 사유를 자체 설명). */}
+          <Link
+            href={`/governance/${boardSegment(board)}/${canWrite ? "new" : "forbidden"}`}
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
+          >
+            <Pencil size={14} /> 작성하기
+          </Link>
         </div>
       </div>
 
