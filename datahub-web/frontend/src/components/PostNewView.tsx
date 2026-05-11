@@ -1,7 +1,7 @@
 "use client";
 
 // 화면 7: 새 글 작성 폼 — 모든 게시판 공통 (제목/카테고리/내용 + 첨부).
-// 정책 게시판은 추가로 '중요도(severity)' 칩 선택을 노출 → 표 중요도 컬럼에 반영.
+// 정책 게시판은 추가로 '위험도(severity)' 칩 선택을 노출 → 표 위험도 컬럼에 반영.
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
@@ -205,7 +205,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {isPolicy && (
-              <Field label="중요도" required>
+              <Field label="위험도" required>
                 <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
                   {SEVERITIES.map((s) => (
                     <button

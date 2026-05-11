@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색 + 중요도 필터.
+ * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색 + 위험도 필터.
  *
- * 컬럼은 항상 전체 표시. 우측 상단 드롭다운은 '중요도(필수/권장/미지정)' 로
+ * 컬럼은 항상 전체 표시. 우측 상단 드롭다운은 '위험도(필수/권장/미지정)' 로
  * row 를 필터링.
  */
 
@@ -19,7 +19,7 @@ import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
-// 중요도 필터 옵션 — 4단계만. severity 가 비어있는 옛 row 는 필터 통과(항상 노출).
+// 위험도 필터 옵션 — 4단계만. severity 가 비어있는 옛 row 는 필터 통과(항상 노출).
 type SeverityFilterKey = Severity;
 const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
   { key: "low", label: "Low" },
@@ -35,7 +35,7 @@ export function PolicyBoardView() {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1); // 1-based
 
-  // 중요도 필터 — 기본은 전체 선택
+  // 위험도 필터 — 기본은 전체 선택
   const [severityFilter, setSeverityFilter] = useState<Set<SeverityFilterKey>>(
     () => new Set(SEVERITY_FILTERS.map((f) => f.key)),
   );
@@ -47,12 +47,12 @@ export function PolicyBoardView() {
 
   const canWrite = me?.permissions.can_write_policy ?? false;
 
-  // 검색 + 중요도 필터 (클라이언트 사이드)
+  // 검색 + 위험도 필터 (클라이언트 사이드)
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
-      // 1) 중요도 필터
+      // 1) 위험도 필터
       // severity 가 있으면 필터 매칭 검사, 없으면 통과 (옛 데이터 호환)
       const sevKey = p.severity as Severity | undefined | null;
       if (sevKey && !severityFilter.has(sevKey)) return false;
@@ -152,7 +152,7 @@ export function PolicyBoardView() {
               <th className="w-32 px-5 py-3">작성자</th>
               <th className="w-32 px-5 py-3">등록일</th>
               <th className="w-32 px-5 py-3">수정일</th>
-              <th className="w-32 px-5 py-3">중요도</th>
+              <th className="w-32 px-5 py-3">위험도</th>
               <th className="w-48 px-5 py-3">태그</th>
             </tr>
           </thead>
@@ -311,7 +311,7 @@ function Pagination({
 }
 
 /**
- * 중요도 필터 드롭다운 — 체크된 severity 만 row 로 표시.
+ * 위험도 필터 드롭다운 — 체크된 severity 만 row 로 표시.
  * 외부 클릭 자동 닫힘. 전체 체크 시 모든 row 표시 (필터 비활성과 동일).
  */
 function SeverityFilterDropdown({
@@ -347,8 +347,8 @@ function SeverityFilterDropdown({
   // 버튼 라벨
   const isAll = selected.size === SEVERITY_FILTERS.length;
   const summary = isAll
-    ? "중요도: 전체"
-    : "중요도: " + SEVERITY_FILTERS.filter((f) => selected.has(f.key)).map((f) => f.label).join(", ") || "중요도: 없음";
+    ? "위험도: 전체"
+    : "위험도: " + SEVERITY_FILTERS.filter((f) => selected.has(f.key)).map((f) => f.label).join(", ") || "위험도: 없음";
 
   return (
     <div ref={ref} className="relative">
@@ -364,7 +364,7 @@ function SeverityFilterDropdown({
       {open && (
         <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-bold text-gray-700">중요도 필터</span>
+            <span className="text-xs font-bold text-gray-700">위험도 필터</span>
             <button
               type="button"
               onClick={selectAll}
