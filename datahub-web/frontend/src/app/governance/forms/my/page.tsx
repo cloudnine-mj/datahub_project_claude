@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, FileEdit, Pencil, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Pencil, Search } from "lucide-react";
 import {
   api,
   type BoardType,
@@ -152,11 +152,6 @@ function AdminPostsView() {
       </div>
 
       <section className="mt-6">
-        <div className="flex items-center gap-2">
-          <FileEdit size={16} className="text-gray-500" />
-          <h2 className="text-base font-bold tracking-tight">내가 작성한 게시글</h2>
-        </div>
-
         {/* 툴바 — 페이지 크기 + 검색 */}
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="relative">
