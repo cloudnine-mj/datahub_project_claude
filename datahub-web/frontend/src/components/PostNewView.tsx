@@ -26,6 +26,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   const isPolicy = board === "policy";
 
   const [me, setMe] = useState<Me | null>(null);
+  const [authorName, setAuthorName] = useState("");
   const [title, setTitle] = useState("");
   const [docNo, setDocNo] = useState("");
   const [docType, setDocType] = useState("");
@@ -63,6 +64,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         setSeverity((p.severity as Severity | null) ?? "");
         setTags(p.tags ?? []);
         setVisibility((p.visibility as PostVisibility) ?? "public");
+        setAuthorName(p.author_name ?? "");
       })
       .catch((e) => setError((e as Error).message));
   }, [editId, board]);
@@ -103,6 +105,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         content,
         is_draft: asDraft,
         visibility,
+        author_name: authorName.trim() || undefined,
         ...(isPolicy && {
           severity: severity || null,
           tags: tags.length > 0 ? tags : null,
@@ -151,14 +154,13 @@ export function PostNewView({ board }: { board: BoardType }) {
         <section className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-sm font-bold text-gray-700">기본 정보</h2>
           <div className="space-y-5">
-            <Field label="작성자" hint="로그인한 관리자로 자동 입력됩니다.">
+            <Field label="작성자" hint="비워두면 로그인 관리자명으로 자동 입력됩니다.">
               <input
-                value={me?.user.name ?? ""}
-                readOnly
-                tabIndex={-1}
-                aria-readonly="true"
-                placeholder="(로그인 후 자동 입력)"
-                className="w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 focus:outline-none"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                placeholder={me ? `예: ${me.user.name}` : "작성자명을 입력하세요"}
+                maxLength={100}
+                className={inputCls}
               />
             </Field>
 

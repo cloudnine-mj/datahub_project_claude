@@ -86,7 +86,8 @@ def create_post(
         category=payload.category,
         content=payload.content,
         author_id=user.id,
-        author_name=user.name,
+        # 작성자명은 admin 이 직접 입력 가능 — 미지정/공백이면 로그인 사용자명으로 fallback
+        author_name=(payload.author_name or "").strip() or user.name,
         is_draft=payload.is_draft,
         visibility=payload.visibility if payload.visibility in ("public", "admin") else "public",
         summary=payload.summary,
@@ -142,6 +143,13 @@ def update_post(
     for field, value in data.items():
         if field == "visibility" and value is None:
             continue  # 명시적 None 은 무시 (기본 public 유지)
+        if field == "author_name":
+            # 빈 문자열/공백은 기존 값 유지 — 작성자명을 의도적으로 지우는 케이스는 없음
+            v = (value or "").strip() if isinstance(value, str) else value
+            if not v:
+                continue
+            setattr(post, field, v)
+            continue
         setattr(post, field, value)
     db.commit()
     db.refresh(post)

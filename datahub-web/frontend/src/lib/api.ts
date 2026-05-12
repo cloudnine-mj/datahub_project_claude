@@ -218,6 +218,7 @@ export const api = {
       content: string;
       is_draft?: boolean;
       visibility?: PostVisibility;
+      author_name?: string;
     } & Partial<PolicyMeta>,
   ) =>
     request<PostDetail>(`/boards/${board}/posts`, {
@@ -237,6 +238,7 @@ export const api = {
       content: string;
       is_draft: boolean;
       visibility: PostVisibility;
+      author_name: string;
     }> &
       Partial<PolicyMeta>,
   ) =>

@@ -23,6 +23,8 @@ class PostCreate(BaseModel):
     content: str = ""
     is_draft: bool = False
     visibility: str | None = None  # 'public' (default) / 'admin' (비공개)
+    # 작성자 이름 — admin 이 직접 입력. 미지정 시 로그인 사용자명으로 fallback.
+    author_name: str | None = Field(default=None, max_length=100)
 
     # 정책 메타 (모두 선택)
     summary: str | None = None
@@ -41,6 +43,7 @@ class PostUpdate(BaseModel):
     category: str | None = None
     is_draft: bool | None = None
     visibility: str | None = None
+    author_name: str | None = Field(default=None, max_length=100)
     content: str | None = None
     summary: str | None = None
     tags: list[str] | None = None
