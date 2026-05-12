@@ -22,7 +22,7 @@ import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { DeletePostButton } from "@/components/DeletePostButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { boardSegment } from "@/components/BoardListView";
-import { BOARD_LABELS, FORM_TYPE_LABELS, formatDate, parseUtc } from "@/lib/utils";
+import { BOARD_LABELS, FORM_TYPE_LABELS, formatDateTime, parseUtc } from "@/lib/utils";
 
 type StatusFilter = "all" | FormStatus;
 type MyPost = PostListItem & { board: BoardType };
@@ -115,7 +115,7 @@ function AdminPostsView() {
                 <th className="w-48 px-6 py-3 font-medium">게시판</th>
                 <th className="px-6 py-3 font-medium">제목</th>
                 <th className="w-28 px-6 py-3 font-medium">상태</th>
-                <th className="w-32 px-6 py-3 font-medium">최근 수정</th>
+                <th className="w-44 px-6 py-3 font-medium">최근 수정</th>
                 <th className="w-56 px-6 py-3 font-medium">관리</th>
               </tr>
             </thead>
@@ -145,7 +145,7 @@ function AdminPostsView() {
                     <td className="px-6 py-4">
                       <PostStatusBadge post={p} />
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{formatDate(p.updated_at)}</td>
+                    <td className="px-6 py-4 text-gray-500">{formatDateTime(p.updated_at)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <Link
@@ -276,7 +276,7 @@ function UserFormsView() {
               <th className="px-6 py-3 font-medium">신청서 종류</th>
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
-              <th className="w-32 px-6 py-3 font-medium">제출일</th>
+              <th className="w-44 px-6 py-3 font-medium">제출일</th>
               <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
@@ -306,7 +306,7 @@ function UserFormsView() {
                   <td className="px-6 py-4">
                     <StatusBadge status={it.status} />
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
+                  <td className="px-6 py-4 text-gray-500">{formatDateTime(it.submitted_at)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
                       <a

@@ -10,7 +10,7 @@ import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
-import { FORM_TYPE_LABELS, formatDate } from "@/lib/utils";
+import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
 
 type StatusFilter = "all" | FormStatus;
 
@@ -94,7 +94,7 @@ export default function AdminFormsPage() {
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-32 px-6 py-3 font-medium">신청자</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
-              <th className="w-32 px-6 py-3 font-medium">제출일</th>
+              <th className="w-44 px-6 py-3 font-medium">제출일</th>
               <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
@@ -123,7 +123,7 @@ export default function AdminFormsPage() {
                   </td>
                   <td className="px-6 py-4 text-gray-600">{it.submitter_name}</td>
                   <td className="px-6 py-4"><StatusBadge status={it.status} /></td>
-                  <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
+                  <td className="px-6 py-4 text-gray-500">{formatDateTime(it.submitted_at)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
                       <a
