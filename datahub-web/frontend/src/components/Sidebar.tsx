@@ -36,7 +36,7 @@ const NAV: NavItem[] = [
     label: "Governance",
     icon: ShieldCheck,
     children: [
-      { href: "/governance/info", label: "정책 / 프로세스 자료실" },
+      { href: "/governance/info", label: "정책 / 프로세스 안내" },
       { href: "/governance/forms", label: "데이터 거버넌스 문서 서식 모음" },
       {
         href: "/governance/forms/my",

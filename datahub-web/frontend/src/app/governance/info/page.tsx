@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 정책 / 프로세스 자료실 — '데이터 관리 정책' + '데이터 제작 / 활용 요청 프로세스' 통합 진입점.
+ * 정책 / 프로세스 안내 — '데이터 관리 정책' + '데이터 제작 / 활용 요청 프로세스' 통합 진입점.
  *
  * 이 페이지는 데이터를 통합하지 않고 진입점만 통합한다. 탭 전환에 따라
  * 기존 PolicyBoardView / BoardListView 를 compact 모드로 재사용 — 각 도메인의
@@ -38,10 +38,10 @@ export default function GovernanceInfoPage() {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance" },
-          { label: "정책 / 프로세스 자료실" },
+          { label: "정책 / 프로세스 안내" },
         ]}
       />
-      <h1 className="text-3xl font-bold tracking-tight">정책 / 프로세스 자료실</h1>
+      <h1 className="text-3xl font-bold tracking-tight">정책 / 프로세스 안내</h1>
 
       <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
         <div className="flex items-start gap-3 text-sm">

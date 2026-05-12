@@ -6,7 +6,7 @@ const CARDS = [
   {
     href: "/governance/info",
     icon: BookOpen,
-    title: "정책 / 프로세스 자료실",
+    title: "정책 / 프로세스 안내",
     desc: "데이터 관리 정책과 데이터 제작·요청 프로세스를 한 곳에서 확인합니다.",
   },
   {
