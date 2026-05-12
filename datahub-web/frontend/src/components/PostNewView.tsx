@@ -321,6 +321,17 @@ export function PostNewView({ board }: { board: BoardType }) {
           >
             취소
           </button>
+          {/* 임시저장 — 신규 작성 모드에서만 노출. 수정 모드에선 의미 없음. */}
+          {!isEdit && (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => save(true)}
+              className="rounded-md border border-gray-200 bg-white px-5 py-2 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
+            >
+              {submitting ? "임시저장 중..." : "임시저장"}
+            </button>
+          )}
           <button
             type="submit"
             disabled={submitting}
