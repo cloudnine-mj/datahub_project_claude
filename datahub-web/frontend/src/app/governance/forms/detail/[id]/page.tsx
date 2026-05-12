@@ -1,12 +1,12 @@
 // 화면 9: 데이터 구매 신청서 (read-only 상세). 모든 신청서 종류 공통 사용.
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, CheckSquare, Database, Download, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
@@ -161,18 +161,23 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       <div className="mt-4 flex justify-end gap-2">
-        <Link
-          href="/governance/forms/my"
-          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+        <a
+          href={api.exportFormUrl(form.id)}
+          className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
         >
-          ☰ 내 문서 목록 보기
-        </Link>
+          <Download size={12} /> Excel
+        </a>
         <button
           onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
           className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
         >
           <Pencil size={12} /> 수정
         </button>
+        <DeleteFormButton
+          formId={form.id}
+          contextLabel={form.project_name}
+          onDeleted={() => router.push(from === "admin" ? "/governance/admin/forms" : "/governance/forms/my")}
+        />
         {form.status === "draft" && justEdited && (
           <button
             type="button"
