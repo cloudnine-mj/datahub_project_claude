@@ -34,6 +34,11 @@ BOARD_TYPES = ("policy", "process")
 #   critical : 반드시 준수, 위반 시 즉시 조치 대상
 SEVERITY_VALUES = ("low", "medium", "high", "critical")
 
+# 공개 범위
+#   public : 게시판 접근 가능한 모두 (default)
+#   admin  : admin role 사용자에게만 (게시판에 들어와도 row 자체 노출 안 됨)
+VISIBILITY_VALUES = ("public", "admin")
+
 
 class Post(Base):
     __tablename__ = "posts"
@@ -48,6 +53,8 @@ class Post(Base):
     is_draft: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     # 상단 고정 — admin 이 토글. 정렬 시 pinned=True 가 최상단, 그 다음 created_at desc.
     pinned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # 공개 범위 — 'public' (default) / 'admin' (비공개, admin 전용)
+    visibility: Mapped[str] = mapped_column(String(20), default="public", index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     author_name: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

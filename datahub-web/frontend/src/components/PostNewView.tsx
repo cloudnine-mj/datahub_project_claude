@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
-import { api, type BoardType, type Me, type Severity } from "@/lib/api";
+import { api, type BoardType, type Me, type PostVisibility, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
 import { SEVERITIES } from "./SeverityBadge";
 import { DOC_TYPES, PROCESS_CATEGORIES } from "@/lib/utils";
@@ -34,6 +34,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   const [severity, setSeverity] = useState<Severity | "">("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState(""); // 입력 중인 태그 텍스트
+  const [visibility, setVisibility] = useState<PostVisibility>("public");
 
   // 파일 첨부 (글 등록 후 순차 업로드)
   const [files, setFiles] = useState<File[]>([]);
@@ -61,6 +62,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         setContent(p.content ?? "");
         setSeverity((p.severity as Severity | null) ?? "");
         setTags(p.tags ?? []);
+        setVisibility((p.visibility as PostVisibility) ?? "public");
       })
       .catch((e) => setError((e as Error).message));
   }, [editId, board]);
@@ -100,6 +102,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         category: category || undefined,
         content,
         is_draft: asDraft,
+        visibility,
         ...(isPolicy && {
           severity: severity || null,
           tags: tags.length > 0 ? tags : null,
@@ -226,6 +229,29 @@ export function PostNewView({ board }: { board: BoardType }) {
                 <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
               </Field>
             )}
+
+            <Field
+              label="공개 범위"
+              required
+              hint="비공개로 두면 관리자만 조회·수정할 수 있습니다."
+            >
+              <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
+                <VisibilityChip
+                  active={visibility === "public"}
+                  onClick={() => setVisibility("public")}
+                  tone="public"
+                >
+                  공개
+                </VisibilityChip>
+                <VisibilityChip
+                  active={visibility === "admin"}
+                  onClick={() => setVisibility("admin")}
+                  tone="admin"
+                >
+                  비공개 (관리자 전용)
+                </VisibilityChip>
+              </div>
+            </Field>
 
             <Field label="내용" required hint="마크다운 지원">
               <textarea
@@ -356,6 +382,33 @@ function chipCls(active: boolean) {
 }
 
 /** severity 칩 색상 — SeverityBadge 4단계 (Low/Medium/High/Critical) 와 일관. */
+function VisibilityChip({
+  active,
+  onClick,
+  tone,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  tone: "public" | "admin";
+  children: React.ReactNode;
+}) {
+  const activeCls =
+    tone === "public" ? "bg-emerald-500 text-white" : "bg-gray-800 text-white";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded px-3 py-1.5 text-xs font-semibold transition " +
+        (active ? activeCls : "text-gray-600 hover:bg-gray-100")
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
 function severityChipCls(kind: Severity, active: boolean) {
   const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
   if (!active) return base + "text-gray-600 hover:bg-gray-100";

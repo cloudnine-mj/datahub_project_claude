@@ -143,7 +143,7 @@ function AdminPostsView() {
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      <PostStatusBadge isDraft={p.is_draft} />
+                      <PostStatusBadge post={p} />
                     </td>
                     <td className="px-6 py-4 text-gray-500">{formatDate(p.updated_at)}</td>
                     <td className="px-6 py-4">
@@ -168,11 +168,18 @@ function AdminPostsView() {
   );
 }
 
-function PostStatusBadge({ isDraft }: { isDraft: boolean }) {
-  if (isDraft) {
+function PostStatusBadge({ post }: { post: MyPost }) {
+  if (post.is_draft) {
     return (
       <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
         임시저장
+      </span>
+    );
+  }
+  if (post.visibility === "admin") {
+    return (
+      <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
+        비공개
       </span>
     );
   }

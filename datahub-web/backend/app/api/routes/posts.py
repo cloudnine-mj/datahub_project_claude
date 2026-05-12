@@ -47,14 +47,21 @@ def list_posts(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Post]:
-    """게시판 목록 — 임시저장(is_draft) 글은 작성자 본인 또는 admin 에게만 노출."""
+    """게시판 목록 — 임시저장(is_draft) / 비공개(visibility='admin') 글의 노출 규칙:
+      - admin: 모든 글 노출
+      - 작성자 본인: 자기 글은 무조건 노출 (draft / 비공개 포함)
+      - 그 외: !is_draft AND visibility='public' 인 글만 노출
+    """
     _validate_board(board_type)
     q = db.query(Post).filter(Post.board_type == board_type)
     if mine:
-        # '내 게시글' 모드 — 본인 작성분 모두 (drafts 포함)
+        # '내 게시글' 모드 — 본인 작성분 모두 (drafts + 비공개 포함)
         q = q.filter(Post.author_id == user.id)
     elif user.role != "admin":
-        q = q.filter((Post.is_draft == False) | (Post.author_id == user.id))  # noqa: E712
+        q = q.filter(
+            ((Post.is_draft == False) & (Post.visibility == "public"))  # noqa: E712
+            | (Post.author_id == user.id)
+        )
     # 상단 고정(pinned) 글이 최상단, 그 다음 생성일 역순
     return q.order_by(Post.pinned.desc(), Post.created_at.desc()).all()
 
@@ -81,6 +88,7 @@ def create_post(
         author_id=user.id,
         author_name=user.name,
         is_draft=payload.is_draft,
+        visibility=payload.visibility if payload.visibility in ("public", "admin") else "public",
         summary=payload.summary,
         tags=payload.tags,
         severity=payload.severity,
@@ -106,8 +114,9 @@ def get_post(
     post = db.query(Post).filter(Post.id == post_id, Post.board_type == board_type).first()
     if not post:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
-    # 임시저장 글은 작성자 / admin 만 조회 가능
-    if post.is_draft and post.author_id != user.id and user.role != "admin":
+    # 임시저장 또는 비공개 글은 작성자 / admin 만 조회 가능
+    is_restricted = post.is_draft or post.visibility == "admin"
+    if is_restricted and post.author_id != user.id and user.role != "admin":
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
     return post
 
@@ -126,7 +135,13 @@ def update_post(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
     if post.author_id != user.id and user.role != "admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="수정 권한이 없습니다.")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    # visibility 는 허용 enum 만 적용
+    if "visibility" in data and data["visibility"] not in ("public", "admin", None):
+        data.pop("visibility")
+    for field, value in data.items():
+        if field == "visibility" and value is None:
+            continue  # 명시적 None 은 무시 (기본 public 유지)
         setattr(post, field, value)
     db.commit()
     db.refresh(post)

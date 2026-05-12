@@ -22,6 +22,7 @@ class PostCreate(BaseModel):
     category: str | None = None
     content: str = ""
     is_draft: bool = False
+    visibility: str | None = None  # 'public' (default) / 'admin' (비공개)
 
     # 정책 메타 (모두 선택)
     summary: str | None = None
@@ -39,6 +40,7 @@ class PostUpdate(BaseModel):
     doc_type: str | None = Field(default=None, max_length=20)
     category: str | None = None
     is_draft: bool | None = None
+    visibility: str | None = None
     content: str | None = None
     summary: str | None = None
     tags: list[str] | None = None
@@ -67,6 +69,7 @@ class PostListItem(BaseModel):
     author_name: str
     is_draft: bool = False
     pinned: bool = False
+    visibility: str = "public"
     summary: str | None = None
     tags: list[str] | None = None
     severity: str | None = None
@@ -85,6 +88,7 @@ class PostDetail(BaseModel):
     content: str
     is_draft: bool = False
     pinned: bool = False
+    visibility: str = "public"
     author_name: str
     created_at: datetime
     updated_at: datetime

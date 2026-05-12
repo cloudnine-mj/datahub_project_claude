@@ -107,6 +107,8 @@ export interface PolicyMeta {
   examples?: string | null;
 }
 
+export type PostVisibility = "public" | "admin";
+
 export interface PostListItem extends PolicyMeta {
   id: number;
   title: string;
@@ -119,6 +121,8 @@ export interface PostListItem extends PolicyMeta {
   is_draft: boolean;
   /** 상단 고정 여부 — admin 이 토글. 목록에서 pinned=true 가 최상단. */
   pinned: boolean;
+  /** 공개 범위 — 'public' 게시판 접근 가능자 모두, 'admin' 관리자 전용 (비공개). */
+  visibility: PostVisibility;
 }
 
 export interface PostDetail extends PostListItem {
@@ -213,6 +217,7 @@ export const api = {
       category?: string;
       content: string;
       is_draft?: boolean;
+      visibility?: PostVisibility;
     } & Partial<PolicyMeta>,
   ) =>
     request<PostDetail>(`/boards/${board}/posts`, {
@@ -231,6 +236,7 @@ export const api = {
       category: string | null;
       content: string;
       is_draft: boolean;
+      visibility: PostVisibility;
     }> &
       Partial<PolicyMeta>,
   ) =>
