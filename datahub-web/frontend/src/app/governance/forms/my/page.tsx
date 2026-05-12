@@ -145,7 +145,7 @@ function AdminPostsView() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">정책 / 프로세스 게시글 관리</h1>
           <p className="mt-1.5 text-sm text-gray-500">
-            작성한 정책 / 프로세스 게시글을 확인하고, 제목을 누른 후 상세 페이지에서 이어서 작성하거나 수정 및 삭제할 수 있습니다.
+            작성한 정책 / 프로세스 게시글을 확인하고, 문서명을 누른 후 상세 페이지에서 이어서 작성하거나 수정 및 삭제할 수 있습니다.
           </p>
         </div>
       </div>
