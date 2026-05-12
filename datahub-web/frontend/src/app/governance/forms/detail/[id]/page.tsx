@@ -170,6 +170,14 @@ export default function Page({ params }: { params: { id: string } }) {
             <ArrowLeft size={12} /> 관리 페이지로 돌아가기
           </Link>
         )}
+        {from === "my" && (
+          <Link
+            href="/governance/forms/my"
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+          >
+            <ArrowLeft size={12} /> 내 문서 목록
+          </Link>
+        )}
         <button
           onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
           className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
