@@ -1,9 +1,10 @@
 // 화면 9: 데이터 구매 신청서 (read-only 상세). 모든 신청서 종류 공통 사용.
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckSquare, Database, Download, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckSquare, Database, Download, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
@@ -161,6 +162,14 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       <div className="mt-4 flex justify-end gap-2">
+        {from === "admin" && (
+          <Link
+            href="/governance/admin/forms"
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+          >
+            <ArrowLeft size={12} /> 관리 페이지로 돌아가기
+          </Link>
+        )}
         <button
           onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
           className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
