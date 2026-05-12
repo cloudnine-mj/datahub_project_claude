@@ -69,9 +69,11 @@ class Form(Base):
 
     @property
     def approved_at(self) -> datetime | None:
-        """approval_history 에서 가장 마지막 'approved' 엔트리의 시각.
-        승인되지 않은 신청서는 None.
+        """현재 상태가 'approved' 일 때만 마지막 승인 시각을 반환.
+        승인 후 검토 중으로 되돌린 경우 등 상태가 더 이상 승인이 아니면 None.
         """
+        if self.status != "approved":
+            return None
         history = self.approval_history or []
         for entry in reversed(history):
             if not isinstance(entry, dict):
