@@ -42,6 +42,11 @@ export interface FieldDef {
   /** hint 안의 `{link}` 자리 또는 hint 아래에 노출되는 보조 링크 */
   hintLink?: { url: string; label: string };
   /**
+   * 특정 값일 때만 hint 를 노출. (radio/select 같이 enum 값을 가지는 필드 용도)
+   * 미지정 시 hint 는 값과 무관하게 항상 노출.
+   */
+  hintWhen?: string | string[];
+  /**
    * true 면 다음 필드를 같은 행(행 1개)에 인라인으로 함께 렌더링.
    * 다음 필드의 label 이 두 입력 사이에 인라인 레이블로 배치됨.
    * 예: 목표 데이터 수량(number) → 단위(text) 를 한 줄에.
@@ -180,11 +185,12 @@ const dataPurchase: FormSchema = {
           label: "Compliance 확인 여부",
           type: "radio",
           options: ["확인 완료", "확인 필요"],
-          hint: "* 라이선스·개인정보·외부 공유 가능 여부에 대해 법무팀 자문을 받았는지 확인해주세요. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
+          hint: "* 라이선스·개인정보·외부 공유 가능 여부에 대해 법무팀 자문을 받았는지 확인 후 제출해주세요. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
           hintLink: {
             url: "https://legal.lgresearch.ai/#/app/law/save",
             label: "법무팀 자문 시스템",
           },
+          hintWhen: "확인 필요",
         },
         {
           key: "데이터셋_저장_레포지토리",

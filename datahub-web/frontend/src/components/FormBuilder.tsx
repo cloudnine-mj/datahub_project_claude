@@ -383,8 +383,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                             ) : (
                               <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} allValues={values} />
                             )}
-                            <FieldHint field={f} />
-                            {inline && <FieldHint field={inline} />}
+                            <FieldHint field={f} currentValue={values[f.key]} />
+                            {inline && <FieldHint field={inline} currentValue={values[inline.key]} />}
                           </td>
                         </tr>
                       );
@@ -819,8 +819,16 @@ function DateField({ value, onChange }: { value: string; onChange: (v: string) =
  * hint 에 `{link}` 토큰이 있으면 그 자리에 클릭 가능한 링크가 인라인으로 들어감.
  * 토큰이 없으면 hint 아래에 별도 줄로 링크 표시.
  */
-function FieldHint({ field }: { field: FieldDef }) {
+function FieldHint({ field, currentValue }: { field: FieldDef; currentValue?: unknown }) {
   if (!field.hint && !field.hintLink) return null;
+
+  // hintWhen 이 지정되어 있으면 현재 값이 매칭될 때만 노출
+  if (field.hintWhen !== undefined) {
+    const allowed = Array.isArray(field.hintWhen) ? field.hintWhen : [field.hintWhen];
+    if (typeof currentValue !== "string" || !allowed.includes(currentValue)) {
+      return null;
+    }
+  }
 
   const link = field.hintLink ? (
     <a
