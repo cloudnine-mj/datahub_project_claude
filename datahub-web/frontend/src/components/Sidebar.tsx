@@ -52,8 +52,21 @@ export function Sidebar() {
   const pathname = usePathname() ?? "";
   const [me, setMe] = useState<Me | null>(null);
 
+  // 경로 전환마다 me 재조회 — Sidebar 가 루트 레이아웃에 있어 remount 가 없으므로
+  // 로그인/로그아웃 후 단순 router.push 만으로는 role 변화가 반영되지 않음.
   useEffect(() => {
     api.me().then(setMe).catch(() => setMe(null));
+  }, [pathname]);
+
+  // 다른 탭/창에서 localStorage 가 바뀐 경우 (mock 모드의 계정 전환) 동기화
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === "datahub-user-email") {
+        api.me().then(setMe).catch(() => setMe(null));
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const isAdmin = me?.user.role === "admin";
