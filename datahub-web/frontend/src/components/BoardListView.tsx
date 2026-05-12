@@ -160,19 +160,20 @@ export function BoardListView({ board, compact = false }: Props) {
               <th className="w-24 px-6 py-3 font-medium">번호</th>
               <th className="px-6 py-3 font-medium">제목</th>
               {isProcess && <th className="w-40 px-6 py-3 font-medium">카테고리</th>}
+              <th className="w-32 px-6 py-3 font-medium">작성자</th>
               <th className="w-40 px-6 py-3 text-right font-medium">작성일</th>
             </tr>
           </thead>
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={isProcess ? 4 : 3} className="px-6 py-16 text-center text-gray-400">
+                <td colSpan={isProcess ? 5 : 4} className="px-6 py-16 text-center text-gray-400">
                   불러오는 중...
                 </td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={isProcess ? 4 : 3}>
+                <td colSpan={isProcess ? 5 : 4}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
@@ -210,6 +211,7 @@ export function BoardListView({ board, compact = false }: Props) {
                         )}
                       </td>
                     )}
+                    <td className="px-6 py-4 text-gray-600">{p.author_name}</td>
                     <td className="px-6 py-4 text-right text-gray-400">{formatDate(p.created_at)}</td>
                   </tr>
                 );
