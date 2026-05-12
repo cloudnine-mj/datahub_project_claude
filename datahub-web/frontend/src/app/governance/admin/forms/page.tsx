@@ -62,11 +62,11 @@ export default function AdminFormsPage() {
   return (
     <div>
       <Breadcrumb
-        items={[{ label: "Governance", href: "/governance" }, { label: "신청서 관리" }]}
+        items={[{ label: "Governance", href: "/governance" }, { label: "거버넌스 요청 관리" }]}
       />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">신청서 관리</h1>
+          <h1 className="text-3xl font-bold tracking-tight">거버넌스 요청 관리</h1>
           <p className="mt-1.5 text-sm text-gray-500">
             전체 사용자의 신청서를 검토 / 승인할 수 있습니다. 프로젝트명을 클릭해 신청서 상세 페이지로 이동한 뒤 처리해 주세요.
           </p>

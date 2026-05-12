@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 // 사이드바 — Datasets / Models / Workspace / Dashboard / Governance.
 // Governance 는 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
-// '신청서 관리' 자식은 admin role 사용자에게만 노출.
+// '거버넌스 요청 관리' 자식은 admin role 사용자에게만 노출.
 
 interface NavChild {
   href: string;
@@ -43,7 +43,7 @@ const NAV: NavItem[] = [
         label: "내 문서 목록",
         adminLabel: "정책 / 프로세스 게시글 관리",
       },
-      { href: "/governance/admin/forms", label: "신청서 관리", adminOnly: true },
+      { href: "/governance/admin/forms", label: "거버넌스 요청 관리", adminOnly: true },
     ],
   },
 ];

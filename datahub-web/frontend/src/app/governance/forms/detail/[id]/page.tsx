@@ -18,7 +18,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const justEdited = searchParams?.get("just-edited") === "1";
   // 진입 출처 — 브레드크럼 부모를 어디로 표시할지 결정.
   //   from=my    → '내 문서 목록'
-  //   from=admin → '신청서 관리'
+  //   from=admin → '거버넌스 요청 관리'
   //   기본        → '데이터 거버넌스 문서 서식 모음' (서식 선택 화면에서 들어온 경우)
   const from = searchParams?.get("from");
   const [form, setForm] = useState<FormDetail | null>(null);
@@ -87,7 +87,7 @@ export default function Page({ params }: { params: { id: string } }) {
           from === "my"
             ? { label: "내 문서 목록", href: "/governance/forms/my" }
             : from === "admin"
-            ? { label: "신청서 관리", href: "/governance/admin/forms" }
+            ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
             : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
           { label },
         ]}
