@@ -151,9 +151,6 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
           />
           <span>진행 이력</span>
           <span className="text-xs font-semibold text-gray-400">{history.length}건</span>
-          <span className="ml-auto text-xs font-medium text-gray-400">
-            {historyOpen ? "접기" : "펼치기"}
-          </span>
         </button>
 
         {historyOpen && (
