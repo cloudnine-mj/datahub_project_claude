@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileEdit, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileEdit, Pencil, Search } from "lucide-react";
 import {
   api,
   type BoardType,
@@ -26,6 +26,15 @@ import { BOARD_LABELS, FORM_TYPE_LABELS, formatDateTime, parseUtc } from "@/lib/
 
 type StatusFilter = "all" | FormStatus;
 type MyPost = PostListItem & { board: BoardType };
+
+const PAGE_SIZES = [10, 20, 50, 100];
+
+/** 게시글 상태 (임시저장 / 비공개 / 게시됨) 를 검색 매칭용 문자열로. */
+function postStatusLabel(p: MyPost): string {
+  if (p.is_draft) return "임시저장";
+  if (p.visibility === "admin") return "비공개";
+  return "게시됨";
+}
 
 /** '-vN' 접미사를 제거한 base request_no. 그룹 키로 사용. */
 function getBaseRequestNo(rn: string): string {
@@ -65,6 +74,9 @@ export default function MyDocumentsPage() {
 
 function AdminPostsView() {
   const [posts, setPosts] = useState<MyPost[] | null>(null);
+  const [query, setQuery] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
   const refetch = useCallback(() => {
     Promise.all([api.listMyPosts("policy"), api.listMyPosts("process")])
@@ -87,6 +99,30 @@ function AdminPostsView() {
 
   const draftCount = posts?.filter((p) => p.is_draft).length ?? 0;
 
+  // 검색 — 제목 / 게시판 / 상태 라벨 부분 일치
+  const filtered = useMemo(() => {
+    if (!posts) return null;
+    const q = query.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((p) => {
+      const haystack = [p.title, BOARD_LABELS[p.board], postStatusLabel(p)]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [posts, query]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, pageSize]);
+
+  const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+  const pageItems = useMemo(() => {
+    if (!filtered) return null;
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
   return (
     <div>
       <Breadcrumb items={[{ label: "Governance", href: "/governance" }, { label: "정책 / 프로세스 게시글 관리" }]} />
@@ -108,6 +144,30 @@ function AdminPostsView() {
           </span>
         </div>
 
+        {/* 툴바 — 페이지 크기 + 검색 */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm focus:border-brand focus:outline-none"
+            >
+              {PAGE_SIZES.map((n) => (
+                <option key={n} value={n}>{n}개씩 보기</option>
+              ))}
+            </select>
+          </div>
+          <div className="relative min-w-[260px] max-w-md flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="제목, 게시판, 상태로 검색"
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
+            />
+          </div>
+        </div>
+
         <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-gray-500">
@@ -120,18 +180,20 @@ function AdminPostsView() {
               </tr>
             </thead>
             <tbody>
-              {posts === null ? (
+              {pageItems === null ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
                 </tr>
-              ) : posts.length === 0 ? (
+              ) : pageItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                    작성한 게시글이 없습니다.
+                    {posts && posts.length > 0
+                      ? "검색 결과가 없습니다."
+                      : "작성한 게시글이 없습니다."}
                   </td>
                 </tr>
               ) : (
-                posts.map((p) => (
+                pageItems.map((p) => (
                   <tr key={`${p.board}-${p.id}`} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-6 py-4 text-gray-600">{BOARD_LABELS[p.board]}</td>
                     <td className="px-6 py-4">
@@ -163,7 +225,76 @@ function AdminPostsView() {
             </tbody>
           </table>
         </div>
+
+        {/* 페이지네이션 + 합계 */}
+        {pageItems && pageItems.length > 0 && (
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-gray-500">총 {filtered?.length ?? 0} 건</span>
+            <PostsPagination page={page} totalPages={totalPages} onChange={setPage} />
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function PostsPagination({
+  page,
+  totalPages,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (n: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  const pages: (number | "...")[] = [];
+  const window = 1;
+  pages.push(1);
+  if (page - window > 2) pages.push("...");
+  for (let i = Math.max(2, page - window); i <= Math.min(totalPages - 1, page + window); i++) {
+    pages.push(i);
+  }
+  if (page + window < totalPages - 1) pages.push("...");
+  if (totalPages > 1) pages.push(totalPages);
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="이전 페이지"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span key={`gap-${i}`} className="px-2 text-xs text-gray-400">...</span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            className={
+              "min-w-[28px] rounded px-2 py-1 text-xs font-semibold transition " +
+              (p === page ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100")
+            }
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="다음 페이지"
+      >
+        <ChevronRight size={16} />
+      </button>
     </div>
   );
 }
