@@ -159,7 +159,7 @@ export function BoardListView({ board, compact = false }: Props) {
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
               <th className="w-24 px-6 py-3 font-medium">번호</th>
-              <th className="px-6 py-3 font-medium">제목</th>
+              <th className="px-6 py-3 font-medium">문서명</th>
               {isProcess && <th className="w-40 px-6 py-3 font-medium">카테고리</th>}
               <th className="w-32 px-6 py-3 font-medium">작성자</th>
               <th className="w-40 px-6 py-3 text-right font-medium">작성일</th>
