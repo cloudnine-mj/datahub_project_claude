@@ -171,7 +171,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
             href={`/governance/info?tab=${board}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
-            <ArrowLeft size={14} /> 정책 / 프로세스 자료실로 돌아가기
+            <ArrowLeft size={14} /> {label} 탭으로 돌아가기
           </Link>
         </div>
       )}
