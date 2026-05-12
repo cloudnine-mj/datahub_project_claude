@@ -23,6 +23,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // ?id=N 가 있으면 수정 모드 — 기존 신청서를 읽어 폼 prefill 후 PATCH 로 저장.
   const editId = searchParams?.get("id");
   const isEdit = !!editId;
+  // 진입 출처 — 브레드크럼 부모를 어디로 보낼지 결정.
+  //   from=my    → '내 문서 목록'
+  //   from=admin → '신청서 관리'
+  //   기본        → '데이터 거버넌스 문서 서식 모음' (서식 선택 화면에서 들어온 경우)
+  const from = searchParams?.get("from");
 
   const schema = FORM_SCHEMAS[formType];
   const [values, setValues] = useState<Record<string, unknown>>({});
@@ -224,7 +229,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance" },
-          { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
+          from === "my"
+            ? { label: "내 문서 목록", href: "/governance/forms/my" }
+            : from === "admin"
+            ? { label: "신청서 관리", href: "/governance/admin/forms" }
+            : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
           { label: schema.label },
         ]}
       />

@@ -166,7 +166,7 @@ export default function Page({ params }: { params: { id: string } }) {
           ☰ 내 문서 목록 보기
         </Link>
         <button
-          onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}`)}
+          onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
           className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
         >
           <Pencil size={12} /> 수정
@@ -223,7 +223,7 @@ export default function Page({ params }: { params: { id: string } }) {
                 type="button"
                 onClick={() => {
                   setMissingField(null);
-                  if (form) router.push(`/governance/forms/${form.form_type}/new?id=${form.id}`);
+                  if (form) router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`);
                 }}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
               >
