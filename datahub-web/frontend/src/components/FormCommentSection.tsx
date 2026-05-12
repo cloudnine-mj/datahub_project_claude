@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MessageSquarePlus, Trash2 } from "lucide-react";
 import { api, type FormCommentItem, type Me } from "@/lib/api";
+import { parseUtc } from "@/lib/utils";
 
 interface Props {
   formId: number;
@@ -208,7 +209,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function formatRelative(iso: string): string {
   try {
-    const d = new Date(iso);
+    const d = parseUtc(iso);
     const diffMs = Date.now() - d.getTime();
     const min = Math.floor(diffMs / 60000);
     if (min < 1) return "방금 전";

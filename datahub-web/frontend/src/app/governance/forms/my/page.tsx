@@ -11,7 +11,7 @@ import { api, type FormListItem, type FormStatus } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
-import { FORM_TYPE_LABELS, formatDate } from "@/lib/utils";
+import { FORM_TYPE_LABELS, formatDate, parseUtc } from "@/lib/utils";
 
 type StatusFilter = "all" | FormStatus;
 
@@ -62,12 +62,12 @@ export default function MyFormsPage() {
       group.sort((a, b) => {
         const dp = statusPriority(b.status) - statusPriority(a.status);
         if (dp !== 0) return dp;
-        return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
+        return parseUtc(b.submitted_at).getTime() - parseUtc(a.submitted_at).getTime();
       });
       latest.push(group[0]);
     }
     latest.sort(
-      (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
+      (a, b) => parseUtc(b.submitted_at).getTime() - parseUtc(a.submitted_at).getTime(),
     );
     return latest;
   }, [items]);

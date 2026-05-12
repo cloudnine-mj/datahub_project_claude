@@ -5,12 +5,40 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * 백엔드는 datetime.utcnow() 로 naive UTC 를 저장하고 ISO 문자열로 직렬화하는데
+ * tz 정보가 없는 ISO 문자열은 브라우저가 '로컬 시각' 으로 해석해 9시간(KST) 어긋남.
+ * 이 헬퍼는 tz 표시(Z 또는 ±HH:MM) 가 없으면 UTC 로 간주해 'Z' 를 붙여 파싱한다.
+ *
+ * 결과 Date 객체에 대한 toLocaleString / getHours 등은 자동으로 KST(브라우저 로컬) 로 표시됨.
+ */
+export function parseUtc(iso: string): Date {
+  if (!iso) return new Date(NaN);
+  // 이미 tz 정보가 있으면 그대로 파싱
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(iso)) return new Date(iso);
+  // 시각이 포함된 ISO 라면 UTC 로 간주
+  if (/T\d{2}:\d{2}/.test(iso)) return new Date(iso + "Z");
+  // 'YYYY-MM-DD' 같은 날짜만 있는 경우는 그대로 (날짜 단위라 tz 의미가 옅음)
+  return new Date(iso);
+}
+
 export function formatDate(iso: string): string {
-  const d = new Date(iso);
+  const d = parseUtc(iso);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}.${mm}.${dd}`;
+}
+
+/** 날짜+시각 — YYYY.MM.DD HH:MM (브라우저 로컬 = KST). */
+export function formatDateTime(iso: string): string {
+  const d = parseUtc(iso);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
 }
 
 export const FORM_TYPE_LABELS: Record<string, string> = {

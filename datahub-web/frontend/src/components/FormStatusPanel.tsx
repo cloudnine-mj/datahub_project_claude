@@ -12,6 +12,7 @@
 import { useState } from "react";
 import { AlertTriangle, Check, MessageSquare, Play, X } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/api";
+import { parseUtc } from "@/lib/utils";
 import { StatusBadge } from "./StatusBadge";
 
 interface Props {
@@ -173,7 +174,7 @@ function dotColor(s: string): string {
 
 function formatTimeline(iso: string): string {
   try {
-    const d = new Date(iso);
+    const d = parseUtc(iso);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
