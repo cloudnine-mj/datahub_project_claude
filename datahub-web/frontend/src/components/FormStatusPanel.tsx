@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, Check, MessageSquare, Play, X } from "lucide-react";
+import { AlertTriangle, Check, MessageSquare, Play } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/api";
 import { parseUtc } from "@/lib/utils";
 import { StatusBadge } from "./StatusBadge";
@@ -28,7 +28,6 @@ interface Props {
 const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Play }[] = [
   { to: "reviewing", label: "검토 시작", cls: "bg-amber-500 hover:bg-amber-600", icon: Play },
   { to: "approved", label: "승인", cls: "bg-emerald-500 hover:bg-emerald-600", icon: Check },
-  { to: "rejected", label: "반려", cls: "bg-red-500 hover:bg-red-600", icon: X },
 ];
 
 export function FormStatusPanel({ formId, status, history, me, submitterEmail, onChanged }: Props) {
