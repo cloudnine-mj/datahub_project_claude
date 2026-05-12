@@ -9,12 +9,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { EmptyState } from "./EmptyState";
 import { BOARD_LABELS, PROCESS_CATEGORIES, formatDate } from "@/lib/utils";
 import { DocTypePill } from "./DocTypePill";
+
+const PAGE_SIZES = [10, 20, 50, 100];
 
 interface Props {
   board: BoardType;
@@ -47,6 +49,9 @@ export function BoardListView({ board, compact = false }: Props) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [filter, setFilter] = useState<CategoryFilter>("all");
+  const [query, setQuery] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.listPosts(board).then(setPosts).catch(() => setPosts([]));
@@ -57,11 +62,24 @@ export function BoardListView({ board, compact = false }: Props) {
   const label = BOARD_LABELS[board];
   const isProcess = board === "process";
 
+  // 카테고리 필터 + 검색 (제목 / 작성자 / 유형 / 카테고리). 클라이언트 사이드.
   const filtered = useMemo(() => {
     if (!posts) return null;
-    if (!isProcess || filter === "all") return posts;
-    return posts.filter((p) => p.category === filter);
-  }, [posts, filter, isProcess]);
+    const q = query.trim().toLowerCase();
+    return posts.filter((p) => {
+      if (isProcess && filter !== "all" && p.category !== filter) return false;
+      if (!q) return true;
+      const haystack = [
+        p.title,
+        p.author_name,
+        p.doc_type ?? "",
+        p.category ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [posts, filter, isProcess, query]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: posts?.length ?? 0 };
@@ -70,6 +88,18 @@ export function BoardListView({ board, compact = false }: Props) {
     }
     return c;
   }, [posts]);
+
+  // 필터/검색/페이지 크기 바뀔 때 첫 페이지로 리셋
+  useEffect(() => {
+    setPage(1);
+  }, [filter, query, pageSize]);
+
+  const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
+  const pageItems = useMemo(() => {
+    if (!filtered) return null;
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   return (
     <div>
@@ -86,6 +116,30 @@ export function BoardListView({ board, compact = false }: Props) {
       )}
 
       <div className={(compact ? "" : "mt-8 ") + "flex flex-wrap items-center gap-3"}>
+        {/* 페이지 크기 선택 */}
+        <div className="relative">
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="appearance-none rounded-md border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm focus:border-brand focus:outline-none"
+          >
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>{n}개씩 보기</option>
+            ))}
+          </select>
+        </div>
+
+        {/* 검색 */}
+        <div className="relative min-w-[220px] max-w-md flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="제목, 작성자, 유형, 카테고리로 검색"
+            className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
+          />
+        </div>
+
         {isProcess && (
           <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
             <FilterChip
@@ -146,55 +200,130 @@ export function BoardListView({ board, compact = false }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filtered === null ? (
+            {pageItems === null ? (
               <tr>
                 <td colSpan={isProcess ? 4 : 3} className="px-6 py-16 text-center text-gray-400">
                   불러오는 중...
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : pageItems.length === 0 ? (
               <tr>
                 <td colSpan={isProcess ? 4 : 3}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
-                        ? "선택한 카테고리에 해당하는 문서가 없습니다."
+                        ? "검색·필터 결과가 없습니다."
                         : "등록된 문서가 없습니다"
                     }
                   />
                 </td>
               </tr>
             ) : (
-              filtered.map((p, i) => (
-                <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-6 py-4 text-gray-400">{filtered.length - i}</td>
-                  <td className="px-6 py-4">
-                    <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
-                      {p.is_draft && (
-                        <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
-                          임시저장
-                        </span>
-                      )}
-                      {p.doc_type && <DocTypePill docType={p.doc_type} />}
-                      <span>{p.title}</span>
-                    </Link>
-                  </td>
-                  {isProcess && (
+              pageItems.map((p, i) => {
+                // 전체 정렬 기준 번호 — filtered 전체에서 역순으로 매김
+                const indexInFiltered = (page - 1) * pageSize + i;
+                const totalRows = filtered?.length ?? 0;
+                return (
+                  <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-400">{totalRows - indexInFiltered}</td>
                     <td className="px-6 py-4">
-                      {p.category ? (
-                        <CategoryPill category={p.category} />
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
+                      <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
+                        {p.is_draft && (
+                          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
+                            임시저장
+                          </span>
+                        )}
+                        {p.doc_type && <DocTypePill docType={p.doc_type} />}
+                        <span>{p.title}</span>
+                      </Link>
                     </td>
-                  )}
-                  <td className="px-6 py-4 text-right text-gray-400">{formatDate(p.created_at)}</td>
-                </tr>
-              ))
+                    {isProcess && (
+                      <td className="px-6 py-4">
+                        {p.category ? (
+                          <CategoryPill category={p.category} />
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
+                    )}
+                    <td className="px-6 py-4 text-right text-gray-400">{formatDate(p.created_at)}</td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* 페이지네이션 + 합계 */}
+      {pageItems && pageItems.length > 0 && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-gray-500">총 {filtered?.length ?? 0} 건</span>
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Pagination({
+  page,
+  totalPages,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (n: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const pages: (number | "...")[] = [];
+  const window = 1;
+  pages.push(1);
+  if (page - window > 2) pages.push("...");
+  for (let i = Math.max(2, page - window); i <= Math.min(totalPages - 1, page + window); i++) {
+    pages.push(i);
+  }
+  if (page + window < totalPages - 1) pages.push("...");
+  if (totalPages > 1) pages.push(totalPages);
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="이전 페이지"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      {pages.map((p, i) =>
+        p === "..." ? (
+          <span key={`gap-${i}`} className="px-2 text-xs text-gray-400">...</span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onChange(p)}
+            className={
+              "min-w-[28px] rounded px-2 py-1 text-xs font-semibold transition " +
+              (p === page ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100")
+            }
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        className="rounded p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+        aria-label="다음 페이지"
+      >
+        <ChevronRight size={16} />
+      </button>
     </div>
   );
 }
