@@ -43,16 +43,16 @@ def _validate_board(board_type: str) -> str:
 @router.get("", response_model=list[PostListItem])
 def list_posts(
     board_type: str = PathParam(...),
-    mine_drafts: bool = Query(False, description="True 면 본인 임시저장본만 반환 — '내 문서 목록' 용도"),
+    mine: bool = Query(False, description="True 면 본인이 작성한 글만 (공개 + 임시저장) — '내 문서 목록' 용도"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Post]:
     """게시판 목록 — 임시저장(is_draft) 글은 작성자 본인 또는 admin 에게만 노출."""
     _validate_board(board_type)
     q = db.query(Post).filter(Post.board_type == board_type)
-    if mine_drafts:
-        # '내 임시저장 게시글' 모드 — 본인이 작성한 draft 만
-        q = q.filter(Post.is_draft == True, Post.author_id == user.id)  # noqa: E712
+    if mine:
+        # '내 게시글' 모드 — 본인 작성분 모두 (drafts 포함)
+        q = q.filter(Post.author_id == user.id)
     elif user.role != "admin":
         q = q.filter((Post.is_draft == False) | (Post.author_id == user.id))  # noqa: E712
     # 상단 고정(pinned) 글이 최상단, 그 다음 생성일 역순
