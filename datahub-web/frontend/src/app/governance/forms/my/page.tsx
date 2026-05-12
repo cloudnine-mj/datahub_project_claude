@@ -113,8 +113,6 @@ function AdminPostsView() {
     refetch();
   }, [refetch]);
 
-  const draftCount = posts?.filter((p) => p.is_draft).length ?? 0;
-
   // 검색 + 상태 필터
   const filtered = useMemo(() => {
     if (!posts) return null;
@@ -157,9 +155,6 @@ function AdminPostsView() {
         <div className="flex items-center gap-2">
           <FileEdit size={16} className="text-gray-500" />
           <h2 className="text-base font-bold tracking-tight">내가 작성한 게시글</h2>
-          <span className="text-xs text-gray-400">
-            {posts === null ? "..." : `${posts.length}건 (임시저장 ${draftCount}건)`}
-          </span>
         </div>
 
         {/* 툴바 — 페이지 크기 + 검색 */}
