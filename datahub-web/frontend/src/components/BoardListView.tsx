@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Pin, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { EmptyState } from "./EmptyState";
@@ -193,6 +193,9 @@ export function BoardListView({ board, compact = false }: Props) {
                     <td className="px-6 py-4 text-gray-400">{totalRows - indexInFiltered}</td>
                     <td className="px-6 py-4">
                       <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
+                        {p.pinned && (
+                          <Pin size={12} className="shrink-0 text-amber-600" aria-label="상단 고정" />
+                        )}
                         {p.is_draft && (
                           <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
                             임시저장

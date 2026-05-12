@@ -117,6 +117,8 @@ export interface PostListItem extends PolicyMeta {
   updated_at: string;
   author_name: string;
   is_draft: boolean;
+  /** 상단 고정 여부 — admin 이 토글. 목록에서 pinned=true 가 최상단. */
+  pinned: boolean;
 }
 
 export interface PostDetail extends PostListItem {
@@ -248,6 +250,10 @@ export const api = {
   /** 게시글 삭제 — 작성자 본인 또는 admin 만 가능 (백엔드에서 검증). */
   deletePost: (board: BoardType, postId: number) =>
     request<void>(`/boards/${board}/posts/${postId}`, { method: "DELETE" }),
+
+  /** 게시글 상단 고정 토글 — admin 만. 응답으로 갱신된 PostDetail 반환. */
+  togglePinPost: (board: BoardType, postId: number) =>
+    request<PostDetail>(`/boards/${board}/posts/${postId}/pin`, { method: "PATCH" }),
 
   listForms: (params: { form_type?: FormType; mine?: boolean } = {}) => {
     const q = new URLSearchParams();

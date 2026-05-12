@@ -46,6 +46,8 @@ class Post(Base):
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
     content: Mapped[str] = mapped_column(Text)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # 상단 고정 — admin 이 토글. 정렬 시 pinned=True 가 최상단, 그 다음 created_at desc.
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     author_name: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

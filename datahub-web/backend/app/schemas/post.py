@@ -66,6 +66,7 @@ class PostListItem(BaseModel):
     updated_at: datetime
     author_name: str
     is_draft: bool = False
+    pinned: bool = False
     summary: str | None = None
     tags: list[str] | None = None
     severity: str | None = None
@@ -83,6 +84,7 @@ class PostDetail(BaseModel):
     category: str | None
     content: str
     is_draft: bool = False
+    pinned: bool = False
     author_name: str
     created_at: datetime
     updated_at: datetime

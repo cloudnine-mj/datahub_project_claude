@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
 import { api, type Me, type PostListItem, type Severity } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DocTypePill } from "./DocTypePill";
@@ -195,6 +195,9 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
                       href={`/governance/policy/${p.id}`}
                       className="inline-flex items-center gap-2 font-medium text-gray-900 hover:text-brand"
                     >
+                      {p.pinned && (
+                        <Pin size={12} className="shrink-0 text-amber-600" aria-label="상단 고정" />
+                      )}
                       {p.is_draft && (
                         <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
                           임시저장

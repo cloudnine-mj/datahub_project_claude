@@ -51,7 +51,8 @@ def list_posts(
     q = db.query(Post).filter(Post.board_type == board_type)
     if user.role != "admin":
         q = q.filter((Post.is_draft == False) | (Post.author_id == user.id))  # noqa: E712
-    return q.order_by(Post.created_at.desc()).all()
+    # 상단 고정(pinned) 글이 최상단, 그 다음 생성일 역순
+    return q.order_by(Post.pinned.desc(), Post.created_at.desc()).all()
 
 
 @router.post("", response_model=PostDetail, status_code=status.HTTP_201_CREATED)
@@ -143,6 +144,28 @@ def delete_post(
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="삭제 권한이 없습니다.")
     db.delete(post)
     db.commit()
+
+
+@router.patch("/{post_id}/pin", response_model=PostDetail)
+def toggle_pin(
+    post_id: int,
+    board_type: str = PathParam(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """게시글 상단 고정 토글 — admin 만 가능."""
+    if user.role != "admin":
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, detail="고정 권한이 없습니다 (관리자 전용).",
+        )
+    _validate_board(board_type)
+    post = db.query(Post).filter(Post.id == post_id, Post.board_type == board_type).first()
+    if not post:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="post not found")
+    post.pinned = not post.pinned
+    db.commit()
+    db.refresh(post)
+    return post
 
 
 # ── 파일 첨부 ─────────────────────────────────────────────────────────────────
