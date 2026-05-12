@@ -10,7 +10,7 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, Check, MessageSquare, Play } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, MessageSquare, Play } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/api";
 import { parseUtc } from "@/lib/utils";
 import { StatusBadge } from "./StatusBadge";
@@ -38,6 +38,8 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 진행 이력 펼침/접힘 — 기본은 펼친 상태. 이력이 많아질 때 사용자가 접을 수 있음.
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   async function onApply() {
     if (!target) return;
@@ -65,31 +67,48 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
       <WorkflowStepper status={status} />
 
-      {/* 타임라인 — 이력 있을 때만 노출 (없으면 stepper 만으로 충분) */}
+      {/* 타임라인 — 이력 있을 때만 노출. 접기/펼치기 토글 (기본 펼침). */}
       {history && history.length > 0 && (
-        <ol className="mt-4 space-y-3 border-l-2 border-gray-100 pl-5">
-          {history.map((h, i) => (
-            <li key={i} className="relative">
-              <span
-                className={
-                  "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white " +
-                  dotColor(h.status)
-                }
-              />
-              <div className="flex flex-wrap items-baseline gap-2 text-sm">
-                <StatusBadge status={h.status} />
-                <span className="font-medium text-gray-700">{h.changed_by}</span>
-                <span className="text-xs text-gray-400">{formatTimeline(h.changed_at)}</span>
-              </div>
-              {h.comment && (
-                <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-600">
-                  <MessageSquare size={12} className="mt-0.5 shrink-0 text-gray-400" />
-                  <span>{h.comment}</span>
-                </p>
-              )}
-            </li>
-          ))}
-        </ol>
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((v) => !v)}
+            aria-expanded={historyOpen}
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+          >
+            <ChevronDown
+              size={14}
+              className={"transition " + (historyOpen ? "" : "-rotate-90")}
+            />
+            진행 이력 {history.length}건 {historyOpen ? "접기" : "펼치기"}
+          </button>
+
+          {historyOpen && (
+            <ol className="mt-3 space-y-3 border-l-2 border-gray-100 pl-5">
+              {history.map((h, i) => (
+                <li key={i} className="relative">
+                  <span
+                    className={
+                      "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white " +
+                      dotColor(h.status)
+                    }
+                  />
+                  <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                    <StatusBadge status={h.status} />
+                    <span className="font-medium text-gray-700">{h.changed_by}</span>
+                    <span className="text-xs text-gray-400">{formatTimeline(h.changed_at)}</span>
+                  </div>
+                  {h.comment && (
+                    <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-600">
+                      <MessageSquare size={12} className="mt-0.5 shrink-0 text-gray-400" />
+                      <span>{h.comment}</span>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       )}
 
       {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청서에는 숨김 */}
