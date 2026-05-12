@@ -28,7 +28,8 @@ const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
   { key: "critical", label: "Critical" },
 ];
 
-export function PolicyBoardView() {
+/** compact: 자체 Breadcrumb·페이지 제목·가이드 배너 생략 (상위 컨테이너가 헤더를 제공할 때). */
+export function PolicyBoardView({ compact = false }: { compact?: boolean } = {}) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [query, setQuery] = useState("");
@@ -86,27 +87,31 @@ export function PolicyBoardView() {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Governance", href: "/governance" },
-          { label: "데이터 관리 정책" },
-        ]}
-      />
-      <h1 className="text-3xl font-bold tracking-tight">데이터 관리 정책</h1>
+      {!compact && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Governance", href: "/governance" },
+              { label: "데이터 관리 정책" },
+            ]}
+          />
+          <h1 className="text-3xl font-bold tracking-tight">데이터 관리 정책</h1>
 
-      {/* 가이드 배너 */}
-      <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
-        <div className="flex items-start gap-3 text-sm">
-          <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
-          <p className="text-blue-800/80">
-            이 페이지는 데이터의 <strong className="font-semibold">생성·저장·활용·폐기</strong> 까지의 기준을 정의합니다.
-            필요한 정책을 확인하고 <strong className="font-semibold">바로 실행</strong>할 수 있습니다.
-          </p>
-        </div>
-      </div>
+          {/* 가이드 배너 */}
+          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
+            <div className="flex items-start gap-3 text-sm">
+              <Info size={18} className="mt-0.5 shrink-0 text-blue-600" />
+              <p className="text-blue-800/80">
+                이 페이지는 데이터의 <strong className="font-semibold">생성·저장·활용·폐기</strong> 까지의 기준을 정의합니다.
+                필요한 정책을 확인하고 <strong className="font-semibold">바로 실행</strong>할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 상단 툴바 */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className={(compact ? "" : "mt-6 ") + "flex flex-wrap items-center gap-3"}>
         <div className="relative">
           <select
             value={pageSize}

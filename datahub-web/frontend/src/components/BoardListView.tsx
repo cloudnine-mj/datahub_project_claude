@@ -18,6 +18,8 @@ import { DocTypePill } from "./DocTypePill";
 
 interface Props {
   board: BoardType;
+  /** true 면 자체 Breadcrumb·페이지 제목 생략 — 상위 컨테이너가 헤더를 책임지는 임베드 모드. */
+  compact?: boolean;
 }
 
 type CategoryFilter = "all" | (typeof PROCESS_CATEGORIES)[number];
@@ -41,7 +43,7 @@ const CATEGORY_COLORS: Record<
   },
 };
 
-export function BoardListView({ board }: Props) {
+export function BoardListView({ board, compact = false }: Props) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [filter, setFilter] = useState<CategoryFilter>("all");
@@ -71,15 +73,19 @@ export function BoardListView({ board }: Props) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Governance", href: "/governance" },
-          { label },
-        ]}
-      />
-      <h1 className="text-3xl font-bold tracking-tight">{label}</h1>
+      {!compact && (
+        <>
+          <Breadcrumb
+            items={[
+              { label: "Governance", href: "/governance" },
+              { label },
+            ]}
+          />
+          <h1 className="text-3xl font-bold tracking-tight">{label}</h1>
+        </>
+      )}
 
-      <div className="mt-8 flex flex-wrap items-center gap-3">
+      <div className={(compact ? "" : "mt-8 ") + "flex flex-wrap items-center gap-3"}>
         {isProcess && (
           <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
             <FilterChip

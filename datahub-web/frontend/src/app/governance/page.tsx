@@ -1,19 +1,13 @@
-// Governance 인덱스 — 4개 카드
+// Governance 인덱스 — 3개 카드 (정책 + 프로세스는 통합 자료실로 합침)
 import Link from "next/link";
-import { ShieldCheck, Layers, FileEdit, FolderOpen, ArrowRight } from "lucide-react";
+import { BookOpen, FileEdit, FolderOpen, ArrowRight } from "lucide-react";
 
 const CARDS = [
   {
-    href: "/governance/policy",
-    icon: ShieldCheck,
-    title: "데이터 관리 정책",
-    desc: "데이터 관리 원칙과 정책 문서를 확인합니다.",
-  },
-  {
-    href: "/governance/process",
-    icon: Layers,
-    title: "데이터 제작 / 요청 프로세스",
-    desc: "데이터 제작 및 요청 프로세스를 한곳에서 확인합니다.",
+    href: "/governance/info",
+    icon: BookOpen,
+    title: "정책 / 프로세스 자료실",
+    desc: "데이터 관리 정책과 데이터 제작·요청 프로세스를 한 곳에서 확인합니다.",
   },
   {
     href: "/governance/forms",
