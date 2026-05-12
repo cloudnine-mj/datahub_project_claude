@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckSquare, Database, Download, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
@@ -199,12 +199,6 @@ export default function Page({ params }: { params: { id: string } }) {
             <Send size={12} /> {submitting ? "제출 중..." : "제출"}
           </button>
         )}
-        <a
-          href={api.exportFormUrl(form.id)}
-          className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600"
-        >
-          <Download size={12} /> Excel
-        </a>
       </div>
 
       {missingField && (
