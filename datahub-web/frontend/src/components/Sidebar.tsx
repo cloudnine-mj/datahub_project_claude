@@ -15,6 +15,8 @@ interface NavChild {
   href: string;
   label: string;
   adminOnly?: boolean;
+  /** admin 일 때 라벨 오버라이드 — 같은 URL 이지만 admin 컨텍스트의 의미가 다른 페이지용 */
+  adminLabel?: string;
 }
 
 interface NavItem {
@@ -36,7 +38,11 @@ const NAV: NavItem[] = [
     children: [
       { href: "/governance/info", label: "정책 / 프로세스 자료실" },
       { href: "/governance/forms", label: "데이터 거버넌스 문서 서식 모음" },
-      { href: "/governance/forms/my", label: "내 문서 목록" },
+      {
+        href: "/governance/forms/my",
+        label: "내 문서 목록",
+        adminLabel: "정책 / 프로세스 게시글 관리",
+      },
       { href: "/governance/admin/forms", label: "신청서 관리", adminOnly: true },
     ],
   },
@@ -99,7 +105,7 @@ export function Sidebar() {
                               : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
                           )}
                         >
-                          {c.label}
+                          {isAdmin && c.adminLabel ? c.adminLabel : c.label}
                         </Link>
                       </li>
                     );

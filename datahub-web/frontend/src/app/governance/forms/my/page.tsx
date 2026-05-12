@@ -89,10 +89,10 @@ function AdminPostsView() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Governance", href: "/governance" }, { label: "내 문서 목록" }]} />
+      <Breadcrumb items={[{ label: "Governance", href: "/governance" }, { label: "정책 / 프로세스 게시글 관리" }]} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">내 문서 목록</h1>
+          <h1 className="text-3xl font-bold tracking-tight">정책 / 프로세스 게시글 관리</h1>
           <p className="mt-1.5 text-sm text-gray-500">
             작성한 정책 / 프로세스 게시글을 확인하고 이어서 작성하거나 수정 및 삭제할 수 있습니다.
           </p>
