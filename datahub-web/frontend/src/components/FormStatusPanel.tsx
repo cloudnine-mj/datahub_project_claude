@@ -67,24 +67,31 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
       <WorkflowStepper status={status} />
 
-      {/* 타임라인 — 이력 있을 때만 노출. 접기/펼치기 토글 (기본 펼침). */}
+      {/* 타임라인 — 이력 있을 때만 노출. 헤더(토글) + 본문이 한 카드 안에 묶임. */}
       {history && history.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
           <button
             type="button"
             onClick={() => setHistoryOpen((v) => !v)}
             aria-expanded={historyOpen}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+            className={
+              "flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 " +
+              (historyOpen ? "border-b border-gray-100" : "")
+            }
           >
             <ChevronDown
-              size={14}
-              className={"transition " + (historyOpen ? "" : "-rotate-90")}
+              size={16}
+              className={"shrink-0 text-gray-500 transition " + (historyOpen ? "" : "-rotate-90")}
             />
-            진행 이력 {history.length}건 {historyOpen ? "접기" : "펼치기"}
+            <span>진행 이력</span>
+            <span className="text-xs font-semibold text-gray-400">{history.length}건</span>
+            <span className="ml-auto text-xs font-medium text-gray-400">
+              {historyOpen ? "접기" : "펼치기"}
+            </span>
           </button>
 
           {historyOpen && (
-            <ol className="mt-3 space-y-3 border-l-2 border-gray-100 pl-5">
+            <ol className="space-y-3 border-l-2 border-gray-100 px-6 py-4 pl-9">
               {history.map((h, i) => (
                 <li key={i} className="relative">
                   <span
