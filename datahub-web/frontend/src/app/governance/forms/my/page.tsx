@@ -7,8 +7,8 @@
 // 정책/프로세스 글쓰기 권한 자체가 없으므로 양쪽 모두 한쪽만 의미 있음.
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, FileEdit, Pencil, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileEdit, Pencil, Search } from "lucide-react";
 import {
   api,
   type BoardType,
@@ -29,11 +29,23 @@ type MyPost = PostListItem & { board: BoardType };
 
 const PAGE_SIZES = [10, 20, 50, 100];
 
+type PostStatusKey = "draft" | "private" | "published";
+
+const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
+  { key: "draft", label: "임시저장" },
+  { key: "private", label: "비공개" },
+  { key: "published", label: "게시됨" },
+];
+
+function postStatusKey(p: MyPost): PostStatusKey {
+  if (p.is_draft) return "draft";
+  if (p.visibility === "admin") return "private";
+  return "published";
+}
+
 /** 게시글 상태 (임시저장 / 비공개 / 게시됨) 를 검색 매칭용 문자열로. */
 function postStatusLabel(p: MyPost): string {
-  if (p.is_draft) return "임시저장";
-  if (p.visibility === "admin") return "비공개";
-  return "게시됨";
+  return POST_STATUS_OPTIONS.find((o) => o.key === postStatusKey(p))?.label ?? "";
 }
 
 /** '-vN' 접미사를 제거한 base request_no. 그룹 키로 사용. */
@@ -77,6 +89,10 @@ function AdminPostsView() {
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  // 상태 필터 — 기본은 전체 선택. 정책 보드의 중요도 필터와 동일 패턴.
+  const [statusFilter, setStatusFilter] = useState<Set<PostStatusKey>>(
+    () => new Set(POST_STATUS_OPTIONS.map((o) => o.key)),
+  );
 
   const refetch = useCallback(() => {
     Promise.all([api.listMyPosts("policy"), api.listMyPosts("process")])
@@ -99,22 +115,24 @@ function AdminPostsView() {
 
   const draftCount = posts?.filter((p) => p.is_draft).length ?? 0;
 
-  // 검색 — 제목 / 게시판 / 상태 라벨 부분 일치
+  // 검색 + 상태 필터
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
-    if (!q) return posts;
     return posts.filter((p) => {
+      // 상태 필터 — 체크된 상태만 통과
+      if (!statusFilter.has(postStatusKey(p))) return false;
+      if (!q) return true;
       const haystack = [p.title, BOARD_LABELS[p.board], postStatusLabel(p)]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, query]);
+  }, [posts, query, statusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, pageSize]);
+  }, [query, pageSize, statusFilter]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -166,6 +184,7 @@ function AdminPostsView() {
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
             />
           </div>
+          <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         </div>
 
         <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -234,6 +253,96 @@ function AdminPostsView() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/** 게시글 상태 다중 선택 드롭다운 — 임시저장 / 비공개 / 게시됨 체크박스. */
+function PostStatusFilterDropdown({
+  selected,
+  onChange,
+}: {
+  selected: Set<PostStatusKey>;
+  onChange: (next: Set<PostStatusKey>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  function toggle(key: PostStatusKey) {
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onChange(next);
+  }
+
+  function selectAll() {
+    onChange(new Set(POST_STATUS_OPTIONS.map((o) => o.key)));
+  }
+
+  const isAll = selected.size === POST_STATUS_OPTIONS.length;
+  const summary = isAll
+    ? "상태: 전체"
+    : selected.size === 0
+    ? "상태: 없음"
+    : "상태: " + POST_STATUS_OPTIONS.filter((o) => selected.has(o.key)).map((o) => o.label).join(", ");
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-[260px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+      >
+        <span className="truncate">{summary}</span>
+        <ChevronDown size={14} className="shrink-0 text-gray-400" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs font-bold text-gray-700">상태 필터</span>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              전체 선택
+            </button>
+          </div>
+          <ul>
+            {POST_STATUS_OPTIONS.map((o) => {
+              const checked = selected.has(o.key);
+              return (
+                <li key={o.key}>
+                  <label
+                    className={
+                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
+                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
+                    }
+                  >
+                    <span>{o.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(o.key)}
+                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
+                    />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
