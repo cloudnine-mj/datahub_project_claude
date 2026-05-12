@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Pencil, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import {
   api,
   type BoardType,
@@ -19,7 +19,6 @@ import {
 } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
-import { DeletePostButton } from "@/components/DeletePostButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { boardSegment } from "@/components/BoardListView";
 import { BOARD_LABELS, FORM_TYPE_LABELS, formatDateTime, parseUtc } from "@/lib/utils";
@@ -185,8 +184,8 @@ function AdminPostsView() {
                 <th className="px-6 py-3 font-medium">제목</th>
                 <th className="w-32 px-6 py-3 font-medium">작성자</th>
                 <th className="w-28 px-6 py-3 font-medium">상태</th>
+                <th className="w-44 px-6 py-3 font-medium">작성일</th>
                 <th className="w-44 px-6 py-3 font-medium">최근 수정</th>
-                <th className="w-56 px-6 py-3 font-medium">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -218,18 +217,8 @@ function AdminPostsView() {
                     <td className="px-6 py-4">
                       <PostStatusBadge post={p} />
                     </td>
+                    <td className="px-6 py-4 text-gray-500">{formatDateTime(p.created_at)}</td>
                     <td className="px-6 py-4 text-gray-500">{formatDateTime(p.updated_at)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 whitespace-nowrap">
-                        <Link
-                          href={`/governance/${boardSegment(p.board)}/new?id=${p.id}`}
-                          className="inline-flex items-center gap-1 whitespace-nowrap rounded bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600"
-                        >
-                          <Pencil size={12} /> 수정
-                        </Link>
-                        <DeletePostButton board={p.board} postId={p.id} onDeleted={refetch} />
-                      </div>
-                    </td>
                   </tr>
                 ))
               )}
