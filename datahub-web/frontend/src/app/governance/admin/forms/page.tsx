@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Lock } from "lucide-react";
+import { Check, Download, Lock, Play, X as XIcon } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
@@ -40,6 +40,18 @@ export default function AdminFormsPage() {
     return c;
   }, [items]);
 
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function changeStatus(formId: number, next: FormStatus) {
+    setActionError(null);
+    try {
+      await api.changeFormStatus(formId, { status: next });
+      refetch();
+    } catch (e) {
+      setActionError((e as Error).message);
+    }
+  }
+
   // 권한 거부 화면 (admin 아닌 사용자가 직접 URL 진입)
   if (me && me.user.role !== "admin") {
     return (
@@ -68,7 +80,7 @@ export default function AdminFormsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">신청서 관리</h1>
           <p className="mt-1.5 text-sm text-gray-500">
-            전체 사용자의 신청서를 검토 / 승인 / 반려할 수 있습니다. 행을 클릭해 상세에서 처리해 주세요.
+            전체 사용자의 신청서를 검토 / 승인 / 반려할 수 있습니다. 표에서 바로 처리하거나, 프로젝트명을 눌러 상세 페이지에서 코멘트와 함께 처리할 수 있습니다.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
@@ -86,6 +98,10 @@ export default function AdminFormsPage() {
         </div>
       </div>
 
+      {actionError && (
+        <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{actionError}</div>
+      )}
+
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
@@ -95,17 +111,18 @@ export default function AdminFormsPage() {
               <th className="w-32 px-6 py-3 font-medium">신청자</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
               <th className="w-32 px-6 py-3 font-medium">제출일</th>
+              <th className="w-64 px-6 py-3 font-medium">검토</th>
               <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
           <tbody>
             {filtered === null ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                   {items && items.length > 0
                     ? "선택한 상태의 신청서가 없습니다."
                     : "제출된 신청서가 없습니다."}
@@ -124,6 +141,13 @@ export default function AdminFormsPage() {
                   <td className="px-6 py-4 text-gray-600">{it.submitter_name}</td>
                   <td className="px-6 py-4"><StatusBadge status={it.status} /></td>
                   <td className="px-6 py-4 text-gray-500">{formatDate(it.submitted_at)}</td>
+                  <td className="px-6 py-4">
+                    <InlineReviewActions
+                      item={it}
+                      me={me}
+                      onAction={(next) => changeStatus(it.id, next)}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
                       <a
@@ -146,6 +170,89 @@ export default function AdminFormsPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * 신청서 행 인라인 검토 버튼.
+ *   submitted   → 검토 시작 / 승인 / 반려
+ *   reviewing   → 승인 / 반려
+ *   그 외        → '-'
+ * 자기 결재 방지: 본인이 제출한 신청서면 액션 숨김.
+ */
+function InlineReviewActions({
+  item,
+  me,
+  onAction,
+}: {
+  item: FormListItem;
+  me: Me | null;
+  onAction: (next: FormStatus) => void;
+}) {
+  const isOwn = !!me && item.submitter_id === me.user.id;
+
+  if (isOwn) {
+    return (
+      <span className="text-xs text-gray-400" title="본인이 제출한 신청서는 처리할 수 없습니다">
+        본인 제출
+      </span>
+    );
+  }
+
+  const status = item.status;
+  if (status !== "submitted" && status !== "reviewing") {
+    return <span className="text-xs text-gray-400">-</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {status === "submitted" && (
+        <ActionButton
+          tone="amber"
+          icon={Play}
+          label="검토 시작"
+          onClick={() => onAction("reviewing")}
+        />
+      )}
+      <ActionButton
+        tone="emerald"
+        icon={Check}
+        label="승인"
+        onClick={() => onAction("approved")}
+      />
+      <ActionButton tone="red" icon={XIcon} label="반려" onClick={() => onAction("rejected")} />
+    </div>
+  );
+}
+
+function ActionButton({
+  tone,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  tone: "amber" | "emerald" | "red";
+  icon: typeof Play;
+  label: string;
+  onClick: () => void;
+}) {
+  const cls =
+    tone === "amber"
+      ? "bg-amber-500 hover:bg-amber-600"
+      : tone === "emerald"
+      ? "bg-emerald-500 hover:bg-emerald-600"
+      : "bg-red-500 hover:bg-red-600";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "inline-flex items-center gap-1 whitespace-nowrap rounded px-2 py-1 text-[11px] font-semibold text-white " +
+        cls
+      }
+    >
+      <Icon size={11} /> {label}
+    </button>
   );
 }
 
