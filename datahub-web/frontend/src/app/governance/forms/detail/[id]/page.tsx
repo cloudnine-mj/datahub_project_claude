@@ -58,6 +58,8 @@ export default function Page({ params }: { params: { id: string } }) {
         submitter_email: form.submitter_email,
         submitter_department: form.submitter_department ?? undefined,
       });
+      // 내 문서 목록 등 다른 페이지의 Router Cache 무효화
+      router.refresh();
       router.push(`/governance/forms/submitted?id=${form.id}`);
     } catch (e) {
       setError((e as Error).message);

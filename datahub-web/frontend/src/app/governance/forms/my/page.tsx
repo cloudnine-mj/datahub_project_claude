@@ -204,6 +204,19 @@ function UserFormsView() {
     refetch();
   }, [refetch]);
 
+  // 다른 탭에서 수정 후 돌아오거나 브라우저 포커스 복원 시 자동 새로고침 — Router Cache 안전망.
+  useEffect(() => {
+    function onFocus() {
+      refetch();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [refetch]);
+
   // base request_no 별 그룹핑 → 그룹당 최신 1개만 메인에 노출.
   const latestItems = useMemo(() => {
     if (!items) return null;

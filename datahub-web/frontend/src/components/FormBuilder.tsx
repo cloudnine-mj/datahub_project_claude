@@ -203,9 +203,12 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         }
       }
 
+      // Next.js Router Cache 무효화 — '내 문서 목록' 같은 다른 페이지의 캐시된 상태를 다음 진입 시 다시 fetch 시킴.
+      router.refresh();
+
       if (isEdit) {
         // 수정 저장 후 detail 로 — just-edited 플래그로 detail 의 '제출' 버튼 노출 트리거
-        router.push(`/governance/forms/detail/${result.id}?just-edited=1`);
+        router.push(`/governance/forms/detail/${result.id}${from ? `?from=${from}&` : "?"}just-edited=1`);
       } else if (asDraft) {
         // 신규 임시저장 → 바로 내 문서 목록으로. detail 은 어차피 거기서 수정 가능.
         router.push(`/governance/forms/my`);
