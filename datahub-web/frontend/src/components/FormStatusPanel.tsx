@@ -67,18 +67,14 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
       <WorkflowStepper status={status} />
 
-      {/* 타임라인 — 이력 있을 때만 노출. 부모 카드(흰 배경) 안의 sub-panel 이므로 미묘한
-          double-border 를 피하기 위해 회색 배경(bg-gray-50) + border 없이 구분. */}
+      {/* 타임라인 — 이력 있을 때만 노출. 박스 없이 상단 구분선 + 토글 버튼 + 본문. */}
       {history && history.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-lg bg-gray-50">
+        <div className="mt-4 border-t border-gray-100 pt-3">
           <button
             type="button"
             onClick={() => setHistoryOpen((v) => !v)}
             aria-expanded={historyOpen}
-            className={
-              "flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-gray-100/80 " +
-              (historyOpen ? "border-b border-gray-200/70" : "")
-            }
+            className="flex w-full items-center gap-2 text-left text-sm font-bold text-gray-700"
           >
             <ChevronDown
               size={16}
@@ -92,12 +88,12 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
           </button>
 
           {historyOpen && (
-            <ol className="space-y-3 border-l-2 border-gray-200/70 px-6 py-4 pl-9">
+            <ol className="mt-4 space-y-3 border-l-2 border-gray-100 pl-5">
               {history.map((h, i) => (
                 <li key={i} className="relative">
                   <span
                     className={
-                      "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-gray-50 " +
+                      "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white " +
                       dotColor(h.status)
                     }
                   />
