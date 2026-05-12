@@ -169,7 +169,7 @@ function AdminPostsView() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="제목, 작성자, 게시판, 상태로 검색"
+              placeholder="문서명, 작성자, 게시판, 상태로 검색"
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
             />
           </div>
@@ -181,7 +181,7 @@ function AdminPostsView() {
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
                 <th className="w-48 px-6 py-3 font-medium">게시판</th>
-                <th className="px-6 py-3 font-medium">제목</th>
+                <th className="px-6 py-3 font-medium">문서명</th>
                 <th className="w-32 px-6 py-3 font-medium">작성자</th>
                 <th className="w-28 px-6 py-3 font-medium">상태</th>
                 <th className="w-44 px-6 py-3 font-medium">작성일</th>
