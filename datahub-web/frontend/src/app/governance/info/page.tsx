@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 정책 / 프로세스 자료실 — '데이터 관리 정책' + '데이터 제작 / 요청 프로세스' 통합 진입점.
+ * 정책 / 프로세스 자료실 — '데이터 관리 정책' + '데이터 제작 / 활용 요청 프로세스' 통합 진입점.
  *
  * 이 페이지는 데이터를 통합하지 않고 진입점만 통합한다. 탭 전환에 따라
  * 기존 PolicyBoardView / BoardListView 를 compact 모드로 재사용 — 각 도메인의
@@ -20,7 +20,7 @@ type Tab = "policy" | "process";
 
 const TABS: { key: Tab; label: string; href: string }[] = [
   { key: "policy", label: "데이터 관리 정책", href: "/governance/info?tab=policy" },
-  { key: "process", label: "데이터 제작 / 요청 프로세스", href: "/governance/info?tab=process" },
+  { key: "process", label: "데이터 제작 / 활용 요청 프로세스", href: "/governance/info?tab=process" },
 ];
 
 export default function GovernanceInfoPage() {
