@@ -8,8 +8,8 @@
  */
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { EmptyState } from "./EmptyState";
@@ -24,7 +24,7 @@ interface Props {
   compact?: boolean;
 }
 
-type CategoryFilter = "all" | (typeof PROCESS_CATEGORIES)[number];
+type CategoryKey = (typeof PROCESS_CATEGORIES)[number];
 
 // 카테고리별 색 — 칩(active)과 표 배지에 공통 사용
 const CATEGORY_COLORS: Record<
@@ -48,7 +48,10 @@ const CATEGORY_COLORS: Record<
 export function BoardListView({ board, compact = false }: Props) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
-  const [filter, setFilter] = useState<CategoryFilter>("all");
+  // 카테고리 다중 필터 — 기본은 전체 선택 (Policy 의 severity 필터와 동일 패턴)
+  const [categoryFilter, setCategoryFilter] = useState<Set<CategoryKey>>(
+    () => new Set(PROCESS_CATEGORIES),
+  );
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -67,7 +70,8 @@ export function BoardListView({ board, compact = false }: Props) {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
-      if (isProcess && filter !== "all" && p.category !== filter) return false;
+      // 카테고리 필터: category 가 있으면 set 매칭, 없으면 통과 (옛 데이터 호환)
+      if (isProcess && p.category && !categoryFilter.has(p.category as CategoryKey)) return false;
       if (!q) return true;
       const haystack = [
         p.title,
@@ -79,20 +83,12 @@ export function BoardListView({ board, compact = false }: Props) {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, filter, isProcess, query]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: posts?.length ?? 0 };
-    for (const p of posts ?? []) {
-      if (p.category) c[p.category] = (c[p.category] ?? 0) + 1;
-    }
-    return c;
-  }, [posts]);
+  }, [posts, categoryFilter, isProcess, query]);
 
   // 필터/검색/페이지 크기 바뀔 때 첫 페이지로 리셋
   useEffect(() => {
     setPage(1);
-  }, [filter, query, pageSize]);
+  }, [categoryFilter, query, pageSize]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -141,39 +137,7 @@ export function BoardListView({ board, compact = false }: Props) {
         </div>
 
         {isProcess && (
-          <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
-            <FilterChip
-              active={filter === "all"}
-              activeCls="bg-gray-800 text-white"
-              onClick={() => setFilter("all")}
-            >
-              전체
-              {counts.all > 0 && (
-                <span className={"ml-1 " + (filter === "all" ? "text-gray-300" : "text-gray-400")}>
-                  ({counts.all})
-                </span>
-              )}
-            </FilterChip>
-            {PROCESS_CATEGORIES.map((c) => {
-              const colors = CATEGORY_COLORS[c];
-              const isActive = filter === c;
-              return (
-                <FilterChip
-                  key={c}
-                  active={isActive}
-                  activeCls={colors?.chipActive ?? "bg-brand text-white"}
-                  onClick={() => setFilter(c)}
-                >
-                  {c}
-                  {(counts[c] ?? 0) > 0 && (
-                    <span className={"ml-1 " + (isActive ? "text-white/75" : "text-gray-400")}>
-                      ({counts[c]})
-                    </span>
-                  )}
-                </FilterChip>
-              );
-            })}
-          </div>
+          <CategoryFilterDropdown selected={categoryFilter} onChange={setCategoryFilter} />
         )}
 
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
@@ -328,28 +292,96 @@ function Pagination({
   );
 }
 
-function FilterChip({
-  active,
-  activeCls = "bg-brand text-white",
-  onClick,
-  children,
+/**
+ * 카테고리 필터 드롭다운 — 체크된 카테고리 row 만 표시. 외부 클릭 자동 닫힘.
+ * Policy 보드의 SeverityFilterDropdown 와 동일 패턴.
+ */
+function CategoryFilterDropdown({
+  selected,
+  onChange,
 }: {
-  active: boolean;
-  activeCls?: string;
-  onClick: () => void;
-  children: React.ReactNode;
+  selected: Set<CategoryKey>;
+  onChange: (next: Set<CategoryKey>) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  function toggle(key: CategoryKey) {
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onChange(next);
+  }
+
+  function selectAll() {
+    onChange(new Set(PROCESS_CATEGORIES));
+  }
+
+  const isAll = selected.size === PROCESS_CATEGORIES.length;
+  const summary = isAll
+    ? "카테고리: 전체"
+    : selected.size === 0
+    ? "카테고리: 없음"
+    : "카테고리: " + PROCESS_CATEGORIES.filter((c) => selected.has(c)).join(", ");
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded px-3 py-1.5 text-xs font-semibold transition " +
-        (active ? activeCls : "text-gray-600 hover:bg-gray-100")
-      }
-    >
-      {children}
-    </button>
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-[260px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+      >
+        <span className="truncate">{summary}</span>
+        <ChevronDown size={14} className="shrink-0 text-gray-400" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs font-bold text-gray-700">카테고리 필터</span>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              전체 선택
+            </button>
+          </div>
+          <ul>
+            {PROCESS_CATEGORIES.map((c) => {
+              const checked = selected.has(c);
+              return (
+                <li key={c}>
+                  <label
+                    className={
+                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
+                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
+                    }
+                  >
+                    <span>{c}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(c)}
+                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
+                    />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
