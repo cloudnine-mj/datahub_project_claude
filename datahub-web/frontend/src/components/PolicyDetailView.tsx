@@ -18,7 +18,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Lock, Pencil, X } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { MarkdownView } from "./MarkdownEditor";
@@ -142,6 +142,18 @@ export function PolicyDetailView({ postId }: { postId: number }) {
           </div>
         )}
       </div>
+
+      {/* 자료실로 돌아가기 — 통합 자료실(/info) 의 정책 탭으로 이동 */}
+      {post && (
+        <div className="mt-4 flex justify-end">
+          <Link
+            href="/governance/info?tab=policy"
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+          >
+            <ArrowLeft size={14} /> 정책 / 프로세스 자료실로 돌아가기
+          </Link>
+        </div>
+      )}
 
       {forbiddenOpen && (
         <div
