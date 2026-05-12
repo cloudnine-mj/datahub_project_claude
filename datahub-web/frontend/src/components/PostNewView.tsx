@@ -151,6 +151,17 @@ export function PostNewView({ board }: { board: BoardType }) {
         <section className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-sm font-bold text-gray-700">기본 정보</h2>
           <div className="space-y-5">
+            <Field label="작성자" hint="로그인한 관리자로 자동 입력됩니다.">
+              <input
+                value={me?.user.name ?? ""}
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+                placeholder="(로그인 후 자동 입력)"
+                className="w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 focus:outline-none"
+              />
+            </Field>
+
             <Field label="제목" required>
               <input
                 value={title}
