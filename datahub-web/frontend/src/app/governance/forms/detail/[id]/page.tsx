@@ -531,7 +531,7 @@ function PreviewModal({
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
-            <h2 className="text-base font-bold">붙여넣기용 미리보기</h2>
+            <h2 className="text-base font-bold">제출할 문서 미리보기</h2>
             <p className="mt-0.5 text-xs text-gray-500">
               아래 표를 복사한 뒤 전자결재 본문 에디터에 붙여넣으면 서식 그대로 들어갑니다.
             </p>
