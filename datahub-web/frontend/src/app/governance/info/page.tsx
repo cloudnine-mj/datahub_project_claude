@@ -10,7 +10,6 @@
  * URL 동기화: ?tab=policy|process (기본 policy). 탭 변경 시 history 에 푸시.
  */
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Info } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -80,19 +79,6 @@ export default function GovernanceInfoPage() {
           <BoardListView board="process" compact />
         )}
       </div>
-
-      {/* 직접 진입 URL 도 그대로 유지 — 기존 deep link 호환용 보조 안내 */}
-      <p className="mt-8 text-[11px] text-gray-400">
-        직접 링크가 필요하면{" "}
-        <Link href="/governance/policy" className="underline hover:text-gray-600">
-          /governance/policy
-        </Link>{" "}
-        ·{" "}
-        <Link href="/governance/process" className="underline hover:text-gray-600">
-          /governance/process
-        </Link>{" "}
-        도 그대로 동작합니다.
-      </p>
     </div>
   );
 }
