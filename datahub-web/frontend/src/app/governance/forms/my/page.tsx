@@ -121,7 +121,7 @@ function AdminPostsView() {
       // 상태 필터 — 체크된 상태만 통과
       if (!statusFilter.has(postStatusKey(p))) return false;
       if (!q) return true;
-      const haystack = [p.title, BOARD_LABELS[p.board], postStatusLabel(p)]
+      const haystack = [p.title, p.author_name, BOARD_LABELS[p.board], postStatusLabel(p)]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
@@ -170,7 +170,7 @@ function AdminPostsView() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="제목, 게시판, 상태로 검색"
+              placeholder="제목, 작성자, 게시판, 상태로 검색"
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
             />
           </div>
@@ -183,6 +183,7 @@ function AdminPostsView() {
               <tr>
                 <th className="w-48 px-6 py-3 font-medium">게시판</th>
                 <th className="px-6 py-3 font-medium">제목</th>
+                <th className="w-32 px-6 py-3 font-medium">작성자</th>
                 <th className="w-28 px-6 py-3 font-medium">상태</th>
                 <th className="w-44 px-6 py-3 font-medium">최근 수정</th>
                 <th className="w-56 px-6 py-3 font-medium">관리</th>
@@ -191,11 +192,11 @@ function AdminPostsView() {
             <tbody>
               {pageItems === null ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
                 </tr>
               ) : pageItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                     {posts && posts.length > 0
                       ? "검색 결과가 없습니다."
                       : "작성한 게시글이 없습니다."}
@@ -213,6 +214,7 @@ function AdminPostsView() {
                         {p.title || <span className="italic text-gray-400">(제목 없음)</span>}
                       </Link>
                     </td>
+                    <td className="px-6 py-4 text-gray-600">{p.author_name}</td>
                     <td className="px-6 py-4">
                       <PostStatusBadge post={p} />
                     </td>
