@@ -166,7 +166,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
 
       {/* 자료실로 돌아가기 — 게시판 직접 URL 이 아닌 통합 자료실(/info) 의 해당 탭으로 이동 */}
       {post && (
-        <div className="mt-4 flex justify-start">
+        <div className="mt-4 flex justify-end">
           <Link
             href={`/governance/info?tab=${board}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
