@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import {
   api,
   type BoardType,
@@ -18,7 +18,6 @@ import {
   type PostListItem,
 } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { boardSegment } from "@/components/BoardListView";
 import { BOARD_LABELS, FORM_TYPE_LABELS, formatDateTime, parseUtc } from "@/lib/utils";
@@ -511,7 +510,7 @@ function UserFormsView() {
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
               <th className="w-44 px-6 py-3 font-medium">제출일</th>
-              <th className="w-40 px-6 py-3 font-medium">관리</th>
+              <th className="w-44 px-6 py-3 font-medium">최종 승인일</th>
             </tr>
           </thead>
           <tbody>
@@ -541,20 +540,8 @@ function UserFormsView() {
                     <StatusBadge status={it.status} />
                   </td>
                   <td className="px-6 py-4 text-gray-500">{formatDateTime(it.submitted_at)}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <a
-                        href={api.exportFormUrl(it.id)}
-                        className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
-                      >
-                        <Download size={12} /> Excel
-                      </a>
-                      <DeleteFormButton
-                        formId={it.id}
-                        contextLabel={it.project_name}
-                        onDeleted={refetch}
-                      />
-                    </div>
+                  <td className="px-6 py-4 text-gray-500">
+                    {it.approved_at ? formatDateTime(it.approved_at) : <span className="text-gray-300">-</span>}
                   </td>
                 </tr>
               ))
