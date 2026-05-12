@@ -150,7 +150,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             href="/governance/info?tab=policy"
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
-            <ArrowLeft size={14} /> 데이터 관리 정책 탭으로 돌아가기
+            <ArrowLeft size={14} /> 데이터 관리 정책 탭
           </Link>
         </div>
       )}
