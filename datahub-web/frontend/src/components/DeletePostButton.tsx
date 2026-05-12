@@ -15,11 +15,13 @@ import { api, type BoardType } from "@/lib/api";
 interface Props {
   board: BoardType;
   postId: number;
-  /** 삭제 후 이동할 경로 (예: "/governance/policy"). */
-  redirectTo: string;
+  /** 삭제 후 이동할 경로 (예: "/governance/policy"). onDeleted 와 둘 중 하나는 지정. */
+  redirectTo?: string;
+  /** 삭제 후 부모가 목록 재조회 등 후속 처리. redirectTo 와 함께 쓰일 수도 있음. */
+  onDeleted?: () => void;
 }
 
-export function DeletePostButton({ board, postId, redirectTo }: Props) {
+export function DeletePostButton({ board, postId, redirectTo, onDeleted }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -30,8 +32,12 @@ export function DeletePostButton({ board, postId, redirectTo }: Props) {
     setPending(true);
     try {
       await api.deletePost(board, postId);
-      router.push(redirectTo);
-      router.refresh();
+      if (onDeleted) onDeleted();
+      if (redirectTo) {
+        router.push(redirectTo);
+        router.refresh();
+      }
+      setOpen(false);
     } catch (e) {
       setError((e as Error).message);
       setPending(false);

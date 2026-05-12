@@ -6,12 +6,20 @@
 // 그룹당 가장 '확정도 높은' row 1개만 메인 테이블에 노출.
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
-import { api, type FormListItem, type FormStatus } from "@/lib/api";
+import { Download, FileEdit, Pencil } from "lucide-react";
+import {
+  api,
+  type BoardType,
+  type FormListItem,
+  type FormStatus,
+  type PostListItem,
+} from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
+import { DeletePostButton } from "@/components/DeletePostButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
-import { FORM_TYPE_LABELS, formatDate, parseUtc } from "@/lib/utils";
+import { boardSegment } from "@/components/BoardListView";
+import { BOARD_LABELS, FORM_TYPE_LABELS, formatDate, parseUtc } from "@/lib/utils";
 
 type StatusFilter = "all" | FormStatus;
 
@@ -34,12 +42,29 @@ function statusPriority(status: string): number {
   return 1; // draft
 }
 
+type DraftPost = PostListItem & { board: BoardType };
+
 export default function MyFormsPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
+  const [draftPosts, setDraftPosts] = useState<DraftPost[] | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
 
   const refetch = useCallback(() => {
     api.listForms({ mine: true }).then(setItems).catch(() => setItems([]));
+    // 본인이 임시저장한 게시글 — 정책 / 프로세스 양쪽에서 모아서 표시.
+    // 일반 사용자는 게시판 글쓰기 권한이 없어 결과가 늘 비어있지만, 권한 추후 변경에 대비해 양쪽 모두 호출.
+    Promise.all([api.listMyDraftPosts("policy"), api.listMyDraftPosts("process")])
+      .then(([policy, process]) => {
+        const merged: DraftPost[] = [
+          ...policy.map((p) => ({ ...p, board: "policy" as BoardType })),
+          ...process.map((p) => ({ ...p, board: "process" as BoardType })),
+        ];
+        merged.sort(
+          (a, b) => parseUtc(b.updated_at).getTime() - parseUtc(a.updated_at).getTime(),
+        );
+        setDraftPosts(merged);
+      })
+      .catch(() => setDraftPosts([]));
   }, []);
 
   useEffect(() => {
@@ -176,7 +201,78 @@ export default function MyFormsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* 임시저장한 게시글 — admin 만 작성 권한이 있어 실제 사용자는 admin 위주.
+          비어있어도 admin 인 경우 안내 메시지를 보여 빈 섹션을 명시. */}
+      {draftPosts !== null && draftPosts.length > 0 && (
+        <DraftPostsSection items={draftPosts} onChanged={refetch} />
+      )}
     </div>
+  );
+}
+
+function DraftPostsSection({
+  items,
+  onChanged,
+}: {
+  items: DraftPost[];
+  onChanged: () => void;
+}) {
+  return (
+    <section className="mt-10">
+      <div className="flex items-center gap-2">
+        <FileEdit size={16} className="text-gray-500" />
+        <h2 className="text-base font-bold tracking-tight">임시저장한 게시글</h2>
+        <span className="text-xs text-gray-400">{items.length}건</span>
+      </div>
+      <p className="mt-1 text-xs text-gray-500">
+        정책 / 프로세스 게시판에 임시저장 중인 글입니다. '계속 작성' 으로 이어 작성하거나 삭제할 수 있습니다.
+      </p>
+
+      <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-left text-gray-500">
+            <tr>
+              <th className="w-48 px-6 py-3 font-medium">게시판</th>
+              <th className="px-6 py-3 font-medium">제목</th>
+              <th className="w-32 px-6 py-3 font-medium">최근 수정</th>
+              <th className="w-44 px-6 py-3 font-medium">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((p) => (
+              <tr key={`${p.board}-${p.id}`} className="border-t border-gray-100 hover:bg-gray-50">
+                <td className="px-6 py-4 text-gray-600">{BOARD_LABELS[p.board]}</td>
+                <td className="px-6 py-4">
+                  <Link
+                    href={`/governance/${boardSegment(p.board)}/${p.id}`}
+                    className="font-medium hover:text-brand"
+                  >
+                    {p.title || <span className="italic text-gray-400">(제목 없음)</span>}
+                  </Link>
+                </td>
+                <td className="px-6 py-4 text-gray-500">{formatDate(p.updated_at)}</td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1.5">
+                    <Link
+                      href={`/governance/${boardSegment(p.board)}/new?id=${p.id}`}
+                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600"
+                    >
+                      <Pencil size={12} /> 계속 작성
+                    </Link>
+                    <DeletePostButton
+                      board={p.board}
+                      postId={p.id}
+                      onDeleted={onChanged}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

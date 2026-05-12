@@ -199,6 +199,10 @@ export const api = {
   me: () => request<Me>("/me"),
 
   listPosts: (board: BoardType) => request<PostListItem[]>(`/boards/${board}/posts`),
+
+  /** 본인이 임시저장한 게시글 목록 — '내 문서 목록' 의 게시글 섹션에서 사용. */
+  listMyDraftPosts: (board: BoardType) =>
+    request<PostListItem[]>(`/boards/${board}/posts?mine_drafts=true`),
   getPost: (board: BoardType, id: number) => request<PostDetail>(`/boards/${board}/posts/${id}`),
   createPost: (
     board: BoardType,
