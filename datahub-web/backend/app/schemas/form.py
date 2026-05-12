@@ -69,7 +69,6 @@ class FormListItem(BaseModel):
     request_no: str
     form_type: str
     project_name: str
-    submitter_id: int
     submitter_name: str
     submitted_at: datetime
     status: str
