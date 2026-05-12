@@ -5,10 +5,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Lock, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Lock, Search } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
 
@@ -133,17 +132,16 @@ export default function AdminFormsPage() {
               <th className="w-28 px-6 py-3 font-medium">상태</th>
               <th className="w-44 px-6 py-3 font-medium">제출일</th>
               <th className="w-44 px-6 py-3 font-medium">승인 완료일</th>
-              <th className="w-40 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">불러오는 중...</td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                   {items && items.length > 0
                     ? "검색·필터 결과가 없습니다."
                     : "제출된 신청서가 없습니다."}
@@ -164,21 +162,6 @@ export default function AdminFormsPage() {
                   <td className="px-6 py-4 text-gray-500">{formatDateTime(it.submitted_at)}</td>
                   <td className="px-6 py-4 text-gray-500">
                     {it.approved_at ? formatDateTime(it.approved_at) : <span className="text-gray-300">-</span>}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <a
-                        href={api.exportFormUrl(it.id)}
-                        className="inline-flex items-center gap-1 rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
-                      >
-                        <Download size={12} /> Excel
-                      </a>
-                      <DeleteFormButton
-                        formId={it.id}
-                        contextLabel={it.project_name}
-                        onDeleted={refetch}
-                      />
-                    </div>
                   </td>
                 </tr>
               ))
