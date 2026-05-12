@@ -62,6 +62,7 @@ export function BoardListView({ board, compact = false }: Props) {
   }, [board]);
 
   const canWrite = me?.permissions[`can_write_${board}` as const] ?? false;
+  const isAdmin = me?.user.role === "admin";
   const label = BOARD_LABELS[board];
   const isProcess = board === "process";
 
@@ -201,6 +202,10 @@ export function BoardListView({ board, compact = false }: Props) {
                             임시저장
                           </span>
                         )}
+                        {/* 공개 범위 표기 — admin 만 노출, draft 가 아닐 때 */}
+                        {isAdmin && !p.is_draft && (
+                          <VisibilityPill visibility={p.visibility} />
+                        )}
                         {p.doc_type && <DocTypePill docType={p.doc_type} />}
                         <span>{p.title}</span>
                       </Link>
@@ -232,6 +237,22 @@ export function BoardListView({ board, compact = false }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+/** 공개 범위 표기 — admin 전용 리스트에서 각 row 가 공개/비공개 인지 한눈에 구분. */
+function VisibilityPill({ visibility }: { visibility: "public" | "admin" }) {
+  if (visibility === "admin") {
+    return (
+      <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-1.5 py-0 text-[10px] font-semibold text-gray-700">
+        비공개
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-700">
+      공개
+    </span>
   );
 }
 
