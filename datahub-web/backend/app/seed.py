@@ -114,7 +114,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             board_type="process",
             title="Product 서비스 로그 데이터 활용 방법",
             doc_type="가이드",
-            category="요청 프로세스",
+            category="활용 요청 프로세스",
             content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
                     "신청서: 'Product 로그 데이터 활용 신청서'",
             author_id=admin.id,
@@ -125,7 +125,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             board_type="process",
             title="다운로드 불가능한 구매 데이터 활용 방법",
             doc_type="가이드",
-            category="요청 프로세스",
+            category="활용 요청 프로세스",
             content="라이선스 제약으로 다운로드가 불가능한 구매 데이터는 보안 워크스페이스에서만 사용 가능합니다.",
             author_id=admin.id,
             author_name=admin.name,
@@ -243,7 +243,7 @@ def _migrate_board_types(db: Session) -> None:
     if not legacy:
         pass
     for p in legacy:
-        new_cat = "제작 프로세스" if p.board_type == "production_process" else "요청 프로세스"
+        new_cat = "제작 프로세스" if p.board_type == "production_process" else "활용 요청 프로세스"
         # 옛 카테고리가 일반적이면 새 카테고리로 덮어쓰기. 사용자가 지정한 의미있는 값은 보존.
         # 옛 'category=가이드' 는 doc_type 으로 이전.
         if p.category == "가이드":
@@ -264,14 +264,17 @@ def _migrate_severity_values(db: Session) -> None:
 
 
 def _migrate_category_values(db: Session) -> None:
-    """프로세스 보드 category 라벨 단순화: '활용 요청 프로세스' → '요청 프로세스'."""
+    """프로세스 보드 category 라벨 마이그레이션: 옛 '요청 프로세스' → '활용 요청 프로세스'.
+
+    (이전엔 '활용 요청 프로세스' → '요청 프로세스' 로 줄였다가 다시 명시성 회복.)
+    """
     legacy = (
         db.query(Post)
-        .filter(Post.board_type == "process", Post.category == "활용 요청 프로세스")
+        .filter(Post.board_type == "process", Post.category == "요청 프로세스")
         .all()
     )
     for p in legacy:
-        p.category = "요청 프로세스"
+        p.category = "활용 요청 프로세스"
 
 
 def _backfill_initial_approval_entry(db: Session) -> None:
