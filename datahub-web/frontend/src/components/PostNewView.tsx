@@ -154,11 +154,11 @@ export function PostNewView({ board }: { board: BoardType }) {
         <section className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="mb-4 text-sm font-bold text-gray-700">기본 정보</h2>
           <div className="space-y-5">
-            <Field label="작성자" hint="비워두면 로그인 관리자명으로 자동 입력됩니다.">
+            <Field label="작성자" required>
               <input
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                placeholder={me ? `예: ${me.user.name}` : "작성자명을 입력하세요"}
+                placeholder="작성자명을 입력하세요"
                 maxLength={100}
                 className={inputCls}
               />
