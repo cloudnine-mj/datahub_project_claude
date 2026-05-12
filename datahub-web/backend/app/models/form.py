@@ -67,6 +67,28 @@ class Form(Base):
         back_populates="form", cascade="all, delete-orphan"
     )
 
+    @property
+    def approved_at(self) -> datetime | None:
+        """approval_history 에서 가장 마지막 'approved' 엔트리의 시각.
+        승인되지 않은 신청서는 None.
+        """
+        history = self.approval_history or []
+        for entry in reversed(history):
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("status") != "approved":
+                continue
+            ts = entry.get("changed_at")
+            if isinstance(ts, datetime):
+                return ts
+            if isinstance(ts, str):
+                try:
+                    return datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
+                except ValueError:
+                    return None
+            return None
+        return None
+
 
 class FormAttachment(Base):
     __tablename__ = "form_attachments"

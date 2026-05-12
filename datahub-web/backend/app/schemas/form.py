@@ -72,6 +72,7 @@ class FormListItem(BaseModel):
     submitter_name: str
     submitted_at: datetime
     status: str
+    approved_at: datetime | None = None
     version: int = 1
     parent_form_id: int | None = None
 

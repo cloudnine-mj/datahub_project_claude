@@ -149,6 +149,8 @@ export interface FormListItem {
   submitter_name: string;
   submitted_at: string;
   status: string;
+  /** 최종 승인 시각 — approval_history 의 마지막 'approved' 엔트리. 미승인 시 null. */
+  approved_at: string | null;
   version: number;
   parent_form_id: number | null;
 }
