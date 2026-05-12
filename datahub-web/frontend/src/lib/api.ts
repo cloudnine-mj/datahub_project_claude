@@ -168,25 +168,6 @@ export interface EditHistoryEntry {
   changes: FieldChange[];
 }
 
-export type AuditSeverity = "info" | "success" | "warning" | "danger";
-
-export interface AuditFieldChange {
-  field: string;
-  before: unknown;
-  after: unknown;
-}
-
-export interface AuditEvent {
-  timestamp: string;
-  actor: string;
-  action: string;
-  target: string;
-  detail: string;
-  severity: AuditSeverity;
-  /** form.edited 같이 구조화된 변경 내역이 있을 때만 채워짐 */
-  changes?: AuditFieldChange[] | null;
-}
-
 export interface FormCommentItem {
   id: number;
   form_id: number;
@@ -327,20 +308,6 @@ export const api = {
   deleteFormAttachment: (formId: number, attId: number) =>
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
 
-  /** Audit Trail — 거버넌스 활동 로그.
-   *  - 기본(admin 전용): 전체 이벤트
-   *  - mine=true: 본인 신청서/본인 행위 이벤트만 (모든 사용자 가능). */
-  listAuditEvents: (
-    params: { days?: number; search?: string; severity?: string; mine?: boolean } = {},
-  ) => {
-    const q = new URLSearchParams();
-    if (params.days !== undefined) q.set("days", String(params.days));
-    if (params.search) q.set("search", params.search);
-    if (params.severity) q.set("severity", params.severity);
-    if (params.mine) q.set("mine", "true");
-    const qs = q.toString();
-    return request<AuditEvent[]>(`/audit${qs ? `?${qs}` : ""}`);
-  },
 
   /** 신청서 단일 댓글 스레드 — 신청자 + admin 만 접근. */
   listFormComments: (formId: number) =>
