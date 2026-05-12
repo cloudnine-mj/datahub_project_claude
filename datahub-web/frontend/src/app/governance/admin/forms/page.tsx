@@ -68,7 +68,7 @@ export default function AdminFormsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">신청서 관리</h1>
           <p className="mt-1.5 text-sm text-gray-500">
-            전체 사용자의 신청서를 검토 / 승인 / 반려할 수 있습니다. 프로젝트명을 클릭해 상세에서 처리해 주세요.
+            전체 사용자의 신청서를 검토 / 승인 / 반려할 수 있습니다. 프로젝트명을 클릭해 신청서 상세 페이지로 이동한 뒤 처리해 주세요.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
