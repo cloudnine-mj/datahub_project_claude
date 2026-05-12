@@ -236,7 +236,7 @@ function DraftPostsSection({
               <th className="w-48 px-6 py-3 font-medium">게시판</th>
               <th className="px-6 py-3 font-medium">제목</th>
               <th className="w-32 px-6 py-3 font-medium">최근 수정</th>
-              <th className="w-44 px-6 py-3 font-medium">관리</th>
+              <th className="w-56 px-6 py-3 font-medium">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -253,10 +253,10 @@ function DraftPostsSection({
                 </td>
                 <td className="px-6 py-4 text-gray-500">{formatDate(p.updated_at)}</td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
                     <Link
                       href={`/governance/${boardSegment(p.board)}/new?id=${p.id}`}
-                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600"
+                      className="inline-flex items-center gap-1 whitespace-nowrap rounded bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-600"
                     >
                       <Pencil size={12} /> 계속 작성
                     </Link>

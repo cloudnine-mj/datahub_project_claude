@@ -49,7 +49,7 @@ export function DeletePostButton({ board, postId, redirectTo, onDeleted }: Props
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
       >
         <Trash2 size={12} /> 삭제
       </button>
