@@ -230,11 +230,7 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            <Field
-              label="공개 범위"
-              required
-              hint="비공개로 두면 관리자만 조회·수정할 수 있습니다."
-            >
+            <Field label="공개 범위" required>
               <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
                 <VisibilityChip
                   active={visibility === "public"}
