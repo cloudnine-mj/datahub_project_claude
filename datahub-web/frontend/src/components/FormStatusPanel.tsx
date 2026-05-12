@@ -38,8 +38,8 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // 진행 이력 펼침/접힘 — 기본은 펼친 상태. 이력이 많아질 때 사용자가 접을 수 있음.
-  const [historyOpen, setHistoryOpen] = useState(true);
+  // 진행 이력 펼침/접힘 — 기본 접힘. 사용자가 필요할 때만 펼쳐서 봄.
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   async function onApply() {
     if (!target) return;
