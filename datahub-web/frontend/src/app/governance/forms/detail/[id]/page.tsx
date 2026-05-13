@@ -129,6 +129,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <FormStatusPanel
         formId={form.id}
         status={form.status}
+        history={form.approval_history}
         me={me}
         submitterEmail={form.submitter_email}
         onChanged={refetch}
