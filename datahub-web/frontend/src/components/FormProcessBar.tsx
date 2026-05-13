@@ -7,8 +7,10 @@
 // STEP_GUIDES 양쪽에 추가.
 
 import { useState } from "react";
-import { Check, X } from "lucide-react";
-import type { FormType } from "@/lib/api";
+import { Check, MessageSquare, X } from "lucide-react";
+import type { ApprovalEntry, FormType } from "@/lib/api";
+import { parseUtc } from "@/lib/utils";
+import { MiniWorkflowStepper } from "./MiniWorkflowStepper";
 
 type StepState = "done" | "current" | "future" | "rejected";
 
@@ -16,13 +18,15 @@ interface StepDef {
   label: string;
   /** 클릭 시 부드럽게 스크롤할 대상 CSS selector. 단계 설명 패널 + 스크롤이 같이 일어남. */
   scrollTo?: string;
+  /** true 면 단계 설명 패널에 워크플로우 스텝퍼 + 진행 이력을 노출. */
+  showsProgress?: boolean;
 }
 
 const STEP_DEFS: Partial<Record<FormType, StepDef[]>> = {
   data_purchase: [
     { label: "필요성 정의 및 예산 확인" },
     { label: "신청서 작성", scrollTo: "#form-content" },
-    { label: "승인 완료" },
+    { label: "승인 완료", showsProgress: true },
     { label: "전자결재 승인" },
   ],
 };
@@ -51,10 +55,13 @@ const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
 export function FormProcessBar({
   formType,
   status,
+  history,
   onSelectedStepChange,
 }: {
   formType: FormType;
   status: string;
+  /** showsProgress 단계 패널에서 진행 이력을 노출하기 위한 입력 (없으면 이력은 안 보임). */
+  history?: ApprovalEntry[] | null;
   /** 선택된 step 변화를 부모에 알림 — 부모는 step 에 따라 다른 영역을 숨기거나 강조할 수 있음. */
   onSelectedStepChange?: (step: number | null) => void;
 }) {
@@ -103,7 +110,7 @@ export function FormProcessBar({
         ))}
       </div>
 
-      {selected !== null && guides && guides[selected] && guides[selected].length > 0 && (
+      {selected !== null && (steps[selected].showsProgress || (guides && guides[selected] && guides[selected].length > 0)) && (
         <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50/60 px-5 py-4 text-sm">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">
@@ -118,14 +125,48 @@ export function FormProcessBar({
               <X size={14} />
             </button>
           </div>
-          <ul className="space-y-1.5 text-gray-700">
-            {guides[selected].map((line, j) => (
-              <li key={j} className="flex gap-2">
-                <span className="shrink-0 text-gray-400">•</span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
+
+          {steps[selected].showsProgress && (
+            <div className="mb-3">
+              <MiniWorkflowStepper status={status} />
+            </div>
+          )}
+
+          {guides && guides[selected] && guides[selected].length > 0 && (
+            <ul className="space-y-1.5 text-gray-700">
+              {guides[selected].map((line, j) => (
+                <li key={j} className="flex gap-2">
+                  <span className="shrink-0 text-gray-400">•</span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {steps[selected].showsProgress && history && history.length > 0 && (
+            <div className="mt-3 border-t border-gray-200 pt-3">
+              <div className="mb-2 text-xs font-bold text-gray-700">
+                진행 이력 <span className="font-semibold text-gray-400">{history.length}건</span>
+              </div>
+              <ol className="space-y-2">
+                {history.map((h, i) => (
+                  <li key={i} className="text-xs">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="font-semibold text-gray-700">{statusLabel(h.status)}</span>
+                      <span className="text-gray-600">{h.changed_by}</span>
+                      <span className="text-gray-400">{formatTimeline(h.changed_at)}</span>
+                    </div>
+                    {h.comment && (
+                      <p className="mt-0.5 flex items-start gap-1 text-gray-600">
+                        <MessageSquare size={11} className="mt-0.5 shrink-0 text-gray-400" />
+                        <span>{h.comment}</span>
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -216,4 +257,30 @@ function Chevron({
       <span className="truncate">{label}</span>
     </button>
   );
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: "임시 저장",
+  submitted: "제출됨",
+  reviewing: "검토 중",
+  approved: "승인 완료",
+  rejected: "반려",
+};
+
+function statusLabel(s: string): string {
+  return STATUS_LABELS[s] ?? s;
+}
+
+function formatTimeline(iso: string): string {
+  try {
+    const d = parseUtc(iso);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
+  } catch {
+    return iso;
+  }
 }

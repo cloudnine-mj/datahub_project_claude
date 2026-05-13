@@ -122,6 +122,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <FormProcessBar
         formType={form.form_type}
         status={form.status}
+        history={form.approval_history}
         onSelectedStepChange={setSelectedStep}
       />
 
