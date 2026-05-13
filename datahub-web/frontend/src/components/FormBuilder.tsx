@@ -79,8 +79,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 작성 예시 모달
   const [exampleOpen, setExampleOpen] = useState(false);
 
-  // 신청자 정보 섹션 토글 — 기본 펼침. 한 번 닫아두면 같은 신청 작성 동안만 유지.
-  const [submitterOpen, setSubmitterOpen] = useState(true);
+  // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
+  // 필요할 때만 펼쳐 확인.
+  const [submitterOpen, setSubmitterOpen] = useState(false);
 
   // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
   // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
