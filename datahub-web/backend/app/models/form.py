@@ -68,6 +68,19 @@ class Form(Base):
     )
 
     @property
+    def participants(self) -> list[str]:
+        """payload 의 '참조자' (이름 목록) — 신청서를 함께 봐야 하는 사람들.
+
+        list/detail 응답에 노출되어 권한 체크 (참조자도 조회 가능) 와
+        프런트 필터 ('내 업무만 보기') 에 사용됨. 값이 없거나 형태가
+        리스트가 아니면 빈 리스트 반환.
+        """
+        raw = (self.payload or {}).get("참조자")
+        if not isinstance(raw, list):
+            return []
+        return [s.strip() for s in raw if isinstance(s, str) and s.strip()]
+
+    @property
     def approved_at(self) -> datetime | None:
         """현재 상태가 'approved' 일 때만 마지막 승인 시각을 반환.
         승인 후 검토 중으로 되돌린 경우 등 상태가 더 이상 승인이 아니면 None.

@@ -153,6 +153,8 @@ export interface FormListItem {
   approved_at: string | null;
   version: number;
   parent_form_id: number | null;
+  /** payload['참조자'] — 신청서를 함께 봐야 하는 사람들 (이름 목록). */
+  participants: string[];
 }
 
 export type FormStatus = "draft" | "submitted" | "reviewing" | "approved" | "rejected";

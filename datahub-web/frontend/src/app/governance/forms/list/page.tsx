@@ -44,7 +44,13 @@ export default function GovernanceFormsListPage() {
     const myName = me?.user.name;
     return items.filter((it) => {
       if (!statusFilter.has(it.status as FormStatus)) return false;
-      if (mineOnly && (!myName || it.submitter_name !== myName)) return false;
+      if (mineOnly) {
+        // 내가 신청자거나, 참조자 명단에 포함되어 있어야 노출
+        if (!myName) return false;
+        const isMine = it.submitter_name === myName;
+        const isParticipant = (it.participants || []).includes(myName);
+        if (!isMine && !isParticipant) return false;
+      }
       if (!q) return true;
       const statusLabel = STATUSES.find((s) => s.value === it.status)?.label ?? "";
       const haystack = [

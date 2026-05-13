@@ -75,6 +75,8 @@ class FormListItem(BaseModel):
     approved_at: datetime | None = None
     version: int = 1
     parent_form_id: int | None = None
+    # 신청서를 함께 봐야 하는 사람들 (payload['참조자']) — 권한/필터링용
+    participants: list[str] = []
 
 
 class FormDetail(BaseModel):

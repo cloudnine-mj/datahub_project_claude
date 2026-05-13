@@ -138,7 +138,13 @@ def get_form(
     form = db.query(Form).filter(Form.id == form_id).first()
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
-    if form.submitter_id != user.id and user.role != "admin":
+    # 본인이 신청자거나, 참조자 명단(payload['참조자'])에 포함되거나, admin 인 경우 조회 가능
+    is_participant = user.name in form.participants
+    if (
+        form.submitter_id != user.id
+        and user.role != "admin"
+        and not is_participant
+    ):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
     return form
 
