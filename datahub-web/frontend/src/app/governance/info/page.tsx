@@ -32,7 +32,7 @@ export default function GovernanceInfoPage() {
         <PolicyBoardView compact />
       </section>
 
-      <section className="mt-16">
+      <section className="mt-36">
         <h2 className="mb-3 text-xl font-bold tracking-tight">데이터 제작 / 활용 요청 프로세스</h2>
         <BoardListView board="process" compact />
       </section>
