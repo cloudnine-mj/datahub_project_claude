@@ -52,7 +52,7 @@ export const FORM_TYPE_LABELS: Record<string, string> = {
 };
 
 export const BOARD_LABELS: Record<string, string> = {
-  policy: "데이터 관리 정책",
+  policy: "데이터 거버넌스 정책",
   process: "데이터 제작 / 활용 요청 프로세스",
 };
 

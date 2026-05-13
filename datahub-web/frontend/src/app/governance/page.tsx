@@ -1,8 +1,8 @@
 "use client";
 
 // Governance 인덱스 — admin 과 비-admin 에 따라 카드 구성/라벨 분기.
-//   admin: 데이터 관리 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 정책/프로세스 게시글 관리 + 거버넌스 요청 관리
-//   non-admin: 데이터 관리 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 내 문서 목록
+//   admin: 데이터 거버넌스 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 정책/프로세스 게시글 관리 + 거버넌스 요청 관리
+//   non-admin: 데이터 거버넌스 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 내 문서 목록
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -20,8 +20,8 @@ const COMMON_CARDS: Card[] = [
   {
     href: "/governance/policy",
     icon: BookOpen,
-    title: "데이터 관리 정책",
-    desc: "데이터 관리에 필요한 정책을 확인합니다.",
+    title: "데이터 거버넌스 정책",
+    desc: "데이터 거버넌스에 필요한 정책을 확인합니다.",
   },
   {
     href: "/governance/process",

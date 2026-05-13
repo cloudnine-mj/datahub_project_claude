@@ -48,7 +48,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance" },
-          { label: "데이터 관리 정책", href: "/governance/policy" },
+          { label: "데이터 거버넌스 정책", href: "/governance/policy" },
           { label: post.title },
         ]}
       />
@@ -148,7 +148,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
             href="/governance/policy"
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
-            <ArrowLeft size={14} /> 데이터 관리 정책
+            <ArrowLeft size={14} /> 데이터 거버넌스 정책
           </Link>
         </div>
       )}
@@ -179,7 +179,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-600">
-              데이터 관리 정책 문서는 <strong className="font-semibold text-gray-800">관리자</strong>만 수정할 수 있습니다. 수정이 필요하면 거버넌스 관리자에게 요청해 주세요.
+              데이터 거버넌스 정책 문서는 <strong className="font-semibold text-gray-800">관리자</strong>만 수정할 수 있습니다. 수정이 필요하면 거버넌스 관리자에게 요청해 주세요.
             </p>
             <div className="mt-5 flex justify-end">
               <button

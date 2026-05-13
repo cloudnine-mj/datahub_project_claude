@@ -72,10 +72,10 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           <Breadcrumb
             items={[
               { label: "Governance", href: "/governance" },
-              { label: "데이터 관리 정책" },
+              { label: "데이터 거버넌스 정책" },
             ]}
           />
-          <h1 className="text-3xl font-bold tracking-tight">데이터 관리 정책</h1>
+          <h1 className="text-3xl font-bold tracking-tight">데이터 거버넌스 정책</h1>
 
           {/* 가이드 배너 */}
           <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
