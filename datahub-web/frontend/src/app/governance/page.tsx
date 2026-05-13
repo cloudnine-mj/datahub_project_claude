@@ -35,6 +35,12 @@ const COMMON_CARDS: Card[] = [
     title: "데이터 거버넌스 문서 서식 모음",
     desc: "각종 신청 및 품의서 양식을 작성합니다.",
   },
+  {
+    href: "/governance/forms/list",
+    icon: ClipboardList,
+    title: "거버넌스 요청 목록",
+    desc: "전체 사용자의 신청 현황을 확인합니다.",
+  },
 ];
 
 const ADMIN_CARDS: Card[] = [

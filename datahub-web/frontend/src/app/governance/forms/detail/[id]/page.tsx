@@ -95,6 +95,8 @@ export default function Page({ params }: { params: { id: string } }) {
             ? { label: "내 문서 목록", href: "/governance/forms/my" }
             : from === "admin"
             ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
+            : from === "list"
+            ? { label: "거버넌스 요청 목록", href: "/governance/forms/list" }
             : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
           { label },
         ]}
@@ -186,6 +188,14 @@ export default function Page({ params }: { params: { id: string } }) {
             className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
           >
             <ArrowLeft size={12} /> 내 문서 목록
+          </Link>
+        )}
+        {from === "list" && (
+          <Link
+            href="/governance/forms/list"
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+          >
+            <ArrowLeft size={12} /> 요청 목록으로 돌아가기
           </Link>
         )}
         <button
