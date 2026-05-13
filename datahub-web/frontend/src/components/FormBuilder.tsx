@@ -234,7 +234,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             onClick={() => setExampleOpen(true)}
             className="inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
           >
-            작성 예시
+            신청서 작성 예시
           </button>
         </div>
 
@@ -582,7 +582,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           >
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-                작성 예시
+                신청서 작성 예시
               </div>
               <button
                 type="button"
