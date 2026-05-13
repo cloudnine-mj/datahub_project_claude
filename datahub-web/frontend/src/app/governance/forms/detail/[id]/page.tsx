@@ -453,7 +453,7 @@ function valueToText(field: FieldDef, v: unknown): string {
   if (field.type === "approver_list" && Array.isArray(v)) {
     return (v as unknown[])
       .filter((s) => typeof s === "string" && s.trim().length > 0)
-      .join(" → ");
+      .join(", ");
   }
   if (Array.isArray(v)) {
     return v
