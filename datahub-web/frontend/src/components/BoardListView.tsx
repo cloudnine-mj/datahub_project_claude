@@ -26,6 +26,21 @@ interface Props {
 
 type CategoryKey = (typeof PROCESS_CATEGORIES)[number];
 
+// admin 게시글 상태 필터 — 임시저장 / 비공개(admin visibility) / 게시됨(public).
+// PolicyBoardView 와 동일 — 별도 '게시글 관리' 페이지를 대체하기 위해 여기도 노출.
+type PostStatusKey = "draft" | "private" | "published";
+const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
+  { key: "draft", label: "임시 저장" },
+  { key: "private", label: "비공개" },
+  { key: "published", label: "게시됨" },
+];
+
+function postStatusKey(p: PostListItem): PostStatusKey {
+  if (p.is_draft) return "draft";
+  if (p.visibility === "admin") return "private";
+  return "published";
+}
+
 // 카테고리별 색 — 칩(active)과 표 배지에 공통 사용
 const CATEGORY_COLORS: Record<
   string,
@@ -52,6 +67,10 @@ export function BoardListView({ board, compact = false }: Props) {
   const [categoryFilter, setCategoryFilter] = useState<Set<CategoryKey>>(
     () => new Set(PROCESS_CATEGORIES),
   );
+  // admin 전용 게시글 상태 필터 — 기본 전체 선택
+  const [statusFilter, setStatusFilter] = useState<Set<PostStatusKey>>(
+    () => new Set(POST_STATUS_OPTIONS.map((o) => o.key)),
+  );
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -66,13 +85,15 @@ export function BoardListView({ board, compact = false }: Props) {
   const label = BOARD_LABELS[board];
   const isProcess = board === "process";
 
-  // 카테고리 필터 + 검색 (제목 / 작성자 / 유형 / 카테고리). 클라이언트 사이드.
+  // 카테고리 필터 + (admin) 상태 필터 + 검색 (제목 / 작성자 / 유형 / 카테고리). 클라이언트 사이드.
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
       // 카테고리 필터: category 가 있으면 set 매칭, 없으면 통과 (옛 데이터 호환)
       if (isProcess && p.category && !categoryFilter.has(p.category as CategoryKey)) return false;
+      // admin 상태 필터
+      if (isAdmin && !statusFilter.has(postStatusKey(p))) return false;
       if (!q) return true;
       const haystack = [
         p.title,
@@ -84,12 +105,12 @@ export function BoardListView({ board, compact = false }: Props) {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, categoryFilter, isProcess, query]);
+  }, [posts, categoryFilter, isProcess, isAdmin, statusFilter, query]);
 
   // 필터/검색/페이지 크기 바뀔 때 첫 페이지로 리셋
   useEffect(() => {
     setPage(1);
-  }, [categoryFilter, query, pageSize]);
+  }, [categoryFilter, statusFilter, query, pageSize]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -139,6 +160,11 @@ export function BoardListView({ board, compact = false }: Props) {
 
         {isProcess && (
           <CategoryFilterDropdown selected={categoryFilter} onChange={setCategoryFilter} />
+        )}
+
+        {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 비공개 / 게시됨). */}
+        {isAdmin && (
+          <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
 
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
@@ -432,4 +458,94 @@ function CategoryPill({ category }: { category: string }) {
 
 export function boardSegment(board: BoardType): string {
   return board === "policy" ? "policy" : "process";
+}
+
+/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시 저장 / 비공개 / 게시됨을 골라 볼 때 사용. */
+function PostStatusFilterDropdown({
+  selected,
+  onChange,
+}: {
+  selected: Set<PostStatusKey>;
+  onChange: (next: Set<PostStatusKey>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  function toggle(key: PostStatusKey) {
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onChange(next);
+  }
+
+  function selectAll() {
+    onChange(new Set(POST_STATUS_OPTIONS.map((o) => o.key)));
+  }
+
+  const isAll = selected.size === POST_STATUS_OPTIONS.length;
+  const summary = isAll
+    ? "상태: 전체"
+    : selected.size === 0
+    ? "상태: 없음"
+    : "상태: " + POST_STATUS_OPTIONS.filter((o) => selected.has(o.key)).map((o) => o.label).join(", ");
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-[260px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+      >
+        <span className="truncate">{summary}</span>
+        <ChevronDown size={14} className="shrink-0 text-gray-400" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs font-bold text-gray-700">상태 필터</span>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              전체 선택
+            </button>
+          </div>
+          <ul>
+            {POST_STATUS_OPTIONS.map((o) => {
+              const checked = selected.has(o.key);
+              return (
+                <li key={o.key}>
+                  <label
+                    className={
+                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
+                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
+                    }
+                  >
+                    <span>{o.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(o.key)}
+                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
+                    />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
