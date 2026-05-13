@@ -347,7 +347,6 @@ const APPROVER_SECTION: SectionDef = {
       label: "결재선",
       type: "approver_list",
       placeholder: "결재자 이름 입력 후 Enter (예: 홍길동)",
-      hint: "결재자 이름을 한 명씩 입력 후 Enter 를 눌러 추가하세요. 입력한 순서대로 결재가 진행됩니다.",
     },
   ],
 };
