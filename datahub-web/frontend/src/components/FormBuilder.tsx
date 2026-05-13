@@ -335,7 +335,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         </section>
 
         {schema.sections.map((section, sectionIdx) => {
-          // 풀 와이드 단독 필드 (service_blocks 등) — 표/섹션헤더 없이 렌더
+          // 풀 와이드 단독 필드 (service_blocks) — 내부 표 래퍼 없이 렌더하되,
+          // section.title 이 있으면 다른 섹션과 동일한 스타일의 헤더를 위에 노출.
           if (
             section.fields.length === 1 &&
             section.fields[0].type === "service_blocks"
@@ -343,6 +344,15 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             const f = section.fields[0];
             return (
               <section key={`bare-${sectionIdx}`}>
+                {section.title && (
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="block h-5 w-1 rounded-sm bg-brand" />
+                    <h2 className="text-base font-bold">
+                      {section.title}
+                      {!section.optional && <span className="ml-1 text-brand">*</span>}
+                    </h2>
+                  </div>
+                )}
                 <FieldInput
                   field={f}
                   value={values[f.key]}

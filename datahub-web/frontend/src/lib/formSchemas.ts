@@ -328,7 +328,7 @@ const productivityTool: FormSchema = {
   projectField: "서비스_목록",
   sections: [
     {
-      title: "",
+      title: "신청 정보",
       fields: [
         { key: "서비스_목록", label: "", type: "service_blocks" },
       ],
