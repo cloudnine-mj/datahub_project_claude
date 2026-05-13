@@ -21,8 +21,6 @@ export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justEdited = searchParams?.get("just-edited") === "1";
-  // FormBuilder 저장 직후 진입 시 chevron '승인 완료' 패널 자동 펼침
-  const showProgress = searchParams?.get("show-progress") === "1";
   // 진입 출처 — 브레드크럼 부모를 어디로 표시할지 결정.
   //   from=my    → '내 문서 목록'
   //   from=admin → '거버넌스 요청 관리'
@@ -125,7 +123,6 @@ export default function Page({ params }: { params: { id: string } }) {
         formType={form.form_type}
         status={form.status}
         history={form.approval_history}
-        initialSelectedStep={showProgress ? 2 : null}
         onSelectedStepChange={setSelectedStep}
       />
 
