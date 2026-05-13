@@ -165,18 +165,15 @@ def submit_form(
 def get_form(
     form_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),  # noqa: ARG001 — 로그인 검증용
 ):
+    """신청 상세 조회 — 거버넌스 요청 목록이 누구에게나 노출되므로, 같은 신청서의
+    상세도 로그인된 사용자라면 누구나 read-only 로 볼 수 있도록 개방.
+    수정/삭제/상태 변경 같은 변경 액션은 별도 엔드포인트에서 본인/admin 체크 유지.
+    """
     form = db.query(Form).filter(Form.id == form_id).first()
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
-    # 본인이 신청자거나, 참조자 명단(payload['참조자'])에 포함되거나, admin 인 경우 조회 가능
-    if (
-        form.submitter_id != user.id
-        and user.role != "admin"
-        and not _user_is_participant(form, user)
-    ):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
     return form
 
 
