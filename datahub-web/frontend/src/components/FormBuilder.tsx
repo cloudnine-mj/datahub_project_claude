@@ -9,6 +9,7 @@ import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 import { Breadcrumb } from "./Breadcrumb";
 import { FormPreviewModal, copyPreviewToClipboard } from "./FormPreviewModal";
+import { FormProcessBar } from "./FormProcessBar";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -62,6 +63,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       });
   }, [isEdit]);
 
+  // 진행 바 표시용 — 신규 작성은 'draft', 편집은 로드된 form 의 status 를 그대로.
+  const [loadedStatus, setLoadedStatus] = useState<string>("draft");
+
   // 수정 모드 — 기존 신청 prefill
   useEffect(() => {
     if (!editId) return;
@@ -72,6 +76,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         setSubmitterName(f.submitter_name || "");
         setSubmitterDepartment(f.submitter_department || "");
         setSubmitterEmail(f.submitter_email || "");
+        setLoadedStatus(f.status || "draft");
       })
       .catch((e) => setError((e as Error).message));
   }, [editId]);
@@ -268,6 +273,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             작성 예시
           </button>
         </div>
+
+        <FormProcessBar formType={formType} status={loadedStatus} />
 
         {/* 진행률 안내 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">

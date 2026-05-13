@@ -9,6 +9,7 @@ import { api, type FormDetail, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
+import { FormProcessBar } from "@/components/FormProcessBar";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { approverInitials } from "@/components/FormBuilder";
@@ -112,6 +113,8 @@ export default function Page({ params }: { params: { id: string } }) {
           <Eye size={12} /> 미리보기
         </button>
       </div>
+
+      <FormProcessBar formType={form.form_type} status={form.status} />
 
       <FormStatusPanel
         formId={form.id}
