@@ -119,9 +119,12 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      {/* 거버넌스 요청 관리(from=admin) 진입은 admin 의 검토/승인 화면이라 chevron 진행 바를
-          노출하지 않고 chevron 적용 전 모습 유지. */}
-      {from !== "admin" && (
+      {/* chevron 진행 바 / 진행 상태·이력 패널 노출 정책
+          - from=admin (거버넌스 요청 관리): 검토/승인 화면이라 chevron 미노출.
+              FormStatusPanel 은 admin 액션을 위해 그대로 노출.
+          - from=list  (거버넌스 요청 목록): 순수 read-only 조회. 둘 다 미노출.
+          - 그 외 (from=my, 기본): 둘 다 노출. */}
+      {from !== "admin" && from !== "list" && (
         <FormProcessBar
           formType={form.form_type}
           status={form.status}
@@ -130,14 +133,16 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      <FormStatusPanel
-        formId={form.id}
-        status={form.status}
-        history={form.approval_history}
-        me={me}
-        submitterEmail={form.submitter_email}
-        onChanged={refetch}
-      />
+      {from !== "list" && (
+        <FormStatusPanel
+          formId={form.id}
+          status={form.status}
+          history={form.approval_history}
+          me={me}
+          submitterEmail={form.submitter_email}
+          onChanged={refetch}
+        />
+      )}
 
       <div
         id="form-content"
