@@ -143,14 +143,14 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         )}
       </div>
 
-      {/* 자료실로 돌아가기 — 통합 자료실(/info) 의 정책 탭으로 이동 */}
+      {/* 목록으로 돌아가기 */}
       {post && (
         <div className="mt-4 flex justify-end">
           <Link
-            href="/governance/info?tab=policy"
+            href="/governance/policy"
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
-            <ArrowLeft size={14} /> 데이터 관리 정책 탭
+            <ArrowLeft size={14} /> 데이터 관리 정책
           </Link>
         </div>
       )}

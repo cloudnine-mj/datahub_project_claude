@@ -1,12 +1,12 @@
 "use client";
 
 // Governance 인덱스 — admin 과 비-admin 에 따라 카드 구성/라벨 분기.
-//   admin: 정책/프로세스 안내 + 문서 서식 모음 + 정책/프로세스 게시글 관리 + 거버넌스 요청 관리
-//   non-admin: 정책/프로세스 안내 + 문서 서식 모음 + 내 문서 목록
+//   admin: 데이터 관리 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 정책/프로세스 게시글 관리 + 거버넌스 요청 관리
+//   non-admin: 데이터 관리 정책 + 데이터 제작/활용 요청 프로세스 + 문서 서식 모음 + 내 문서 목록
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, ClipboardList, FileEdit, FolderOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ClipboardList, FileEdit, FolderOpen, ArrowRight, Workflow } from "lucide-react";
 import { api, type Me } from "@/lib/api";
 
 type Card = {
@@ -18,10 +18,16 @@ type Card = {
 
 const COMMON_CARDS: Card[] = [
   {
-    href: "/governance/info",
+    href: "/governance/policy",
     icon: BookOpen,
-    title: "정책 / 프로세스 안내",
-    desc: "데이터 관리 정책과 데이터 제작·요청 프로세스를 한 곳에서 확인합니다.",
+    title: "데이터 관리 정책",
+    desc: "데이터 관리에 필요한 정책을 확인합니다.",
+  },
+  {
+    href: "/governance/process",
+    icon: Workflow,
+    title: "데이터 제작 / 활용 요청 프로세스",
+    desc: "데이터 제작·활용을 위한 프로세스 및 가이드를 확인합니다.",
   },
   {
     href: "/governance/forms",
