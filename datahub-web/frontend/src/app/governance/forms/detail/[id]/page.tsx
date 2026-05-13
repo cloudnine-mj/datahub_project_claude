@@ -204,14 +204,14 @@ export default function Page({ params }: { params: { id: string } }) {
         >
           <Pencil size={12} /> 수정
         </button>
-        {/* 거버넌스 요청 목록(from=list) 진입은 참조자 / 어드민의 공용 열람 컨텍스트.
-            여기서는 본인 문서라도 파괴적 액션을 노출하지 않음 — 삭제는 '내 문서 목록' /
-            '거버넌스 요청 관리' 컨텍스트에서만. */}
-        {from !== "list" && (
+        {/* 상세 페이지의 삭제 버튼은 admin 의 '거버넌스 요청 관리' 진입 시에만 노출.
+            '내 문서 목록' 에서는 행 단위 휴지통 아이콘으로, 그 외 컨텍스트(요청 목록 등)
+            에서는 파괴적 액션을 띄우지 않음. */}
+        {from === "admin" && (
           <DeleteFormButton
             formId={form.id}
             contextLabel={form.project_name}
-            onDeleted={() => router.push(from === "admin" ? "/governance/admin/forms" : "/governance/forms/my")}
+            onDeleted={() => router.push("/governance/admin/forms")}
           />
         )}
         {form.status === "draft" && justEdited && (
