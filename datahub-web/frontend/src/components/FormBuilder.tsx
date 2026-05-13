@@ -121,8 +121,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   async function save(asDraft: boolean, force: boolean = false) {
     setError(null);
 
-    // 수정 모드는 항상 draft 로 저장 — 사용자가 detail 에서 '제출' 버튼으로 명시적으로 재제출
-    const willBeDraft = asDraft || isEdit;
+    // asDraft 플래그 그대로 따름 — 신규/편집 모두 동일하게 동작.
+    //   '임시 저장' 버튼: status='draft'
+    //   '제출' 버튼:      status='submitted'
+    const willBeDraft = asDraft;
 
     // 검증:
     //  - 신규 정식 제출: 누락 시 차단 (blocking)
@@ -451,22 +453,20 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           >
             <Eye size={14} /> 미리보기
           </button>
-          {!isEdit && (
-            <button
-              type="button"
-              onClick={() => save(true)}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              임시 저장
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => save(true)}
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            임시 저장
+          </button>
           <button
             type="submit"
             disabled={submitting}
             className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
           >
-            <Save size={14} /> {submitting ? (isEdit ? "수정 중..." : "제출 중...") : (isEdit ? "수정 저장" : "제출")}
+            <Save size={14} /> {submitting ? "제출 중..." : "제출"}
           </button>
         </div>
       </form>
