@@ -53,7 +53,7 @@ export function BoardListView({ board, compact = false }: Props) {
     () => new Set(PROCESS_CATEGORIES),
   );
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
   useEffect(() => {

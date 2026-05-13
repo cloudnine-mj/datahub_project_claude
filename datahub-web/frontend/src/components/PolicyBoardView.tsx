@@ -33,7 +33,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1); // 1-based
 
   // 중요도 필터 — 기본은 전체 선택

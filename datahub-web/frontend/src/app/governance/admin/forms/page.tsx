@@ -24,7 +24,7 @@ export default function AdminFormsPage() {
     () => new Set(STATUS_OPTIONS.map((s) => s.value)),
   );
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
   const refetch = useCallback(() => {
