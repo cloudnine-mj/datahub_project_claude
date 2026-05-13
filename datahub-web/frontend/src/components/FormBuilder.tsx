@@ -67,9 +67,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   // 진행 바 표시용 — 신규 작성은 'draft', 편집은 로드된 form 의 status 를 그대로.
   const [loadedStatus, setLoadedStatus] = useState<string>("draft");
-  // 진행 바에서 선택된 단계. 1단계('필요성 정의') 선택 시 신청서 양식 폼을 숨김.
+  // 진행 바에서 선택된 단계. 양식 폼은 '신청서 작성' 단계(index 1) 일 때만 노출.
+  // 다른 단계를 명시적으로 선택하면 (필요성 정의 / 승인 완료 / 전자결재 승인 등) 폼은
+  // 숨겨짐. 아무 단계도 선택 안 한 기본 상태에선 폼이 그대로 보임.
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
-  const hideForm = selectedStep === 0;
+  const hideForm = selectedStep !== null && selectedStep !== 1;
 
   // 수정 모드 — 기존 신청 prefill
   useEffect(() => {
