@@ -59,12 +59,12 @@ const NAV: NavItem[] = [
           label: FORM_TYPE_LABELS[t] ?? t,
         })),
       },
+      { href: "/governance/forms/list", label: "거버넌스 요청 목록" },
       {
         href: "/governance/forms/my",
         label: "내 문서 목록",
         adminLabel: "정책 / 프로세스 게시글 관리",
       },
-      { href: "/governance/forms/list", label: "거버넌스 요청 목록" },
       { href: "/governance/admin/forms", label: "거버넌스 요청 관리", adminOnly: true },
     ],
   },
