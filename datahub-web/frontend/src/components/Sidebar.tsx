@@ -4,8 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Database, Brain, Folder, LayoutGrid, ShieldCheck } from "lucide-react";
-import { api, type Me } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { api, type FormType, type Me } from "@/lib/api";
+import { cn, FORM_TYPE_LABELS } from "@/lib/utils";
+
+// 서식 모음 하위 노출용 — formSchemas 에 정의된 7종과 일치하는 순서로 노출
+const FORM_TYPES_FOR_SIDEBAR: FormType[] = [
+  "data_production",
+  "data_purchase",
+  "data_subscription",
+  "product_log_usage",
+  "data_production_plan",
+  "api_usage_plan",
+  "productivity_tool",
+];
 
 // 사이드바 — Datasets / Models / Workspace / Dashboard / Governance.
 // Governance 는 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
@@ -17,6 +28,8 @@ interface NavChild {
   adminOnly?: boolean;
   /** admin 일 때 라벨 오버라이드 — 같은 URL 이지만 admin 컨텍스트의 의미가 다른 페이지용 */
   adminLabel?: string;
+  /** 2단계 하위 항목 — 부모가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
+  subchildren?: { href: string; label: string }[];
 }
 
 interface NavItem {
@@ -37,7 +50,14 @@ const NAV: NavItem[] = [
     icon: ShieldCheck,
     children: [
       { href: "/governance/info", label: "정책 / 프로세스 안내" },
-      { href: "/governance/forms", label: "데이터 거버넌스 문서 서식 모음" },
+      {
+        href: "/governance/forms",
+        label: "데이터 거버넌스 문서 서식 모음",
+        subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => ({
+          href: `/governance/forms/${t}/new`,
+          label: FORM_TYPE_LABELS[t] ?? t,
+        })),
+      },
       {
         href: "/governance/forms/my",
         label: "내 문서 목록",
@@ -120,6 +140,29 @@ export function Sidebar() {
                         >
                           {isAdmin && c.adminLabel ? c.adminLabel : c.label}
                         </Link>
+                        {c.subchildren && c.subchildren.length > 0 && (
+                          <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
+                            {c.subchildren.map((sc) => {
+                              const subActive =
+                                pathname === sc.href || pathname.startsWith(sc.href + "/");
+                              return (
+                                <li key={sc.href}>
+                                  <Link
+                                    href={sc.href}
+                                    className={cn(
+                                      "block rounded-md px-3 py-1 text-[11px] transition",
+                                      subActive
+                                        ? "font-semibold text-brand"
+                                        : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
+                                    )}
+                                  >
+                                    {sc.label}
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
