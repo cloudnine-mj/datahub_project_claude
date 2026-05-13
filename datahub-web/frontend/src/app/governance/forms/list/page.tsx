@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { api, type FormListItem, type FormStatus } from "@/lib/api";
+import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
@@ -19,12 +19,15 @@ const STATUS_OPTIONS = STATUSES.filter((s) => s.value !== "rejected");
 
 export default function GovernanceFormsListPage() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [statusFilter, setStatusFilter] = useState<Set<FormStatus>>(
     () => new Set(STATUS_OPTIONS.map((s) => s.value)),
   );
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
+  // '내 업무만 보기' — 로그인 사용자가 신청자인 신청만 노출
+  const [mineOnly, setMineOnly] = useState(false);
 
   const refetch = useCallback(() => {
     api.listForms({ mine: false }).then(setItems).catch(() => setItems([]));
@@ -32,13 +35,16 @@ export default function GovernanceFormsListPage() {
 
   useEffect(() => {
     refetch();
+    api.me().then(setMe).catch(() => setMe(null));
   }, [refetch]);
 
   const filtered = useMemo(() => {
     if (!items) return null;
     const q = query.trim().toLowerCase();
+    const myName = me?.user.name;
     return items.filter((it) => {
       if (!statusFilter.has(it.status as FormStatus)) return false;
+      if (mineOnly && (!myName || it.submitter_name !== myName)) return false;
       if (!q) return true;
       const statusLabel = STATUSES.find((s) => s.value === it.status)?.label ?? "";
       const haystack = [
@@ -52,11 +58,11 @@ export default function GovernanceFormsListPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [items, statusFilter, query]);
+  }, [items, statusFilter, query, mineOnly, me]);
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, query, pageSize]);
+  }, [statusFilter, query, pageSize, mineOnly]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -97,6 +103,16 @@ export default function GovernanceFormsListPage() {
           />
         </div>
         <StatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
+        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs text-gray-700">
+          <input
+            type="checkbox"
+            checked={mineOnly}
+            onChange={(e) => setMineOnly(e.target.checked)}
+            disabled={!me}
+            className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+          />
+          <span>내 업무만 보기</span>
+        </label>
       </div>
 
       <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
