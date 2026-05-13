@@ -1,13 +1,13 @@
 "use client";
 
 // 화면 7: 새 글 작성 폼 — 모든 게시판 공통 (제목/카테고리/내용 + 첨부).
-// 정책 게시판은 추가로 '중요도(severity)' 칩 선택을 노출 → 표 중요도 컬럼에 반영.
+// 중요도(severity) 입력 UI 는 일단 비활성. 편집 시 기존 값은 그대로 보존돼
+// payload 로 다시 전달되며, 신규 글은 severity=null 로 생성됨.
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { api, type BoardType, type Me, type PostVisibility, type Severity } from "@/lib/api";
 import { boardSegment } from "./BoardListView";
-import { SEVERITIES } from "./SeverityBadge";
 import { DOC_TYPES, PROCESS_CATEGORIES } from "@/lib/utils";
 
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -221,23 +221,6 @@ export function PostNewView({ board }: { board: BoardType }) {
             )}
 
             {isPolicy && (
-              <Field label="중요도" required>
-                <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
-                  {SEVERITIES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setSeverity(s.value)}
-                      className={severityChipCls(s.value, severity === s.value)}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </Field>
-            )}
-
-            {isPolicy && (
               <Field label="태그">
                 <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
               </Field>
@@ -390,7 +373,6 @@ function chipCls(active: boolean) {
   );
 }
 
-/** severity 칩 색상 — SeverityBadge 4단계 (Low/Medium/High/Critical) 와 일관. */
 function VisibilityChip({
   active,
   onClick,
@@ -416,15 +398,6 @@ function VisibilityChip({
       {children}
     </button>
   );
-}
-
-function severityChipCls(kind: Severity, active: boolean) {
-  const base = "rounded px-3 py-1.5 text-xs font-semibold transition ";
-  if (!active) return base + "text-gray-600 hover:bg-gray-100";
-  if (kind === "low") return base + "bg-gray-500 text-white";
-  if (kind === "medium") return base + "bg-blue-500 text-white";
-  if (kind === "high") return base + "bg-amber-500 text-white";
-  return base + "bg-red-500 text-white"; // critical
 }
 
 function Field({

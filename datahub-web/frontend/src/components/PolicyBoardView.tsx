@@ -1,32 +1,22 @@
 "use client";
 
 /**
- * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색 + 중요도 필터.
+ * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색.
  *
- * 컬럼은 항상 전체 표시. 우측 상단 드롭다운은 '중요도(필수/권장/미지정)' 로
- * row 를 필터링.
+ * 중요도(severity) 컬럼/필터는 일단 비활성. 필요해지면 SeverityBadge 와
+ * api.PostListItem.severity 가 그대로 남아있으므로 복원 가능.
  */
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
-import { api, type Me, type PostListItem, type Severity } from "@/lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
+import { api, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DocTypePill } from "./DocTypePill";
-import { SeverityBadge } from "./SeverityBadge";
 import { EmptyState } from "./EmptyState";
 import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
-
-// 중요도 필터 옵션 — 4단계만. severity 가 비어있는 옛 row 는 필터 통과(항상 노출).
-type SeverityFilterKey = Severity;
-const SEVERITY_FILTERS: { key: SeverityFilterKey; label: string }[] = [
-  { key: "low", label: "Low" },
-  { key: "medium", label: "Medium" },
-  { key: "high", label: "High" },
-  { key: "critical", label: "Critical" },
-];
 
 /** compact: 자체 Breadcrumb·페이지 제목·가이드 배너 생략 (상위 컨테이너가 헤더를 제공할 때). */
 export function PolicyBoardView({ compact = false }: { compact?: boolean } = {}) {
@@ -36,11 +26,6 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1); // 1-based
 
-  // 중요도 필터 — 기본은 전체 선택
-  const [severityFilter, setSeverityFilter] = useState<Set<SeverityFilterKey>>(
-    () => new Set(SEVERITY_FILTERS.map((f) => f.key)),
-  );
-
   useEffect(() => {
     api.listPosts("policy").then(setPosts).catch(() => setPosts([]));
     api.me().then(setMe).catch(() => setMe(null));
@@ -49,17 +34,11 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const canWrite = me?.permissions.can_write_policy ?? false;
   const isAdmin = me?.user.role === "admin";
 
-  // 검색 + 중요도 필터 (클라이언트 사이드)
+  // 검색 (클라이언트 사이드)
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
-      // 1) 중요도 필터
-      // severity 가 있으면 필터 매칭 검사, 없으면 통과 (옛 데이터 호환)
-      const sevKey = p.severity as Severity | undefined | null;
-      if (sevKey && !severityFilter.has(sevKey)) return false;
-
-      // 2) 검색
       if (!q) return true;
       // 표에 노출되는 컬럼만 검색 대상 — 관리 번호 / 정책명 / 작성자 / 태그
       const haystack = [
@@ -72,12 +51,12 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, query, severityFilter]);
+  }, [posts, query]);
 
-  // 검색·페이지 크기·필터 바뀔 때 1페이지로 리셋
+  // 검색·페이지 크기 바뀔 때 1페이지로 리셋
   useEffect(() => {
     setPage(1);
-  }, [query, pageSize, severityFilter]);
+  }, [query, pageSize]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -135,8 +114,6 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           />
         </div>
 
-        <SeverityFilterDropdown selected={severityFilter} onChange={setSeverityFilter} />
-
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
         {canWrite && (
           <Link
@@ -158,18 +135,17 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
               <th className="w-32 px-5 py-3">작성자</th>
               <th className="w-32 px-5 py-3">등록일</th>
               <th className="w-32 px-5 py-3">수정일</th>
-              <th className="w-32 px-5 py-3">중요도</th>
               <th className="w-48 px-5 py-3">태그</th>
             </tr>
           </thead>
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
+                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">불러오는 중...</td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
@@ -218,15 +194,6 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
                   <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
                   <td className="px-5 py-3 text-gray-500">{formatDate(p.created_at)}</td>
                   <td className="px-5 py-3 text-gray-500">{formatDate(p.updated_at)}</td>
-                  <td className="px-5 py-3">
-                    {p.severity ? (
-                      <SeverityBadge severity={p.severity} />
-                    ) : (
-                      <span className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-500">
-                        미지정
-                      </span>
-                    )}
-                  </td>
                   <td className="px-5 py-3">
                     {(p.tags ?? []).length > 0 ? (
                       <div className="flex flex-wrap gap-1">
@@ -339,94 +306,3 @@ function Pagination({
   );
 }
 
-/**
- * 중요도 필터 드롭다운 — 체크된 severity 만 row 로 표시.
- * 외부 클릭 자동 닫힘. 전체 체크 시 모든 row 표시 (필터 비활성과 동일).
- */
-function SeverityFilterDropdown({
-  selected,
-  onChange,
-}: {
-  selected: Set<SeverityFilterKey>;
-  onChange: (next: Set<SeverityFilterKey>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
-
-  function toggle(key: SeverityFilterKey) {
-    const next = new Set(selected);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    onChange(next);
-  }
-
-  function selectAll() {
-    onChange(new Set(SEVERITY_FILTERS.map((f) => f.key)));
-  }
-
-  // 버튼 라벨
-  const isAll = selected.size === SEVERITY_FILTERS.length;
-  const summary = isAll
-    ? "중요도: 전체"
-    : "중요도: " + SEVERITY_FILTERS.filter((f) => selected.has(f.key)).map((f) => f.label).join(", ") || "중요도: 없음";
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex max-w-[260px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
-      >
-        <span className="truncate">{summary}</span>
-        <ChevronDown size={14} className="shrink-0 text-gray-400" />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
-          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-bold text-gray-700">중요도 필터</span>
-            <button
-              type="button"
-              onClick={selectAll}
-              className="text-xs font-semibold text-blue-600 hover:underline"
-            >
-              전체 선택
-            </button>
-          </div>
-          <ul>
-            {SEVERITY_FILTERS.map((f) => {
-              const checked = selected.has(f.key);
-              return (
-                <li key={f.key}>
-                  <label
-                    className={
-                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
-                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
-                    }
-                  >
-                    <span>{f.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(f.key)}
-                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
-                    />
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}

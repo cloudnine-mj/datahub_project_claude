@@ -22,7 +22,6 @@ import { ArrowLeft, Lock, Pencil, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { MarkdownView } from "./MarkdownEditor";
-import { SeverityBadge } from "./SeverityBadge";
 import { DeletePostButton } from "./DeletePostButton";
 import { DOC_TYPE_STYLES, formatDate } from "@/lib/utils";
 
@@ -97,7 +96,6 @@ export function PolicyDetailView({ postId }: { postId: number }) {
               </span>
             );
           })()}
-          {post.severity && <SeverityBadge severity={post.severity} size="sm" />}
           {(post.tags ?? []).map((t) => (
             <span key={t} className="rounded bg-gray-100 px-2 py-0.5 text-gray-600">
               #{t}
