@@ -306,7 +306,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         </div>
       </div>
 
-      <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
+      <form id="form-content" onSubmit={onSubmit} className="space-y-8">
         {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly).
             헤더 클릭으로 펼침/접힘. */}
         <section>

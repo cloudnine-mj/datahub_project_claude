@@ -12,12 +12,18 @@ import type { FormType } from "@/lib/api";
 
 type StepState = "done" | "current" | "future" | "rejected";
 
-const STEP_DEFS: Partial<Record<FormType, string[]>> = {
+interface StepDef {
+  label: string;
+  /** 클릭 시 부드럽게 스크롤할 대상 CSS selector. 단계 설명 패널 + 스크롤이 같이 일어남. */
+  scrollTo?: string;
+}
+
+const STEP_DEFS: Partial<Record<FormType, StepDef[]>> = {
   data_purchase: [
-    "필요성 정의 및 예산 확인",
-    "신청서 작성",
-    "전자결재 승인",
-    "승인 완료",
+    { label: "필요성 정의 및 예산 확인" },
+    { label: "신청서 작성", scrollTo: "#form-content" },
+    { label: "전자결재 승인" },
+    { label: "승인 완료" },
   ],
 };
 
@@ -56,9 +62,22 @@ export function FormProcessBar({
   if (!steps) return null;
 
   const states = computeStates(status, steps.length);
-  const labels = steps.map((label, i) =>
-    i === steps.length - 1 && status === "rejected" ? "반려" : label,
+  const labels = steps.map((s, i) =>
+    i === steps.length - 1 && status === "rejected" ? "반려" : s.label,
   );
+
+  function handleClick(i: number) {
+    setSelected((prev) => (prev === i ? null : i));
+    const target = steps?.[i].scrollTo;
+    if (target) {
+      // 패널 토글 직후 DOM 안정화 위해 한 틱 뒤 스크롤
+      setTimeout(() => {
+        document
+          .querySelector(target)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  }
 
   return (
     <div className="my-4">
@@ -71,7 +90,7 @@ export function FormProcessBar({
             isFirst={i === 0}
             isLast={i === labels.length - 1}
             selected={selected === i}
-            onClick={() => setSelected((prev) => (prev === i ? null : i))}
+            onClick={() => handleClick(i)}
           />
         ))}
       </div>

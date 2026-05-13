@@ -125,7 +125,7 @@ export default function Page({ params }: { params: { id: string } }) {
         onChanged={refetch}
       />
 
-      <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div id="form-content" className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4">
         <table className="w-full text-sm">
           <tbody>
             <Row label="신청자 이름">{form.submitter_name}</Row>
