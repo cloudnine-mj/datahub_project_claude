@@ -26,19 +26,16 @@ interface Props {
 
 type CategoryKey = (typeof PROCESS_CATEGORIES)[number];
 
-// admin 게시글 상태 필터 — 임시저장 / 비공개(admin visibility) / 게시됨(public).
+// admin 게시글 상태 필터 — 임시 저장 / 게시됨.
 // PolicyBoardView 와 동일 — 별도 '게시글 관리' 페이지를 대체하기 위해 여기도 노출.
-type PostStatusKey = "draft" | "private" | "published";
+type PostStatusKey = "draft" | "published";
 const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
   { key: "draft", label: "임시 저장" },
-  { key: "private", label: "비공개" },
   { key: "published", label: "게시됨" },
 ];
 
 function postStatusKey(p: PostListItem): PostStatusKey {
-  if (p.is_draft) return "draft";
-  if (p.visibility === "admin") return "private";
-  return "published";
+  return p.is_draft ? "draft" : "published";
 }
 
 // 카테고리별 색 — 칩(active)과 표 배지에 공통 사용
@@ -163,7 +160,7 @@ export function BoardListView({ board, compact = false }: Props) {
           <CategoryFilterDropdown selected={categoryFilter} onChange={setCategoryFilter} />
         )}
 
-        {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 비공개 / 게시됨). */}
+        {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 게시됨). */}
         {isAdmin && (
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
@@ -228,12 +225,8 @@ export function BoardListView({ board, compact = false }: Props) {
                         )}
                         {p.is_draft && (
                           <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
-                            임시저장
+                            임시 저장
                           </span>
-                        )}
-                        {/* 공개 범위 표기 — admin 만 노출, draft 가 아닐 때 */}
-                        {isAdmin && !p.is_draft && (
-                          <VisibilityPill visibility={p.visibility} />
                         )}
                         {p.doc_type && <DocTypePill docType={p.doc_type} />}
                         <span>{p.title}</span>
@@ -283,22 +276,6 @@ export function BoardListView({ board, compact = false }: Props) {
         </div>
       )}
     </div>
-  );
-}
-
-/** 공개 범위 표기 — admin 전용 리스트에서 각 row 가 공개/비공개 인지 한눈에 구분. */
-function VisibilityPill({ visibility }: { visibility: "public" | "admin" }) {
-  if (visibility === "admin") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-1.5 py-0 text-[10px] font-semibold text-gray-700">
-        비공개
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-700">
-      공개
-    </span>
   );
 }
 
@@ -478,7 +455,7 @@ export function boardSegment(board: BoardType): string {
   return board === "policy" ? "policy" : "process";
 }
 
-/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시 저장 / 비공개 / 게시됨을 골라 볼 때 사용. */
+/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시 저장 / 게시됨을 골라 볼 때 사용. */
 function PostStatusFilterDropdown({
   selected,
   onChange,

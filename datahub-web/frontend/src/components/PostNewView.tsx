@@ -228,25 +228,6 @@ export function PostNewView({ board }: { board: BoardType }) {
               <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
             </Field>
 
-            <Field label="공개 범위" required>
-              <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
-                <VisibilityChip
-                  active={visibility === "public"}
-                  onClick={() => setVisibility("public")}
-                  tone="public"
-                >
-                  공개
-                </VisibilityChip>
-                <VisibilityChip
-                  active={visibility === "admin"}
-                  onClick={() => setVisibility("admin")}
-                  tone="admin"
-                >
-                  비공개 (관리자 전용)
-                </VisibilityChip>
-              </div>
-            </Field>
-
             <Field label="내용" required hint="마크다운 지원">
               <textarea
                 value={content}
@@ -372,33 +353,6 @@ function chipCls(active: boolean) {
   return (
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
-  );
-}
-
-function VisibilityChip({
-  active,
-  onClick,
-  tone,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  tone: "public" | "admin";
-  children: React.ReactNode;
-}) {
-  const activeCls =
-    tone === "public" ? "bg-emerald-500 text-white" : "bg-gray-800 text-white";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded px-3 py-1.5 text-xs font-semibold transition " +
-        (active ? activeCls : "text-gray-600 hover:bg-gray-100")
-      }
-    >
-      {children}
-    </button>
   );
 }
 

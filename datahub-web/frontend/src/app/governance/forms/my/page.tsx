@@ -27,21 +27,18 @@ type MyPost = PostListItem & { board: BoardType };
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
-type PostStatusKey = "draft" | "private" | "published";
+type PostStatusKey = "draft" | "published";
 
 const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
-  { key: "draft", label: "임시저장" },
-  { key: "private", label: "비공개" },
+  { key: "draft", label: "임시 저장" },
   { key: "published", label: "게시됨" },
 ];
 
 function postStatusKey(p: MyPost): PostStatusKey {
-  if (p.is_draft) return "draft";
-  if (p.visibility === "admin") return "private";
-  return "published";
+  return p.is_draft ? "draft" : "published";
 }
 
-/** 게시글 상태 (임시저장 / 비공개 / 게시됨) 를 검색 매칭용 문자열로. */
+/** 게시글 상태 (임시 저장 / 게시됨) 를 검색 매칭용 문자열로. */
 function postStatusLabel(p: MyPost): string {
   return POST_STATUS_OPTIONS.find((o) => o.key === postStatusKey(p))?.label ?? "";
 }
@@ -237,7 +234,7 @@ function AdminPostsView() {
   );
 }
 
-/** 게시글 상태 다중 선택 드롭다운 — 임시저장 / 비공개 / 게시됨 체크박스. */
+/** 게시글 상태 다중 선택 드롭다운 — 임시 저장 / 게시됨 체크박스. */
 function PostStatusFilterDropdown({
   selected,
   onChange,
@@ -392,14 +389,7 @@ function PostStatusBadge({ post }: { post: MyPost }) {
   if (post.is_draft) {
     return (
       <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-        임시저장
-      </span>
-    );
-  }
-  if (post.visibility === "admin") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-        비공개
+        임시 저장
       </span>
     );
   }

@@ -3,7 +3,7 @@
 // 게시글 상세 — 화면 캡처에는 명시적 디자인 없으나 자연스러운 read-only 뷰.
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, EyeOff, Pencil, Pin, PinOff } from "lucide-react";
+import { ArrowLeft, Pencil, Pin, PinOff } from "lucide-react";
 import { api, type BoardType, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DeletePostButton } from "./DeletePostButton";
@@ -99,12 +99,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: nu
             )}
             {post.is_draft && (
               <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                임시저장
-              </span>
-            )}
-            {!post.is_draft && post.visibility === "admin" && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                <EyeOff size={10} /> 비공개
+                임시 저장
               </span>
             )}
             {post.doc_type && (() => {

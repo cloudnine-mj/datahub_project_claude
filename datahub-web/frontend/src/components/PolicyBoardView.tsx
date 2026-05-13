@@ -3,12 +3,11 @@
 /**
  * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색.
  *
- * admin 은 임시저장 / 비공개 게시글까지 모두 노출되며, 우측 상단의
- * 상태 필터 드롭다운으로 임시저장 / 비공개 / 게시됨을 골라볼 수 있음
- * (별도의 '게시글 관리' 페이지 대체).
+ * admin 은 임시 저장 게시글까지 노출되며, 우측 상단의 상태 필터 드롭다운으로
+ * 임시 저장 / 게시됨을 골라볼 수 있음 (별도의 '게시글 관리' 페이지 대체).
  *
- * 중요도(severity) 컬럼/필터는 일단 비활성. 필요해지면 SeverityBadge 와
- * api.PostListItem.severity 가 그대로 남아있으므로 복원 가능.
+ * 공개 범위(visibility), 중요도(severity) UI 는 일단 비활성. 데이터 필드는
+ * api.PostListItem 에 남아 있어 복원 가능.
  */
 
 import Link from "next/link";
@@ -22,18 +21,15 @@ import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
-// admin 게시글 상태 필터 — 임시저장 / 비공개(admin visibility) / 게시됨(public).
-type PostStatusKey = "draft" | "private" | "published";
+// admin 게시글 상태 필터 — 임시 저장 / 게시됨.
+type PostStatusKey = "draft" | "published";
 const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
   { key: "draft", label: "임시 저장" },
-  { key: "private", label: "비공개" },
   { key: "published", label: "게시됨" },
 ];
 
 function postStatusKey(p: PostListItem): PostStatusKey {
-  if (p.is_draft) return "draft";
-  if (p.visibility === "admin") return "private";
-  return "published";
+  return p.is_draft ? "draft" : "published";
 }
 
 /** compact: 자체 Breadcrumb·페이지 제목·가이드 배너 생략 (상위 컨테이너가 헤더를 제공할 때). */
@@ -137,7 +133,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           />
         </div>
 
-        {/* 게시글 상태 필터 — admin 만 노출 (임시저장/비공개/게시됨). */}
+        {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 게시됨). */}
         {isAdmin && (
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
@@ -208,10 +204,6 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
                           임시 저장
                         </span>
                       )}
-                      {/* 공개 범위 표기 — admin 만 노출, draft 가 아닐 때 */}
-                      {isAdmin && !p.is_draft && (
-                        <VisibilityPill visibility={p.visibility} />
-                      )}
                       {p.doc_type && <DocTypePill docType={p.doc_type} />}
                       <span>{p.title}</span>
                     </Link>
@@ -253,22 +245,6 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
         </div>
       )}
     </div>
-  );
-}
-
-/** 공개 범위 표기 — admin 전용 리스트에서 각 row 가 공개/비공개 인지 한눈에 구분. */
-function VisibilityPill({ visibility }: { visibility: "public" | "admin" }) {
-  if (visibility === "admin") {
-    return (
-      <span className="inline-flex items-center rounded-full border border-gray-300 bg-gray-100 px-1.5 py-0 text-[10px] font-semibold text-gray-700">
-        비공개
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-700">
-      공개
-    </span>
   );
 }
 
@@ -334,7 +310,7 @@ function Pagination({
   );
 }
 
-/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시저장 / 비공개 / 게시됨을 골라 볼 때 사용. */
+/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시 저장 / 게시됨을 골라 볼 때 사용. */
 function PostStatusFilterDropdown({
   selected,
   onChange,
