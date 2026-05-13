@@ -79,6 +79,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 작성 예시 모달
   const [exampleOpen, setExampleOpen] = useState(false);
 
+  // 신청자 정보 섹션 토글 — 기본 펼침. 한 번 닫아두면 같은 신청 작성 동안만 유지.
+  const [submitterOpen, setSubmitterOpen] = useState(true);
+
   // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
   // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
   // (변수명 'progress' 는 파일 업로드 메시지 useState 와 충돌하므로 'completion' 사용)
@@ -287,21 +290,35 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       </div>
 
       <form id="form-builder" onSubmit={onSubmit} className="space-y-8">
-        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly) */}
+        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly).
+            헤더 클릭으로 펼침/접힘. */}
         <section>
-          <div className="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSubmitterOpen((v) => !v)}
+            aria-expanded={submitterOpen}
+            className="mb-3 flex w-full items-center gap-2 text-left"
+          >
             <span className="block h-5 w-1 rounded-sm bg-brand" />
             <h2 className="text-base font-bold">신청자 정보</h2>
-          </div>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-            <table className="w-full text-sm">
-              <tbody>
-                <SubmitterInputRow label="신청자 이름" value={submitterName} />
-                <SubmitterInputRow label="소속" value={submitterDepartment} />
-                <SubmitterInputRow label="이메일" value={submitterEmail} type="email" />
-              </tbody>
-            </table>
-          </div>
+            <ChevronDown
+              size={16}
+              className={
+                "text-gray-400 transition-transform " + (submitterOpen ? "" : "-rotate-90")
+              }
+            />
+          </button>
+          {submitterOpen && (
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <table className="w-full text-sm">
+                <tbody>
+                  <SubmitterInputRow label="신청자 이름" value={submitterName} />
+                  <SubmitterInputRow label="소속" value={submitterDepartment} />
+                  <SubmitterInputRow label="이메일" value={submitterEmail} type="email" />
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {schema.sections.map((section, sectionIdx) => {
