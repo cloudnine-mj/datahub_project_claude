@@ -1,38 +1,12 @@
-"use client";
+// 정책 / 프로세스 안내 — '데이터 관리 정책' + '데이터 제작 / 활용 요청 프로세스' 를 한 페이지에 위/아래로 쌓아 노출.
+// 두 보드의 데이터 모델은 분리 유지 (정책: 중요도·태그 / 프로세스: 카테고리·유형). 각각 compact 모드로 임베드.
 
-/**
- * 정책 / 프로세스 안내 — '데이터 관리 정책' + '데이터 제작 / 활용 요청 프로세스' 통합 진입점.
- *
- * 이 페이지는 데이터를 통합하지 않고 진입점만 통합한다. 탭 전환에 따라
- * 기존 PolicyBoardView / BoardListView 를 compact 모드로 재사용 — 각 도메인의
- * 고유 메타데이터(중요도·태그 vs 카테고리·유형)는 그대로 보존.
- *
- * URL 동기화: ?tab=policy|process (기본 policy). 탭 변경 시 history 에 푸시.
- */
-
-import { useRouter, useSearchParams } from "next/navigation";
 import { Info } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { BoardListView } from "@/components/BoardListView";
 import { PolicyBoardView } from "@/components/PolicyBoardView";
 
-type Tab = "policy" | "process";
-
-const TABS: { key: Tab; label: string; href: string }[] = [
-  { key: "policy", label: "데이터 관리 정책", href: "/governance/info?tab=policy" },
-  { key: "process", label: "데이터 제작 / 활용 요청 프로세스", href: "/governance/info?tab=process" },
-];
-
 export default function GovernanceInfoPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tabParam = searchParams?.get("tab");
-  const active: Tab = tabParam === "process" ? "process" : "policy";
-
-  function switchTab(t: Tab) {
-    router.push(`/governance/info?tab=${t}`);
-  }
-
   return (
     <div>
       <Breadcrumb
@@ -53,32 +27,15 @@ export default function GovernanceInfoPage() {
         </div>
       </div>
 
-      {/* 탭 — 단일 클릭 영역. Link 가 아니라 button 으로 history.push 만 사용해 깜빡임 최소화. */}
-      <div className="mt-6 flex items-center gap-1 border-b border-gray-200">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => switchTab(t.key)}
-            className={
-              "relative -mb-px px-4 py-2.5 text-sm font-semibold transition " +
-              (active === t.key
-                ? "border-b-2 border-brand text-brand"
-                : "border-b-2 border-transparent text-gray-500 hover:text-gray-800")
-            }
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <section className="mt-8">
+        <h2 className="mb-3 text-xl font-bold tracking-tight">데이터 관리 정책</h2>
+        <PolicyBoardView compact />
+      </section>
 
-      <div className="mt-6">
-        {active === "policy" ? (
-          <PolicyBoardView compact />
-        ) : (
-          <BoardListView board="process" compact />
-        )}
-      </div>
+      <section className="mt-12">
+        <h2 className="mb-3 text-xl font-bold tracking-tight">데이터 제작 / 활용 요청 프로세스</h2>
+        <BoardListView board="process" compact />
+      </section>
     </div>
   );
 }
