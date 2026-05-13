@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ChevronDown, Calendar, Eye, Save, Upload, X } from "lucide-react";
-import { api, type FormType } from "@/lib/api";
+import { api, type ApprovalEntry, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 import { copyPreviewToClipboard, derivePreviewProjectName } from "@/lib/formPreview";
@@ -67,6 +67,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   // 진행 바 표시용 — 신규 작성은 'draft', 편집은 로드된 form 의 status 를 그대로.
   const [loadedStatus, setLoadedStatus] = useState<string>("draft");
+  // chevron '승인 완료' 패널의 진행 이력에 표시할 데이터. 편집 모드에서 form 로드 시 채움.
+  const [loadedHistory, setLoadedHistory] = useState<ApprovalEntry[] | null>(null);
   // 진행 바에서 선택된 단계. 양식 폼은 '신청서 작성' 단계(index 1) 일 때만 노출.
   // 다른 단계를 명시적으로 선택하면 (필요성 정의 / 승인 완료 / 전자결재 승인 등) 폼은
   // 숨겨짐. 아무 단계도 선택 안 한 기본 상태에선 폼이 그대로 보임.
@@ -84,6 +86,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         setSubmitterDepartment(f.submitter_department || "");
         setSubmitterEmail(f.submitter_email || "");
         setLoadedStatus(f.status || "draft");
+        setLoadedHistory(f.approval_history ?? null);
       })
       .catch((e) => setError((e as Error).message));
   }, [editId]);
@@ -245,6 +248,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         <FormProcessBar
           formType={formType}
           status={loadedStatus}
+          history={loadedHistory}
           onSelectedStepChange={setSelectedStep}
         />
       </div>
