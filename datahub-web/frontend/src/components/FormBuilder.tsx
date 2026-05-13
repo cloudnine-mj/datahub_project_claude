@@ -1,7 +1,7 @@
 "use client";
 
 // 화면 10: 신청 작성 폼 — schema 기반 자동 렌더링.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ChevronDown, Calendar, Eye, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
@@ -94,38 +94,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
   // 필요할 때만 펼쳐 확인.
   const [submitterOpen, setSubmitterOpen] = useState(false);
-
-  // 진행률 계산 — schema 섹션 / 필드 기준.
-  // 신청자 정보는 SSO 로 자동 채워지고 기본 접힘 상태라 카운트에서 제외 (사용자가
-  // 실제로 입력해야 하는 부분만 % 에 반영). 파일 첨부도 마찬가지로 제외.
-  // (변수명 'progress' 는 파일 업로드 메시지 useState 와 충돌하므로 'completion' 사용)
-  const completion = useMemo(() => {
-    const allFields = schema.sections.flatMap((s) => s.fields);
-    const filledSchemaFields = allFields.filter((f) => {
-      const v = values[f.key];
-      if (v === undefined || v === null) return false;
-      if (typeof v === "string") return v.trim().length > 0;
-      if (typeof v === "boolean") return v === true;
-      if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().length > 0);
-      if (typeof v === "object") return Object.values(v).some((x) => typeof x === "string" && x.trim().length > 0);
-      return true;
-    }).length;
-
-    const total = allFields.length;
-    const filled = filledSchemaFields;
-    const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
-
-    const totalSections = schema.sections.length;
-    const startedSections = schema.sections.filter((s) => s.fields.some((f) => {
-      const v = values[f.key];
-      if (v === undefined || v === null) return false;
-      if (typeof v === "string") return v.trim().length > 0;
-      if (typeof v === "boolean") return v === true;
-      return true;
-    })).length;
-
-    return { filled, total, percent, startedSections, totalSections };
-  }, [values, schema]);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
@@ -282,35 +250,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           status={loadedStatus}
           onSelectedStepChange={setSelectedStep}
         />
-
-        {/* 진행률 안내 */}
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-            <div className="inline-flex items-center gap-1.5 text-gray-600">
-              Step{" "}
-              <strong className="font-semibold text-gray-800">
-                {completion.startedSections} / {completion.totalSections}
-              </strong>
-              <span className="text-gray-400">진행 중</span>
-            </div>
-            <span className="hidden text-gray-300 sm:inline">·</span>
-            <div className="text-gray-600">
-              <strong className="font-semibold text-gray-800">{completion.filled}</strong>
-              <span className="text-gray-400"> / {completion.total} 필드</span>
-            </div>
-          </div>
-
-          {/* progress bar */}
-          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${completion.percent}%` }}
-            />
-          </div>
-          <div className="mt-1 text-right text-[11px] font-semibold text-blue-600">
-            {completion.percent}% 완료
-          </div>
-        </div>
       </div>
 
       <form
