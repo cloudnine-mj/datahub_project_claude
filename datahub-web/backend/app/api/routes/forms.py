@@ -47,6 +47,29 @@ router = APIRouter(prefix="/forms", tags=["forms"])
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50MB (UI hint 와 일치)
 
 
+def _user_is_participant(form: Form, user: User) -> bool:
+    """form.participants 안의 이름과 user 가 동일인인지 판정.
+
+    사용자가 참조자 입력란에 'siu' 같은 짧은 식별자를 적을 수도 있고
+    'Siu (datahub-storage)' 같이 풀네임을 적을 수도 있어 단순 이름 비교는
+    매칭이 자주 새는 편. 이메일 / 이메일 로컬파트도 후보에 넣어 한 쪽에
+    포함되면 동일인으로 판정 (대소문자 무시).
+    """
+    if not form.participants:
+        return False
+    local = user.email.split("@", 1)[0] if user.email else ""
+    candidates = {
+        user.name.strip().lower(),
+        (user.email or "").strip().lower(),
+        local.strip().lower(),
+    }
+    candidates.discard("")
+    for p in form.participants:
+        if p.strip().lower() in candidates:
+            return True
+    return False
+
+
 def _next_request_no(db: Session) -> str:
     """REQ-YYYY-NNNNN — 연도별 카운터.
 
@@ -139,11 +162,10 @@ def get_form(
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
     # 본인이 신청자거나, 참조자 명단(payload['참조자'])에 포함되거나, admin 인 경우 조회 가능
-    is_participant = user.name in form.participants
     if (
         form.submitter_id != user.id
         and user.role != "admin"
-        and not is_participant
+        and not _user_is_participant(form, user)
     ):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="조회 권한이 없습니다.")
     return form

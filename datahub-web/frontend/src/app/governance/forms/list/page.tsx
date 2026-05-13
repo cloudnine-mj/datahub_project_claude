@@ -38,17 +38,29 @@ export default function GovernanceFormsListPage() {
     api.me().then(setMe).catch(() => setMe(null));
   }, [refetch]);
 
+  // 로그인 사용자의 식별자 후보 (이름 / 이메일 / 이메일 로컬파트) — 소문자 정규화.
+  // 참조자에 'siu' 처럼 짧은 식별자가 적힐 수도, 'Siu (datahub-storage)' 처럼 풀네임이
+  // 적힐 수도 있어 한 쪽이라도 일치하면 본인으로 판정.
+  const myIdentifiers = useMemo(() => {
+    if (!me) return null;
+    const norm = (s: string) => s.trim().toLowerCase();
+    const local = me.user.email.split("@")[0] ?? "";
+    const set = new Set<string>([norm(me.user.name), norm(me.user.email), norm(local)]);
+    set.delete("");
+    return set;
+  }, [me]);
+
   const filtered = useMemo(() => {
     if (!items) return null;
     const q = query.trim().toLowerCase();
-    const myName = me?.user.name;
     return items.filter((it) => {
       if (!statusFilter.has(it.status as FormStatus)) return false;
       if (mineOnly) {
-        // 내가 신청자거나, 참조자 명단에 포함되어 있어야 노출
-        if (!myName) return false;
-        const isMine = it.submitter_name === myName;
-        const isParticipant = (it.participants || []).includes(myName);
+        if (!myIdentifiers) return false;
+        const isMine = myIdentifiers.has(it.submitter_name.trim().toLowerCase());
+        const isParticipant = (it.participants || []).some((p) =>
+          myIdentifiers.has(p.trim().toLowerCase()),
+        );
         if (!isMine && !isParticipant) return false;
       }
       if (!q) return true;
@@ -64,7 +76,7 @@ export default function GovernanceFormsListPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [items, statusFilter, query, mineOnly, me]);
+  }, [items, statusFilter, query, mineOnly, myIdentifiers]);
 
   useEffect(() => {
     setPage(1);
