@@ -54,21 +54,32 @@ const NAV: NavItem[] = [
     label: "Governance",
     icon: ShieldCheck,
     children: [
-      { href: "/governance/policy", label: "데이터 거버넌스 정책" },
-      { href: "/governance/process", label: "데이터 제작 / 활용 요청 프로세스" },
+      // 활동 단위 그룹: 거버넌스 문서 → 신청서 작성 → 요청 현황 → (admin) 관리.
+      // 그룹 헤더(group: true) 는 클릭 불가 텍스트로 노출, subchildren 만 실제 링크.
+      {
+        label: "거버넌스 문서",
+        group: true,
+        subchildren: [
+          { href: "/governance/policy", label: "데이터 거버넌스 정책" },
+          { href: "/governance/process", label: "프로세스" },
+          { href: "/governance/guideline", label: "가이드라인 / 매뉴얼" },
+        ],
+      },
       {
         href: "/governance/forms",
-        label: "데이터 거버넌스 문서 서식 모음",
+        label: "신청서 작성",
         subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => ({
           href: `/governance/forms/${t}/new`,
           label: FORM_TYPE_LABELS[t] ?? t,
         })),
       },
-      { href: "/governance/forms/list", label: "거버넌스 요청 목록" },
       {
-        href: "/governance/forms/my",
-        label: "내 문서 목록",
-        userOnly: true,
+        label: "요청 현황",
+        group: true,
+        subchildren: [
+          { href: "/governance/forms/list", label: "거버넌스 요청 목록" },
+          { href: "/governance/forms/my", label: "내 문서 목록" },
+        ],
       },
       {
         label: "관리 페이지",
