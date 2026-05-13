@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
+/** 이름에서 아바타용 이니셜 — 영문 두 단어면 각 첫 글자, 그 외엔 앞 1~2자. */
+export function approverInitials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  if (tokens.length >= 2) {
+    return (tokens[0][0] + tokens[tokens.length - 1][0]).toUpperCase();
+  }
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
 /**
  * 백엔드는 datetime.utcnow() 로 naive UTC 를 저장하고 ISO 문자열로 직렬화하는데
  * tz 정보가 없는 ISO 문자열은 브라우저가 '로컬 시각' 으로 해석해 9시간(KST) 어긋남.

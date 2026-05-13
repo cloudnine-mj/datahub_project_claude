@@ -7,8 +7,10 @@ import { AlertCircle, ChevronDown, Calendar, Eye, Save, Upload, X } from "lucide
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
+import { copyPreviewToClipboard, derivePreviewProjectName } from "@/lib/formPreview";
+import { approverInitials } from "@/lib/utils";
 import { Breadcrumb } from "./Breadcrumb";
-import { FormPreviewModal, copyPreviewToClipboard } from "./FormPreviewModal";
+import { FormPreviewModal } from "./FormPreviewModal";
 import { FormProcessBar } from "./FormProcessBar";
 
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -1419,30 +1421,6 @@ function ApproverListField({
       />
     </div>
   );
-}
-
-/** 미리보기 헤더용 프로젝트명 — schema.projectField 가 service_blocks 같은 배열이면
- *  첫 항목의 service_name 을 꺼냄. 비어있으면 빈 문자열 (모달은 '신청종류' 만 표시). */
-export function derivePreviewProjectName(raw: unknown): string {
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object" && raw[0]) {
-    const name = (raw[0] as Record<string, unknown>).service_name;
-    if (typeof name === "string" && name.trim()) return name.trim();
-    return "";
-  }
-  if (typeof raw === "string") return raw.trim();
-  if (raw == null) return "";
-  return String(raw);
-}
-
-/** 이름에서 아바타용 이니셜 — 영문 두 단어면 각 첫 글자, 그 외엔 앞 1~2자. */
-export function approverInitials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  const tokens = trimmed.split(/\s+/).filter(Boolean);
-  if (tokens.length >= 2) {
-    return (tokens[0][0] + tokens[tokens.length - 1][0]).toUpperCase();
-  }
-  return trimmed.slice(0, 2).toUpperCase();
 }
 
 /** "예상 비용" 문자열에서 숫자 부분을 추출해 인원 수와 곱한 뒤 통화 기호와 함께 포맷. */

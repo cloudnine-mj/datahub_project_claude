@@ -105,3 +105,32 @@ export function buildPreviewPlainText(d: PreviewData): string {
   }
   return rows.join("\n");
 }
+
+/** 미리보기 헤더용 프로젝트명 — schema.projectField 가 service_blocks 같은 배열이면
+ *  첫 항목의 service_name 을 꺼냄. 비어있으면 빈 문자열. */
+export function derivePreviewProjectName(raw: unknown): string {
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object" && raw[0]) {
+    const name = (raw[0] as Record<string, unknown>).service_name;
+    if (typeof name === "string" && name.trim()) return name.trim();
+    return "";
+  }
+  if (typeof raw === "string") return raw.trim();
+  if (raw == null) return "";
+  return String(raw);
+}
+
+/** 클립보드 복사 헬퍼 — HTML + plain text 둘 다 넣고, ClipboardItem 미지원 환경은 text fallback. */
+export async function copyPreviewToClipboard(data: PreviewData): Promise<void> {
+  const html = buildPreviewHtml(data);
+  const text = buildPreviewPlainText(data);
+  if (typeof ClipboardItem !== "undefined") {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" }),
+      }),
+    ]);
+    return;
+  }
+  await navigator.clipboard.writeText(text);
+}

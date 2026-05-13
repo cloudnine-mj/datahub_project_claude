@@ -5,11 +5,7 @@
 // HTML + plain text 를 클립보드에 함께 넣음.
 
 import { X } from "lucide-react";
-import {
-  buildPreviewHtml,
-  buildPreviewPlainText,
-  type PreviewData,
-} from "@/lib/formPreview";
+import { buildPreviewHtml, type PreviewData } from "@/lib/formPreview";
 
 export function FormPreviewModal({
   data,
@@ -73,20 +69,4 @@ export function FormPreviewModal({
       </div>
     </div>
   );
-}
-
-/** 클립보드 복사 헬퍼 — HTML + plain text 둘 다 넣고, ClipboardItem 미지원 환경은 text fallback. */
-export async function copyPreviewToClipboard(data: PreviewData): Promise<void> {
-  const html = buildPreviewHtml(data);
-  const text = buildPreviewPlainText(data);
-  if (typeof ClipboardItem !== "undefined") {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": new Blob([html], { type: "text/html" }),
-        "text/plain": new Blob([text], { type: "text/plain" }),
-      }),
-    ]);
-    return;
-  }
-  await navigator.clipboard.writeText(text);
 }

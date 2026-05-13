@@ -12,9 +12,9 @@ import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FormProcessBar } from "@/components/FormProcessBar";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
-import { approverInitials } from "@/components/FormBuilder";
-import { FormPreviewModal, copyPreviewToClipboard } from "@/components/FormPreviewModal";
-import type { PreviewData } from "@/lib/formPreview";
+import { approverInitials } from "@/lib/utils";
+import { FormPreviewModal } from "@/components/FormPreviewModal";
+import { copyPreviewToClipboard, type PreviewData } from "@/lib/formPreview";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 
 export default function Page({ params }: { params: { id: string } }) {
