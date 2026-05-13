@@ -195,15 +195,14 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       // Next.js Router Cache 무효화 — '내 문서 목록' 같은 다른 페이지의 캐시된 상태를 다음 진입 시 다시 fetch 시킴.
       router.refresh();
 
-      if (isEdit) {
-        // 수정 저장 후 detail 로 — just-edited 플래그로 detail 의 '제출' 버튼 노출 트리거
-        router.push(`/governance/forms/detail/${result.id}${from ? `?from=${from}&` : "?"}just-edited=1`);
-      } else if (asDraft) {
-        // 신규 임시저장 → 바로 내 문서 목록으로. detail 은 어차피 거기서 수정 가능.
-        router.push(`/governance/forms/my`);
-      } else {
-        router.push(`/governance/forms/submitted?id=${result.id}`);
-      }
+      // 저장/제출 후 항상 신청 상세 페이지로 이동 — chevron 진행 바와 '승인 완료'
+      // 패널에서 방금 저장한 내역(상태 변화 + 진행 이력) 을 즉시 확인할 수 있도록.
+      // ?show-progress=1 로 detail 페이지가 '승인 완료' chevron 을 자동 펼침.
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      params.set("show-progress", "1");
+      if (isEdit) params.set("just-edited", "1");
+      router.push(`/governance/forms/detail/${result.id}?${params.toString()}`);
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);

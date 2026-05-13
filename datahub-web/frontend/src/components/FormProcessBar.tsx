@@ -6,7 +6,7 @@
 // 달라 formType 분기로 정의를 따로 둠. 다른 양식으로 확장 시 STEP_DEFS 와
 // STEP_GUIDES 양쪽에 추가.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, MessageSquare, X } from "lucide-react";
 import type { ApprovalEntry, FormType } from "@/lib/api";
 import { parseUtc } from "@/lib/utils";
@@ -57,18 +57,28 @@ export function FormProcessBar({
   formType,
   status,
   history,
+  initialSelectedStep,
   onSelectedStepChange,
 }: {
   formType: FormType;
   status: string;
   /** showsProgress 단계 패널에서 진행 이력을 노출하기 위한 입력 (없으면 이력은 안 보임). */
   history?: ApprovalEntry[] | null;
+  /** 마운트 시 자동으로 펼칠 step 인덱스 — FormBuilder 저장 직후 detail 진입 등에서 사용 */
+  initialSelectedStep?: number | null;
   /** 선택된 step 변화를 부모에 알림 — 부모는 step 에 따라 다른 영역을 숨기거나 강조할 수 있음. */
   onSelectedStepChange?: (step: number | null) => void;
 }) {
   const steps = STEP_DEFS[formType];
   const guides = STEP_GUIDES[formType];
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(initialSelectedStep ?? null);
+  // 진입 직후 한 번만 부모에 동기화 (initial 값이 있는 경우)
+  useEffect(() => {
+    if (initialSelectedStep !== undefined && initialSelectedStep !== null) {
+      onSelectedStepChange?.(initialSelectedStep);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (!steps) return null;
 
   function updateSelected(next: number | null) {
