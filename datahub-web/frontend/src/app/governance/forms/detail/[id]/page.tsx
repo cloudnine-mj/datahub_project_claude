@@ -30,6 +30,9 @@ export default function Page({ params }: { params: { id: string } }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // 진행 바에서 선택된 단계 — 1단계('필요성 정의') 선택 시 신청서 데이터 표를 숨김.
+  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const hideForm = selectedStep === 0;
   const [missingField, setMissingField] = useState<string | null>(null);
   // 미리보기 모달 — 전자결재 에디터에 붙여넣을 HTML 표를 생성해 보여줌
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -114,7 +117,11 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      <FormProcessBar formType={form.form_type} status={form.status} />
+      <FormProcessBar
+        formType={form.form_type}
+        status={form.status}
+        onSelectedStepChange={setSelectedStep}
+      />
 
       <FormStatusPanel
         formId={form.id}
@@ -125,7 +132,10 @@ export default function Page({ params }: { params: { id: string } }) {
         onChanged={refetch}
       />
 
-      <div id="form-content" className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4">
+      <div
+        id="form-content"
+        className={`mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4 ${hideForm ? "hidden" : ""}`}
+      >
         <table className="w-full text-sm">
           <tbody>
             <Row label="신청자 이름">{form.submitter_name}</Row>

@@ -65,6 +65,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   // 진행 바 표시용 — 신규 작성은 'draft', 편집은 로드된 form 의 status 를 그대로.
   const [loadedStatus, setLoadedStatus] = useState<string>("draft");
+  // 진행 바에서 선택된 단계. 1단계('필요성 정의') 선택 시 신청서 양식 폼을 숨김.
+  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const hideForm = selectedStep === 0;
 
   // 수정 모드 — 기존 신청 prefill
   useEffect(() => {
@@ -274,7 +277,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </button>
         </div>
 
-        <FormProcessBar formType={formType} status={loadedStatus} />
+        <FormProcessBar
+          formType={formType}
+          status={loadedStatus}
+          onSelectedStepChange={setSelectedStep}
+        />
 
         {/* 진행률 안내 */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-3">
@@ -306,7 +313,11 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         </div>
       </div>
 
-      <form id="form-content" onSubmit={onSubmit} className="space-y-8">
+      <form
+        id="form-content"
+        onSubmit={onSubmit}
+        className={`space-y-8 ${hideForm ? "hidden" : ""}`}
+      >
         {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly).
             헤더 클릭으로 펼침/접힘. */}
         <section>

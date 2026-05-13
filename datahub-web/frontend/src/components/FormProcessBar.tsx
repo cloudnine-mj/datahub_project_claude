@@ -52,14 +52,22 @@ const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
 export function FormProcessBar({
   formType,
   status,
+  onSelectedStepChange,
 }: {
   formType: FormType;
   status: string;
+  /** 선택된 step 변화를 부모에 알림 — 부모는 step 에 따라 다른 영역을 숨기거나 강조할 수 있음. */
+  onSelectedStepChange?: (step: number | null) => void;
 }) {
   const steps = STEP_DEFS[formType];
   const guides = STEP_GUIDES[formType];
   const [selected, setSelected] = useState<number | null>(null);
   if (!steps) return null;
+
+  function updateSelected(next: number | null) {
+    setSelected(next);
+    onSelectedStepChange?.(next);
+  }
 
   const states = computeStates(status, steps.length);
   const labels = steps.map((s, i) =>
@@ -67,15 +75,16 @@ export function FormProcessBar({
   );
 
   function handleClick(i: number) {
-    setSelected((prev) => (prev === i ? null : i));
+    const next = selected === i ? null : i;
+    updateSelected(next);
     const target = steps?.[i].scrollTo;
-    if (target) {
-      // 패널 토글 직후 DOM 안정화 위해 한 틱 뒤 스크롤
+    if (next !== null && target) {
+      // 패널 토글 + 컨텐츠 마운트 직후 안정화 위해 한 틱 뒤 스크롤
       setTimeout(() => {
         document
           .querySelector(target)
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 50);
+      }, 80);
     }
   }
 
