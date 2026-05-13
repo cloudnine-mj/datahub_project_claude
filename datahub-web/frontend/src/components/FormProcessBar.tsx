@@ -38,13 +38,12 @@ const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
       "신청자는 데이터 구매 신청서를 작성하여 G Portal 전자결재 시스템에 첨부 후, 조직장의 승인을 받습니다.",
       "본 화면 하단의 양식 폼이 G Portal 첨부용 신청서입니다 — '미리보기' 로 표 형태 HTML 을 복사할 수 있습니다.",
     ],
-    [
-      "조직장 결재 승인 후 데이터 구매가 진행됩니다.",
-      "통보 대상자에게 결과가 자동 안내됩니다.",
-    ],
+    [],
     [
       "결재선: 신청자의 소속 조직장",
       "통보: AI Biz. Development Team장(박용민), Data Governance Team장(김의순), Data Governance Team 실무자(김은솔)",
+      "조직장 결재 승인 후 데이터 구매가 진행됩니다.",
+      "통보 대상자에게 결과가 자동 안내됩니다.",
     ],
   ],
 };
@@ -104,7 +103,7 @@ export function FormProcessBar({
         ))}
       </div>
 
-      {selected !== null && guides && guides[selected] && (
+      {selected !== null && guides && guides[selected] && guides[selected].length > 0 && (
         <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50/60 px-5 py-4 text-sm">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">
