@@ -201,35 +201,39 @@ def update_form(
     form.payload = payload.payload
     form.status = payload.status
 
-    # draft / 그 외 상태 → submitted 전환 시 '최초 제출' 이력 누적.
-    # 기존엔 approval_history 가 비어있을 때만 추가했는데, 그러면 '임시 저장' 이력이
-    # 이미 있는 신청서를 제출할 때 '최초 제출' 이 누락되어 chevron 진행 이력에
-    # 임시 저장 한 줄만 남는 버그가 있었음.
-    # 동일한 'submitted' 항목이 이미 있으면(중복) 안전하게 스킵.
-    if prev_status != "submitted" and payload.status == "submitted":
-        history = list(form.approval_history or [])
-        already_submitted = any(
-            isinstance(h, dict) and h.get("status") == "submitted" for h in history
-        )
-        if not already_submitted:
-            history.append({
-                "status": "submitted",
-                "changed_by": user.name,
-                "changed_at": datetime.utcnow().isoformat(),
-                "comment": "최초 제출",
-            })
-            form.approval_history = history
-    # draft → draft 재저장도 진행 이력에 한 줄 누적 (사용자 작업 흔적 기록).
-    # 본문 변경이 있어 edit_history 가 쌓일 때만 의미 있으므로 changes 가 있을 때만.
-    if prev_status == "draft" and payload.status == "draft" and changes:
-        history = list(form.approval_history or [])
+    # 진행 이력 누적 — 사용자가 수행한 모든 작업이 흔적으로 남도록.
+    # 정책:
+    #   - 상태 전환 (prev_status != payload.status):
+    #       · → submitted : '최초 제출' (처음) 또는 '재제출' (이미 한 번이라도 제출 이력 있음)
+    #       · → draft     : '임시 저장' (예: 제출했던 신청을 다시 임시 저장으로 내림)
+    #   - 동일 상태 재저장 (changes 있을 때만):
+    #       · draft → draft     : '임시 저장 갱신'
+    #       · submitted → submitted : '내용 수정'
+    history = list(form.approval_history or [])
+
+    def _append_history(status: str, comment: str) -> None:
         history.append({
-            "status": "draft",
+            "status": status,
             "changed_by": user.name,
             "changed_at": datetime.utcnow().isoformat(),
-            "comment": "임시 저장 갱신",
+            "comment": comment,
         })
-        form.approval_history = history
+
+    if prev_status != payload.status:
+        if payload.status == "submitted":
+            already_submitted = any(
+                isinstance(h, dict) and h.get("status") == "submitted" for h in history
+            )
+            _append_history("submitted", "재제출" if already_submitted else "최초 제출")
+        elif payload.status == "draft":
+            _append_history("draft", "임시 저장")
+    elif changes:
+        if payload.status == "draft":
+            _append_history("draft", "임시 저장 갱신")
+        elif payload.status == "submitted":
+            _append_history("submitted", "내용 수정")
+
+    form.approval_history = history
     if payload.submitter_name is not None:
         form.submitter_name = payload.submitter_name
     if payload.submitter_email is not None:
