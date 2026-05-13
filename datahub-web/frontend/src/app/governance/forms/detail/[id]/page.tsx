@@ -12,6 +12,8 @@ import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { approverInitials } from "@/components/FormBuilder";
+import { FormPreviewModal, copyPreviewToClipboard } from "@/components/FormPreviewModal";
+import type { PreviewData } from "@/lib/formPreview";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 
 export default function Page({ params }: { params: { id: string } }) {
@@ -265,24 +267,28 @@ export default function Page({ params }: { params: { id: string } }) {
           <FormCommentSection formId={form.id} me={me} /> */}
 
       {previewOpen && form && (
-        <PreviewModal
-          form={form}
-          fields={allFields}
+        <FormPreviewModal
+          data={{
+            typeLabel: label,
+            projectName: form.project_name,
+            submitterName: form.submitter_name,
+            submitterDepartment: form.submitter_department || "",
+            submitterEmail: form.submitter_email,
+            payload: form.payload,
+            fields: allFields,
+          } satisfies PreviewData}
           copyDone={copyDone}
           onCopy={async () => {
-            const html = buildPreviewHtml(form, allFields, label);
-            const text = buildPreviewPlainText(form, allFields, label);
             try {
-              if (typeof ClipboardItem !== "undefined") {
-                await navigator.clipboard.write([
-                  new ClipboardItem({
-                    "text/html": new Blob([html], { type: "text/html" }),
-                    "text/plain": new Blob([text], { type: "text/plain" }),
-                  }),
-                ]);
-              } else {
-                await navigator.clipboard.writeText(text);
-              }
+              await copyPreviewToClipboard({
+                typeLabel: label,
+                projectName: form.project_name,
+                submitterName: form.submitter_name,
+                submitterDepartment: form.submitter_department || "",
+                submitterEmail: form.submitter_email,
+                payload: form.payload,
+                fields: allFields,
+              });
               setCopyDone(true);
               setTimeout(() => setCopyDone(false), 2000);
             } catch (e) {
@@ -442,159 +448,3 @@ function FieldValue({ field, value }: { field: FieldDef; value: unknown }) {
   return <span className="whitespace-pre-wrap">{String(value)}</span>;
 }
 
-// ── 미리보기 모달 (전자결재 시스템 붙여넣기용 HTML 표 생성) ──────────────────
-
-/** payload 의 단일 값을 plain text 한 줄로 직렬화 — 복사용 fallback / HTML cell 내용에도 사용. */
-function valueToText(field: FieldDef, v: unknown): string {
-  if (v === null || v === undefined || v === "") return "";
-  if (typeof v === "boolean") return v ? "예" : "아니오";
-  if (typeof v === "string") return v;
-  if (typeof v === "number") return String(v);
-  if (field.type === "approver_list" && Array.isArray(v)) {
-    return (v as unknown[])
-      .filter((s) => typeof s === "string" && s.trim().length > 0)
-      .join(", ");
-  }
-  if (Array.isArray(v)) {
-    return v
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object") {
-          return Object.entries(item as Record<string, unknown>)
-            .map(([k, val]) => `${k}: ${val ?? ""}`)
-            .join(", ");
-        }
-        return String(item);
-      })
-      .join("\n");
-  }
-  if (typeof v === "object") {
-    const obj = v as Record<string, unknown>;
-    // checked/value 패턴
-    if ("value" in obj || "checked" in obj) {
-      const checked = obj.checked ? "✓ " : "";
-      const value = obj.value ?? obj.checked ?? "";
-      return `${checked}${value}`;
-    }
-    return JSON.stringify(obj);
-  }
-  return String(v);
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function buildPreviewHtml(form: FormDetail, fields: FieldDef[], typeLabel: string): string {
-  const rows: { label: string; value: string }[] = [
-    { label: "신청 종류", value: typeLabel },
-    { label: "신청자 이름", value: form.submitter_name },
-    { label: "소속", value: form.submitter_department || "-" },
-    { label: "이메일", value: form.submitter_email },
-  ];
-  for (const f of fields) {
-    const v = form.payload[f.key];
-    if (v === undefined || v === null || v === "") continue;
-    rows.push({ label: f.label, value: valueToText(f, v) });
-  }
-  const trs = rows
-    .map(
-      (r) =>
-        `<tr>` +
-        `<td style="border:1px solid #cbd5e1;padding:6px 10px;background:#f8fafc;width:180px;font-weight:600;">${escapeHtml(r.label)}</td>` +
-        `<td style="border:1px solid #cbd5e1;padding:6px 10px;white-space:pre-wrap;">${escapeHtml(r.value)}</td>` +
-        `</tr>`,
-    )
-    .join("");
-  return (
-    `<h3 style="font-weight:700;margin:0 0 8px 0;">${escapeHtml(typeLabel)} — ${escapeHtml(form.project_name)}</h3>` +
-    `<table style="border-collapse:collapse;font-size:13px;line-height:1.5;">${trs}</table>`
-  );
-}
-
-function buildPreviewPlainText(form: FormDetail, fields: FieldDef[], typeLabel: string): string {
-  const rows: string[] = [
-    `${typeLabel} — ${form.project_name}`,
-    "",
-    `신청자 이름\t${form.submitter_name}`,
-    `소속\t${form.submitter_department || "-"}`,
-    `이메일\t${form.submitter_email}`,
-  ];
-  for (const f of fields) {
-    const v = form.payload[f.key];
-    if (v === undefined || v === null || v === "") continue;
-    rows.push(`${f.label}\t${valueToText(f, v).replace(/\n/g, " / ")}`);
-  }
-  return rows.join("\n");
-}
-
-function PreviewModal({
-  form,
-  fields,
-  copyDone,
-  onCopy,
-  onClose,
-}: {
-  form: FormDetail;
-  fields: FieldDef[];
-  copyDone: boolean;
-  onCopy: () => void;
-  onClose: () => void;
-}) {
-  const label = FORM_TYPE_LABELS[form.form_type];
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-3xl rounded-lg bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <div>
-            <h2 className="text-base font-bold">제출할 문서 미리보기</h2>
-            <p className="mt-0.5 text-xs text-gray-500">
-              아래 표를 복사한 뒤 전자결재 본문 에디터에 붙여넣으면 서식 그대로 들어갑니다.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div
-          className="max-h-[60vh] overflow-auto px-6 py-5"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: buildPreviewHtml(form, fields, label) }}
-        />
-
-        <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-6 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-gray-200 px-4 py-2 text-sm font-semibold hover:bg-gray-50"
-          >
-            닫기
-          </button>
-          <button
-            type="button"
-            onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
-          >
-            {copyDone ? "복사됨!" : "복사하기"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}

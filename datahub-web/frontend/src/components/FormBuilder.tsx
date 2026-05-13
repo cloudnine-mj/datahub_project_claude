@@ -3,11 +3,12 @@
 // 화면 10: 신청 작성 폼 — schema 기반 자동 렌더링.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
+import { AlertCircle, ChevronDown, Calendar, Eye, Save, Upload, X } from "lucide-react";
 import { api, type FormType } from "@/lib/api";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 import { Breadcrumb } from "./Breadcrumb";
+import { FormPreviewModal, copyPreviewToClipboard } from "./FormPreviewModal";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -78,6 +79,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   // 작성 예시 모달
   const [exampleOpen, setExampleOpen] = useState(false);
+
+  // 미리보기 모달 — 작성 중인 값으로 EAS 붙여넣기용 HTML 미리보기 (제출 전 확인).
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
 
   // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
   // 필요할 때만 펼쳐 확인.
@@ -247,10 +252,19 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {schema.label}
-            {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {schema.label}
+              {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
+            </h1>
+            <button
+              type="button"
+              onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
+              className="inline-flex items-center gap-1 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              <Eye size={12} /> 미리보기
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setExampleOpen(true)}
@@ -582,6 +596,35 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </div>
         </div>
       )}
+
+      {previewOpen && (() => {
+        const allFields = schema.sections.flatMap((s) => s.fields);
+        const data = {
+          typeLabel: schema.label,
+          projectName: derivePreviewProjectName(values[schema.projectField]),
+          submitterName,
+          submitterDepartment,
+          submitterEmail,
+          payload: values,
+          fields: allFields,
+        };
+        return (
+          <FormPreviewModal
+            data={data}
+            copyDone={copyDone}
+            onCopy={async () => {
+              try {
+                await copyPreviewToClipboard(data);
+                setCopyDone(true);
+                setTimeout(() => setCopyDone(false), 2000);
+              } catch (e) {
+                setError("클립보드 복사 실패: " + (e as Error).message);
+              }
+            }}
+            onClose={() => setPreviewOpen(false)}
+          />
+        );
+      })()}
 
       {/* 작성 예시 모달 — 현재 placeholder, 향후 신청별 예시 데이터 연결 */}
       {exampleOpen && (
@@ -1434,6 +1477,19 @@ function ApproverListField({
       />
     </div>
   );
+}
+
+/** 미리보기 헤더용 프로젝트명 — schema.projectField 가 service_blocks 같은 배열이면
+ *  첫 항목의 service_name 을 꺼냄. 비어있으면 빈 문자열 (모달은 '신청종류' 만 표시). */
+export function derivePreviewProjectName(raw: unknown): string {
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object" && raw[0]) {
+    const name = (raw[0] as Record<string, unknown>).service_name;
+    if (typeof name === "string" && name.trim()) return name.trim();
+    return "";
+  }
+  if (typeof raw === "string") return raw.trim();
+  if (raw == null) return "";
+  return String(raw);
 }
 
 /** 이름에서 아바타용 이니셜 — 영문 두 단어면 각 첫 글자, 그 외엔 앞 1~2자. */
