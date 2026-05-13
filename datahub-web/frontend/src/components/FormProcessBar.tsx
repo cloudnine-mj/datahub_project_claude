@@ -10,7 +10,8 @@ import { useState } from "react";
 import { Check, MessageSquare, X } from "lucide-react";
 import type { ApprovalEntry, FormType } from "@/lib/api";
 import { parseUtc } from "@/lib/utils";
-import { MiniWorkflowStepper } from "./MiniWorkflowStepper";
+import { StatusBadge } from "./StatusBadge";
+import { WorkflowStepper } from "./WorkflowStepper";
 
 type StepState = "done" | "current" | "future" | "rejected";
 
@@ -110,7 +111,15 @@ export function FormProcessBar({
         ))}
       </div>
 
-      {selected !== null && (steps[selected].showsProgress || (guides && guides[selected] && guides[selected].length > 0)) && (
+      {selected !== null && steps[selected].showsProgress && (
+        <ProgressPanel
+          status={status}
+          history={history}
+          onClose={() => updateSelected(null)}
+        />
+      )}
+
+      {selected !== null && !steps[selected].showsProgress && guides && guides[selected] && guides[selected].length > 0 && (
         <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50/60 px-5 py-4 text-sm">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">
@@ -118,55 +127,21 @@ export function FormProcessBar({
             </h3>
             <button
               type="button"
-              onClick={() => setSelected(null)}
+              onClick={() => updateSelected(null)}
               aria-label="설명 닫기"
               className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
             >
               <X size={14} />
             </button>
           </div>
-
-          {steps[selected].showsProgress && (
-            <div className="mb-3">
-              <MiniWorkflowStepper status={status} />
-            </div>
-          )}
-
-          {guides && guides[selected] && guides[selected].length > 0 && (
-            <ul className="space-y-1.5 text-gray-700">
-              {guides[selected].map((line, j) => (
-                <li key={j} className="flex gap-2">
-                  <span className="shrink-0 text-gray-400">•</span>
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {steps[selected].showsProgress && history && history.length > 0 && (
-            <div className="mt-3 border-t border-gray-200 pt-3">
-              <div className="mb-2 text-xs font-bold text-gray-700">
-                진행 이력 <span className="font-semibold text-gray-400">{history.length}건</span>
-              </div>
-              <ol className="space-y-2">
-                {history.map((h, i) => (
-                  <li key={i} className="text-xs">
-                    <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="font-semibold text-gray-700">{statusLabel(h.status)}</span>
-                      <span className="text-gray-600">{h.changed_by}</span>
-                      <span className="text-gray-400">{formatTimeline(h.changed_at)}</span>
-                    </div>
-                    {h.comment && (
-                      <p className="mt-0.5 flex items-start gap-1 text-gray-600">
-                        <MessageSquare size={11} className="mt-0.5 shrink-0 text-gray-400" />
-                        <span>{h.comment}</span>
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          <ul className="space-y-1.5 text-gray-700">
+            {guides[selected].map((line, j) => (
+              <li key={j} className="flex gap-2">
+                <span className="shrink-0 text-gray-400">•</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
@@ -259,16 +234,101 @@ function Chevron({
   );
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "임시 저장",
-  submitted: "제출됨",
-  reviewing: "검토 중",
-  approved: "승인 완료",
-  rejected: "반려",
-};
+/** '승인 완료' chevron 패널 — 신청 상세의 FormStatusPanel 과 동일한 룩으로
+ *  진행 상태(WorkflowStepper) + 진행 이력(접고 펼침) 을 노출. 액션 버튼은
+ *  여기엔 없음 (액션은 본 페이지의 FormStatusPanel 에서 그대로 처리). */
+function ProgressPanel({
+  status,
+  history,
+  onClose,
+}: {
+  status: string;
+  history?: ApprovalEntry[] | null;
+  onClose: () => void;
+}) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  return (
+    <div className="mt-2 space-y-3">
+      <section className="rounded-lg border border-gray-200 bg-white p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold">진행 상태</h2>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={status} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="닫기"
+              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+        <WorkflowStepper status={status} />
+      </section>
 
-function statusLabel(s: string): string {
-  return STATUS_LABELS[s] ?? s;
+      {history && history.length > 0 && (
+        <section className="rounded-lg border border-gray-200 bg-white">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((v) => !v)}
+            aria-expanded={historyOpen}
+            className={
+              "flex w-full items-center gap-2 px-5 py-3 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 " +
+              (historyOpen ? "border-b border-gray-100" : "")
+            }
+          >
+            <span
+              className={
+                "shrink-0 text-gray-500 transition " + (historyOpen ? "" : "-rotate-90")
+              }
+            >
+              ▼
+            </span>
+            <span>진행 이력</span>
+            <span className="text-xs font-semibold text-gray-400">{history.length}건</span>
+          </button>
+          {historyOpen && (
+            <ol className="space-y-3 border-l-2 border-gray-100 px-6 py-4 ml-5 pl-5">
+              {history.map((h, i) => (
+                <li key={i} className="relative">
+                  <span
+                    className={
+                      "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white " +
+                      dotColor(h.status)
+                    }
+                  />
+                  <div className="flex flex-wrap items-baseline gap-2 text-sm">
+                    <StatusBadge status={h.status} />
+                    <span className="font-medium text-gray-700">{h.changed_by}</span>
+                    <span className="text-xs text-gray-400">{formatTimeline(h.changed_at)}</span>
+                  </div>
+                  {h.comment && (
+                    <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-600">
+                      <MessageSquare size={12} className="mt-0.5 shrink-0 text-gray-400" />
+                      <span>{h.comment}</span>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function dotColor(s: string): string {
+  return s === "approved"
+    ? "bg-emerald-500"
+    : s === "rejected"
+    ? "bg-red-500"
+    : s === "reviewing"
+    ? "bg-amber-500"
+    : s === "submitted"
+    ? "bg-blue-500"
+    : "bg-gray-400";
 }
 
 function formatTimeline(iso: string): string {
