@@ -17,7 +17,7 @@ import { SeverityBadge } from "./SeverityBadge";
 import { EmptyState } from "./EmptyState";
 import { formatDate } from "@/lib/utils";
 
-const PAGE_SIZES = [10, 20, 50, 100];
+const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 // 중요도 필터 옵션 — 4단계만. severity 가 비어있는 옛 row 는 필터 통과(항상 노출).
 type SeverityFilterKey = Severity;
@@ -33,7 +33,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1); // 1-based
 
   // 중요도 필터 — 기본은 전체 선택

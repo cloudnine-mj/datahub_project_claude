@@ -16,7 +16,7 @@ import { EmptyState } from "./EmptyState";
 import { BOARD_LABELS, PROCESS_CATEGORIES, formatDate } from "@/lib/utils";
 import { DocTypePill } from "./DocTypePill";
 
-const PAGE_SIZES = [10, 20, 50, 100];
+const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 interface Props {
   board: BoardType;
@@ -53,7 +53,7 @@ export function BoardListView({ board, compact = false }: Props) {
     () => new Set(PROCESS_CATEGORIES),
   );
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
 
   useEffect(() => {

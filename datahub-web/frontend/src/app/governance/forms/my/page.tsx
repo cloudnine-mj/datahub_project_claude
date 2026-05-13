@@ -25,7 +25,7 @@ import { BOARD_LABELS, FORM_TYPE_LABELS, formatDateTime, parseUtc } from "@/lib/
 type StatusFilter = "all" | FormStatus;
 type MyPost = PostListItem & { board: BoardType };
 
-const PAGE_SIZES = [10, 20, 50, 100];
+const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 type PostStatusKey = "draft" | "private" | "published";
 
@@ -85,7 +85,7 @@ export default function MyDocumentsPage() {
 function AdminPostsView() {
   const [posts, setPosts] = useState<MyPost[] | null>(null);
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   // 상태 필터 — 기본은 전체 선택. 정책 보드의 중요도 필터와 동일 패턴.
   const [statusFilter, setStatusFilter] = useState<Set<PostStatusKey>>(

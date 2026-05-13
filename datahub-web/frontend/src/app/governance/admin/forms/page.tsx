@@ -11,7 +11,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
 import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
 
-const PAGE_SIZES = [10, 20, 50, 100];
+const PAGE_SIZES = [5, 10, 20, 50, 100];
 
 // 반려는 admin 액션에서 제거됨 → 필터에서도 노출 안 함
 const STATUS_OPTIONS = STATUSES.filter((s) => s.value !== "rejected");
@@ -24,7 +24,7 @@ export default function AdminFormsPage() {
     () => new Set(STATUS_OPTIONS.map((s) => s.value)),
   );
   const [query, setQuery] = useState("");
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
 
   const refetch = useCallback(() => {
