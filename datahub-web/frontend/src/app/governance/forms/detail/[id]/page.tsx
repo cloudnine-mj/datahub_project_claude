@@ -119,12 +119,16 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      <FormProcessBar
-        formType={form.form_type}
-        status={form.status}
-        history={form.approval_history}
-        onSelectedStepChange={setSelectedStep}
-      />
+      {/* 거버넌스 요청 관리(from=admin) 진입은 admin 의 검토/승인 화면이라 chevron 진행 바를
+          노출하지 않고 chevron 적용 전 모습 유지. */}
+      {from !== "admin" && (
+        <FormProcessBar
+          formType={form.form_type}
+          status={form.status}
+          history={form.approval_history}
+          onSelectedStepChange={setSelectedStep}
+        />
+      )}
 
       <FormStatusPanel
         formId={form.id}
