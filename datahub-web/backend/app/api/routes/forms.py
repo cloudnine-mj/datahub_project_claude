@@ -138,13 +138,22 @@ def submit_form(
         status=payload.status,
         payload=payload.payload,
     )
-    # 제출 상태로 생성되는 경우 — 사용자에게도 보이도록 '최초 제출' 이력을 자동 추가
+    # 생성 시각에 진행 이력 한 줄 자동 추가:
+    #   - submitted 로 바로 생성: '최초 제출'
+    #   - draft 로 임시 저장: '임시 저장'
     if payload.status == "submitted":
         form.approval_history = [{
             "status": "submitted",
             "changed_by": user.name,
             "changed_at": datetime.utcnow().isoformat(),
             "comment": "최초 제출",
+        }]
+    elif payload.status == "draft":
+        form.approval_history = [{
+            "status": "draft",
+            "changed_by": user.name,
+            "changed_at": datetime.utcnow().isoformat(),
+            "comment": "임시 저장",
         }]
     db.add(form)
     db.commit()
@@ -203,6 +212,17 @@ def update_form(
             "changed_at": datetime.utcnow().isoformat(),
             "comment": "최초 제출",
         }]
+    # draft → draft 재저장도 진행 이력에 한 줄 누적 (사용자 작업 흔적 기록).
+    # 본문 변경이 있어 edit_history 가 쌓일 때만 의미 있으므로 changes 가 있을 때만.
+    if prev_status == "draft" and payload.status == "draft" and changes:
+        history = list(form.approval_history or [])
+        history.append({
+            "status": "draft",
+            "changed_by": user.name,
+            "changed_at": datetime.utcnow().isoformat(),
+            "comment": "임시 저장 갱신",
+        })
+        form.approval_history = history
     if payload.submitter_name is not None:
         form.submitter_name = payload.submitter_name
     if payload.submitter_email is not None:
