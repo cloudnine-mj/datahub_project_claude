@@ -33,7 +33,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const schema = FORM_SCHEMAS[formType];
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [files, setFiles] = useState<File[]>([]);
-  const [dragActive, setDragActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -460,31 +459,16 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           </button>
 
           {attachOpen && (
-            <>
-              {/* 드래그&드롭 + 클릭 업로드 영역 */}
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragActive(true);
-                }}
-                onDragLeave={() => setDragActive(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragActive(false);
-                  if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                className={
-                  "cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition " +
-                  (dragActive ? "border-brand bg-brand/5" : "border-blue-300 bg-blue-50/30 hover:border-brand/60 hover:bg-blue-50/50")
-                }
-              >
-                <Upload size={20} className="mx-auto text-gray-400" />
-                <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
-                <p className="mt-1 text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 첨부 가능 · 최대 50MB</p>
-                <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
-                  📎 파일 선택
-                </span>
+            <div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <Upload size={12} /> 파일 선택
+                </button>
+                <span className="text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 · 최대 50MB</span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -525,7 +509,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                   ))}
                 </ul>
               )}
-            </>
+            </div>
           )}
         </section>
 
