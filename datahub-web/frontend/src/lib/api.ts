@@ -288,7 +288,7 @@ export const api = {
   }) =>
     request<FormDetail>("/forms", { method: "POST", body: JSON.stringify(body) }),
 
-  /** 신청서 수정 — 작성자 본인 또는 admin. 매 호출마다 edit_history 에 한 줄 누적. */
+  /** 신청 수정 — 작성자 본인 또는 admin. 매 호출마다 edit_history 에 한 줄 누적. */
   updateForm: (
     id: number,
     body: {
@@ -304,18 +304,18 @@ export const api = {
     request<FormDetail>(`/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   exportFormUrl: (id: number) => `${BASE}/forms/${id}/export`,
 
-  /** 신청서 삭제 — 제출자 본인 또는 admin 만 가능 (백엔드에서 검증). */
+  /** 신청 삭제 — 제출자 본인 또는 admin 만 가능 (백엔드에서 검증). */
   deleteForm: (id: number) =>
     request<void>(`/forms/${id}`, { method: "DELETE" }),
 
-  /** 신청서 상태 변경 — admin 만. 변경 이력은 approval_history 에 누적. */
+  /** 신청 상태 변경 — admin 만. 변경 이력은 approval_history 에 누적. */
   changeFormStatus: (id: number, body: { status: FormStatus; comment?: string }) =>
     request<FormDetail>(`/forms/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
 
-  /** 신청서 1개에 파일 1개 업로드 (multipart/form-data). */
+  /** 신청 1개에 파일 1개 업로드 (multipart/form-data). */
   uploadFormAttachment: (formId: number, file: File) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -329,7 +329,7 @@ export const api = {
     request<void>(`/forms/${formId}/attachments/${attId}`, { method: "DELETE" }),
 
 
-  /** 신청서 단일 댓글 스레드 — 신청자 + admin 만 접근. */
+  /** 신청 단일 댓글 스레드 — 신청자 + admin 만 접근. */
   listFormComments: (formId: number) =>
     request<FormCommentItem[]>(`/forms/${formId}/comments`),
   createFormComment: (formId: number, body: string) =>

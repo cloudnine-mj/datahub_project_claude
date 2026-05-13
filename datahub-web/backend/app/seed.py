@@ -56,7 +56,7 @@ def _ensure_users(db: Session) -> dict[str, User]:
         ("doyun@example.com", "Doyun (datahub-qa)", "editor", "QA"),
         # viewer — 화면 12 트리거용 (글쓰기 권한 없음)
         ("viewer@example.com", "Viewer Lee", "viewer", "Marketing"),
-        # 신청서 시드용 (REQ-2024-* 들 제출자)
+        # 신청 시드용 (REQ-2024-* 들 제출자)
         ("jun.lee@company.com", "이준혁", "editor", "데이터전략팀"),
     ]
     out: dict[str, User] = {}
@@ -84,7 +84,7 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             doc_type="가이드",
             category="제작 프로세스",
             content="외주 업체를 통한 데이터 용역 제작을 요청하는 절차를 안내합니다.\n\n"
-                    "1. 데이터 거버넌스 문서 서식 모음에서 '데이터 용역 제작 신청서' 작성\n"
+                    "1. 데이터 거버넌스 문서 서식 모음에서 '데이터 용역 제작 신청' 작성\n"
                     "2. 작성 완료 후 전자결재 상신\n"
                     "3. 승인 후 외주 업체 매칭 및 작업 착수",
             author_id=admin.id,
@@ -97,8 +97,8 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             doc_type="가이드",
             category="제작 프로세스",
             content="외부 데이터셋 구매 또는 구독 신청 절차입니다.\n\n"
-                    "- 일회성 구매 → 데이터 구매 신청서\n"
-                    "- 정기 구독 → 데이터 구독 신청서",
+                    "- 일회성 구매 → 데이터 구매 신청\n"
+                    "- 정기 구독 → 데이터 구독 신청",
             author_id=admin.id,
             author_name=admin.name,
             created_at=datetime(2025, 1, 15, 10, 5),
@@ -115,8 +115,8 @@ def _ensure_posts(db: Session, users: dict[str, User]) -> None:
             title="Product 서비스 로그 데이터 활용 방법",
             doc_type="가이드",
             category="활용 요청 프로세스",
-            content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청서를 통해서만 접근 가능합니다.\n\n"
-                    "신청서: 'Product 로그 데이터 활용 신청서'",
+            content="Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청을 통해서만 접근 가능합니다.\n\n"
+                    "신청: 'Product 로그 데이터 활용 신청'",
             author_id=admin.id,
             author_name=admin.name,
             created_at=datetime(2025, 1, 15, 9, 30),
@@ -278,7 +278,7 @@ def _migrate_category_values(db: Session) -> None:
 
 
 def _backfill_initial_approval_entry(db: Session) -> None:
-    """approval_history 가 비어있는 제출/검토/승인/반려 신청서에 '최초 제출' 엔트리 보강.
+    """approval_history 가 비어있는 제출/검토/승인/반려 신청에 '최초 제출' 엔트리 보강.
 
     초기 코드가 제출 시점 엔트리를 만들지 않아 사용자 화면에 타임라인이
     안 보이던 문제 해결용 일회성 마이그레이션.

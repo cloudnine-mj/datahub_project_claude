@@ -27,7 +27,7 @@ const COMMON_CARDS: Card[] = [
     href: "/governance/forms",
     icon: FileEdit,
     title: "데이터 거버넌스 문서 서식 모음",
-    desc: "각종 신청서 및 품의서 양식을 작성합니다.",
+    desc: "각종 신청 및 품의서 양식을 작성합니다.",
   },
 ];
 
@@ -42,7 +42,7 @@ const ADMIN_CARDS: Card[] = [
     href: "/governance/admin/forms",
     icon: ClipboardList,
     title: "거버넌스 요청 관리",
-    desc: "전체 사용자의 신청서를 검토 / 승인합니다.",
+    desc: "전체 사용자의 신청을 검토 / 승인합니다.",
   },
 ];
 
@@ -51,7 +51,7 @@ const USER_CARDS: Card[] = [
     href: "/governance/forms/my",
     icon: FolderOpen,
     title: "내 문서 목록",
-    desc: "내가 제출한 신청서의 진행 상태를 확인합니다.",
+    desc: "내가 제출한 신청의 진행 상태를 확인합니다.",
   },
 ];
 

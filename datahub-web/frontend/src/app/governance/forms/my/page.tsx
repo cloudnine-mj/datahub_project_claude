@@ -2,8 +2,8 @@
 
 // 내 문서 목록 —
 //   admin: 본인이 작성한 정책/프로세스 게시글 (공개 + 임시저장)
-//   non-admin: 본인이 제출한 신청서 목록
-// role 에 따라 한쪽만 노출. admin 은 신청서를 작성할 일이 거의 없고, non-admin 은
+//   non-admin: 본인이 제출한 신청 목록
+// role 에 따라 한쪽만 노출. admin 은 신청을 작성할 일이 거의 없고, non-admin 은
 // 정책/프로세스 글쓰기 권한 자체가 없으므로 양쪽 모두 한쪽만 의미 있음.
 
 import Link from "next/link";
@@ -410,7 +410,7 @@ function PostStatusBadge({ post }: { post: MyPost }) {
   );
 }
 
-// ── 일반 사용자: 본인 신청서 ────────────────────────────────────────────
+// ── 일반 사용자: 본인 신청 ────────────────────────────────────────────
 
 function UserFormsView() {
   const [items, setItems] = useState<FormListItem[] | null>(null);
@@ -480,7 +480,7 @@ function UserFormsView() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">내 문서 목록</h1>
           <p className="mt-1.5 text-sm text-gray-500">
-            프로젝트명을 클릭하면 신청서 상세를 확인하고 수정할 수 있습니다.
+            프로젝트명을 클릭하면 신청 상세를 확인하고 수정할 수 있습니다.
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-gray-200 bg-white p-1">
@@ -506,7 +506,7 @@ function UserFormsView() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
-              <th className="px-6 py-3 font-medium">신청서 종류</th>
+              <th className="px-6 py-3 font-medium">신청 종류</th>
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
               <th className="w-44 px-6 py-3 font-medium">제출일</th>
@@ -522,8 +522,8 @@ function UserFormsView() {
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
                   {latestItems && latestItems.length > 0
-                    ? "선택한 상태의 신청서가 없습니다."
-                    : "제출한 신청서가 없습니다."}
+                    ? "선택한 상태의 신청이 없습니다."
+                    : "제출한 신청이 없습니다."}
                 </td>
               </tr>
             ) : (

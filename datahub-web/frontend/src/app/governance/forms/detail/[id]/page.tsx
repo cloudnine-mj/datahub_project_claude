@@ -1,4 +1,4 @@
-// 화면 9: 데이터 구매 신청서 (read-only 상세). 모든 신청서 종류 공통 사용.
+// 화면 9: 데이터 구매 신청 (read-only 상세). 모든 신청 종류 공통 사용.
 "use client";
 
 import Link from "next/link";
@@ -234,7 +234,7 @@ export default function Page({ params }: { params: { id: string } }) {
               </button>
             </div>
             <p className="mt-3 text-sm text-gray-600">
-              <strong className="font-semibold text-gray-800">&apos;{missingField}&apos;</strong> 항목을 입력해주세요. 신청서를 수정한 뒤 다시 제출해 주세요.
+              <strong className="font-semibold text-gray-800">&apos;{missingField}&apos;</strong> 항목을 입력해주세요. 신청을 수정한 뒤 다시 제출해 주세요.
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -305,7 +305,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * 신청서 값을 필드 타입/키에 따라 의미있는 형태로 렌더링.
+ * 신청 값을 필드 타입/키에 따라 의미있는 형태로 렌더링.
  *
  *  - radio (옵션 있음) : 모든 옵션을 체크박스로 표시 (선택된 쪽만 채워진 박스)
  *  - 레포지토리 키워드  : 데이터베이스 아이콘 + 칩 형태
@@ -465,7 +465,7 @@ function escapeHtml(s: string): string {
 
 function buildPreviewHtml(form: FormDetail, fields: FieldDef[], typeLabel: string): string {
   const rows: { label: string; value: string }[] = [
-    { label: "신청서 종류", value: typeLabel },
+    { label: "신청 종류", value: typeLabel },
     { label: "신청자 이름", value: form.submitter_name },
     { label: "소속", value: form.submitter_department || "-" },
     { label: "이메일", value: form.submitter_email },

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * 신청서 상태 패널 — 신청서 상세 페이지에 표시.
+ * 신청 상태 패널 — 신청 상세 페이지에 표시.
  *
  *  - 모든 사용자: 현재 상태 + 승인 이력 타임라인
  *  - admin: 상태 변경 액션 (검토 시작 / 승인 / 반려) + 코멘트 입력
  *
- * 상태 변경 후 부모(`onChanged`)가 신청서 데이터를 재조회.
+ * 상태 변경 후 부모(`onChanged`)가 신청 데이터를 재조회.
  */
 
 import { useState } from "react";
@@ -20,7 +20,7 @@ interface Props {
   status: FormStatus | string;
   history: ApprovalEntry[] | null;
   me: Me | null;
-  /** 신청서 제출자 이메일 — admin 이라도 본인 신청서에는 액션 숨김 (자기 결재 방지) */
+  /** 신청 제출자 이메일 — admin 이라도 본인 신청에는 액션 숨김 (자기 결재 방지) */
   submitterEmail?: string | null;
   onChanged: () => void;
 }
@@ -68,7 +68,7 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
       <WorkflowStepper status={status} />
 
-      {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청서에는 숨김 */}
+      {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청에는 숨김 */}
       {canActAsAdmin && (
         <div className="mt-5 border-t border-gray-100 pt-4">
           <div className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -239,7 +239,7 @@ function WorkflowStepper({ status }: { status: FormStatus | string }) {
       <StepNode label="검토 중" reached={reachedReviewing} current={status === "reviewing"} index={2} />
       <span className={"h-0.5 w-14 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")} />
 
-      {/* 3) 종착 — 기본은 '승인 완료' 단독 노출. 실제로 반려된 신청서일 때만 '반려' 노드를 보여 사실 반영. */}
+      {/* 3) 종착 — 기본은 '승인 완료' 단독 노출. 실제로 반려된 신청일 때만 '반려' 노드를 보여 사실 반영. */}
       <div className="flex flex-col gap-1.5">
         <TerminalNode label="승인 완료" tone="approved" active={isApproved} muted={isRejected} />
         {isRejected && (

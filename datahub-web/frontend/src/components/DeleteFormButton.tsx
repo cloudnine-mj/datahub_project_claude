@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 신청서 삭제 버튼 + 확인 다이얼로그.
+ * 신청 삭제 버튼 + 확인 다이얼로그.
  *
  * 사용처: 내 문서 목록의 각 행 — 컴팩트한 휴지통 아이콘으로 표시.
  * 삭제 성공 시 부모(`onDeleted`)가 목록을 재조회.
@@ -63,12 +63,12 @@ export function DeleteFormButton({ formId, onDeleted, contextLabel }: Props) {
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold">신청서를 삭제하시겠습니까?</h3>
+            <h3 className="text-base font-bold">신청을 삭제하시겠습니까?</h3>
             {contextLabel && (
               <p className="mt-1 truncate text-sm font-medium text-gray-700">{contextLabel}</p>
             )}
             <p className="mt-2 text-sm text-gray-600">
-              삭제된 신청서는 복구할 수 없습니다. 첨부된 파일도 함께 삭제됩니다.
+              삭제된 신청은 복구할 수 없습니다. 첨부된 파일도 함께 삭제됩니다.
             </p>
             {error && (
               <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>

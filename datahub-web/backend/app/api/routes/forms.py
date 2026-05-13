@@ -1,9 +1,9 @@
-"""신청서 — 화면 5,8,9,10,11.
+"""신청 — 화면 5,8,9,10,11.
 
 URL:
   GET  /forms                  → 내 문서 목록 (전체 탭)
   GET  /forms?form_type=...    → 종류별 필터
-  POST /forms                  → 신청서 제출
+  POST /forms                  → 신청 제출
   GET  /forms/{id}             → 상세 (read-only 보기)
   PATCH /forms/{id}            → 수정 (제출자 or admin)
   GET  /forms/{id}/export      → Excel 다운로드
@@ -240,7 +240,7 @@ def change_form_status(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """신청서 상태 변경 — admin 만 가능. 변경 이력은 approval_history 에 누적.
+    """신청 상태 변경 — admin 만 가능. 변경 이력은 approval_history 에 누적.
 
     실제 환경에서는 전자결재 시스템 webhook 으로 들어오겠지만, MVP 는
     admin 이 직접 reviewing/approved/rejected 로 전이.
@@ -253,11 +253,11 @@ def change_form_status(
     form = db.query(Form).filter(Form.id == form_id).first()
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
-    # 자기 결재 방지 — admin 이라도 본인이 제출한 신청서는 본인이 처리 X
+    # 자기 결재 방지 — admin 이라도 본인이 제출한 신청은 본인이 처리 X
     if form.submitter_id == user.id:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
-            detail="본인이 제출한 신청서의 상태는 변경할 수 없습니다.",
+            detail="본인이 제출한 신청의 상태는 변경할 수 없습니다.",
         )
 
     history = list(form.approval_history or [])
@@ -280,7 +280,7 @@ def delete_form(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """신청서 삭제 — 제출자 본인 또는 admin 만 가능. 첨부 파일도 함께 정리."""
+    """신청 삭제 — 제출자 본인 또는 admin 만 가능. 첨부 파일도 함께 정리."""
     form = db.query(Form).filter(Form.id == form_id).first()
     if not form:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
@@ -342,7 +342,7 @@ def _compute_total_cost(cost_str: str, count: int, currency: dict | None) -> str
 
 
 def _render_productivity_tool_table(ws, payload: dict) -> None:
-    """업무생산성 도구 신청서 — service_blocks 를 표 형태로 출력.
+    """업무생산성 도구 신청 — service_blocks 를 표 형태로 출력.
 
     컬럼: 서비스명 / 활용 방안 / 예상 비용 / 결제 방식 / 사용 인원 / 인원 수 / 총 비용
     """
@@ -439,11 +439,11 @@ def export_form(
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "신청서"
+    ws.title = "신청"
 
     header_rows: list[tuple[str, str]] = [
         ("신청번호", form.request_no),
-        ("신청서 종류", form.form_type),
+        ("신청 종류", form.form_type),
         ("프로젝트명", form.project_name),
         ("신청자", form.submitter_name),
         ("이메일", form.submitter_email),
@@ -580,7 +580,7 @@ def delete_attachment(
     db.commit()
 
 
-# ── 댓글 — 신청서별 단일 스레드 ─────────────────────────────────
+# ── 댓글 — 신청별 단일 스레드 ─────────────────────────────────
 # 권한: form 조회 가능한 사용자 (제출자 본인 또는 admin) 만 작성/조회 가능.
 # '권한 부여된 검토자' 컨셉은 향후 ACL 모델 도입 시 _check_form_owner 를 확장하면
 # 댓글에도 자동 반영됨.

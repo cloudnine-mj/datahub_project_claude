@@ -20,7 +20,7 @@ const MOCK_DEMO_EMAIL = "karlo.lee@example.com";
 // mock 모드 — 시드된 테스트 계정. 백엔드 seed.py 와 동기화 유지.
 const MOCK_TEST_ACCOUNTS: { email: string; name: string; role: string; note?: string }[] = [
   { email: "karlo.lee@example.com", name: "Karlo Lee", role: "admin", note: "기본 관리자" },
-  { email: "jun.lee@company.com", name: "이준혁", role: "editor", note: "시드 신청서 3건의 제출자" },
+  { email: "jun.lee@company.com", name: "이준혁", role: "editor", note: "시드 신청 3건의 제출자" },
   { email: "siu@example.com", name: "Siu", role: "editor" },
   { email: "doyun@example.com", name: "Doyun", role: "editor" },
   { email: "viewer@example.com", name: "Viewer Lee", role: "viewer", note: "권한 거부 화면 확인용" },

@@ -1,4 +1,4 @@
-// 화면 11: 신청서 제출 완료 — 다음 단계(전자결재) 안내 포함.
+// 화면 11: 신청 제출 완료 — 다음 단계(전자결재) 안내 포함.
 "use client";
 
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default function Page() {
       <div className="grid h-20 w-20 place-items-center rounded-full bg-emerald-500 text-white">
         <Check size={36} strokeWidth={3} />
       </div>
-      <h1 className="mt-6 text-2xl font-bold tracking-tight">신청서가 제출되었습니다</h1>
+      <h1 className="mt-6 text-2xl font-bold tracking-tight">신청이 제출되었습니다</h1>
       <p className="mt-2 text-sm text-gray-500">
         최종 승인을 받으려면 <strong className="font-semibold text-gray-700">전자결재 시스템에서 결재를 완료</strong>해 주세요.
       </p>
@@ -31,7 +31,7 @@ export default function Page() {
           </li>
           <li className="flex gap-2">
             <span className="font-mono text-gray-400">2.</span>
-            <span>승인이 완료되면 거버넌스 관리자가 본 신청서 상태를 <strong>승인 완료</strong>로 변경합니다.</span>
+            <span>승인이 완료되면 거버넌스 관리자가 본 신청 상태를 <strong>승인 완료</strong>로 변경합니다.</span>
           </li>
           <li className="flex gap-2">
             <span className="font-mono text-gray-400">3.</span>

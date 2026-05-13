@@ -1,7 +1,7 @@
 /**
- * 신청서 5종의 필드 스키마 — 화면 9/10 의 폼 구조를 데이터화.
+ * 신청 5종의 필드 스키마 — 화면 9/10 의 폼 구조를 데이터화.
  *
- * 폼 자동 렌더링 + 백엔드 payload(JSON) 매핑에 사용. 새 신청서 추가 시 여기만 수정하면
+ * 폼 자동 렌더링 + 백엔드 payload(JSON) 매핑에 사용. 새 신청 추가 시 여기만 수정하면
  * 작성/상세 양쪽이 자동 반영된다.
  */
 
@@ -21,7 +21,7 @@ export type FieldType =
   | "date_range"
   /** API 활용 계획서 — USD/KRW/기타(+직접 입력) */
   | "currency"
-  /** 업무생산성 도구 신청서 — 서비스 블록 동적 리스트 (서비스 N + 내부 다중 필드) */
+  /** 업무생산성 도구 신청 — 서비스 블록 동적 리스트 (서비스 N + 내부 다중 필드) */
   | "service_blocks"
   /** 통화 단위(currencyKey 가 가리키는 필드)에 맞춰 prefix/suffix 가 붙는 금액 입력 */
   | "amount_with_currency";
@@ -60,7 +60,7 @@ export interface FieldDef {
 }
 
 /**
- * 데이터셋 저장 레포지토리 — 신청서에서 선택 가능한 사전 정의 목록.
+ * 데이터셋 저장 레포지토리 — 신청에서 선택 가능한 사전 정의 목록.
  *
  * 추후 백엔드에서 동적으로 받아올 수도 있으나(예: GET /repositories),
  * 현재는 데모용으로 고정 목록 사용. 시드된 'analytics-platform-repo' 도 포함.
@@ -91,10 +91,10 @@ export interface FormSchema {
   sections: SectionDef[];
 }
 
-// 화면 10 — 데이터 용역 제작 신청서
+// 화면 10 — 데이터 용역 제작 신청
 const dataProduction: FormSchema = {
   type: "data_production",
-  label: "데이터 용역 제작 신청서",
+  label: "데이터 용역 제작 신청",
   description: "외주 업체에 데이터 라벨링·수집·검수 작업을 의뢰할 때",
   projectField: "관련_프로젝트_PMS",
   sections: [
@@ -164,10 +164,10 @@ const dataProduction: FormSchema = {
   ],
 };
 
-// 화면 9 — 데이터 구매 신청서
+// 화면 9 — 데이터 구매 신청
 const dataPurchase: FormSchema = {
   type: "data_purchase",
-  label: "데이터 구매 신청서",
+  label: "데이터 구매 신청",
   description: "외부 데이터셋을 일회성으로 구매할 때 (라이선스·예산 검토 동반)",
   projectField: "프로젝트명",
   sections: [
@@ -205,7 +205,7 @@ const dataPurchase: FormSchema = {
 
 const dataSubscription: FormSchema = {
   type: "data_subscription",
-  label: "데이터 구독 신청서",
+  label: "데이터 구독 신청",
   description: "정기적으로 갱신되는 데이터를 월/연 단위 구독할 때",
   projectField: "프로젝트명",
   sections: [
@@ -225,7 +225,7 @@ const dataSubscription: FormSchema = {
 
 const productLogUsage: FormSchema = {
   type: "product_log_usage",
-  label: "Product 로그 데이터 활용 신청서",
+  label: "Product 로그 데이터 활용 신청",
   description: "사내 Product 의 클릭·세션·이벤트 로그를 분석·학습에 활용할 때",
   projectField: "프로젝트명",
   sections: [
@@ -316,10 +316,10 @@ const apiUsagePlan: FormSchema = {
   ],
 };
 
-// 업무생산성 도구 신청서 — 서비스 블록 동적 리스트 1개로 구성
+// 업무생산성 도구 신청 — 서비스 블록 동적 리스트 1개로 구성
 const productivityTool: FormSchema = {
   type: "productivity_tool",
-  label: "업무생산성 도구 신청서",
+  label: "업무생산성 도구 신청",
   description: "팀 · 부서에서 사용할 SaaS 라이선스를 사용자 별로 신청할 때",
   // 서비스 블록 첫 항목의 service_name 을 project_name 으로 매핑
   // (FormBuilder.onSubmit 에서 array 타입을 특별 처리)

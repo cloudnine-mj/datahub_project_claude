@@ -1,6 +1,6 @@
 "use client";
 
-// 관리자 전용 — 모든 사용자의 신청서 검토 / 승인 진입점.
+// 관리자 전용 — 모든 사용자의 신청 검토 / 승인 진입점.
 // admin 이 아니면 권한 없음 안내. 기존 detail 페이지의 진행 상태 패널에서 액션 수행.
 
 import Link from "next/link";
@@ -36,7 +36,7 @@ export default function AdminFormsPage() {
     refetch();
   }, [refetch]);
 
-  // 상태 필터 + 검색 (신청서 종류 / 프로젝트명 / 신청자 / 요청번호 / 상태 라벨)
+  // 상태 필터 + 검색 (신청 종류 / 프로젝트명 / 신청자 / 요청번호 / 상태 라벨)
   const filtered = useMemo(() => {
     if (!items) return null;
     const q = query.trim().toLowerCase();
@@ -76,7 +76,7 @@ export default function AdminFormsPage() {
           <Lock size={36} />
         </div>
         <h1 className="mt-5 text-2xl font-bold tracking-tight">접근 권한 없음</h1>
-        <p className="mt-2 text-sm text-gray-500">관리자만 신청서 검토 페이지를 조회할 수 있습니다.</p>
+        <p className="mt-2 text-sm text-gray-500">관리자만 신청 검토 페이지를 조회할 수 있습니다.</p>
         <Link
           href="/governance"
           className="mt-5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
@@ -94,7 +94,7 @@ export default function AdminFormsPage() {
       />
       <h1 className="text-3xl font-bold tracking-tight">거버넌스 요청 관리</h1>
       <p className="mt-1.5 text-sm text-gray-500">
-        전체 사용자의 신청서를 검토 / 승인할 수 있습니다. 프로젝트명을 클릭해 신청서 상세 페이지로 이동한 뒤 처리해 주세요.
+        전체 사용자의 신청을 검토 / 승인할 수 있습니다. 프로젝트명을 클릭해 신청 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
       {/* 툴바 — 페이지 크기 + 검색 + 상태 필터 */}
@@ -115,7 +115,7 @@ export default function AdminFormsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="신청서 종류, 프로젝트명, 신청자, 요청번호로 검색"
+            placeholder="신청 종류, 프로젝트명, 신청자, 요청번호로 검색"
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
@@ -126,7 +126,7 @@ export default function AdminFormsPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
-              <th className="px-6 py-3 font-medium">신청서 종류</th>
+              <th className="px-6 py-3 font-medium">신청 종류</th>
               <th className="px-6 py-3 font-medium">프로젝트명</th>
               <th className="w-32 px-6 py-3 font-medium">신청자</th>
               <th className="w-28 px-6 py-3 font-medium">상태</th>
@@ -144,7 +144,7 @@ export default function AdminFormsPage() {
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
                   {items && items.length > 0
                     ? "검색·필터 결과가 없습니다."
-                    : "제출된 신청서가 없습니다."}
+                    : "제출된 신청이 없습니다."}
                 </td>
               </tr>
             ) : (
@@ -181,7 +181,7 @@ export default function AdminFormsPage() {
   );
 }
 
-/** 신청서 상태 다중 선택 드롭다운 — 임시저장 / 제출됨 / 검토 중 / 승인 완료. */
+/** 신청 상태 다중 선택 드롭다운 — 임시저장 / 제출됨 / 검토 중 / 승인 완료. */
 function StatusFilterDropdown({
   selected,
   onChange,

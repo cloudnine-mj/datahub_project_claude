@@ -1,9 +1,9 @@
 "use client";
 
 /**
- * 신청서 댓글 스레드 — HuggingFace Discussion 스타일.
+ * 신청 댓글 스레드 — HuggingFace Discussion 스타일.
  *
- * 권한: 신청서 조회 권한과 동일 (제출자 본인 또는 admin). 백엔드에서 강제.
+ * 권한: 신청 조회 권한과 동일 (제출자 본인 또는 admin). 백엔드에서 강제.
  * 화면:
  *  - 헤더: 'Discussions' + 댓글 수
  *  - 빈 상태: 메시지 아이콘 + '첫 댓글을 남겨주세요'
@@ -135,7 +135,7 @@ function EmptyState() {
         <MessageSquarePlus size={20} />
       </div>
       <h3 className="mt-4 text-base font-bold">첫 댓글을 남겨주세요</h3>
-      <p className="mt-1 text-xs text-gray-500">아직 이 신청서에 작성된 댓글이 없습니다.</p>
+      <p className="mt-1 text-xs text-gray-500">아직 이 신청에 작성된 댓글이 없습니다.</p>
     </div>
   );
 }

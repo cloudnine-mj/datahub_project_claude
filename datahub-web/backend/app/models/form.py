@@ -1,13 +1,13 @@
-"""Form — 신청서 (5종).
+"""Form — 신청 (5종).
 
-  - data_production       : 데이터 용역 제작 신청서 (화면 10 입력 폼)
-  - data_purchase         : 데이터 구매 신청서   (화면 9 read-only 상세)
-  - data_subscription     : 데이터 구독 신청서
-  - product_log_usage     : product 로그 데이터 활용 신청서
+  - data_production       : 데이터 용역 제작 신청 (화면 10 입력 폼)
+  - data_purchase         : 데이터 구매 신청   (화면 9 read-only 상세)
+  - data_subscription     : 데이터 구독 신청
+  - product_log_usage     : product 로그 데이터 활용 신청
   - data_production_plan  : 데이터 제작 계획서
 
 타입별 필드 구성이 모두 다르므로, 공통 메타(신청자/프로젝트/상태)만 컬럼으로 두고
-타입별 페이로드는 JSON(`payload`) 으로 보관 — 새 신청서 추가 시 마이그레이션 불필요.
+타입별 페이로드는 JSON(`payload`) 으로 보관 — 새 신청 추가 시 마이그레이션 불필요.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ FORM_TYPES = (
     "productivity_tool",
 )
 
-# 신청서 상태 — 전자결재 시스템과 연동되기 전 mock 워크플로우.
+# 신청 상태 — 전자결재 시스템과 연동되기 전 mock 워크플로우.
 #   draft       : 임시저장 (작성 중)
 #   submitted   : 제출됨 — 검토 대기
 #   reviewing   : 검토 중 (관리자가 픽업)
@@ -105,7 +105,7 @@ class FormAttachment(Base):
 
 
 class FormComment(Base):
-    """신청서 1건에 대한 단일 댓글 스레드 — 신청자/관리자 간 논의 기록.
+    """신청 1건에 대한 단일 댓글 스레드 — 신청자/관리자 간 논의 기록.
 
     승인 이력(approval_history)이 '공식 결재 기록' 이라면, 이 모델은 검토 과정의
     질의/응답을 담는 비공식 의사소통 공간. HuggingFace Discussion 형태와 유사.

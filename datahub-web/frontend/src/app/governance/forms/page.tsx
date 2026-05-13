@@ -1,4 +1,4 @@
-// 화면 5: 데이터 거버넌스 문서 서식 모음 — 신청서 양식 카드 목록.
+// 화면 5: 데이터 거버넌스 문서 서식 모음 — 신청 양식 카드 목록.
 // (내 문서 목록은 /governance/forms/my 로 분리 — 사이드바 별도 카테고리)
 import Link from "next/link";
 import { ChevronRight, FileText } from "lucide-react";

@@ -1,6 +1,6 @@
 "use client";
 
-// 화면 10: 신청서 작성 폼 — schema 기반 자동 렌더링.
+// 화면 10: 신청 작성 폼 — schema 기반 자동 렌더링.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, ChevronDown, Calendar, Save, Upload, X } from "lucide-react";
@@ -20,7 +20,7 @@ function formatBytes(n: number): string {
 export function FormBuilder({ formType }: { formType: FormType }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // ?id=N 가 있으면 수정 모드 — 기존 신청서를 읽어 폼 prefill 후 PATCH 로 저장.
+  // ?id=N 가 있으면 수정 모드 — 기존 신청을 읽어 폼 prefill 후 PATCH 로 저장.
   const editId = searchParams?.get("id");
   const isEdit = !!editId;
   // 진입 출처 — 브레드크럼 부모를 어디로 보낼지 결정.
@@ -47,7 +47,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
   useEffect(() => {
-    if (isEdit) return; // 수정 모드는 기존 신청서 값 우선
+    if (isEdit) return; // 수정 모드는 기존 신청 값 우선
     api
       .me()
       .then((m) => {
@@ -62,7 +62,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       });
   }, [isEdit]);
 
-  // 수정 모드 — 기존 신청서 prefill
+  // 수정 모드 — 기존 신청 prefill
   useEffect(() => {
     if (!editId) return;
     api
@@ -174,7 +174,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
           ? isEdit
             ? "수정 저장 중..."
             : "임시저장 중..."
-          : "신청서 제출 중...",
+          : "신청 제출 중...",
       );
 
       const body = {
@@ -191,7 +191,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         ? await api.updateForm(Number(editId), body)
         : await api.submitForm(body);
 
-      // 파일은 신청서 저장 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도.
+      // 파일은 신청 저장 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도.
       // 수정 모드에서도 새로 추가한 파일만 업로드 (기존 첨부는 그대로).
       for (let i = 0; i < files.length; i++) {
         setProgress(`파일 업로드 중 (${i + 1}/${files.length}): ${files[i].name}`);
@@ -564,7 +564,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         </div>
       )}
 
-      {/* 작성 예시 모달 — 현재 placeholder, 향후 신청서별 예시 데이터 연결 */}
+      {/* 작성 예시 모달 — 현재 placeholder, 향후 신청별 예시 데이터 연결 */}
       {exampleOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
@@ -589,7 +589,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
             </div>
             <h3 className="mt-2 text-base font-bold">{schema.label}</h3>
             <p className="mt-3 text-sm text-gray-600">
-              이 신청서의 작성 예시는 곧 추가될 예정입니다. 작성 시 도움이 필요하면
+              이 신청의 작성 예시는 곧 추가될 예정입니다. 작성 시 도움이 필요하면
               관리자에게 문의해 주세요.
             </p>
             <div className="mt-5 flex justify-end">
@@ -995,7 +995,7 @@ function CurrencyField({
 }
 
 /**
- * 업무생산성 도구 신청서 — 서비스 블록 동적 리스트.
+ * 업무생산성 도구 신청 — 서비스 블록 동적 리스트.
  *
  * 각 블록: 서비스명 / 활용 방안 / 결제 통화 / 예상 비용 / 결제 방식 / 사용 인원(이름 칩) / 인원 수(자동) / 총 비용(자동).
  * 인원 수 = members.length, 총 비용 = parse(예상 비용 숫자) × 인원 수.

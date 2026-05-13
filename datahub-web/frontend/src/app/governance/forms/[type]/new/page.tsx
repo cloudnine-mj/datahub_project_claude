@@ -1,4 +1,4 @@
-// 화면 10: 신청서 작성 폼 — 모든 5종을 [type] 동적 라우트로 처리.
+// 화면 10: 신청 작성 폼 — 모든 5종을 [type] 동적 라우트로 처리.
 import { notFound } from "next/navigation";
 import { FormBuilder } from "@/components/FormBuilder";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";

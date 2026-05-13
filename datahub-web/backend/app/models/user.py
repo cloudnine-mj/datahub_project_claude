@@ -2,7 +2,7 @@
 
 권한 모델은 단순화: role 만 가짐. 향후 board 별 ACL 이 필요하면 별도 join 테이블로 확장.
   - admin: 모든 게시판에 글 작성 가능 (정책 / 프로세스 게시판은 admin 전용)
-  - editor: 신청서 제출은 가능하나 게시판 글 작성은 불가
+  - editor: 신청 제출은 가능하나 게시판 글 작성은 불가
   - viewer: read-only
 """
 

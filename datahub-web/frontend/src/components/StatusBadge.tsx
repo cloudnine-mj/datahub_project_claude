@@ -1,4 +1,4 @@
-// 신청서 상태 뱃지 — 내 문서 목록·상세 화면 공용.
+// 신청 상태 뱃지 — 내 문서 목록·상세 화면 공용.
 import type { FormStatus } from "@/lib/api";
 
 const STYLES: Record<FormStatus, { label: string; cls: string; dot: string }> = {

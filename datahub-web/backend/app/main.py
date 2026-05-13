@@ -30,7 +30,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="DataHub Governance API",
     version="0.1.0",
-    description="Governance 탭 백엔드 — 게시판 + 신청서",
+    description="Governance 탭 백엔드 — 게시판 + 신청",
     lifespan=lifespan,
 )
 
