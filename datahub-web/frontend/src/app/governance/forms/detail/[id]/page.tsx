@@ -218,12 +218,16 @@ export default function Page({ params }: { params: { id: string } }) {
             <ArrowLeft size={12} /> 요청 목록으로 돌아가기
           </Link>
         )}
-        <button
-          onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
-          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-        >
-          <Pencil size={12} /> 수정
-        </button>
+        {/* '거버넌스 요청 목록' (from=list) 진입은 read-only 조회 컨텍스트라
+            수정 버튼 노출하지 않음. 다른 진입(내 문서 / 관리 / 기본) 은 그대로. */}
+        {from !== "list" && (
+          <button
+            onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+          >
+            <Pencil size={12} /> 수정
+          </button>
+        )}
         {/* 상세 페이지의 삭제 버튼은 admin 의 '거버넌스 요청 관리' 진입 시에만 노출.
             '내 문서 목록' 에서는 행 단위 휴지통 아이콘으로, 그 외 컨텍스트(요청 목록 등)
             에서는 파괴적 액션을 띄우지 않음. */}
