@@ -1,22 +1,45 @@
 "use client";
 
 // 신청서 상단 프로세스 진행 바 — IPRS 의 chevron 스타일.
-// 현재 데이터 구매 신청(data_purchase) 1종만 지원. 양식별 단계가 모두 달라
-// formType 분기로 단계 정의를 따로 둠. 다른 양식으로 확장 시 STEP_DEFS 에 추가.
+// 각 chevron 클릭 시 단계 설명 패널이 펼쳐짐(같은 단계 다시 클릭하면 닫힘).
+// 현재 데이터 구매 신청(data_purchase) 1종만 지원. 양식별 단계/설명이 모두
+// 달라 formType 분기로 정의를 따로 둠. 다른 양식으로 확장 시 STEP_DEFS 와
+// STEP_GUIDES 양쪽에 추가.
 
+import { useState } from "react";
 import { Check, X } from "lucide-react";
 import type { FormType } from "@/lib/api";
 
 type StepState = "done" | "current" | "future" | "rejected";
 
-// 양식별 단계 정의. 마지막 단계는 종료 상태(승인 완료 / 반려) — status 에 따라
-// 라벨/색이 갈림.
 const STEP_DEFS: Partial<Record<FormType, string[]>> = {
   data_purchase: [
     "필요성 정의 및 예산 확인",
     "신청서 작성",
     "전자결재 승인",
     "승인 완료",
+  ],
+};
+
+// 단계 클릭 시 펼쳐질 설명 — LG 자료 원문 기반.
+const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
+  data_purchase: [
+    [
+      "신청자는 구매 대상 데이터, 데이터 구매 목적, 활용 범위, 필요 기간 등을 정의합니다.",
+      "신청자는 데이터 구매 예산과 구매 비용을 확인합니다.",
+    ],
+    [
+      "신청자는 데이터 구매 신청서를 작성하여 G Portal 전자결재 시스템에 첨부 후, 조직장의 승인을 받습니다.",
+      "본 화면 하단의 양식 폼이 G Portal 첨부용 신청서입니다 — '미리보기' 로 표 형태 HTML 을 복사할 수 있습니다.",
+    ],
+    [
+      "결재선: 신청자의 소속 조직장",
+      "통보: AI Biz. Development Team장(박용민), Data Governance Team장(김의순), Data Governance Team 실무자(김은솔)",
+    ],
+    [
+      "조직장 결재 승인 후 데이터 구매가 진행됩니다.",
+      "통보 대상자에게 결과가 자동 안내됩니다.",
+    ],
   ],
 };
 
@@ -28,6 +51,8 @@ export function FormProcessBar({
   status: string;
 }) {
   const steps = STEP_DEFS[formType];
+  const guides = STEP_GUIDES[formType];
+  const [selected, setSelected] = useState<number | null>(null);
   if (!steps) return null;
 
   const states = computeStates(status, steps.length);
@@ -36,16 +61,46 @@ export function FormProcessBar({
   );
 
   return (
-    <div className="my-4 flex items-stretch text-xs font-semibold">
-      {labels.map((label, i) => (
-        <Chevron
-          key={i}
-          label={label}
-          state={states[i]}
-          isFirst={i === 0}
-          isLast={i === labels.length - 1}
-        />
-      ))}
+    <div className="my-4">
+      <div className="flex items-stretch text-xs font-semibold">
+        {labels.map((label, i) => (
+          <Chevron
+            key={i}
+            label={label}
+            state={states[i]}
+            isFirst={i === 0}
+            isLast={i === labels.length - 1}
+            selected={selected === i}
+            onClick={() => setSelected((prev) => (prev === i ? null : i))}
+          />
+        ))}
+      </div>
+
+      {selected !== null && guides && guides[selected] && (
+        <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50/60 px-5 py-4 text-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-gray-900">
+              {selected + 1}. {labels[selected]}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              aria-label="설명 닫기"
+              className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <ul className="space-y-1.5 text-gray-700">
+            {guides[selected].map((line, j) => (
+              <li key={j} className="flex gap-2">
+                <span className="shrink-0 text-gray-400">•</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -79,7 +134,6 @@ function computeStates(status: string, length: number): StepState[] {
     arr[length - 1] = "rejected";
     return arr;
   }
-  // 알 수 없는 status — 보수적으로 step 2 진행 중으로 표기
   arr[0] = "done";
   arr[1] = "current";
   return arr;
@@ -92,17 +146,21 @@ function Chevron({
   state,
   isFirst,
   isLast,
+  selected,
+  onClick,
 }: {
   label: string;
   state: StepState;
   isFirst: boolean;
   isLast: boolean;
+  selected: boolean;
+  onClick: () => void;
 }) {
   const bg = {
-    done: "bg-emerald-500 text-white",
-    current: "bg-blue-600 text-white",
-    future: "bg-gray-100 text-gray-500",
-    rejected: "bg-red-500 text-white",
+    done: "bg-emerald-500 text-white hover:bg-emerald-600",
+    current: "bg-blue-600 text-white hover:bg-blue-700",
+    future: "bg-gray-100 text-gray-500 hover:bg-gray-200",
+    rejected: "bg-red-500 text-white hover:bg-red-600",
   }[state];
 
   // chevron 모양 — first 는 왼쪽 직선 + 오른쪽 뾰족, last 는 왼쪽 노치 + 오른쪽 직선,
@@ -114,8 +172,11 @@ function Chevron({
     : `polygon(0 0, calc(100% - ${POINT}) 0, 100% 50%, calc(100% - ${POINT}) 100%, 0 100%, ${POINT} 50%)`;
 
   return (
-    <div
-      className={`relative flex flex-1 items-center justify-center gap-1.5 py-2.5 ${bg}`}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-2.5 font-semibold transition ${bg} ${selected ? "brightness-110 saturate-150" : ""}`}
       style={{
         clipPath,
         paddingLeft: isFirst ? "0.75rem" : `calc(0.75rem + ${POINT})`,
@@ -126,6 +187,6 @@ function Chevron({
       {state === "done" && <Check size={12} strokeWidth={3} />}
       {state === "rejected" && <X size={12} strokeWidth={3} />}
       <span className="truncate">{label}</span>
-    </div>
+    </button>
   );
 }
