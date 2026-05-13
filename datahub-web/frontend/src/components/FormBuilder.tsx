@@ -87,6 +87,8 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
   // 필요할 때만 펼쳐 확인.
   const [submitterOpen, setSubmitterOpen] = useState(false);
+  // 파일 첨부 섹션 토글 — 기본 접힘. 첨부할 게 있을 때만 펼쳐서 사용.
+  const [attachOpen, setAttachOpen] = useState(false);
 
   // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
   // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
@@ -430,74 +432,94 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         })}
 
         <section>
-          <div className="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAttachOpen((v) => !v)}
+            aria-expanded={attachOpen}
+            className="mb-3 flex w-full items-center gap-2 text-left"
+          >
             <span className="block h-5 w-1 rounded-sm bg-brand" />
             <h2 className="text-base font-bold">파일 첨부</h2>
-          </div>
-
-          {/* 드래그&드롭 + 클릭 업로드 영역 */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragActive(true);
-            }}
-            onDragLeave={() => setDragActive(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragActive(false);
-              if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-            className={
-              "cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition " +
-              (dragActive ? "border-brand bg-brand/5" : "border-blue-300 bg-blue-50/30 hover:border-brand/60 hover:bg-blue-50/50")
-            }
-          >
-            <Upload size={20} className="mx-auto text-gray-400" />
-            <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
-            <p className="mt-1 text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 첨부 가능 · 최대 50MB</p>
-            <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
-              📎 파일 선택
-            </span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
-                e.target.value = "";  // 같은 파일 다시 선택 가능하게
-              }}
+            {files.length > 0 && (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                {files.length}
+              </span>
+            )}
+            <ChevronDown
+              size={16}
+              className={
+                "text-gray-400 transition-transform " + (attachOpen ? "" : "-rotate-90")
+              }
             />
-          </div>
+          </button>
 
-          {/* 선택된 파일 목록 */}
-          {files.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {files.map((f, i) => (
-                <li
-                  key={`${f.name}-${i}`}
-                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-gray-400">📎</span>
-                    <span className="truncate font-medium">{f.name}</span>
-                    <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(i);
-                    }}
-                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
-                    aria-label="제거"
-                  >
-                    <X size={14} />
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {attachOpen && (
+            <>
+              {/* 드래그&드롭 + 클릭 업로드 영역 */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActive(true);
+                }}
+                onDragLeave={() => setDragActive(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActive(false);
+                  if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={
+                  "cursor-pointer rounded-lg border-2 border-dashed px-6 py-10 text-center transition " +
+                  (dragActive ? "border-brand bg-brand/5" : "border-blue-300 bg-blue-50/30 hover:border-brand/60 hover:bg-blue-50/50")
+                }
+              >
+                <Upload size={20} className="mx-auto text-gray-400" />
+                <p className="mt-2 text-sm font-semibold">파일을 드래그하거나 클릭하여 업로드하세요</p>
+                <p className="mt-1 text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 첨부 가능 · 최대 50MB</p>
+                <span className="mt-3 inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold">
+                  📎 파일 선택
+                </span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                    e.target.value = "";  // 같은 파일 다시 선택 가능하게
+                  }}
+                />
+              </div>
+
+              {/* 선택된 파일 목록 */}
+              {files.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                  {files.map((f, i) => (
+                    <li
+                      key={`${f.name}-${i}`}
+                      className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="text-gray-400">📎</span>
+                        <span className="truncate font-medium">{f.name}</span>
+                        <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(i);
+                        }}
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                        aria-label="제거"
+                      >
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </section>
 
