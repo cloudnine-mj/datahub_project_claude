@@ -22,8 +22,8 @@ const STEP_DEFS: Partial<Record<FormType, StepDef[]>> = {
   data_purchase: [
     { label: "필요성 정의 및 예산 확인" },
     { label: "신청서 작성", scrollTo: "#form-content" },
-    { label: "전자결재 승인" },
     { label: "승인 완료" },
+    { label: "전자결재 승인" },
   ],
 };
 
@@ -39,12 +39,12 @@ const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
       "본 화면 하단의 양식 폼이 G Portal 첨부용 신청서입니다 — '미리보기' 로 표 형태 HTML 을 복사할 수 있습니다.",
     ],
     [
-      "결재선: 신청자의 소속 조직장",
-      "통보: AI Biz. Development Team장(박용민), Data Governance Team장(김의순), Data Governance Team 실무자(김은솔)",
-    ],
-    [
       "조직장 결재 승인 후 데이터 구매가 진행됩니다.",
       "통보 대상자에게 결과가 자동 안내됩니다.",
+    ],
+    [
+      "결재선: 신청자의 소속 조직장",
+      "통보: AI Biz. Development Team장(박용민), Data Governance Team장(김의순), Data Governance Team 실무자(김은솔)",
     ],
   ],
 };
@@ -133,11 +133,11 @@ export function FormProcessBar({
   );
 }
 
-/** 상태 → 단계별 state 배열. 데이터 구매 4단계 가정.
+/** 상태 → 단계별 state 배열. 데이터 구매 4단계 가정 (3·4 단계 위치 스왑됨).
  *  - draft     : 1✓ / 2● / 3○ / 4○
- *  - submitted / reviewing : 1✓ / 2✓ / 3● / 4○
+ *  - submitted / reviewing : 1✓ / 2✓ / 3● / 4○ (승인 진행 중)
  *  - approved  : 1✓ / 2✓ / 3✓ / 4✓
- *  - rejected  : 1✓ / 2✓ / 3✓ / 4✗ (라벨도 '반려' 로 교체)
+ *  - rejected  : 1✓ / 2✓ / 3✓ / 4✗ (마지막 단계 '반려' 로 교체)
  */
 function computeStates(status: string, length: number): StepState[] {
   const arr: StepState[] = Array(length).fill("future");
