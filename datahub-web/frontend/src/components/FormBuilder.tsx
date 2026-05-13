@@ -90,8 +90,9 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 파일 첨부 섹션 토글 — 기본 접힘. 첨부할 게 있을 때만 펼쳐서 사용.
   const [attachOpen, setAttachOpen] = useState(false);
 
-  // 진행률 계산 — 신청자 정보(3) + schema 모든 필드.
-  // 값이 비어있지 않으면 작성된 것으로 카운트 (boolean false 도 작성된 걸로 간주 X).
+  // 진행률 계산 — schema 섹션 / 필드 기준.
+  // 신청자 정보는 SSO 로 자동 채워지고 기본 접힘 상태라 카운트에서 제외 (사용자가
+  // 실제로 입력해야 하는 부분만 % 에 반영). 파일 첨부도 마찬가지로 제외.
   // (변수명 'progress' 는 파일 업로드 메시지 useState 와 충돌하므로 'completion' 사용)
   const completion = useMemo(() => {
     const allFields = schema.sections.flatMap((s) => s.fields);
@@ -104,27 +105,22 @@ export function FormBuilder({ formType }: { formType: FormType }) {
       if (typeof v === "object") return Object.values(v).some((x) => typeof x === "string" && x.trim().length > 0);
       return true;
     }).length;
-    const filledSubmitter = [submitterName, submitterDepartment, submitterEmail]
-      .filter((s) => s.trim().length > 0).length;
 
-    const total = allFields.length + 3; // +3 for submitter info
-    const filled = filledSchemaFields + filledSubmitter;
+    const total = allFields.length;
+    const filled = filledSchemaFields;
     const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
 
-    // 섹션 진행 — '신청자 정보' 1개 + schema sections.
-    const totalSections = schema.sections.length + 1;
-    const startedSections =
-      (filledSubmitter > 0 ? 1 : 0) +
-      schema.sections.filter((s) => s.fields.some((f) => {
-        const v = values[f.key];
-        if (v === undefined || v === null) return false;
-        if (typeof v === "string") return v.trim().length > 0;
-        if (typeof v === "boolean") return v === true;
-        return true;
-      })).length;
+    const totalSections = schema.sections.length;
+    const startedSections = schema.sections.filter((s) => s.fields.some((f) => {
+      const v = values[f.key];
+      if (v === undefined || v === null) return false;
+      if (typeof v === "string") return v.trim().length > 0;
+      if (typeof v === "boolean") return v === true;
+      return true;
+    })).length;
 
     return { filled, total, percent, startedSections, totalSections };
-  }, [values, submitterName, submitterDepartment, submitterEmail, schema]);
+  }, [values, schema]);
 
   function setField(key: string, v: unknown) {
     setValues((prev) => ({ ...prev, [key]: v }));
