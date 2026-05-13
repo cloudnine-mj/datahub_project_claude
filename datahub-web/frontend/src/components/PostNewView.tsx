@@ -106,9 +106,12 @@ export function PostNewView({ board }: { board: BoardType }) {
         is_draft: asDraft,
         visibility,
         author_name: authorName.trim() || undefined,
+        // 태그는 정책/프로세스 모두 지원. 비어 있으면 null 로 전송.
+        tags: tags.length > 0 ? tags : null,
+        // 중요도(severity) UI 는 비활성 상태지만 편집 시 기존 값 보존을 위해
+        // 정책 보드에 한해 state 그대로 다시 전송.
         ...(isPolicy && {
           severity: severity || null,
-          tags: tags.length > 0 ? tags : null,
         }),
       };
       const post = isEdit
@@ -220,11 +223,10 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            {isPolicy && (
-              <Field label="태그">
-                <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
-              </Field>
-            )}
+            {/* 태그 — 정책/프로세스 모두 노출. 필수 아님. */}
+            <Field label="태그">
+              <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
+            </Field>
 
             <Field label="공개 범위" required>
               <div className="inline-flex gap-1 rounded-md border border-gray-200 bg-white p-1">
