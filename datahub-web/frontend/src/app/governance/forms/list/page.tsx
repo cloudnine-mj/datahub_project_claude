@@ -109,7 +109,7 @@ export default function GovernanceFormsListPage() {
           />
         </div>
         <StatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
-        <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs text-gray-700">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-gray-700">
           <input
             type="checkbox"
             checked={mineOnly}
