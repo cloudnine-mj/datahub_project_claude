@@ -246,7 +246,9 @@ function ProgressPanel({
   history?: ApprovalEntry[] | null;
   onClose: () => void;
 }) {
-  const [historyOpen, setHistoryOpen] = useState(false);
+  // 기본 펼침 — 사용자가 chevron '승인 완료' 를 눌렀다는 건 진행 이력을 보고
+  // 싶은 의도라고 보고, 클릭 한 번 더 안 해도 바로 노출되도록 함.
+  const [historyOpen, setHistoryOpen] = useState(true);
   return (
     <div className="mt-2 space-y-3">
       <section className="rounded-lg border border-gray-200 bg-white p-5">
