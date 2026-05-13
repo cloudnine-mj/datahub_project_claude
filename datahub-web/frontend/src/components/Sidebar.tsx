@@ -23,11 +23,16 @@ const FORM_TYPES_FOR_SIDEBAR: FormType[] = [
 // '거버넌스 요청 관리' 자식은 admin role 사용자에게만 노출.
 
 interface NavChild {
-  href: string;
+  /** 그룹 헤더(group: true) 인 경우 생략 가능 — 그 외에는 클릭 가능한 링크. */
+  href?: string;
   label: string;
   adminOnly?: boolean;
+  /** non-admin 에게만 노출 — admin 에게는 같은 항목이 다른 그룹/라벨로 들어가는 경우 */
+  userOnly?: boolean;
   /** admin 일 때 라벨 오버라이드 — 같은 URL 이지만 admin 컨텍스트의 의미가 다른 페이지용 */
   adminLabel?: string;
+  /** true 면 클릭 불가능한 그룹 헤더로 렌더 — subchildren 만 노출. */
+  group?: boolean;
   /** 2단계 하위 항목 — 부모가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
   subchildren?: { href: string; label: string }[];
 }
@@ -63,9 +68,17 @@ const NAV: NavItem[] = [
       {
         href: "/governance/forms/my",
         label: "내 문서 목록",
-        adminLabel: "정책 / 프로세스 게시글 관리",
+        userOnly: true,
       },
-      { href: "/governance/admin/forms", label: "거버넌스 요청 관리", adminOnly: true },
+      {
+        label: "관리 페이지",
+        adminOnly: true,
+        group: true,
+        subchildren: [
+          { href: "/governance/forms/my", label: "정책 / 프로세스 게시글 관리" },
+          { href: "/governance/admin/forms", label: "거버넌스 요청 관리" },
+        ],
+      },
     ],
   },
 ];
@@ -118,30 +131,40 @@ export function Sidebar() {
                 <span>{item.label}</span>
               </Link>
               {expanded && item.children && (() => {
-                // adminOnly child 는 admin 에게만 노출
-                const visibleChildren = item.children.filter((c) => !c.adminOnly || isAdmin);
+                // adminOnly / userOnly 필터링 — 역할에 맞지 않는 항목 숨김
+                const visibleChildren = item.children.filter(
+                  (c) => (!c.adminOnly || isAdmin) && (!c.userOnly || !isAdmin),
+                );
                 // 가장 긴 prefix 매치 child 만 active 표시
-                // (예: /governance/forms/my 는 /governance/forms 가 아니라 /governance/forms/my 만 active)
+                // (group 헤더는 href 가 없으므로 후보에서 제외)
                 const activeChildHref = [...visibleChildren]
-                  .sort((a, b) => b.href.length - a.href.length)
-                  .find((c) => pathname === c.href || pathname.startsWith(c.href + "/"))?.href;
+                  .filter((c) => !!c.href)
+                  .sort((a, b) => (b.href as string).length - (a.href as string).length)
+                  .find((c) => pathname === c.href || pathname.startsWith((c.href as string) + "/"))?.href;
                 return (
                 <ul className="ml-3 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                   {visibleChildren.map((c) => {
-                    const childActive = c.href === activeChildHref;
+                    const childActive = !!c.href && c.href === activeChildHref;
+                    const displayLabel = isAdmin && c.adminLabel ? c.adminLabel : c.label;
                     return (
-                      <li key={c.href}>
-                        <Link
-                          href={c.href}
-                          className={cn(
-                            "block rounded-md px-3 py-1.5 text-xs transition",
-                            childActive
-                              ? "font-semibold text-brand"
-                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
-                          )}
-                        >
-                          {isAdmin && c.adminLabel ? c.adminLabel : c.label}
-                        </Link>
+                      <li key={c.href ?? `group-${c.label}`}>
+                        {c.group || !c.href ? (
+                          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500">
+                            {displayLabel}
+                          </div>
+                        ) : (
+                          <Link
+                            href={c.href}
+                            className={cn(
+                              "block rounded-md px-3 py-1.5 text-xs transition",
+                              childActive
+                                ? "font-semibold text-brand"
+                                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                            )}
+                          >
+                            {displayLabel}
+                          </Link>
+                        )}
                         {c.subchildren && c.subchildren.length > 0 && (
                           <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                             {c.subchildren.map((sc) => {
