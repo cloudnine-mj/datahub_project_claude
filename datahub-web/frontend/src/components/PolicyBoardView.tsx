@@ -3,13 +3,17 @@
 /**
  * 정책 게시판 — 표(table) 형태 목록 + 페이지네이션 + 검색.
  *
+ * admin 은 임시저장 / 비공개 게시글까지 모두 노출되며, 우측 상단의
+ * 상태 필터 드롭다운으로 임시저장 / 비공개 / 게시됨을 골라볼 수 있음
+ * (별도의 '게시글 관리' 페이지 대체).
+ *
  * 중요도(severity) 컬럼/필터는 일단 비활성. 필요해지면 SeverityBadge 와
  * api.PostListItem.severity 가 그대로 남아있으므로 복원 가능.
  */
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
 import { api, type Me, type PostListItem } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DocTypePill } from "./DocTypePill";
@@ -18,6 +22,20 @@ import { formatDate } from "@/lib/utils";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
+// admin 게시글 상태 필터 — 임시저장 / 비공개(admin visibility) / 게시됨(public).
+type PostStatusKey = "draft" | "private" | "published";
+const POST_STATUS_OPTIONS: { key: PostStatusKey; label: string }[] = [
+  { key: "draft", label: "임시 저장" },
+  { key: "private", label: "비공개" },
+  { key: "published", label: "게시됨" },
+];
+
+function postStatusKey(p: PostListItem): PostStatusKey {
+  if (p.is_draft) return "draft";
+  if (p.visibility === "admin") return "private";
+  return "published";
+}
+
 /** compact: 자체 Breadcrumb·페이지 제목·가이드 배너 생략 (상위 컨테이너가 헤더를 제공할 때). */
 export function PolicyBoardView({ compact = false }: { compact?: boolean } = {}) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
@@ -25,6 +43,10 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1); // 1-based
+  // admin 전용 게시글 상태 필터 — 기본 전체 선택
+  const [statusFilter, setStatusFilter] = useState<Set<PostStatusKey>>(
+    () => new Set(POST_STATUS_OPTIONS.map((o) => o.key)),
+  );
 
   useEffect(() => {
     api.listPosts("policy").then(setPosts).catch(() => setPosts([]));
@@ -34,11 +56,12 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   const canWrite = me?.permissions.can_write_policy ?? false;
   const isAdmin = me?.user.role === "admin";
 
-  // 검색 (클라이언트 사이드)
+  // 검색 + (admin) 상태 필터
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
+      if (isAdmin && !statusFilter.has(postStatusKey(p))) return false;
       if (!q) return true;
       // 표에 노출되는 컬럼만 검색 대상 — 관리 번호 / 정책명 / 작성자 / 태그
       const haystack = [
@@ -51,12 +74,12 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [posts, query]);
+  }, [posts, query, isAdmin, statusFilter]);
 
-  // 검색·페이지 크기 바뀔 때 1페이지로 리셋
+  // 검색·페이지 크기·필터 바뀔 때 1페이지로 리셋
   useEffect(() => {
     setPage(1);
-  }, [query, pageSize]);
+  }, [query, pageSize, statusFilter]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -113,6 +136,11 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
+
+        {/* 게시글 상태 필터 — admin 만 노출 (임시저장/비공개/게시됨). */}
+        {isAdmin && (
+          <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
+        )}
 
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
         {canWrite && (
@@ -302,6 +330,96 @@ function Pagination({
       >
         <ChevronRight size={16} />
       </button>
+    </div>
+  );
+}
+
+/** 게시글 상태 다중 선택 드롭다운 — admin 이 임시저장 / 비공개 / 게시됨을 골라 볼 때 사용. */
+function PostStatusFilterDropdown({
+  selected,
+  onChange,
+}: {
+  selected: Set<PostStatusKey>;
+  onChange: (next: Set<PostStatusKey>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  function toggle(key: PostStatusKey) {
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onChange(next);
+  }
+
+  function selectAll() {
+    onChange(new Set(POST_STATUS_OPTIONS.map((o) => o.key)));
+  }
+
+  const isAll = selected.size === POST_STATUS_OPTIONS.length;
+  const summary = isAll
+    ? "상태: 전체"
+    : selected.size === 0
+    ? "상태: 없음"
+    : "상태: " + POST_STATUS_OPTIONS.filter((o) => selected.has(o.key)).map((o) => o.label).join(", ");
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-[260px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+      >
+        <span className="truncate">{summary}</span>
+        <ChevronDown size={14} className="shrink-0 text-gray-400" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs font-bold text-gray-700">상태 필터</span>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              전체 선택
+            </button>
+          </div>
+          <ul>
+            {POST_STATUS_OPTIONS.map((o) => {
+              const checked = selected.has(o.key);
+              return (
+                <li key={o.key}>
+                  <label
+                    className={
+                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
+                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
+                    }
+                  >
+                    <span>{o.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggle(o.key)}
+                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
+                    />
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

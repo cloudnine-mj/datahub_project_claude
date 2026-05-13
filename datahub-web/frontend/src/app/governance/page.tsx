@@ -45,12 +45,6 @@ const COMMON_CARDS: Card[] = [
 
 const ADMIN_CARDS: Card[] = [
   {
-    href: "/governance/forms/my",
-    icon: FolderOpen,
-    title: "정책 / 프로세스 게시글 관리",
-    desc: "작성한 정책 / 프로세스 게시글을 확인하고 이어서 작성하거나 수정 및 삭제합니다.",
-  },
-  {
     href: "/governance/admin/forms",
     icon: ClipboardList,
     title: "거버넌스 요청 관리",

@@ -75,7 +75,6 @@ const NAV: NavItem[] = [
         adminOnly: true,
         group: true,
         subchildren: [
-          { href: "/governance/forms/my", label: "정책 / 프로세스 게시글 관리" },
           { href: "/governance/admin/forms", label: "거버넌스 요청 관리" },
         ],
       },
