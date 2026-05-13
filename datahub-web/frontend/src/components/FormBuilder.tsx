@@ -86,8 +86,6 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
   // 필요할 때만 펼쳐 확인.
   const [submitterOpen, setSubmitterOpen] = useState(false);
-  // 파일 첨부 섹션 토글 — 기본 접힘. 첨부할 게 있을 때만 펼쳐서 사용.
-  const [attachOpen, setAttachOpen] = useState(false);
 
   // 진행률 계산 — schema 섹션 / 필드 기준.
   // 신청자 정보는 SSO 로 자동 채워지고 기본 접힘 상태라 카운트에서 제외 (사용자가
@@ -437,79 +435,56 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         })}
 
         <section>
-          <button
-            type="button"
-            onClick={() => setAttachOpen((v) => !v)}
-            aria-expanded={attachOpen}
-            className="mb-3 flex w-full items-center gap-2 text-left"
-          >
+          <div className="mb-3 flex items-center gap-3">
             <span className="block h-5 w-1 rounded-sm bg-brand" />
             <h2 className="text-base font-bold">파일 첨부</h2>
-            {files.length > 0 && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                {files.length}
-              </span>
-            )}
-            <ChevronDown
-              size={16}
-              className={
-                "text-gray-400 transition-transform " + (attachOpen ? "" : "-rotate-90")
-              }
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              <Upload size={12} /> 파일 선택
+            </button>
+            <span className="text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 · 최대 50MB</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
+                e.target.value = "";  // 같은 파일 다시 선택 가능하게
+              }}
             />
-          </button>
+          </div>
 
-          {attachOpen && (
-            <div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+          {/* 선택된 파일 목록 */}
+          {files.length > 0 && (
+            <ul className="space-y-2">
+              {files.map((f, i) => (
+                <li
+                  key={`${f.name}-${i}`}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
                 >
-                  <Upload size={12} /> 파일 선택
-                </button>
-                <span className="text-xs text-gray-500">샘플 데이터, 작업 가이드라인 등 · 최대 50MB</span>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length > 0) addFiles(e.target.files);
-                    e.target.value = "";  // 같은 파일 다시 선택 가능하게
-                  }}
-                />
-              </div>
-
-              {/* 선택된 파일 목록 */}
-              {files.length > 0 && (
-                <ul className="mt-3 space-y-2">
-                  {files.map((f, i) => (
-                    <li
-                      key={`${f.name}-${i}`}
-                      className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="text-gray-400">📎</span>
-                        <span className="truncate font-medium">{f.name}</span>
-                        <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFile(i);
-                        }}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
-                        aria-label="제거"
-                      >
-                        <X size={14} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-gray-400">📎</span>
+                    <span className="truncate font-medium">{f.name}</span>
+                    <span className="shrink-0 text-xs text-gray-400">{formatBytes(f.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(i);
+                    }}
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                    aria-label="제거"
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
