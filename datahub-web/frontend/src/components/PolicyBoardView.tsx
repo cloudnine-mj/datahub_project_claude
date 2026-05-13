@@ -201,7 +201,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
                       )}
                       {p.is_draft && (
                         <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0 text-[10px] font-semibold text-amber-700">
-                          임시저장
+                          임시 저장
                         </span>
                       )}
                       {/* 공개 범위 표기 — admin 만 노출, draft 가 아닐 때 */}

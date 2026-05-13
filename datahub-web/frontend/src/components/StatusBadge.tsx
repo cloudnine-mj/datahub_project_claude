@@ -3,7 +3,7 @@ import type { FormStatus } from "@/lib/api";
 
 const STYLES: Record<FormStatus, { label: string; cls: string; dot: string }> = {
   draft: {
-    label: "임시저장",
+    label: "임시 저장",
     cls: "bg-gray-50 text-gray-600 border-gray-200",
     dot: "bg-gray-400",
   },
@@ -42,7 +42,7 @@ export function StatusBadge({ status }: { status: FormStatus | string }) {
 }
 
 export const STATUSES: { value: FormStatus; label: string }[] = [
-  { value: "draft", label: "임시저장" },
+  { value: "draft", label: "임시 저장" },
   { value: "submitted", label: "제출됨" },
   { value: "reviewing", label: "검토 중" },
   { value: "approved", label: "승인 완료" },

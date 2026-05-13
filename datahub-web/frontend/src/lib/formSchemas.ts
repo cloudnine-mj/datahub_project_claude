@@ -124,7 +124,7 @@ const dataProduction: FormSchema = {
     {
       title: "작업 요청 사항",
       fields: [
-        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "e.g., 대화, 점수 매기기, AB 테스트, 다차원 레이블링, 한영번역검수, OCR, 문서 수집, 문서QA" },
+        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "e.g., 대화, 점수 매기기, AB 테스트, 다차원 레이블링, 한영 번역 검수, OCR, 문서 수집, 문서 QA" },
         { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀 or 외주 업체 자체 툴 (별도로 원하는 도구가 있으시면 적어 주세요! e.g., Gradio)" },
         { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력", inlineWithNext: true },
         { key: "단위", label: "단위", type: "text", placeholder: "e.g., 문장, 문항" },
@@ -149,18 +149,18 @@ const dataProduction: FormSchema = {
           key: "기타_유의_사항",
           label: "내용",
           type: "textarea",
-          hint: "위에서 설명하지 못한 기타 유의 사항이 있으면 적어주세요.",
-          placeholder: "예: 이런 주제로 대화하지 말아주세요 (정치, 위험 행동 지시, 미래 예측)",
+          hint: "위에서 설명하지 못한 기타 유의 사항이 있으면 적어 주세요.",
+          placeholder: "예: 이런 주제로 대화하지 말아 주세요 (정치, 위험 행동 지시, 미래 예측)",
         },
       ],
     },
     {
-      title: "파일 첨부 체크 리스트",
+      title: "파일 첨부 체크리스트",
       optional: true,
       fields: [
-        { key: "체크_샘플_데이터", label: "다양성이 있는 샘플 데이터를 직접 제작하여 최소 5개 보내주세요. (작업자 분들의 이해도가 올라가 데이터의 품질이 향상됩니다.)", type: "checkbox" },
-        { key: "체크_가이드라인", label: "작업자 분들에게 전달할 작업 가이드라인을 보내주세요. 데이터 팀에 요청할 별도 사항이 있으시면 별도의 파일을 첨부해 주세요.", type: "checkbox" },
-        { key: "체크_PoC_입력", label: "입력 데이터 / 소스 데이터가 필요한 작업일 경우 PoC 작업 용으로 소량 우선 제공해 주세요.", type: "checkbox" },
+        { key: "체크_샘플_데이터", label: "다양성이 있는 샘플 데이터를 직접 제작하여 최소 5개 보내 주세요. (작업자 분들의 이해도가 올라가 데이터의 품질이 향상됩니다.)", type: "checkbox" },
+        { key: "체크_가이드라인", label: "작업자 분들에게 전달할 작업 가이드라인을 보내 주세요. 데이터 팀에 요청할 별도 사항이 있으시면 별도의 파일을 첨부해 주세요.", type: "checkbox" },
+        { key: "체크_PoC_입력", label: "입력 데이터 / 소스 데이터가 필요한 작업일 경우 PoC 작업용으로 소량 우선 제공해 주세요.", type: "checkbox" },
       ],
     },
   ],

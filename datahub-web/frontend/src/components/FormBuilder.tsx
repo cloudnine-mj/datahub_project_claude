@@ -127,7 +127,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
     const arr = Array.from(list);
     const tooBig = arr.find((f) => f.size > MAX_BYTES);
     if (tooBig) {
-      setError(`"${tooBig.name}" 은(는) 50MB 를 초과합니다.`);
+      setError(`"${tooBig.name}" 은(는) 50MB를 초과합니다.`);
       return;
     }
     setError(null);
@@ -177,7 +177,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         willBeDraft
           ? isEdit
             ? "수정 저장 중..."
-            : "임시저장 중..."
+            : "임시 저장 중..."
           : "신청 제출 중...",
       );
 
@@ -499,7 +499,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
               disabled={submitting}
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
-              임시저장
+              임시 저장
             </button>
           )}
           <button
@@ -544,7 +544,7 @@ export function FormBuilder({ formType }: { formType: FormType }) {
               <strong className="font-semibold text-gray-800">&apos;{missingField.label}&apos;</strong> 항목을 입력해주세요.
               {!missingField.blocking && (
                 <span className="mt-1 block text-xs text-gray-500">
-                  비워둔 채로 저장하면 임시저장 상태로 보관됩니다.
+                  비워둔 채로 저장하면 임시 저장 상태로 보관됩니다.
                 </span>
               )}
             </p>
