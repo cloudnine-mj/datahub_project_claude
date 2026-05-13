@@ -223,19 +223,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {schema.label}
-              {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
-            </h1>
-            <button
-              type="button"
-              onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
-              className="inline-flex items-center gap-1 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
-            >
-              <Eye size={12} /> 미리보기
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {schema.label}
+            {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
+          </h1>
           <button
             type="button"
             onClick={() => setExampleOpen(true)}
@@ -449,6 +440,13 @@ export function FormBuilder({ formType }: { formType: FormType }) {
         {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
         <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            <Eye size={14} /> 미리보기
+          </button>
           {!isEdit && (
             <button
               type="button"
