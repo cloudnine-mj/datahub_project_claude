@@ -349,12 +349,13 @@ export function FormBuilder({ formType }: { formType: FormType }) {
                 <table className="w-full text-sm">
                   <tbody>
                     {rows.map(({ primary: f, inline }) => {
-                      // 체크박스는 라벨이 input 옆에 이미 있으므로 좌측 라벨 셀 생략 (중복 방지)
-                      if (f.type === "checkbox") {
+                      // 체크박스 / 결재선 칩 리스트 — 좌측 라벨 셀 생략 (헤더가 이미 의미 표현)
+                      if (f.type === "checkbox" || f.type === "approver_list") {
                         return (
                           <tr key={f.key} className="border-b border-gray-100 last:border-b-0">
                             <td colSpan={2} className="px-5 py-3">
                               <FieldInput field={f} value={values[f.key]} onChange={(v) => setField(f.key, v)} allValues={values} />
+                              <FieldHint field={f} currentValue={values[f.key]} />
                             </td>
                           </tr>
                         );
@@ -742,6 +743,14 @@ function FieldInput({
         />
       );
     }
+    case "approver_list":
+      return (
+        <ApproverListField
+          value={Array.isArray(value) ? (value as string[]) : []}
+          onChange={(v) => onChange(v)}
+          placeholder={field.placeholder}
+        />
+      );
     default:
       return (
         <input
@@ -1334,6 +1343,90 @@ function MemberChipsField({
       />
     </div>
   );
+}
+
+/**
+ * 결재선 입력 — 이름을 한 명씩 Enter 로 추가하는 칩 리스트.
+ *
+ * 칩에는 이니셜 아바타(영문 두 단어면 각 첫 글자, 그 외에는 앞 1~2자)와
+ * 이름이 함께 표시되고, X 아이콘으로 제거. 빈 입력으로 Enter 시 무시,
+ * 중복 이름은 추가하지 않음.
+ */
+function ApproverListField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function commit() {
+    const v = draft.trim();
+    if (!v) return;
+    if (value.includes(v)) {
+      setDraft("");
+      return;
+    }
+    onChange([...value, v]);
+    setDraft("");
+  }
+
+  function remove(idx: number) {
+    onChange(value.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {value.map((name, i) => (
+        <span
+          key={`${name}-${i}`}
+          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2 text-sm text-gray-700"
+        >
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
+            {approverInitials(name)}
+          </span>
+          <span>{name}</span>
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            aria-label={`${name} 제거`}
+            className="grid h-4 w-4 place-items-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          >
+            <X size={11} />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing || e.key === "Process") return;
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+        }}
+        onBlur={commit}
+        placeholder={placeholder ?? "이름 입력 후 Enter"}
+        className="min-w-[180px] flex-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
+      />
+    </div>
+  );
+}
+
+/** 이름에서 아바타용 이니셜 — 영문 두 단어면 각 첫 글자, 그 외엔 앞 1~2자. */
+export function approverInitials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  if (tokens.length >= 2) {
+    return (tokens[0][0] + tokens[tokens.length - 1][0]).toUpperCase();
+  }
+  return trimmed.slice(0, 2).toUpperCase();
 }
 
 /** "예상 비용" 문자열에서 숫자 부분을 추출해 인원 수와 곱한 뒤 통화 기호와 함께 포맷. */

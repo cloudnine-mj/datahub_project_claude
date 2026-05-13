@@ -11,6 +11,7 @@ import { DeleteFormButton } from "@/components/DeleteFormButton";
 import { FormStatusPanel } from "@/components/FormStatusPanel";
 import { FORM_TYPE_LABELS } from "@/lib/utils";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/formSchemas";
+import { approverInitials } from "@/components/FormBuilder";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
 
 export default function Page({ params }: { params: { id: string } }) {
@@ -381,6 +382,26 @@ function FieldValue({ field, value }: { field: FieldDef; value: unknown }) {
     return <span>{v.kind || "-"}</span>;
   }
 
+  if (field.type === "approver_list" && Array.isArray(value)) {
+    const names = (value as string[]).filter((s) => s && s.trim().length > 0);
+    if (names.length === 0) return <span className="text-gray-400">-</span>;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {names.map((name, i) => (
+          <span
+            key={`${name}-${i}`}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-2.5 text-sm text-gray-700"
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
+              {approverInitials(name)}
+            </span>
+            <span>{name}</span>
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   if (field.type === "service_blocks" && Array.isArray(value)) {
     type Block = {
       service_name?: string;
@@ -429,6 +450,11 @@ function valueToText(field: FieldDef, v: unknown): string {
   if (typeof v === "boolean") return v ? "예" : "아니오";
   if (typeof v === "string") return v;
   if (typeof v === "number") return String(v);
+  if (field.type === "approver_list" && Array.isArray(v)) {
+    return (v as unknown[])
+      .filter((s) => typeof s === "string" && s.trim().length > 0)
+      .join(" → ");
+  }
   if (Array.isArray(v)) {
     return v
       .map((item) => {

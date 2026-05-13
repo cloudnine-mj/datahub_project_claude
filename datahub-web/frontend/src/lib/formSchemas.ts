@@ -24,7 +24,9 @@ export type FieldType =
   /** 업무생산성 도구 신청 — 서비스 블록 동적 리스트 (서비스 N + 내부 다중 필드) */
   | "service_blocks"
   /** 통화 단위(currencyKey 가 가리키는 필드)에 맞춰 prefix/suffix 가 붙는 금액 입력 */
-  | "amount_with_currency";
+  | "amount_with_currency"
+  /** 결재선 — 이름을 한 명씩 입력 후 Enter 로 추가하는 칩 리스트. 값은 string[]. */
+  | "approver_list";
 
 export interface FieldDef {
   key: string;
@@ -334,12 +336,32 @@ const productivityTool: FormSchema = {
   ],
 };
 
+// 결재선 — 7종 신청 양식 공통으로 마지막에 자동 부착되는 섹션.
+// 사용자가 결재자 이름을 한 명씩 Enter 로 추가. 입력 순서가 결재 순서.
+const APPROVER_SECTION: SectionDef = {
+  title: "결재선",
+  optional: true,
+  fields: [
+    {
+      key: "결재선",
+      label: "결재선",
+      type: "approver_list",
+      placeholder: "결재자 이름 입력 후 Enter (예: 홍길동)",
+      hint: "결재자 이름을 한 명씩 입력 후 Enter 를 눌러 추가하세요. 입력한 순서대로 결재가 진행됩니다.",
+    },
+  ],
+};
+
+function withApproverSection(schema: FormSchema): FormSchema {
+  return { ...schema, sections: [...schema.sections, APPROVER_SECTION] };
+}
+
 export const FORM_SCHEMAS: Record<FormType, FormSchema> = {
-  data_production: dataProduction,
-  data_purchase: dataPurchase,
-  data_subscription: dataSubscription,
-  product_log_usage: productLogUsage,
-  data_production_plan: dataProductionPlan,
-  api_usage_plan: apiUsagePlan,
-  productivity_tool: productivityTool,
+  data_production: withApproverSection(dataProduction),
+  data_purchase: withApproverSection(dataPurchase),
+  data_subscription: withApproverSection(dataSubscription),
+  product_log_usage: withApproverSection(productLogUsage),
+  data_production_plan: withApproverSection(dataProductionPlan),
+  api_usage_plan: withApproverSection(apiUsagePlan),
+  productivity_tool: withApproverSection(productivityTool),
 };
