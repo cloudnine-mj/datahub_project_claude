@@ -17,8 +17,9 @@ export default function Page() {
     ? `${inProgress.roundNumber}/${MOCK_CONTRACT.totalRounds}회차 진행 중`
     : undefined;
 
-  // canProceed: 최종 회차까지 모두 completed 일 때만 true.
-  const allCompleted = MOCK_DELIVERY_ROUNDS.every((r) => r.status === "completed");
+  // TODO: 원래 조건 — MOCK_DELIVERY_ROUNDS.every((r) => r.status === 'completed').
+  // 데모 단계에서는 다음 단계 진입을 항상 열어둠.
+  const canProceed = true;
 
   return (
     <PhaseLayout
@@ -41,7 +42,7 @@ export default function Page() {
       prevLabel="1단계 다시 보기"
       nextPath="/governance/forms/intake/load"
       nextLabel="최종 데이터 수령 확인"
-      canProceed={allCompleted}
+      canProceed={canProceed}
     >
       <ContractStatusBlock contract={MOCK_CONTRACT} />
       <DeliveryRoundsBlock

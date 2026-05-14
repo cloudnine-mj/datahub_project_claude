@@ -63,8 +63,11 @@ export default function Page() {
         ))}
       </div>
 
-      {/* 카드 선택이 곧 다음 단계 진입 — 별도 next 버튼은 비활성 안내용. */}
-      <StepActions nextLabel="담당자 논의·확정으로" canProceed={false} />
+      {/* 데모용 — 다음 단계 진입 제한은 추후 신청서 작성 완료 기준으로 재설정. */}
+      <StepActions
+        nextPath="/governance/forms/intake/build"
+        nextLabel="2단계로 진행"
+      />
     </div>
   );
 }

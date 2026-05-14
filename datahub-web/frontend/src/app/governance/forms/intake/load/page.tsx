@@ -12,14 +12,9 @@ import {
 } from "@/lib/phaseMockData";
 
 export default function Page() {
-  // 데이터카드 모든 needs-input 필드가 채워졌고 정산 단계 모두 completed 일 때 진행 가능.
-  const datacardAllFilled = MOCK_DATA_CARD_FIELDS.every(
-    (f) => f.status !== "needs-input",
-  );
-  const settlementAllDone = MOCK_SETTLEMENT_STEPS.every(
-    (s) => s.status === "completed",
-  );
-  const canProceed = datacardAllFilled && settlementAllDone;
+  // TODO: 원래 조건 — 데이터카드 needs-input 모두 채움 AND 정산 단계 모두 완료.
+  // 데모 단계에서는 신청 완료 처리 버튼을 항상 열어둠.
+  const canProceed = true;
 
   return (
     <PhaseLayout
@@ -45,6 +40,7 @@ export default function Page() {
       ]}
       prevPath="/governance/forms/intake/build"
       prevLabel="2단계 다시 보기"
+      nextPath="/governance/home"
       nextLabel="신청 완료 처리"
       canProceed={canProceed}
     >
