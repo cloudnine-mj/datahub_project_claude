@@ -136,9 +136,11 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {/* chevron '승인 완료' (index 2) 가 선택된 상태에서는 chevron 패널 안의 ProgressPanel 이
-          같은 진행 상태 / 진행 이력을 노출하므로 중복 방지를 위해 standalone 은 가림. */}
-      {from !== "list" && selectedStep !== 2 && (
+      {/* standalone 진행 상태 카드는 chevron 의 다른 단계 패널이 점유하는 경우 가림.
+          - selectedStep === 2 (승인 완료): chevron ProgressPanel 이 동일 정보 노출 → 중복 방지
+          - selectedStep === 3 (전자결재 승인): 해당 단계 설명 패널만 노출하고 진행 상태/이력은
+            의도적으로 숨김 (사용자 요청). */}
+      {from !== "list" && selectedStep !== 2 && selectedStep !== 3 && (
         <div id="form-status" className="scroll-mt-4">
           <FormStatusPanel
             formId={form.id}
