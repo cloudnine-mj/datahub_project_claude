@@ -1,10 +1,12 @@
 // 제출된 신청 내용 카드 — 유형별 주요 4개 필드만 요약 표.
-//   '전체 보기' 버튼으로 양식 전체는 별도 모달/페이지 확인 (현재 stub).
+//   '미리보기' 버튼으로 양식 전체 내용을 모달로 노출 (ApplicationPreviewModal).
 
 "use client";
 
+import { useState } from "react";
 import { Eye } from "lucide-react";
 import type { ApplicationType } from "@/lib/applicationFormConfig";
+import { ApplicationPreviewModal } from "./ApplicationPreviewModal";
 
 interface SummaryField {
   id: string;
@@ -40,35 +42,46 @@ interface Props {
 }
 
 export function SubmittedSummaryBlock({ type, values }: Props) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const fields = SUMMARY_FIELDS[type];
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
-      <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">제출된 신청 내용</h2>
-        <button
-          type="button"
-          onClick={() => console.log("[stub] 전체 보기")}
-          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-        >
-          <Eye size={12} aria-hidden="true" />
-          전체 보기
-        </button>
-      </header>
-
-      <dl className="divide-y divide-gray-100 dark:divide-gray-800">
-        {fields.map((f) => (
-          <div
-            key={f.id}
-            className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1 last:pb-1"
+    <>
+      <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
+        <header className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">제출된 신청 내용</h2>
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            <dt className="text-sm text-gray-500 dark:text-gray-400">{f.label}</dt>
-            <dd className="text-sm text-gray-900 dark:text-gray-100">
-              {values[f.id]?.trim() || f.mockValue}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+            <Eye size={12} aria-hidden="true" />
+            미리보기
+          </button>
+        </header>
+
+        <dl className="divide-y divide-gray-100 dark:divide-gray-800">
+          {fields.map((f) => (
+            <div
+              key={f.id}
+              className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1 last:pb-1"
+            >
+              <dt className="text-sm text-gray-500 dark:text-gray-400">{f.label}</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">
+                {values[f.id]?.trim() || f.mockValue}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      {previewOpen && (
+        <ApplicationPreviewModal
+          type={type}
+          values={values}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
+    </>
   );
 }
