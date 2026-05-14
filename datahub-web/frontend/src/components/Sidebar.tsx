@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Database, Brain, Folder, LayoutGrid, ShieldCheck } from "lucide-react";
 import { api, type FormType, type Me } from "@/lib/api";
@@ -116,6 +116,10 @@ const NAV: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname() ?? "";
+  // 3단계 항목 활성 판정에 query 까지 비교하기 위해 (1. 기획 / 2. 구축 / 3. 적재
+  // 가 같은 경로 + 다른 phase 쿼리로 구분됨).
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams?.toString() ?? "";
   const [me, setMe] = useState<Me | null>(null);
 
   // 경로 전환마다 me 재조회 — Sidebar 가 루트 레이아웃에 있어 remount 가 없으므로
@@ -225,10 +229,12 @@ export function Sidebar() {
                                   {sc.subsubchildren && sc.subsubchildren.length > 0 && (
                                     <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                                       {sc.subsubchildren.map((ssc) => {
-                                        // query 무관하게 경로만 일치하면 활성 (SSR/CSR 일관성 위해
-                                        // window 참조 제거)
-                                        const sscPath = ssc.href.split("?")[0];
-                                        const ssActive = pathname === sscPath;
+                                        // 1. 기획 / 2. 구축 / 3. 적재 가 모두 같은 경로 +
+                                        // 다른 ?phase 쿼리라 경로만 보면 셋 다 active 가 됨.
+                                        // path + query 둘 다 정확히 일치할 때만 active.
+                                        const [sscPath, sscQuery = ""] = ssc.href.split("?");
+                                        const ssActive =
+                                          pathname === sscPath && currentQuery === sscQuery;
                                         return (
                                           <li key={ssc.href}>
                                             <Link
