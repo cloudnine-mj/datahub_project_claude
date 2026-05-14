@@ -24,6 +24,10 @@ interface NavSubChild {
   /** 비클릭 카테고리 헤더로 두려면 생략. 그 외엔 클릭 가능한 링크. */
   href?: string;
   label: string;
+  /** admin 에게만 노출 */
+  adminOnly?: boolean;
+  /** non-admin 에게만 노출 */
+  userOnly?: boolean;
   /** 3단계 하위 항목 — subchild 가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
   subsubchildren?: { href: string; label: string }[];
 }
@@ -96,7 +100,8 @@ const NAV: NavItem[] = [
         group: true,
         subchildren: [
           { href: "/governance/forms/list", label: "거버넌스 요청 목록" },
-          { href: "/governance/forms/my", label: "내 문서 목록" },
+          // 내 문서 목록은 일반 사용자에게만 노출 — admin 은 '관리 페이지' 그룹에서 동일 항목 접근.
+          { href: "/governance/forms/my", label: "내 문서 목록", userOnly: true },
         ],
       },
       {
@@ -105,6 +110,7 @@ const NAV: NavItem[] = [
         group: true,
         subchildren: [
           { href: "/governance/admin/forms", label: "거버넌스 요청 관리" },
+          { href: "/governance/forms/my", label: "내 문서 목록" },
         ],
       },
     ],
@@ -197,9 +203,15 @@ export function Sidebar() {
                             {displayLabel}
                           </Link>
                         )}
-                        {c.subchildren && c.subchildren.length > 0 && (
+                        {c.subchildren && c.subchildren.length > 0 && (() => {
+                          // adminOnly / userOnly 역할 필터 — subchildren 도 NavChild 와 동일 정책.
+                          const visibleSub = c.subchildren.filter(
+                            (sc) => (!sc.adminOnly || isAdmin) && (!sc.userOnly || !isAdmin),
+                          );
+                          if (visibleSub.length === 0) return null;
+                          return (
                           <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
-                            {c.subchildren.map((sc) => {
+                            {visibleSub.map((sc) => {
                               // 3단계 항목(subsubchildren) 이 있을 경우 활성 판정도 그 안까지 고려
                               const subActive = !!sc.href && (
                                 pathname === sc.href || pathname.startsWith(sc.href + "/")
@@ -254,7 +266,8 @@ export function Sidebar() {
                               );
                             })}
                           </ul>
-                        )}
+                          );
+                        })()}
                       </li>
                     );
                   })}
