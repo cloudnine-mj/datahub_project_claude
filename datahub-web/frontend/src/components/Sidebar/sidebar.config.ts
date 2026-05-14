@@ -1,19 +1,19 @@
 // 사이드바 Governance 트리 메뉴 데이터.
+//   - 홈 항목(나의 현황) 은 그룹 밖 단독 — CTA 위에 별도 노출.
 //   - 그룹 단위로 묶고 각 그룹마다 항목 배열을 둠.
 //   - 관리(admin) 그룹은 adminOnly=true 로 표시. 사이드바가 권한에 따라 DOM 자체에서 제외.
 
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
-  Bell,
   BookOpen,
-  Check,
+  Bookmark,
+  ClipboardList,
   Code,
   Database,
-  FileEdit,
   FileText,
+  Home,
   Inbox,
-  Loader,
   Route,
   Settings,
   Users,
@@ -43,6 +43,14 @@ export interface MenuGroup {
   locked?: boolean;
 }
 
+/** Governance 트리 최상단의 홈 항목 — 그룹과 분리된 단독 메뉴. */
+export const GOVERNANCE_HOME: MenuItem = {
+  id: "home",
+  label: "나의 현황",
+  icon: Home,
+  path: "/governance/home",
+};
+
 /** 사이드바 CTA — '새 신청 시작'. 메뉴와 구분되는 단일 액션. */
 export const GOVERNANCE_CTA = {
   label: "새 신청 시작",
@@ -51,34 +59,20 @@ export const GOVERNANCE_CTA = {
 
 export const GOVERNANCE_GROUPS: MenuGroup[] = [
   {
-    id: "my-work",
-    label: "내 작업",
+    id: "all-requests",
+    label: "전체 요청",
     items: [
       {
-        id: "in-progress",
-        label: "진행 중인 신청",
-        icon: Loader,
+        id: "request-list",
+        label: "거버넌스 요청 목록",
+        icon: ClipboardList,
         path: "/governance/forms/list",
-        badge: { count: 3, variant: "info" },
       },
       {
-        id: "my-todos",
-        label: "내 할 일",
-        icon: Bell,
-        path: "/governance/forms/list?mine=1",
-        badge: { count: 2, variant: "danger" },
-      },
-      {
-        id: "completed",
-        label: "완료된 신청",
-        icon: Check,
-        path: "/governance/forms/list?status=approved",
-      },
-      {
-        id: "drafts",
-        label: "임시저장",
-        icon: FileEdit,
-        path: "/governance/forms/my",
+        id: "bookmarked",
+        label: "관심 신청",
+        icon: Bookmark,
+        path: "/governance/forms/list?bookmarked=1",
       },
     ],
   },
