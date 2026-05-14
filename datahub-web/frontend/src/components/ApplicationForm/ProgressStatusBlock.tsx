@@ -40,9 +40,9 @@ export function ProgressStatusBlock({ status, history }: Props) {
   const currentIdx = STATUS_INDEX[status];
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
       <header className="mb-5 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">진행 상태</h2>
+        <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">진행 상태</h2>
         <StatusBadge status={status} />
       </header>
 

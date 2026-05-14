@@ -127,8 +127,8 @@ export function ApplicationFormContainer({
 
   // tracking mode (submitted / reviewing / approved)
   return (
-    <>
-      <div className="flex items-center gap-2">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 pb-1">
         <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100">
           {PAGE_TITLE[type]}
         </h2>
@@ -144,7 +144,7 @@ export function ApplicationFormContainer({
         onCancel={onCancel}
         onProceedToApproval={onProceedToApproval}
       />
-    </>
+    </div>
   );
 }
 

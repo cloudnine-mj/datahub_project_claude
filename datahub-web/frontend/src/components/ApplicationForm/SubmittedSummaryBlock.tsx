@@ -43,9 +43,9 @@ export function SubmittedSummaryBlock({ type, values }: Props) {
   const fields = SUMMARY_FIELDS[type];
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
       <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">제출된 신청 내용</h2>
+        <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">제출된 신청 내용</h2>
         <button
           type="button"
           onClick={() => console.log("[stub] 전체 보기")}
