@@ -18,7 +18,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Lock, Pencil, X } from "lucide-react";
+import { ArrowLeft, Lock, Pencil, Pin, PinOff, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/api";
 import { Breadcrumb } from "./Breadcrumb";
 import { MarkdownView } from "./MarkdownEditor";
@@ -30,6 +30,7 @@ export function PolicyDetailView({ postId }: { postId: number }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forbiddenOpen, setForbiddenOpen] = useState(false);
+  const [pinning, setPinning] = useState(false);
 
   useEffect(() => {
     api.getPost("policy", postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -42,6 +43,19 @@ export function PolicyDetailView({ postId }: { postId: number }) {
   // 삭제 권한: admin 이거나 작성자 본인. 백엔드도 동일하게 검증함.
   const canDelete = !!me && (me.user.role === "admin" || me.user.name === post.author_name);
   const isAdmin = me?.user.role === "admin";
+
+  async function togglePin() {
+    if (!post || pinning) return;
+    setPinning(true);
+    try {
+      const updated = await api.togglePinPost("policy", post.id);
+      setPost(updated);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPinning(false);
+    }
+  }
 
   return (
     <div className="max-w-4xl">
@@ -57,6 +71,24 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         <div className="flex items-start justify-between gap-4">
           <h1 className="min-w-0 flex-1 text-2xl font-bold tracking-tight">{post.title}</h1>
           <div className="flex shrink-0 items-center gap-1.5">
+            {/* 상단 고정 토글 — admin 만. 고정 상태면 PinOff 아이콘 + amber 톤. */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={togglePin}
+                disabled={pinning}
+                className={
+                  "inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 " +
+                  (post.pinned
+                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50")
+                }
+                title={post.pinned ? "상단 고정 해제" : "상단에 고정"}
+              >
+                {post.pinned ? <PinOff size={12} /> : <Pin size={12} />}
+                {post.pinned ? "고정 해제" : "상단 고정"}
+              </button>
+            )}
             {isAdmin ? (
               <Link
                 href={`/governance/policy/new?id=${post.id}`}
@@ -80,6 +112,11 @@ export function PolicyDetailView({ postId }: { postId: number }) {
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+          {post.pinned && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+              <Pin size={10} /> 상단 고정
+            </span>
+          )}
           {post.is_draft && (
             <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
               임시저장
