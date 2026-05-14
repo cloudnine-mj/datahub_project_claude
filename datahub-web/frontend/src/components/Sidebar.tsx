@@ -225,18 +225,19 @@ export function Sidebar() {
                                   {sc.subsubchildren && sc.subsubchildren.length > 0 && (
                                     <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                                       {sc.subsubchildren.map((ssc) => {
-                                        const ssActive =
-                                          pathname + (typeof window !== "undefined" ? window.location.search : "") === ssc.href
-                                          || pathname === ssc.href.split("?")[0];
+                                        // query 무관하게 경로만 일치하면 활성 (SSR/CSR 일관성 위해
+                                        // window 참조 제거)
+                                        const sscPath = ssc.href.split("?")[0];
+                                        const ssActive = pathname === sscPath;
                                         return (
                                           <li key={ssc.href}>
                                             <Link
                                               href={ssc.href}
                                               className={cn(
-                                                "block rounded-md px-3 py-1 text-[10px] transition",
+                                                "block rounded-md px-3 py-1 text-[11px] transition",
                                                 ssActive
                                                   ? "font-semibold text-brand"
-                                                  : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
+                                                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
                                               )}
                                             >
                                               {ssc.label}
