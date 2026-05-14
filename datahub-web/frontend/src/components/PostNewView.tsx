@@ -96,8 +96,13 @@ export function PostNewView({ board }: { board: BoardType }) {
     setSubmitting(true);
     try {
       setProgress(asDraft ? "임시저장 중..." : isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
+      // 제목 입력 칸이 제거되어 있어 — 본문 첫 줄에서 자동 추출 (마크다운 헤더 # 떼고
+      // 100자 잘라서 사용). 비어있으면 backend default("") 로 들어감.
+      const finalTitle =
+        title.trim() ||
+        (content.split("\n").find((l) => l.trim()) ?? "").replace(/^#+\s*/, "").trim().slice(0, 100);
       const body = {
-        title,
+        title: finalTitle,
         ...(isPolicy
           ? { doc_no: docNo.trim() || null }
           : { doc_type: docType || null }),
@@ -163,16 +168,6 @@ export function PostNewView({ board }: { board: BoardType }) {
                 onChange={(e) => setAuthorName(e.target.value)}
                 placeholder="작성자명을 입력하세요"
                 maxLength={100}
-                className={inputCls}
-              />
-            </Field>
-
-            <Field label="제목" required>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="제목을 입력하세요"
                 className={inputCls}
               />
             </Field>
