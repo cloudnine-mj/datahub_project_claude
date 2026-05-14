@@ -51,12 +51,6 @@ export const GOVERNANCE_HOME: MenuItem = {
   path: "/governance/home",
 };
 
-/** 사이드바 CTA — '새 신청 시작'. 메뉴와 구분되는 단일 액션. */
-export const GOVERNANCE_CTA = {
-  label: "새 신청 시작",
-  path: "/governance/forms/intake",
-};
-
 export const GOVERNANCE_GROUPS: MenuGroup[] = [
   {
     id: "all-requests",
