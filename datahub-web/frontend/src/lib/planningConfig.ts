@@ -30,6 +30,13 @@ export const PLANNING_TYPE_LABEL: Record<PlanningType, string> = {
   service: "용역 제작",
 };
 
+/** PlanningType → FormBuilder 의 FormType 매핑. 신청서 작성 substep 으로 유형 전달용. */
+export const PLANNING_TO_FORM_TYPE: Record<PlanningType, string> = {
+  purchase: "data_purchase",
+  subscribe: "data_subscription",
+  service: "data_production",
+};
+
 export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
   service: [
     {

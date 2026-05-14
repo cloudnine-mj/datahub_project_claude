@@ -21,7 +21,14 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function FormBuilder({ formType }: { formType: FormType }) {
+// embedded=true 면 자체 Breadcrumb / 제목 / FormProcessBar 를 숨김 — 다른 페이지의 substep 자리에 inline 으로 끼울 때 사용.
+export function FormBuilder({
+  formType,
+  embedded = false,
+}: {
+  formType: FormType;
+  embedded?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   // ?id=N 가 있으면 수정 모드 — 기존 신청을 읽어 폼 prefill 후 PATCH 로 저장.
@@ -216,39 +223,47 @@ export function FormBuilder({ formType }: { formType: FormType }) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Governance", href: "/governance" },
-          from === "my"
-            ? { label: "내 문서 목록", href: "/governance/forms/my" }
-            : from === "admin"
-            ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
-            : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
-          { label: schema.label },
-        ]}
-      />
+      {!embedded && (
+        <Breadcrumb
+          items={[
+            { label: "Governance", href: "/governance" },
+            from === "my"
+              ? { label: "내 문서 목록", href: "/governance/forms/my" }
+              : from === "admin"
+              ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
+              : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
+            { label: schema.label },
+          ]}
+        />
+      )}
 
       <div className="mb-6">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {schema.label}
-            {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
-          </h1>
+          {!embedded && (
+            <h1 className="text-2xl font-bold tracking-tight">
+              {schema.label}
+              {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
+            </h1>
+          )}
           <button
             type="button"
             onClick={() => setExampleOpen(true)}
-            className="inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+            className={`inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 ${
+              embedded ? "ml-auto" : ""
+            }`}
           >
             신청서 작성 예시
           </button>
         </div>
 
-        <FormProcessBar
-          formType={formType}
-          status={loadedStatus}
-          history={loadedHistory}
-          onSelectedStepChange={setSelectedStep}
-        />
+        {!embedded && (
+          <FormProcessBar
+            formType={formType}
+            status={loadedStatus}
+            history={loadedHistory}
+            onSelectedStepChange={setSelectedStep}
+          />
+        )}
       </div>
 
       <form
