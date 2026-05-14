@@ -7,11 +7,9 @@ import { Database, Brain, Folder, LayoutGrid, ShieldCheck } from "lucide-react";
 import { api, type FormType, type Me } from "@/lib/api";
 import { cn, FORM_TYPE_LABELS } from "@/lib/utils";
 
-// 서식 모음 하위 노출용 — formSchemas 에 정의된 7종과 일치하는 순서로 노출
-const FORM_TYPES_FOR_SIDEBAR: FormType[] = [
-  "data_production",
-  "data_purchase",
-  "data_subscription",
+// 사이드바 우측 트리에서 단독 링크로 노출되는 양식 종류 (기획·구축·적재 3단계
+// 프로세스를 공유하지 않는 양식들). 데이터 용역 제작/구매/구독은 별도로 그룹화.
+const STANDALONE_FORM_TYPES: FormType[] = [
   "product_log_usage",
   "data_production_plan",
   "api_usage_plan",
@@ -75,24 +73,23 @@ const NAV: NavItem[] = [
       {
         href: "/governance/forms",
         label: "신청서 작성",
-        subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => {
-          // 데이터 구매 신청: 그 자체는 카테고리 라벨만, 실제 양식 진입은 '1. 기획' 으로 이관.
-          if (t === "data_purchase") {
-            return {
-              label: FORM_TYPE_LABELS[t] ?? t,
-              // href 생략 → 비클릭 카테고리 헤더 + subsubchildren 만 노출
-              subsubchildren: [
-                { href: `/governance/forms/${t}/new`, label: "1. 기획" },
-                { href: `/governance/forms/${t}/build`, label: "2. 구축" },
-                { href: `/governance/forms/${t}/deploy`, label: "3. 적재" },
-              ],
-            } satisfies NavSubChild;
-          }
-          return {
+        subchildren: [
+          // 데이터 용역 제작 / 구매 / 구독 — 같은 3단계 프로세스(기획→구축→적재) 공유.
+          // 그룹 자체는 비클릭 카테고리 헤더, 진입은 sub-sub 단계로만.
+          {
+            label: "데이터 용역 제작/구매/구독",
+            subsubchildren: [
+              { href: "/governance/forms/intake", label: "1. 기획" },
+              { href: "/governance/forms/intake/build", label: "2. 구축" },
+              { href: "/governance/forms/intake/deploy", label: "3. 적재" },
+            ],
+          },
+          // 그 외 단독 양식들
+          ...STANDALONE_FORM_TYPES.map<NavSubChild>((t) => ({
             href: `/governance/forms/${t}/new`,
             label: FORM_TYPE_LABELS[t] ?? t,
-          } satisfies NavSubChild;
-        }),
+          })),
+        ],
       },
       {
         label: "요청 현황",
