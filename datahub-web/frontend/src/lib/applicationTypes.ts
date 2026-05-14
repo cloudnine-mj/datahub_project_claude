@@ -51,8 +51,8 @@ export const APPLICATION_TYPES: ApplicationType[] = [
   {
     type: "data_purchase",
     icon: ShoppingCart,
-    iconBgClass: "bg-[#E6F1FB] dark:bg-[#0e2a44]",
-    iconColorClass: "text-[#185FA5] dark:text-[#7fb6e6]",
+    iconBgClass: "bg-red-100 dark:bg-red-900/40",
+    iconColorClass: "text-red-700 dark:text-red-300",
     title: "데이터 구매",
     description: "기존 데이터셋을 일회성으로 구매",
     metaItems: [

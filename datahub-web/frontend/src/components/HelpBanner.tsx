@@ -14,7 +14,7 @@ interface Props {
 
 export function HelpBanner({ message, ctaLabel, onCtaClick }: Props) {
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-[#E6F1FB] px-4 py-3 text-sm text-[#185FA5] dark:bg-blue-900/20 dark:text-blue-200">
+    <div className="flex items-start gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-200">
       <Info size={16} className="mt-0.5 shrink-0" />
       <p className="leading-relaxed">
         {message}

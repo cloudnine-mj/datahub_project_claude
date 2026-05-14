@@ -10,7 +10,7 @@ const STYLE: Record<RequestType, { label: string; cls: string }> = {
   },
   purchase: {
     label: "구매",
-    cls: "bg-[#E6F1FB] text-[#0C447C] dark:bg-blue-900/30 dark:text-blue-200",
+    cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200",
   },
   subscribe: {
     label: "구독",

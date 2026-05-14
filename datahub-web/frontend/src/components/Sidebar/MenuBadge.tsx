@@ -9,8 +9,8 @@ interface Props {
 }
 
 const VARIANT_CLASS: Record<BadgeVariant, string> = {
-  info: "bg-[#E6F1FB] text-[#185FA5] dark:bg-blue-900/30 dark:text-blue-300",
-  danger: "bg-[#FAECE7] text-[#B0421C] dark:bg-red-900/30 dark:text-red-300",
+  info: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  danger: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200",
   neutral: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
 };
 

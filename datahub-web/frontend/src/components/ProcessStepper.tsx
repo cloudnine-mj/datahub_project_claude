@@ -47,7 +47,7 @@ export function ProcessStepper({ currentPhase, currentSubStep }: Props) {
         {PHASES.map((p, i) => (
           <span key={p.num} className="flex items-center gap-2">
             {p.num === currentPhase ? (
-              <span className="rounded-full bg-[#E6F1FB] px-3 py-1 font-medium text-[#185FA5] dark:bg-blue-900/30 dark:text-blue-300">
+              <span className="rounded-full bg-red-50 px-3 py-1 font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
                 {p.label}
               </span>
             ) : (
@@ -70,10 +70,10 @@ export function ProcessStepper({ currentPhase, currentSubStep }: Props) {
             const barClass = isDone
               ? "bg-[#1D9E75] dark:bg-[#1D9E75]"
               : isCurrent
-              ? "bg-[#185FA5] dark:bg-[#185FA5]"
+              ? "bg-brand dark:bg-brand"
               : "bg-gray-200 dark:bg-gray-700";
             const labelClass = isCurrent
-              ? "font-medium text-[#185FA5] dark:text-blue-300"
+              ? "font-medium text-red-700 dark:text-red-300"
               : isDone
               ? "text-gray-700 dark:text-gray-300"
               : "text-gray-400 dark:text-gray-500";

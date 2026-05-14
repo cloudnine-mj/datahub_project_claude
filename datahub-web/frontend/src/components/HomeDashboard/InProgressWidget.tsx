@@ -1,5 +1,5 @@
 // 위젯: 진행 중인 신청 — 각 row 에 현재 단계 + 진행률 바.
-//   배지: 파랑. 진행률 바 fill 색상은 브랜드 파랑 (#185FA5).
+//   배지·진행률 바 모두 브랜드 빨강 톤 (신청서 양식과 통일).
 
 "use client";
 
@@ -16,7 +16,7 @@ export function InProgressWidget({ items }: Props) {
       <h2 className="flex items-center gap-1.5 text-[13px] font-medium text-gray-900 dark:text-gray-100">
         진행 중인 신청
         {items.length > 0 && (
-          <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[#E6F1FB] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[#185FA5] dark:bg-blue-900/30 dark:text-blue-300">
+          <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-red-700 dark:bg-red-900/30 dark:text-red-300">
             {items.length}
           </span>
         )}
@@ -46,7 +46,7 @@ export function InProgressWidget({ items }: Props) {
                   </span>
                   <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
-                      className="h-full rounded-full bg-[#185FA5]"
+                      className="h-full rounded-full bg-brand"
                       style={{ width: `${it.progressPercent}%` }}
                     />
                   </div>

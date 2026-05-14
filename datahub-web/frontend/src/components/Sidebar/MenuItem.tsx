@@ -29,9 +29,9 @@ export function MenuItem({ item }: Props) {
     <Link
       href={item.path}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] outline-none transition focus-visible:ring-2 focus-visible:ring-[#185FA5]/40 ${
+      className={`group flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] outline-none transition focus-visible:ring-2 focus-visible:ring-brand/40 ${
         active
-          ? "bg-[#E6F1FB] font-medium text-[#185FA5] dark:bg-blue-900/30 dark:text-blue-300"
+          ? "bg-red-50 font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
           : "font-normal text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-100"
       }`}
     >
@@ -39,7 +39,7 @@ export function MenuItem({ item }: Props) {
         size={15}
         className={
           active
-            ? "text-[#185FA5] dark:text-blue-300"
+            ? "text-brand dark:text-red-300"
             : "text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300"
         }
       />
