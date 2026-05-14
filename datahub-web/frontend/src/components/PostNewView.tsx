@@ -12,6 +12,23 @@ import { DOC_TYPES, PROCESS_CATEGORIES } from "@/lib/utils";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
+/**
+ * 본문 첫 비어있지 않은 줄을 제목으로 추출 + 그 줄을 본문에서 제거.
+ * 마크다운 헤더(#/##/###)면 접두 # 제거. 100자 컷.
+ * 첫 줄 추출이 불가능하면(완전 빈 content) title="" / contentRemainder=content 반환.
+ */
+function extractTitleFromContent(content: string): { title: string; contentRemainder: string } {
+  const lines = content.split("\n");
+  const idx = lines.findIndex((l) => l.trim());
+  if (idx < 0) return { title: "", contentRemainder: content };
+  const extractedTitle = lines[idx].replace(/^#+\s*/, "").trim().slice(0, 100);
+  const rest = lines.slice();
+  rest.splice(idx, 1);
+  // 추출된 줄 다음의 선행 빈 줄 정리 — 본문 시작이 어색하지 않도록
+  while (rest.length > 0 && !rest[0].trim()) rest.shift();
+  return { title: extractedTitle, contentRemainder: rest.join("\n") };
+}
+
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -101,19 +118,9 @@ export function PostNewView({ board }: { board: BoardType }) {
       // 제거. 100자 컷.
       // 편집 모드에서 이미 title 이 있으면(state 비어있지 않음) 추출 로직 스킵 →
       // content 변경 없음, 기존 title 유지.
-      let finalTitle = title.trim();
-      let finalContent = content;
-      if (!finalTitle) {
-        const lines = content.split("\n");
-        const idx = lines.findIndex((l) => l.trim());
-        if (idx >= 0) {
-          finalTitle = lines[idx].replace(/^#+\s*/, "").trim().slice(0, 100);
-          lines.splice(idx, 1);
-          // 추출된 줄 다음의 선행 빈 줄 정리 — 본문 시작이 어색하지 않도록
-          while (lines.length > 0 && !lines[0].trim()) lines.shift();
-          finalContent = lines.join("\n");
-        }
-      }
+      const extracted = extractTitleFromContent(content);
+      const finalTitle = title.trim() || extracted.title;
+      const finalContent = title.trim() ? content : extracted.contentRemainder;
       const body = {
         title: finalTitle,
         ...(isPolicy
@@ -237,6 +244,7 @@ export function PostNewView({ board }: { board: BoardType }) {
             </Field>
 
             <Field label="내용" required hint="마크다운 지원">
+              <TitleExtractionHint titleSet={!!title.trim()} content={content} />
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -361,6 +369,26 @@ function chipCls(active: boolean) {
   return (
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
+  );
+}
+
+/**
+ * 본문 textarea 바로 위에 노출되는 라이브 힌트 — 제목 입력 칸이 없으므로
+ * 사용자가 "어떤 줄이 제목이 될지" 작성 중 즉시 확인할 수 있게 함.
+ * 편집 모드처럼 기존 title 이 이미 있으면(titleSet=true) 힌트 미노출.
+ */
+function TitleExtractionHint({ titleSet, content }: { titleSet: boolean; content: string }) {
+  if (titleSet) return null;
+  const { title } = extractTitleFromContent(content);
+  return (
+    <div className="mb-2 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs">
+      <span className="font-semibold text-blue-700">이 줄이 제목이 됩니다 →</span>
+      {title ? (
+        <span className="truncate font-medium text-gray-800">{title}</span>
+      ) : (
+        <span className="italic text-gray-400">(본문 첫 줄을 작성하면 자동으로 제목이 됩니다)</span>
+      )}
+    </div>
   );
 }
 
