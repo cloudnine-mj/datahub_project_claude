@@ -30,7 +30,12 @@ export default function Page() {
           path: "/governance/forms/planning",
         },
         { id: "build", label: "2. 구축", status: "current" },
-        { id: "load", label: "3. 적재", status: "pending" },
+        {
+          id: "load",
+          label: "3. 적재",
+          status: "pending",
+          path: "/governance/forms/intake/load",
+        },
       ]}
       subSteps={[
         { id: "contract", label: "계약 체결", status: "current" },

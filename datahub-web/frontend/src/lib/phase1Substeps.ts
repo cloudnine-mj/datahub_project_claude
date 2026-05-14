@@ -32,21 +32,33 @@ const SUBSTEP_DEFS: SubstepDef[] = [
   },
 ];
 
-/** 1단계 phase pill 배열 — 모든 1단계 substep 페이지에서 동일. */
+/** 1단계 phase pill 배열 — 모든 1단계 substep 페이지에서 동일.
+ *  데모 단계라 pending phase 에도 path 부여 → 클릭 가능. */
 export const PHASE1_PHASES: Phase[] = [
   { id: "plan", label: "1. 기획", status: "current" },
-  { id: "build", label: "2. 구축", status: "pending" },
-  { id: "load", label: "3. 적재", status: "pending" },
+  {
+    id: "build",
+    label: "2. 구축",
+    status: "pending",
+    path: "/governance/forms/intake/build",
+  },
+  {
+    id: "load",
+    label: "3. 적재",
+    status: "pending",
+    path: "/governance/forms/intake/load",
+  },
 ];
 
-/** 현재 substep id 기준 5-substep 배열 생성. done 항목엔 path 부여, 그 외엔 미부여. */
+/** 현재 substep id 기준 5-substep 배열 생성. current 가 아닌 모든 항목에 path 부여 (데모용).
+ *  추후 실제 접근 제한 도입 시 i < idx 조건으로 복원. */
 export function buildPhase1SubSteps(currentId: Phase1SubstepId): SubStep[] {
   const idx = SUBSTEP_DEFS.findIndex((s) => s.id === currentId);
   return SUBSTEP_DEFS.map((s, i) => ({
     id: s.id,
     label: s.label,
     status: i < idx ? "done" : i === idx ? "current" : "pending",
-    path: i < idx ? s.path : undefined,
+    path: i === idx ? undefined : s.path,
   }));
 }
 

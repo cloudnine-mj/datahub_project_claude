@@ -33,8 +33,6 @@ interface Props {
   subSteps: SubStep[];
 }
 
-const PENDING_TITLE = "아직 접근할 수 없는 단계입니다";
-
 export function ProcessStepper({ phases, subSteps }: Props) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
@@ -75,7 +73,8 @@ function phasePillStateClass(status: StepStatus): string {
   if (status === "done") {
     return "font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800";
   }
-  return "text-gray-400 dark:text-gray-500";
+  // pending: 데모 단계라 hover 시각 단서 제공 (path 있을 때 클릭 가능).
+  return "text-gray-400 hover:bg-gray-50 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300";
 }
 
 function PhasePill({ phase }: { phase: Phase }) {
@@ -83,7 +82,8 @@ function PhasePill({ phase }: { phase: Phase }) {
   const state = phasePillStateClass(phase.status);
   const ariaCurrent = phase.status === "current" ? ("step" as const) : undefined;
 
-  if (phase.status === "done" && phase.path) {
+  // current 가 아니고 path 가 있으면 클릭 가능 (done/pending 모두 허용 — 데모용).
+  if (phase.status !== "current" && phase.path) {
     return (
       <Link href={phase.path} className={`${base} ${state} cursor-pointer`}>
         {phase.label}
@@ -91,16 +91,10 @@ function PhasePill({ phase }: { phase: Phase }) {
     );
   }
 
-  const isPending = phase.status === "pending";
   return (
     <span
       aria-current={ariaCurrent}
-      aria-disabled={isPending ? true : undefined}
-      title={isPending ? PENDING_TITLE : undefined}
-      tabIndex={isPending ? -1 : undefined}
-      className={`${base} ${state} ${
-        isPending ? "cursor-not-allowed" : "cursor-default"
-      }`}
+      className={`${base} ${state} cursor-default`}
     >
       {phase.label}
     </span>
@@ -136,8 +130,8 @@ function SubStepCell({ step }: { step: SubStep }) {
     </>
   );
 
-  // done + path: 클릭 가능 — Link 로 렌더
-  if (isDone && step.path) {
+  // current 가 아니고 path 가 있으면 클릭 가능 (done/pending 모두 허용 — 데모용).
+  if (!isCurrent && step.path) {
     return (
       <Link
         href={step.path}
@@ -148,16 +142,10 @@ function SubStepCell({ step }: { step: SubStep }) {
     );
   }
 
-  // 그 외(done-without-path / current / pending): 비클릭 span 으로 처리
   return (
     <div
       aria-current={isCurrent ? "step" : undefined}
-      aria-disabled={isPending ? true : undefined}
-      title={isPending ? PENDING_TITLE : undefined}
-      tabIndex={isPending ? -1 : undefined}
-      className={`-m-1 flex flex-col p-1 ${
-        isPending ? "cursor-not-allowed" : "cursor-default"
-      }`}
+      className="-m-1 flex cursor-default flex-col p-1"
     >
       {inner}
     </div>
