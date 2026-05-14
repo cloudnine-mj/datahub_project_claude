@@ -2,9 +2,12 @@
 //   세 양식은 외부 데이터 도입이라는 공통 목적을 가지며 3단계 프로세스
 //   (기획 → 구축 → 적재) 를 공유. 사용자가 자기 상황에 맞는 양식 카드를
 //   클릭해 작성으로 진입.
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, FileEdit } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { FormProcessBar } from "@/components/FormProcessBar";
 
 const CARDS = [
   {
@@ -39,6 +42,10 @@ export default function Page() {
         도입하려는 데이터 형태에 맞는 신청서를 선택해 작성해 주세요.
         세 양식 모두 같은 3단계 프로세스(기획 → 구축 → 적재) 를 따릅니다.
       </p>
+
+      {/* 데이터 구매 양식 기준의 chevron 진행 바 — 세 양식 모두 동일한 단계 흐름을
+          따르므로 통합 진입점에서도 동일한 시각으로 노출. */}
+      <FormProcessBar formType="data_purchase" status="draft" />
 
       <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
         {CARDS.map((c) => (
