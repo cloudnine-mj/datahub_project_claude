@@ -30,11 +30,14 @@ export default function Page({ params }: { params: { id: string } }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // 진행 바에서 선택된 단계. '필요성 정의 및 예산 확인'(index 0) 만 데이터 표를 숨김.
-  // 그 외 단계는 표 그대로 노출 — 승인 완료 chevron 은 본문의 진행 상태 카드로
-  // 스크롤만 함, 전자결재 승인은 설명 패널만 노출.
+  // 진행 바에서 선택된 단계 — '신청서 작성'(index 1) 외 다른 단계가 선택되면
+  // 신청서 데이터 표를 숨김 (해당 단계의 정보만 보이도록 시야 정리).
+  //   step 0 필요성 정의: 사전 작업 → 표 숨김
+  //   step 1 신청서 작성: 표 노출
+  //   step 2 승인 완료: 본문 진행 상태 카드로 스크롤되며 표는 숨김
+  //   step 3 전자결재 승인: 설명 패널만 노출, 표 숨김
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
-  const hideForm = selectedStep === 0;
+  const hideForm = selectedStep !== null && selectedStep !== 1;
   const [missingField, setMissingField] = useState<string | null>(null);
   // 미리보기 모달 — 전자결재 에디터에 붙여넣을 HTML 표를 생성해 보여줌
   const [previewOpen, setPreviewOpen] = useState(false);
