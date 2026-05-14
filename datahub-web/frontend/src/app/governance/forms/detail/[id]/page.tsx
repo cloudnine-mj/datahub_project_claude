@@ -136,11 +136,13 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {/* standalone 진행 상태 카드는 chevron 의 다른 단계 패널이 점유하는 경우 가림.
-          - selectedStep === 2 (승인 완료): chevron ProgressPanel 이 동일 정보 노출 → 중복 방지
-          - selectedStep === 3 (전자결재 승인): 해당 단계 설명 패널만 노출하고 진행 상태/이력은
-            의도적으로 숨김 (사용자 요청). */}
-      {from !== "list" && selectedStep !== 2 && selectedStep !== 3 && (
+      {/* standalone 진행 상태 카드는 chevron 미선택(default) 상태에서만 노출.
+          chevron 의 어떤 탭이든 누르는 순간 해당 탭 영역에 집중되도록:
+            - step 0 / step 3: 단계 설명 패널만
+            - step 1: 양식 데이터만
+            - step 2: chevron ProgressPanel (진행 상태 + 이력)
+          기본 보기에서만 standalone 카드가 한눈에 보이는 형태. */}
+      {from !== "list" && selectedStep === null && (
         <div id="form-status" className="scroll-mt-4">
           <FormStatusPanel
             formId={form.id}
