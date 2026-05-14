@@ -8,7 +8,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Eye, FileText, Save } from "lucide-react";
-import { PhaseBlock } from "@/components/PhaseBlock";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
@@ -83,16 +82,23 @@ export function ApplicationFormContainer({
       <ProgressStatusBlock status={status} history={history} />
       <StatusBanner status={status} />
 
-      <PhaseBlock
-        icon={FileText}
-        title="신청서 작성"
-        trailing={<ApplicationTypeChip type={type} />}
-      >
-        <p className="-mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+      <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 sm:px-6 sm:py-5">
+        <header className="flex items-center gap-2">
+          <FileText
+            size={16}
+            aria-hidden="true"
+            className="text-gray-500 dark:text-gray-400"
+          />
+          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+            신청서 작성
+          </h2>
+          <ApplicationTypeChip type={type} />
+        </header>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           계획 수립 단계에서 정리한 내용을 입력하세요.
         </p>
 
-        <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+        <form className="mt-5 space-y-6" onSubmit={(e) => e.preventDefault()}>
           {sections.map((s) => (
             <ApplicationFormSection
               key={s.id}
@@ -103,13 +109,13 @@ export function ApplicationFormContainer({
             />
           ))}
         </form>
+      </section>
 
-        {status === "draft" && (
-          <div className="mt-4">
-            <AutoSaveIndicator />
-          </div>
-        )}
-      </PhaseBlock>
+      {status === "draft" && (
+        <div className="flex justify-center">
+          <AutoSaveIndicator />
+        </div>
+      )}
 
       <FormActions
         status={status}
@@ -214,7 +220,7 @@ function PrimaryButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
+      className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
     >
       {label}
       {TrailingIcon && <TrailingIcon size={14} aria-hidden="true" />}

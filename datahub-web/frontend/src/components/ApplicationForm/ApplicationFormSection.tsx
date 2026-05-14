@@ -22,12 +22,12 @@ export function ApplicationFormSection({
 }: Props) {
   return (
     <section className="border-t border-gray-100 pt-5 first:border-t-0 first:pt-0 dark:border-gray-800">
-      <header className="mb-3 flex items-center gap-2">
+      <header className="mb-4 flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="block h-3.5 w-[3px] rounded-sm bg-brand"
+          className="block h-4 w-[3px] rounded-sm bg-brand"
         />
-        <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
           {section.title}
         </h3>
         {section.required ? (
@@ -37,7 +37,7 @@ export function ApplicationFormSection({
         )}
       </header>
 
-      <div className="space-y-3">
+      <div className="space-y-3.5">
         {section.fields.map((f) => (
           <FieldRow
             key={f.id}
