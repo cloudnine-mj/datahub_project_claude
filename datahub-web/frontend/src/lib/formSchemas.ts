@@ -336,16 +336,17 @@ const productivityTool: FormSchema = {
   ],
 };
 
-// 참조자 — 신청서를 함께 봐야 하는 사람들. 7종 신청 양식 공통으로
+// 담당자 지정 — 신청서를 함께 봐야 하는 사람들. 7종 신청 양식 공통으로
 // 마지막에 자동 부착되는 필수 섹션. 사용자가 이름을 한 명씩 Enter 로 추가.
+// 내부 payload key 는 호환을 위해 '참조자' 유지 (라벨만 사용자 노출용).
 const APPROVER_SECTION: SectionDef = {
-  title: "참조자",
+  title: "담당자 지정",
   fields: [
     {
       key: "참조자",
-      label: "참조자",
+      label: "담당자 지정",
       type: "approver_list",
-      placeholder: "참조자 이름 입력 후 Enter (예: 홍길동)",
+      placeholder: "담당자 이름 입력 후 Enter (예: 홍길동)",
       required: true,
     },
   ],
