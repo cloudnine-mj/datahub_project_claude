@@ -27,7 +27,7 @@ const STEP_DEFS: Partial<Record<FormType, StepDef[]>> = {
   data_purchase: [
     { label: "필요성 정의 및 예산 확인" },
     { label: "신청서 작성", scrollTo: "#form-content" },
-    { label: "승인 완료", showsProgress: true },
+    { label: "승인 완료", scrollTo: "#form-status" },
     { label: "전자결재 승인" },
   ],
 };

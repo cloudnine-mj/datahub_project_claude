@@ -134,14 +134,16 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {from !== "list" && (
-        <FormStatusPanel
-          formId={form.id}
-          status={form.status}
-          history={form.approval_history}
-          me={me}
-          submitterEmail={form.submitter_email}
-          onChanged={refetch}
-        />
+        <div id="form-status" className="scroll-mt-4">
+          <FormStatusPanel
+            formId={form.id}
+            status={form.status}
+            history={form.approval_history}
+            me={me}
+            submitterEmail={form.submitter_email}
+            onChanged={refetch}
+          />
+        </div>
       )}
 
       <div
