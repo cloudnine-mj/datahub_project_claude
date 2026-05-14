@@ -96,18 +96,31 @@ export function PostNewView({ board }: { board: BoardType }) {
     setSubmitting(true);
     try {
       setProgress(asDraft ? "임시저장 중..." : isEdit ? "게시글 수정 중..." : "게시글 저장 중...");
-      // 제목 입력 칸이 제거되어 있어 — 본문 첫 줄에서 자동 추출 (마크다운 헤더 # 떼고
-      // 100자 잘라서 사용). 비어있으면 backend default("") 로 들어감.
-      const finalTitle =
-        title.trim() ||
-        (content.split("\n").find((l) => l.trim()) ?? "").replace(/^#+\s*/, "").trim().slice(0, 100);
+      // 제목 입력 칸이 제거되어 있어 — 본문 첫 비어있지 않은 줄을 제목으로 승격하고
+      // 그 줄은 본문에서 제거 (Notion 스타일). 마크다운 헤더(#/##/###)인 경우 # 접두
+      // 제거. 100자 컷.
+      // 편집 모드에서 이미 title 이 있으면(state 비어있지 않음) 추출 로직 스킵 →
+      // content 변경 없음, 기존 title 유지.
+      let finalTitle = title.trim();
+      let finalContent = content;
+      if (!finalTitle) {
+        const lines = content.split("\n");
+        const idx = lines.findIndex((l) => l.trim());
+        if (idx >= 0) {
+          finalTitle = lines[idx].replace(/^#+\s*/, "").trim().slice(0, 100);
+          lines.splice(idx, 1);
+          // 추출된 줄 다음의 선행 빈 줄 정리 — 본문 시작이 어색하지 않도록
+          while (lines.length > 0 && !lines[0].trim()) lines.shift();
+          finalContent = lines.join("\n");
+        }
+      }
       const body = {
         title: finalTitle,
         ...(isPolicy
           ? { doc_no: docNo.trim() || null }
           : { doc_type: docType || null }),
         category: category || undefined,
-        content,
+        content: finalContent,
         is_draft: asDraft,
         visibility,
         author_name: authorName.trim() || undefined,
