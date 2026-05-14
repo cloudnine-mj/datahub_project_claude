@@ -22,6 +22,13 @@ const FORM_TYPES_FOR_SIDEBAR: FormType[] = [
 // Governance 는 세부 카테고리를 가지며, /governance 경로 진입 시 자동으로 펼쳐짐.
 // '거버넌스 요청 관리' 자식은 admin role 사용자에게만 노출.
 
+interface NavSubChild {
+  href: string;
+  label: string;
+  /** 3단계 하위 항목 — subchild 가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
+  subsubchildren?: { href: string; label: string }[];
+}
+
 interface NavChild {
   /** 그룹 헤더(group: true) 인 경우 생략 가능 — 그 외에는 클릭 가능한 링크. */
   href?: string;
@@ -34,7 +41,7 @@ interface NavChild {
   /** true 면 클릭 불가능한 그룹 헤더로 렌더 — subchildren 만 노출. */
   group?: boolean;
   /** 2단계 하위 항목 — 부모가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
-  subchildren?: { href: string; label: string }[];
+  subchildren?: NavSubChild[];
 }
 
 interface NavItem {
@@ -67,10 +74,22 @@ const NAV: NavItem[] = [
       {
         href: "/governance/forms",
         label: "신청서 작성",
-        subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => ({
-          href: `/governance/forms/${t}/new`,
-          label: FORM_TYPE_LABELS[t] ?? t,
-        })),
+        subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => {
+          const sc: NavSubChild = {
+            href: `/governance/forms/${t}/new`,
+            label: FORM_TYPE_LABELS[t] ?? t,
+          };
+          // 데이터 구매 신청만 3단계 진행 단계(기획/구축/적재) 하위 카테고리 노출.
+          // 현재는 모두 같은 작성 페이지로 가되 phase 파라미터로 단계 컨텍스트 전달.
+          if (t === "data_purchase") {
+            sc.subsubchildren = [
+              { href: `/governance/forms/${t}/new?phase=plan`, label: "1. 기획" },
+              { href: `/governance/forms/${t}/new?phase=build`, label: "2. 구축" },
+              { href: `/governance/forms/${t}/new?phase=deploy`, label: "3. 적재" },
+            ];
+          }
+          return sc;
+        }),
       },
       {
         label: "요청 현황",
@@ -177,6 +196,7 @@ export function Sidebar() {
                         {c.subchildren && c.subchildren.length > 0 && (
                           <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                             {c.subchildren.map((sc) => {
+                              // 3단계 항목(subsubchildren) 이 있을 경우 활성 판정도 그 안까지 고려
                               const subActive =
                                 pathname === sc.href || pathname.startsWith(sc.href + "/");
                               return (
@@ -192,6 +212,30 @@ export function Sidebar() {
                                   >
                                     {sc.label}
                                   </Link>
+                                  {sc.subsubchildren && sc.subsubchildren.length > 0 && (
+                                    <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
+                                      {sc.subsubchildren.map((ssc) => {
+                                        const ssActive =
+                                          pathname + (typeof window !== "undefined" ? window.location.search : "") === ssc.href
+                                          || pathname === ssc.href.split("?")[0];
+                                        return (
+                                          <li key={ssc.href}>
+                                            <Link
+                                              href={ssc.href}
+                                              className={cn(
+                                                "block rounded-md px-3 py-1 text-[10px] transition",
+                                                ssActive
+                                                  ? "font-semibold text-brand"
+                                                  : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
+                                              )}
+                                            >
+                                              {ssc.label}
+                                            </Link>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  )}
                                 </li>
                               );
                             })}
