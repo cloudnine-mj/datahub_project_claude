@@ -196,25 +196,13 @@ function TrackingActions({
   onCancel,
   onProceedToApproval,
 }: TrackingActionsProps) {
-  const approved = status === "approved";
+  // TODO: 원래 조건 — status === 'approved' 일 때만 활성. 데모 단계에서는 항상 활성으로 풀어둠.
+  void status;
 
   return (
     <div className="mt-2 flex flex-col items-stretch justify-end gap-2 sm:flex-row sm:items-center">
       <SecondaryButton onClick={onCancel} label="신청 취소" />
-      {approved ? (
-        <PrimaryButton onClick={onProceedToApproval} label="전자결재 품의로" />
-      ) : (
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md bg-gray-100 px-3.5 py-2 text-sm font-medium text-gray-400 dark:bg-gray-800 dark:text-gray-500"
-        >
-          전자결재 품의로
-          <ArrowRight size={14} aria-hidden="true" />
-          <span className="ml-0.5 text-[11px]">(승인 완료 후)</span>
-        </button>
-      )}
+      <PrimaryButton onClick={onProceedToApproval} label="전자결재 품의로" />
     </div>
   );
 }
