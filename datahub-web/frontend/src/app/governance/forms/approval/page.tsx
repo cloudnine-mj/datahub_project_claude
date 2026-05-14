@@ -26,7 +26,11 @@ export default function Page() {
   const next = nextPhase1Substep("approval");
 
   const openGPortal = () => {
-    console.log("[stub] g portal 전자결재로 이동");
+    window.open(
+      "https://gportal.lgresearch.ai/portal/main/portalMain.do",
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   return (
