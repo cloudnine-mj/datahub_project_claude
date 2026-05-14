@@ -128,7 +128,6 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         label: "신청 처리 큐",
         icon: Inbox,
         path: "/governance/admin/forms",
-        badge: { count: 12, variant: "neutral" },
       },
       {
         id: "stats",
