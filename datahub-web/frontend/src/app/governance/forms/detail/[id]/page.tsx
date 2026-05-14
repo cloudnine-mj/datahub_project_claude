@@ -136,7 +136,9 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {from !== "list" && (
+      {/* chevron '승인 완료' (index 2) 가 선택된 상태에서는 chevron 패널 안의 ProgressPanel 이
+          같은 진행 상태 / 진행 이력을 노출하므로 중복 방지를 위해 standalone 은 가림. */}
+      {from !== "list" && selectedStep !== 2 && (
         <div id="form-status" className="scroll-mt-4">
           <FormStatusPanel
             formId={form.id}

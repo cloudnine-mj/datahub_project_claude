@@ -69,11 +69,10 @@ export function FormBuilder({ formType }: { formType: FormType }) {
   const [loadedStatus, setLoadedStatus] = useState<string>("draft");
   // chevron '승인 완료' 패널의 진행 이력에 표시할 데이터. 편집 모드에서 form 로드 시 채움.
   const [loadedHistory, setLoadedHistory] = useState<ApprovalEntry[] | null>(null);
-  // 진행 바에서 선택된 단계. '필요성 정의 및 예산 확인'(index 0) 만 양식 폼을 숨김
-  // (신청서 작성 전 사전 작업 단계라). 그 외 단계는 양식을 가리지 않음 — 승인 완료
-  // chevron 은 본문의 진행 상태 카드로 스크롤만 하고, 전자결재 승인은 설명 패널만 노출.
+  // 진행 바에서 선택된 단계 — '신청서 작성'(index 1) 일 때만 양식 폼 노출.
+  // 다른 단계 선택 시 양식 숨김 (해당 단계 정보만 보이도록).
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
-  const hideForm = selectedStep === 0;
+  const hideForm = selectedStep !== null && selectedStep !== 1;
 
   // 수정 모드 — 기존 신청 prefill
   useEffect(() => {
