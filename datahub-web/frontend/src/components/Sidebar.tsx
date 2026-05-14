@@ -62,7 +62,6 @@ const NAV: NavItem[] = [
         subchildren: [
           { href: "/governance/policy", label: "데이터 거버넌스 정책" },
           { href: "/governance/process", label: "프로세스" },
-          { href: "/governance/guideline", label: "가이드라인 / 매뉴얼" },
         ],
       },
       {
