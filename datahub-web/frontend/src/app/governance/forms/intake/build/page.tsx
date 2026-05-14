@@ -1,40 +1,54 @@
-// 데이터 용역 제작 / 구매 / 구독 — 2. 구축 단계 (외주 업체 선정·계약·검수).
-// 현재 별도 시스템 연동이 없어 '준비 중' 안내만 노출.
-import Link from "next/link";
-import { ArrowLeft, Construction } from "lucide-react";
-import { Breadcrumb } from "@/components/Breadcrumb";
+// 2. 구축 단계 페이지 — 계약 체결 / 중간 수령·검수 / 검수 피드백.
+//   intake(1단계) 이후 진입. 신청자 시점 (검수 액션·코멘트 가능).
+
+import { PhaseLayout } from "@/components/PhaseLayout";
+import { ContractStatusBlock } from "@/components/phase-build/ContractStatusBlock";
+import { DeliveryRoundsBlock } from "@/components/phase-build/DeliveryRoundsBlock";
+import { InspectionFeedbackBlock } from "@/components/phase-build/InspectionFeedbackBlock";
+import {
+  MOCK_CONTRACT,
+  MOCK_DELIVERY_ROUNDS,
+  MOCK_FEEDBACK,
+} from "@/lib/phaseMockData";
 
 export default function Page() {
-  return (
-    <div>
-      <Breadcrumb
-        items={[
-          { label: "Governance", href: "/governance" },
-          { label: "데이터 용역 제작/구매/구독" },
-          { label: "2. 구축" },
-        ]}
-      />
-      <h1 className="text-3xl font-bold tracking-tight">2. 구축</h1>
-      <p className="mt-1.5 text-sm text-gray-500">
-        업체 선정 · 계약 체결 · 데이터 수령 · 검수 단계.
-      </p>
+  const inProgress = MOCK_DELIVERY_ROUNDS.find((r) => r.status === "in-progress");
+  const trailingLabel = inProgress
+    ? `${inProgress.roundNumber}/${MOCK_CONTRACT.totalRounds}회차 진행 중`
+    : undefined;
 
-      <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50/40 px-6 py-16 text-center">
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-amber-50 text-amber-600">
-          <Construction size={22} />
-        </div>
-        <h2 className="mt-4 text-base font-bold">준비 중</h2>
-        <p className="mt-1.5 max-w-md text-sm text-gray-500">
-          이 단계는 별도 시스템(전자결재 이후 외부 계약/검수) 에서 처리됩니다.
-          DataHub 내 자동화는 추후 추가될 예정입니다.
-        </p>
-        <Link
-          href="/governance/forms/intake"
-          className="mt-5 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50"
-        >
-          <ArrowLeft size={12} /> 1. 기획으로 돌아가기
-        </Link>
-      </div>
-    </div>
+  // canProceed: 최종 회차까지 모두 completed 일 때만 true.
+  const allCompleted = MOCK_DELIVERY_ROUNDS.every((r) => r.status === "completed");
+
+  return (
+    <PhaseLayout
+      crumbs={[
+        { label: "Governance", href: "/governance/home" },
+        { label: "데이터 용역 제작/구매/구독", href: "/governance/forms/intake" },
+        { label: "2. 구축" },
+      ]}
+      phases={[
+        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/intake" },
+        { id: "build", label: "2. 구축", status: "current" },
+        { id: "load", label: "3. 적재", status: "pending" },
+      ]}
+      subSteps={[
+        { id: "contract", label: "계약 체결", status: "done" },
+        { id: "delivery", label: "중간 수령·검수", status: "current" },
+        { id: "final", label: "최종 수령", status: "pending" },
+      ]}
+      prevPath="/governance/forms/intake"
+      prevLabel="1단계 다시 보기"
+      nextPath="/governance/forms/intake/load"
+      nextLabel="최종 데이터 수령 확인"
+      canProceed={allCompleted}
+    >
+      <ContractStatusBlock contract={MOCK_CONTRACT} />
+      <DeliveryRoundsBlock
+        rounds={MOCK_DELIVERY_ROUNDS}
+        trailingLabel={trailingLabel}
+      />
+      <InspectionFeedbackBlock feedbacks={MOCK_FEEDBACK} />
+    </PhaseLayout>
   );
 }

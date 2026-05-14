@@ -29,7 +29,7 @@ export default function Page() {
         phases={[
           { id: "plan", label: "1. 기획", status: "current" },
           { id: "build", label: "2. 구축", status: "pending" },
-          { id: "deploy", label: "3. 적재", status: "pending" },
+          { id: "load", label: "3. 적재", status: "pending" },
         ]}
         subSteps={[
           // 1번 substep 페이지는 아직 미구현 — path 생략 시 클릭 비활성.
