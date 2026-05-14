@@ -24,7 +24,7 @@ export default function Page() {
         { label: "3. 적재" },
       ]}
       phases={[
-        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/intake" },
+        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/planning" },
         {
           id: "build",
           label: "2. 구축",

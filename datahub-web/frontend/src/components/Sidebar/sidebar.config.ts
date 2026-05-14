@@ -71,7 +71,7 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         id: "data-intake",
         label: "데이터 용역/구매/구독",
         icon: Database,
-        path: "/governance/forms/intake",
+        path: "/governance/forms/planning",
       },
       {
         id: "product-log",

@@ -29,7 +29,7 @@ export default function Page() {
         { label: "2. 구축" },
       ]}
       phases={[
-        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/intake" },
+        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/planning" },
         { id: "build", label: "2. 구축", status: "current" },
         { id: "load", label: "3. 적재", status: "pending" },
       ]}
@@ -38,7 +38,7 @@ export default function Page() {
         { id: "delivery", label: "중간 수령·검수", status: "current" },
         { id: "final", label: "최종 수령", status: "pending" },
       ]}
-      prevPath="/governance/forms/intake"
+      prevPath="/governance/forms/planning"
       prevLabel="1단계 다시 보기"
       nextPath="/governance/forms/intake/load"
       nextLabel="최종 데이터 수령 확인"

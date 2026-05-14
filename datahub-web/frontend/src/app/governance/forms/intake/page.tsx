@@ -20,8 +20,8 @@ export default function Page() {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
-          { label: "데이터 용역 제작/구매/구독", href: "/governance/forms/intake" },
-          { label: "1. 기획" },
+          { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+          { label: "1. 기획 · 신청서 작성" },
         ]}
       />
 
@@ -32,11 +32,15 @@ export default function Page() {
           { id: "load", label: "3. 적재", status: "pending" },
         ]}
         subSteps={[
-          // 1번 substep 페이지는 아직 미구현 — path 생략 시 클릭 비활성.
-          { id: "budget", label: "필요성 정의·예산", status: "done" },
+          {
+            id: "planning",
+            label: "계획 수립",
+            status: "done",
+            path: "/governance/forms/planning",
+          },
           { id: "form", label: "신청서 작성", status: "current" },
+          { id: "approval", label: "전자결재·승인", status: "pending" },
           { id: "discuss", label: "담당자 논의·확정", status: "pending" },
-          { id: "approval", label: "전자결재", status: "pending" },
         ]}
       />
 
@@ -65,6 +69,8 @@ export default function Page() {
 
       {/* 데모용 — 다음 단계 진입 제한은 추후 신청서 작성 완료 기준으로 재설정. */}
       <StepActions
+        prevPath="/governance/forms/planning"
+        prevLabel="계획 수립 다시 보기"
         nextPath="/governance/forms/intake/build"
         nextLabel="2단계로 진행"
       />
