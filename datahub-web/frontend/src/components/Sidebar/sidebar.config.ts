@@ -7,7 +7,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   BookOpen,
-  Bookmark,
   ClipboardList,
   Code,
   Database,
@@ -61,12 +60,6 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         label: "거버넌스 요청 목록",
         icon: ClipboardList,
         path: "/governance/forms/list",
-      },
-      {
-        id: "bookmarked",
-        label: "관심 신청",
-        icon: Bookmark,
-        path: "/governance/forms/list?bookmarked=1",
       },
     ],
   },
