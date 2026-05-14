@@ -1,13 +1,14 @@
 // 1. 기획 / substep 2: 신청서 작성.
-//   양식 필드는 회사가 별도 정의 예정 — 현재는 위치만 잡는 placeholder.
-//   유형(구매/구독/용역) 은 계획 수립 단계에서 선택된 값을 가정.
+//   3개 유형 카드(용역 제작 / 구매 / 구독) 중 선택해 FormBuilder 로 진입.
+//   양식 자체는 기존 FormBuilder 가 처리 — 여기서는 유형 선택만 담당.
 
 "use client";
 
-import { FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { PhaseLayout } from "@/components/PhaseLayout";
-import { PhaseBlock } from "@/components/PhaseBlock";
 import { HelpBanner } from "@/components/HelpBanner";
+import { ApplicationTypeCard } from "@/components/ApplicationTypeCard";
+import { APPLICATION_TYPES } from "@/lib/applicationTypes";
 import {
   PHASE1_PHASES,
   buildPhase1SubSteps,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/phase1Substeps";
 
 export default function Page() {
+  const router = useRouter();
   const prev = prevPhase1Substep("form");
   const next = nextPhase1Substep("form");
 
@@ -35,17 +37,19 @@ export default function Page() {
     >
       <HelpBanner message="신청서는 전자결재 및 업무 소통용으로 사용됩니다. Datahub에서 작성합니다." />
 
-      <PhaseBlock icon={FileText} title="신청서 작성">
-        <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-          선택한 신청 유형에 맞는 양식이 표시됩니다. 계획 수립 단계에서 정리한 내용을 입력하세요.
-        </p>
-        <div className="rounded-lg bg-gray-50 px-4 py-10 text-center dark:bg-gray-800/40">
-          <p className="text-sm text-gray-500 dark:text-gray-400">신청 유형별 양식 영역</p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            (구매/구독/용역 각각의 양식이 표시되는 자리)
-          </p>
-        </div>
-      </PhaseBlock>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {APPLICATION_TYPES.map((t) => (
+          <ApplicationTypeCard
+            key={t.type}
+            data={t}
+            onSelect={() => {
+              // 기존 FormBuilder 경로로 라우팅 — 유형별 신청서 작성.
+              console.log("selected type:", t.type);
+              router.push(`/governance/forms/${t.type}/new`);
+            }}
+          />
+        ))}
+      </div>
     </PhaseLayout>
   );
 }
