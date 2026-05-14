@@ -12,6 +12,7 @@ import { TypeSelector } from "@/components/Planning/TypeSelector";
 import { ChecklistBlock } from "@/components/Planning/ChecklistBlock";
 import { PlanningFooter } from "@/components/Planning/PlanningFooter";
 import { PLANNING_CONFIG, type PlanningType } from "@/lib/planningConfig";
+import { PHASE1_PHASES, buildPhase1SubSteps } from "@/lib/phase1Substeps";
 
 export function PlanningSubstep() {
   const [type, setType] = useState<PlanningType>("service");
@@ -40,17 +41,8 @@ export function PlanningSubstep() {
       />
 
       <ProcessStepper
-        phases={[
-          { id: "plan", label: "1. 기획", status: "current" },
-          { id: "build", label: "2. 구축", status: "pending" },
-          { id: "load", label: "3. 적재", status: "pending" },
-        ]}
-        subSteps={[
-          { id: "planning", label: "계획 수립", status: "current" },
-          { id: "form", label: "신청서 작성", status: "pending" },
-          { id: "approval", label: "전자결재·승인", status: "pending" },
-          { id: "discuss", label: "담당자 논의·확정", status: "pending" },
-        ]}
+        phases={PHASE1_PHASES}
+        subSteps={buildPhase1SubSteps("planning")}
       />
 
       <HelpBanner
