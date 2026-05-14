@@ -23,7 +23,8 @@ const FORM_TYPES_FOR_SIDEBAR: FormType[] = [
 // '거버넌스 요청 관리' 자식은 admin role 사용자에게만 노출.
 
 interface NavSubChild {
-  href: string;
+  /** 비클릭 카테고리 헤더로 두려면 생략. 그 외엔 클릭 가능한 링크. */
+  href?: string;
   label: string;
   /** 3단계 하위 항목 — subchild 가 펼쳐졌을 때 한 단계 더 들여쓰기로 노출 */
   subsubchildren?: { href: string; label: string }[];
@@ -75,20 +76,22 @@ const NAV: NavItem[] = [
         href: "/governance/forms",
         label: "신청서 작성",
         subchildren: FORM_TYPES_FOR_SIDEBAR.map((t) => {
-          const sc: NavSubChild = {
+          // 데이터 구매 신청: 그 자체는 카테고리 라벨만, 실제 양식 진입은 '1. 기획' 으로 이관.
+          if (t === "data_purchase") {
+            return {
+              label: FORM_TYPE_LABELS[t] ?? t,
+              // href 생략 → 비클릭 카테고리 헤더 + subsubchildren 만 노출
+              subsubchildren: [
+                { href: `/governance/forms/${t}/new`, label: "1. 기획" },
+                { href: `/governance/forms/${t}/new?phase=build`, label: "2. 구축" },
+                { href: `/governance/forms/${t}/new?phase=deploy`, label: "3. 적재" },
+              ],
+            } satisfies NavSubChild;
+          }
+          return {
             href: `/governance/forms/${t}/new`,
             label: FORM_TYPE_LABELS[t] ?? t,
-          };
-          // 데이터 구매 신청만 3단계 진행 단계(기획/구축/적재) 하위 카테고리 노출.
-          // 현재는 모두 같은 작성 페이지로 가되 phase 파라미터로 단계 컨텍스트 전달.
-          if (t === "data_purchase") {
-            sc.subsubchildren = [
-              { href: `/governance/forms/${t}/new?phase=plan`, label: "1. 기획" },
-              { href: `/governance/forms/${t}/new?phase=build`, label: "2. 구축" },
-              { href: `/governance/forms/${t}/new?phase=deploy`, label: "3. 적재" },
-            ];
-          }
-          return sc;
+          } satisfies NavSubChild;
         }),
       },
       {
@@ -197,21 +200,28 @@ export function Sidebar() {
                           <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                             {c.subchildren.map((sc) => {
                               // 3단계 항목(subsubchildren) 이 있을 경우 활성 판정도 그 안까지 고려
-                              const subActive =
-                                pathname === sc.href || pathname.startsWith(sc.href + "/");
+                              const subActive = !!sc.href && (
+                                pathname === sc.href || pathname.startsWith(sc.href + "/")
+                              );
                               return (
-                                <li key={sc.href}>
-                                  <Link
-                                    href={sc.href}
-                                    className={cn(
-                                      "block rounded-md px-3 py-1 text-[11px] transition",
-                                      subActive
-                                        ? "font-semibold text-brand"
-                                        : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
-                                    )}
-                                  >
-                                    {sc.label}
-                                  </Link>
+                                <li key={sc.href ?? `cat-${sc.label}`}>
+                                  {sc.href ? (
+                                    <Link
+                                      href={sc.href}
+                                      className={cn(
+                                        "block rounded-md px-3 py-1 text-[11px] transition",
+                                        subActive
+                                          ? "font-semibold text-brand"
+                                          : "text-gray-400 hover:bg-gray-50 hover:text-gray-700",
+                                      )}
+                                    >
+                                      {sc.label}
+                                    </Link>
+                                  ) : (
+                                    <div className="px-3 py-1 text-[11px] font-semibold text-gray-500">
+                                      {sc.label}
+                                    </div>
+                                  )}
                                   {sc.subsubchildren && sc.subsubchildren.length > 0 && (
                                     <ul className="ml-2 mt-0.5 mb-1 border-l border-gray-100 pl-3">
                                       {sc.subsubchildren.map((ssc) => {
