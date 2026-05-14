@@ -132,7 +132,17 @@ export default function Page({ params }: { params: { id: string } }) {
           formType={form.form_type}
           status={form.status}
           history={form.approval_history}
-          onSelectedStepChange={setSelectedStep}
+          onSelectedStepChange={(step) => {
+            // 신청서 작성 chevron(index 1) = 실제로 양식을 작성/편집할 수 있는 상태로 이동.
+            // 본 상세는 read-only 라 step 1 클릭은 FormBuilder 편집 모드로 진입시킴.
+            if (step === 1) {
+              router.push(
+                `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`,
+              );
+              return;
+            }
+            setSelectedStep(step);
+          }}
         />
       )}
 
