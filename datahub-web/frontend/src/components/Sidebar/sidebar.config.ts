@@ -53,7 +53,7 @@ export const GOVERNANCE_HOME: MenuItem = {
 export const GOVERNANCE_GROUPS: MenuGroup[] = [
   {
     id: "all-requests",
-    label: "전체 요청",
+    label: "통합 검색",
     items: [
       {
         id: "request-list",
