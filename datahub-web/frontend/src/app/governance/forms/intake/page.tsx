@@ -1,40 +1,48 @@
 // 1. 기획 / substep 2: 신청서 작성.
-//   계획 수립 단계에서 선택한 신청 유형(?type=purchase|subscribe|service) 에 따라
-//   해당 유형의 FormBuilder 를 inline 으로 렌더. type 미지정 시 안내 placeholder.
+//   계획 수립 단계에서 선택한 신청 유형(?type=) + 상태(?status=) 를 query 로 받아
+//   유형별 양식 + 상태 분기 렌더 (작성/제출/검토/승인).
+//   상위 PhaseLayout 의 StepActions 는 사용하지 않음 — 컨테이너가 자체 액션 영역을 가짐.
 
-import { FileText } from "lucide-react";
 import { PhaseLayout } from "@/components/PhaseLayout";
 import { PhaseBlock } from "@/components/PhaseBlock";
-import { HelpBanner } from "@/components/HelpBanner";
-import { FormBuilder } from "@/components/FormBuilder";
+import { FileText } from "lucide-react";
+import { ApplicationFormContainer } from "@/components/ApplicationForm/ApplicationFormContainer";
 import {
   PHASE1_PHASES,
   buildPhase1SubSteps,
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
-import {
-  PLANNING_TO_FORM_TYPE,
-  type PlanningType,
-} from "@/lib/planningConfig";
-import type { FormType } from "@/lib/api";
+import type {
+  ApplicationStatus,
+  ApplicationType,
+} from "@/lib/applicationFormConfig";
 
 interface PageProps {
-  searchParams?: { type?: string };
+  searchParams?: { type?: string; status?: string };
 }
 
-function resolveFormType(raw: string | undefined): FormType | null {
-  if (!raw) return null;
-  if (raw === "purchase" || raw === "subscribe" || raw === "service") {
-    return PLANNING_TO_FORM_TYPE[raw as PlanningType] as FormType;
-  }
+function parseType(raw: string | undefined): ApplicationType | null {
+  if (raw === "service" || raw === "purchase" || raw === "subscribe") return raw;
   return null;
+}
+
+function parseStatus(raw: string | undefined): ApplicationStatus {
+  if (
+    raw === "draft" ||
+    raw === "submitted" ||
+    raw === "reviewing" ||
+    raw === "approved"
+  )
+    return raw;
+  return "draft";
 }
 
 export default function Page({ searchParams }: PageProps) {
   const prev = prevPhase1Substep("form");
   const next = nextPhase1Substep("form");
-  const formType = resolveFormType(searchParams?.type);
+  const type = parseType(searchParams?.type);
+  const status = parseStatus(searchParams?.status);
 
   return (
     <PhaseLayout
@@ -45,15 +53,14 @@ export default function Page({ searchParams }: PageProps) {
       ]}
       phases={PHASE1_PHASES}
       subSteps={buildPhase1SubSteps("form")}
-      prevPath={prev?.path}
-      prevLabel={prev ? `${prev.label} 다시 보기` : undefined}
-      nextPath={next.path}
-      nextLabel="신청서 제출"
     >
-      <HelpBanner message="신청서는 전자결재 및 업무 소통용으로 사용됩니다. Datahub에서 작성합니다." />
-
-      {formType ? (
-        <FormBuilder formType={formType} embedded />
+      {type ? (
+        <ApplicationFormContainer
+          type={type}
+          initialStatus={status}
+          prevPath={prev?.path}
+          nextPath={next.path}
+        />
       ) : (
         <PhaseBlock icon={FileText} title="신청서 작성">
           <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
