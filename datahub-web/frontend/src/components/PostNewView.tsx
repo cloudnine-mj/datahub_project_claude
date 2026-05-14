@@ -244,7 +244,6 @@ export function PostNewView({ board }: { board: BoardType }) {
             </Field>
 
             <Field label="내용" required hint="마크다운 지원">
-              <TitleExtractionHint titleSet={!!title.trim()} content={content} />
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -369,26 +368,6 @@ function chipCls(active: boolean) {
   return (
     "rounded px-3 py-1.5 text-xs font-semibold transition " +
     (active ? "bg-brand text-white" : "text-gray-600 hover:bg-gray-100")
-  );
-}
-
-/**
- * 본문 textarea 바로 위에 노출되는 라이브 힌트 — 제목 입력 칸이 없으므로
- * 사용자가 "어떤 줄이 제목이 될지" 작성 중 즉시 확인할 수 있게 함.
- * 편집 모드처럼 기존 title 이 이미 있으면(titleSet=true) 힌트 미노출.
- */
-function TitleExtractionHint({ titleSet, content }: { titleSet: boolean; content: string }) {
-  if (titleSet) return null;
-  const { title } = extractTitleFromContent(content);
-  return (
-    <div className="mb-2 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50/60 px-3 py-2 text-xs">
-      <span className="font-semibold text-blue-700">이 줄이 제목이 됩니다 →</span>
-      {title ? (
-        <span className="truncate font-medium text-gray-800">{title}</span>
-      ) : (
-        <span className="italic text-gray-400">(본문 첫 줄을 작성하면 자동으로 제목이 됩니다)</span>
-      )}
-    </div>
   );
 }
 
