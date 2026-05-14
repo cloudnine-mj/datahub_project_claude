@@ -83,8 +83,8 @@ const NAV: NavItem[] = [
               // href 생략 → 비클릭 카테고리 헤더 + subsubchildren 만 노출
               subsubchildren: [
                 { href: `/governance/forms/${t}/new`, label: "1. 기획" },
-                { href: `/governance/forms/${t}/new?phase=build`, label: "2. 구축" },
-                { href: `/governance/forms/${t}/new?phase=deploy`, label: "3. 적재" },
+                { href: `/governance/forms/${t}/build`, label: "2. 구축" },
+                { href: `/governance/forms/${t}/deploy`, label: "3. 적재" },
               ],
             } satisfies NavSubChild;
           }
