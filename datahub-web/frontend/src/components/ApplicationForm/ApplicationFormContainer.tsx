@@ -14,7 +14,6 @@ import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
 import { ProgressHistoryBlock } from "./ProgressHistoryBlock";
 import { SubmittedSummaryBlock } from "./SubmittedSummaryBlock";
-import { AutoSaveIndicator } from "./AutoSaveIndicator";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import {
   APPLICATION_FORM_CONFIG,
@@ -110,10 +109,6 @@ export function ApplicationFormContainer({
             ))}
           </form>
         </section>
-
-        <div className="flex justify-center">
-          <AutoSaveIndicator />
-        </div>
 
         <DraftActions
           prevPath={prevPath}
