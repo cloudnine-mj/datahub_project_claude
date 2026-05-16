@@ -46,7 +46,7 @@ export function PlanningSubstep() {
       />
 
       <HelpBanner
-        message='신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요. 다음 단계인 "신청서 작성"에서 이 내용을 양식에 입력하게 됩니다.'
+        message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요."
       />
 
       <TypeSelector value={type} onChange={onTypeChange} />
