@@ -1,6 +1,6 @@
 // 제출된 신청서 미리보기 모달 — EAS 본문 에디터에 그대로 붙여넣을 수 있는 HTML 표 형태.
-//   '복사하기' 버튼 → HTML + plain text 둘 다 클립보드에 들어가서 EAS 위지윅 에디터에 서식 그대로 paste.
-//   ESC / 배경 클릭으로 닫힘.
+//   추적 모드 전용 (draft 모드는 FormBuilder 자체 미리보기 사용).
+//   값은 데모용 MOCK_SUBMITTED_PAYLOAD 에서 가져옴 — 실 API 연동 시 type 외에 values 도 prop 으로 받도록 확장.
 
 "use client";
 
@@ -17,11 +17,10 @@ import {
 
 interface Props {
   type: ApplicationType;
-  values: Record<string, string>;
   onClose: () => void;
 }
 
-export function ApplicationPreviewModal({ type, values, onClose }: Props) {
+export function ApplicationPreviewModal({ type, onClose }: Props) {
   const [copyDone, setCopyDone] = useState(false);
 
   useEffect(() => {
@@ -32,11 +31,11 @@ export function ApplicationPreviewModal({ type, values, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const html = buildApplicationPreviewHtml(type, values);
+  const html = buildApplicationPreviewHtml(type);
 
   const onCopy = async () => {
     try {
-      await copyApplicationPreviewToClipboard(type, values);
+      await copyApplicationPreviewToClipboard(type);
       setCopyDone(true);
       setTimeout(() => setCopyDone(false), 1500);
     } catch (e) {
@@ -78,7 +77,6 @@ export function ApplicationPreviewModal({ type, values, onClose }: Props) {
 
         <div
           className="max-h-[60vh] overflow-auto bg-white px-6 py-5 dark:bg-gray-950"
-          // EAS 본문 에디터에 paste 했을 때 그대로 들어가도록 inline style 로 표 렌더.
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: html }}
         />

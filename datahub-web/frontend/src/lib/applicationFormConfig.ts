@@ -1,6 +1,8 @@
-// 1. 기획 / substep 2 신청서 작성 — 양식 config + 상태/이력 타입.
-//   유형(service/purchase/subscribe) 별로 섹션·필드 구성이 다름.
-//   상태(draft/submitted/reviewing/approved) 는 페이지 컨테이너에서 분기.
+// 신청서 작성 substep 추적 모드 — 상태/이력/유형 타입 + mock payload.
+//   실제 양식 필드 정의는 FORM_SCHEMAS (formSchemas.ts) 가 단일 진실의 원천.
+//   여기는 그 위에 얹는 status / history / 페이지 메타데이터만 담당.
+
+import type { FormType } from "./api";
 
 export type ApplicationStatus = "draft" | "submitted" | "reviewing" | "approved";
 export type ApplicationType = "service" | "purchase" | "subscribe";
@@ -11,204 +13,46 @@ export const APPLICATION_TYPE_LABEL: Record<ApplicationType, string> = {
   subscribe: "데이터 구독",
 };
 
-export type FormFieldType =
-  | "input"
-  | "textarea"
-  | "disabled"
-  | "date-range"
-  | "number-with-unit"
-  | "file";
+/** ApplicationType → FormBuilder FormType. 실제 FORM_SCHEMAS 와 연결할 때 사용. */
+export const APPLICATION_TO_FORM_TYPE: Record<ApplicationType, FormType> = {
+  service: "data_production",
+  purchase: "data_purchase",
+  subscribe: "data_subscription",
+};
 
-export interface FormFieldDef {
-  id: string;
-  label: string;
-  type: FormFieldType;
-  placeholder?: string;
-  /** number-with-unit 의 우측 단위 ('원' 등). */
-  unit?: string;
-  /** file 등 일부 필드 하단 안내문. */
-  helperText?: string;
-}
-
-export interface FormSectionDef {
-  id: string;
-  title: string;
-  required: boolean;
-  fields: FormFieldDef[];
-}
-
-export const APPLICATION_FORM_CONFIG: Record<ApplicationType, FormSectionDef[]> = {
-  service: [
-    {
-      id: "basic",
-      title: "기본 정보",
-      required: true,
-      fields: [
-        {
-          id: "dataName",
-          label: "데이터명",
-          type: "input",
-          placeholder: "예) 한국어 도메인 특화 음성 코퍼스",
-        },
-        { id: "applicant", label: "신청자", type: "disabled" },
-      ],
-    },
-    {
-      id: "plan",
-      title: "제작 계획",
-      required: true,
-      fields: [
-        {
-          id: "purpose",
-          label: "제작 목적",
-          type: "textarea",
-          placeholder: "어떤 모델·서비스에 활용할 데이터인지 작성",
-        },
-        {
-          id: "method",
-          label: "제작 방법",
-          type: "textarea",
-          placeholder: "수집·라벨링·검증 등 제작 절차 설명",
-        },
-        { id: "quantity", label: "제작 수량", type: "input", placeholder: "예) 20,000건" },
-        { id: "scope", label: "활용 범위", type: "input", placeholder: "예) 사내 모델 학습 한정" },
-        { id: "period", label: "작업 기간", type: "date-range" },
-      ],
-    },
-    {
-      id: "budget",
-      title: "예산",
-      required: true,
-      fields: [
-        {
-          id: "cost",
-          label: "예상 비용",
-          type: "number-with-unit",
-          unit: "원",
-          placeholder: "예) 16,500,000",
-        },
-      ],
-    },
-    {
-      id: "attachments",
-      title: "첨부 파일",
-      required: false,
-      fields: [
-        {
-          id: "files",
-          label: "파일",
-          type: "file",
-          helperText: "샘플 데이터, 작업 가이드라인 등 · 최대 50MB",
-        },
-      ],
-    },
-  ],
-  purchase: [
-    {
-      id: "basic",
-      title: "기본 정보",
-      required: true,
-      fields: [
-        {
-          id: "dataName",
-          label: "데이터명",
-          type: "input",
-          placeholder: "예) 한국어 음성 코퍼스 라이선스",
-        },
-        { id: "applicant", label: "신청자", type: "disabled" },
-      ],
-    },
-    {
-      id: "plan",
-      title: "구매 계획",
-      required: true,
-      fields: [
-        {
-          id: "targetData",
-          label: "구매 대상 데이터",
-          type: "textarea",
-          placeholder: "구매하려는 데이터셋의 세부 정보",
-        },
-        {
-          id: "purpose",
-          label: "구매 목적",
-          type: "textarea",
-          placeholder: "어떤 용도로 사용할지 작성",
-        },
-        { id: "scope", label: "활용 범위", type: "input", placeholder: "예) 사내 모델 학습 한정" },
-        { id: "period", label: "필요 기간", type: "input", placeholder: "예) 1회성 구매" },
-      ],
-    },
-    {
-      id: "budget",
-      title: "예산",
-      required: true,
-      fields: [
-        { id: "cost", label: "예상 비용", type: "number-with-unit", unit: "원" },
-      ],
-    },
-    {
-      id: "attachments",
-      title: "첨부 파일",
-      required: false,
-      fields: [
-        {
-          id: "files",
-          label: "파일",
-          type: "file",
-          helperText: "샘플 데이터, 라이선스 자료 등 · 최대 50MB",
-        },
-      ],
-    },
-  ],
-  subscribe: [
-    {
-      id: "basic",
-      title: "기본 정보",
-      required: true,
-      fields: [
-        {
-          id: "dataName",
-          label: "데이터명",
-          type: "input",
-          placeholder: "예) 뉴스 코퍼스 월간 구독",
-        },
-        { id: "applicant", label: "신청자", type: "disabled" },
-      ],
-    },
-    {
-      id: "plan",
-      title: "구독 계획",
-      required: true,
-      fields: [
-        { id: "targetData", label: "구독 대상 데이터", type: "textarea" },
-        { id: "purpose", label: "구독 목적", type: "textarea" },
-        { id: "scope", label: "활용 범위", type: "input" },
-        { id: "period", label: "필요 기간", type: "input", placeholder: "예) 월 정기 · 12개월" },
-      ],
-    },
-    {
-      id: "budget",
-      title: "예산",
-      required: true,
-      fields: [
-        { id: "cost", label: "예상 비용", type: "number-with-unit", unit: "원" },
-      ],
-    },
-    {
-      id: "attachments",
-      title: "첨부 파일",
-      required: false,
-      fields: [
-        {
-          id: "files",
-          label: "파일",
-          type: "file",
-          helperText: "샘플 데이터 등 · 최대 50MB",
-        },
-      ],
-    },
-  ],
+/** 추적 모드 데모용 mock payload — FORM_SCHEMAS 의 실제 key 와 일치해야 함. */
+export const MOCK_SUBMITTED_PAYLOAD: Record<
+  ApplicationType,
+  Record<string, unknown>
+> = {
+  purchase: {
+    프로젝트명: "test",
+    구매_희망_데이터셋: "한국어 음성 코퍼스 라이선스",
+    판매_업체: "예시 데이터 컴퍼니",
+    사용_예상_금액: "8,000,000원",
+    사용_목적_및_기대_효과: "음성 인식 모델 학습 데이터 보강",
+    데이터_품질_검수_담당자: "김데이터",
+    compliance_확인_여부: "확인 완료",
+    데이터셋_저장_레포지토리: "research-experiment-repo",
+  },
+  subscribe: {
+    프로젝트명: "test",
+    구독_희망_데이터셋: "뉴스 코퍼스 월간 피드",
+    구독_업체: "예시 미디어",
+    구독_기간: "12개월",
+    월_사용_예상_금액: "2,400,000원",
+    사용_목적: "뉴스 분류 모델 학습 데이터 정기 수급",
+  },
+  service: {
+    관련_프로젝트_PMS: "test",
+    데이터셋_활용_목적: "도메인 특화 음성 인식 모델 학습 데이터 제작",
+    데이터셋_이름: "한국어 도메인 특화 음성 코퍼스",
+    희망_작업_착수일: "2026-06-01",
+    희망_수령일: "2026-07-31",
+    작업_형태: "음성 수집·라벨링",
+    목표_데이터_수량: "20,000",
+    단위: "문장",
+  },
 };
 
 export type HistoryAction =

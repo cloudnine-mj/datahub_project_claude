@@ -1,12 +1,15 @@
-// 신청서(추적 모드) 미리보기 — EAS 본문 에디터에 붙여넣을 HTML 표 + plain text 생성.
-//   ApplicationFormConfig 의 섹션·필드를 순회해 라벨 / 값으로 row 를 만든다.
-//   formPreview.ts (FormBuilder 용) 와 동일한 표 스타일·복사 동작 패턴.
+// 추적 모드 미리보기 — FORM_SCHEMAS 의 실제 양식 구조 기반.
+//   draft 모드는 FormBuilder 가 자체 미리보기를 제공하므로, 이 헬퍼는 추적 모드(읽기 전용) 전용.
+//   formPreview.ts 의 escape / valueToText 재사용해 HTML 표 + plain text 생성.
 
 import {
-  APPLICATION_FORM_CONFIG,
+  APPLICATION_TO_FORM_TYPE,
   APPLICATION_TYPE_LABEL,
+  MOCK_SUBMITTED_PAYLOAD,
   type ApplicationType,
 } from "./applicationFormConfig";
+import { FORM_SCHEMAS } from "./formSchemas";
+import { valueToText } from "./formPreview";
 
 function escapeHtml(s: string): string {
   return s
@@ -17,52 +20,31 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-interface PreviewRow {
-  label: string;
-  value: string;
-}
-
-/** date-range 직렬값('YYYY-MM-DD~YYYY-MM-DD') 을 보기 좋은 문자열로 변환. */
-function normalizeValue(raw: string | undefined, hasUnit?: string): string {
-  const v = (raw ?? "").trim();
-  if (!v) return "";
-  if (v.includes("~")) {
-    const [start, end] = v.split("~");
-    if (!start.trim() && !end.trim()) return "";
-    return `${start.trim() || "(미입력)"} ~ ${end.trim() || "(미입력)"}`;
-  }
-  if (hasUnit) return `${v} ${hasUnit}`;
-  return v;
-}
-
-function collectRows(
-  type: ApplicationType,
-  values: Record<string, string>,
-): PreviewRow[] {
-  const rows: PreviewRow[] = [];
-  for (const section of APPLICATION_FORM_CONFIG[type]) {
-    for (const field of section.fields) {
-      if (field.type === "file") {
-        // 첨부는 현재 mock — 표에서 생략. 실제 첨부 연동 시 파일명 row 추가.
-        continue;
-      }
-      const v = normalizeValue(values[field.id], field.unit);
-      if (!v) continue;
-      rows.push({ label: field.label, value: v });
+function collectRows(type: ApplicationType): { label: string; value: string }[] {
+  const formType = APPLICATION_TO_FORM_TYPE[type];
+  const schema = FORM_SCHEMAS[formType];
+  const payload = MOCK_SUBMITTED_PAYLOAD[type];
+  const rows: { label: string; value: string }[] = [];
+  for (const section of schema.sections) {
+    for (const f of section.fields) {
+      const raw = payload[f.key];
+      const text = valueToText(f, raw);
+      if (!text) continue;
+      rows.push({ label: f.label, value: text });
     }
   }
   return rows;
 }
 
-export function buildApplicationPreviewHtml(
-  type: ApplicationType,
-  values: Record<string, string>,
-): string {
+export function buildApplicationPreviewHtml(type: ApplicationType): string {
   const heading = `${APPLICATION_TYPE_LABEL[type]} 신청`;
-  const dataName = (values.dataName ?? "").trim();
-  const fullHeading = dataName ? `${heading} — ${dataName}` : heading;
+  const projectName =
+    type === "service"
+      ? (MOCK_SUBMITTED_PAYLOAD.service.데이터셋_이름 as string | undefined)
+      : (MOCK_SUBMITTED_PAYLOAD[type].프로젝트명 as string | undefined);
+  const fullHeading = projectName ? `${heading} — ${projectName}` : heading;
 
-  const rows = collectRows(type, values);
+  const rows = collectRows(type);
   if (rows.length === 0) {
     return (
       `<h3 style="font-weight:600;margin:0 0 8px 0;">${escapeHtml(fullHeading)}</h3>` +
@@ -70,7 +52,13 @@ export function buildApplicationPreviewHtml(
     );
   }
 
-  const trs = rows
+  // 신청자 row 를 표 가장 위에 고정.
+  const allRows = [
+    { label: "신청자", value: "김데이터 (AI Platform)" },
+    ...rows,
+  ];
+
+  const trs = allRows
     .map(
       (r) =>
         `<tr>` +
@@ -90,29 +78,31 @@ export function buildApplicationPreviewHtml(
   );
 }
 
-export function buildApplicationPreviewPlainText(
-  type: ApplicationType,
-  values: Record<string, string>,
-): string {
+export function buildApplicationPreviewPlainText(type: ApplicationType): string {
   const heading = `${APPLICATION_TYPE_LABEL[type]} 신청`;
-  const dataName = (values.dataName ?? "").trim();
-  const fullHeading = dataName ? `${heading} — ${dataName}` : heading;
+  const projectName =
+    type === "service"
+      ? (MOCK_SUBMITTED_PAYLOAD.service.데이터셋_이름 as string | undefined)
+      : (MOCK_SUBMITTED_PAYLOAD[type].프로젝트명 as string | undefined);
+  const fullHeading = projectName ? `${heading} — ${projectName}` : heading;
 
-  const rows = collectRows(type, values);
-  const lines = [fullHeading, ""];
+  const rows = collectRows(type);
+  const lines = [
+    fullHeading,
+    "",
+    `신청자\t김데이터 (AI Platform)`,
+  ];
   for (const r of rows) {
     lines.push(`${r.label}\t${r.value.replace(/\n/g, " / ")}`);
   }
   return lines.join("\n");
 }
 
-/** HTML + plain text 를 함께 클립보드에 넣음. ClipboardItem 미지원 시 텍스트만 fallback. */
 export async function copyApplicationPreviewToClipboard(
   type: ApplicationType,
-  values: Record<string, string>,
 ): Promise<void> {
-  const html = buildApplicationPreviewHtml(type, values);
-  const text = buildApplicationPreviewPlainText(type, values);
+  const html = buildApplicationPreviewHtml(type);
+  const text = buildApplicationPreviewPlainText(type);
   if (typeof ClipboardItem !== "undefined") {
     await navigator.clipboard.write([
       new ClipboardItem({
