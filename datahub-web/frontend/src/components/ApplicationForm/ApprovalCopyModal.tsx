@@ -123,6 +123,8 @@ export function ApprovalCopyModal({
           <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
             아래 표를 복사하여{" "}
             <strong className="font-medium">g portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
+            <br />
+            <strong className="font-medium">[결재 본문 복사]</strong> 버튼을 누르면 자동으로 다음 단계인 전자결재 품의로 이동합니다.
           </span>
         </div>
 
