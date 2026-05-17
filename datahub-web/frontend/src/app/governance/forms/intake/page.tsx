@@ -1,11 +1,17 @@
-// 1. 기획 / substep 2: 신청서 작성.
-//   계획 수립 단계에서 선택한 신청 유형(?type=) + 상태(?status=) 를 query 로 받아
-//   유형별 양식 + 상태 분기 렌더 (작성/제출/검토/승인).
-//   상위 PhaseLayout 의 StepActions 는 사용하지 않음 — 컨테이너가 자체 액션 영역을 가짐.
+// 1. 기획 / substep 2: 신청서 작성 — type/status 자동 해석 client 컴포넌트.
+//   1) URL ?type=...&status=... 우선
+//   2) 없으면 sessionStorage 의 datahub:planningType (계획 수립 마지막 선택)
+//   3) 없으면 저장된 lastFormId 가 있는 유형
+//   4) 모두 실패하면 안내 placeholder
+//   다른 substep 의 'prev' 가 type 쿼리 없이 진입해도 직전 작성 내용을 그대로 복원.
 
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FileText } from "lucide-react";
 import { PhaseLayout } from "@/components/PhaseLayout";
 import { PhaseBlock } from "@/components/PhaseBlock";
-import { FileText } from "lucide-react";
 import { ApplicationFormContainer } from "@/components/ApplicationForm/ApplicationFormContainer";
 import {
   PHASE1_PHASES,
@@ -18,31 +24,45 @@ import type {
   ApplicationType,
 } from "@/lib/applicationFormConfig";
 
-interface PageProps {
-  searchParams?: { type?: string; status?: string };
+const ALL_TYPES: ApplicationType[] = ["service", "purchase", "subscribe"];
+
+function isType(v: string | null | undefined): v is ApplicationType {
+  return v === "service" || v === "purchase" || v === "subscribe";
 }
 
-function parseType(raw: string | undefined): ApplicationType | null {
-  if (raw === "service" || raw === "purchase" || raw === "subscribe") return raw;
+function isStatus(v: string | null | undefined): v is ApplicationStatus {
+  return v === "draft" || v === "submitted" || v === "reviewing" || v === "approved";
+}
+
+function resolveTypeFromSession(): ApplicationType | null {
+  if (typeof window === "undefined") return null;
+  const planned = sessionStorage.getItem("datahub:planningType");
+  if (isType(planned)) return planned;
+  for (const t of ALL_TYPES) {
+    if (sessionStorage.getItem(`datahub:lastFormId:${t}`)) return t;
+  }
   return null;
 }
 
-function parseStatus(raw: string | undefined): ApplicationStatus {
-  if (
-    raw === "draft" ||
-    raw === "submitted" ||
-    raw === "reviewing" ||
-    raw === "approved"
-  )
-    return raw;
-  return "draft";
-}
+export default function Page() {
+  const sp = useSearchParams();
+  const urlType = sp?.get("type") ?? null;
+  const urlStatus = sp?.get("status") ?? null;
 
-export default function Page({ searchParams }: PageProps) {
   const prev = prevPhase1Substep("form");
   const next = nextPhase1Substep("form");
-  const type = parseType(searchParams?.type);
-  const status = parseStatus(searchParams?.status);
+
+  // SSR 단계에서는 sessionStorage 접근 불가 — 마운트 후 한 번 해석.
+  const [resolved, setResolved] = useState<{
+    type: ApplicationType | null;
+    status: ApplicationStatus;
+  } | null>(null);
+
+  useEffect(() => {
+    const t = isType(urlType) ? urlType : resolveTypeFromSession();
+    const s = isStatus(urlStatus) ? urlStatus : "draft";
+    setResolved({ type: t, status: s });
+  }, [urlType, urlStatus]);
 
   return (
     <PhaseLayout
@@ -54,14 +74,14 @@ export default function Page({ searchParams }: PageProps) {
       phases={PHASE1_PHASES}
       subSteps={buildPhase1SubSteps("form")}
     >
-      {type ? (
+      {resolved?.type ? (
         <ApplicationFormContainer
-          type={type}
-          initialStatus={status}
+          type={resolved.type}
+          initialStatus={resolved.status}
           prevPath={prev?.path}
           nextPath={next.path}
         />
-      ) : (
+      ) : resolved ? (
         <PhaseBlock icon={FileText} title="신청서 작성">
           <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
             계획 수립 단계에서 신청 유형을 선택한 뒤 다시 진입해 주세요.
@@ -73,7 +93,7 @@ export default function Page({ searchParams }: PageProps) {
             </p>
           </div>
         </PhaseBlock>
-      )}
+      ) : null}
     </PhaseLayout>
   );
 }
