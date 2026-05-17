@@ -192,7 +192,6 @@ const dataPurchase: FormSchema = {
             url: "https://legal.lgresearch.ai/#/app/law/save",
             label: "법무팀 자문 시스템",
           },
-          hintWhen: "확인 필요",
         },
         {
           key: "데이터셋_저장_레포지토리",
