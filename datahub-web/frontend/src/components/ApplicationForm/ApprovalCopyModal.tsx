@@ -6,11 +6,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, X } from "lucide-react";
-import {
-  APPLICATION_TYPE_LABEL,
-  type ApplicationType,
-} from "@/lib/applicationFormConfig";
+import { Check, Copy, Info, X } from "lucide-react";
+import { type ApplicationType } from "@/lib/applicationFormConfig";
 import { generateApprovalText } from "@/lib/applicationPreview";
 
 interface Props {
@@ -109,10 +106,20 @@ export function ApprovalCopyModal({
           </button>
         </div>
 
-        <p className="mb-[18px] text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-          아래 텍스트를 복사하여 g portal 전자결재 품의서 본문에 붙여 넣으세요. (
-          {APPLICATION_TYPE_LABEL[type]} 신청)
-        </p>
+        <div
+          role="note"
+          className="mb-[14px] flex items-start gap-2.5 rounded-lg bg-blue-50 px-3.5 py-3 dark:bg-blue-950/40"
+        >
+          <Info
+            size={16}
+            aria-hidden="true"
+            className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
+          />
+          <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
+            아래 텍스트를 복사하여{" "}
+            <strong className="font-medium">g portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
+          </span>
+        </div>
 
         <textarea
           ref={textareaRef}
