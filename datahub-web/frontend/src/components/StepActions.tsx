@@ -40,40 +40,36 @@ export function StepActions({
   const proceedEnabled = canProceed && !!nextPath;
 
   return (
-    <div className="mt-4 flex items-center justify-between gap-2">
-      <div>
-        {prevPath && (
+    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+      {prevPath && (
+        <Link
+          href={prevPath}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${SECONDARY}`}
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+          {prevLabel}
+        </Link>
+      )}
+      {nextLabel &&
+        (proceedEnabled && nextPath ? (
           <Link
-            href={prevPath}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${SECONDARY}`}
+            href={nextPath}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${PRIMARY_ENABLED}`}
           >
-            <ArrowLeft size={14} aria-hidden="true" />
-            {prevLabel}
+            {nextLabel}
+            <ArrowRight size={14} aria-hidden="true" />
           </Link>
-        )}
-      </div>
-      <div>
-        {nextLabel &&
-          (proceedEnabled && nextPath ? (
-            <Link
-              href={nextPath}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${PRIMARY_ENABLED}`}
-            >
-              {nextLabel}
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          ) : (
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${PRIMARY_DISABLED}`}
-            >
-              {nextLabel}
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          ))}
-      </div>
+        ) : (
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${PRIMARY_DISABLED}`}
+          >
+            {nextLabel}
+            <ArrowRight size={14} aria-hidden="true" />
+          </button>
+        ))}
     </div>
   );
 }
