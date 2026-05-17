@@ -27,9 +27,11 @@ export function ReviewExampleCard({ title, subtitle, items }: Props) {
           {title}
         </h3>
       </header>
-      <p className="mb-2.5 text-[11px] text-red-700/80 dark:text-red-300/80">
-        {subtitle}
-      </p>
+      {subtitle && (
+        <p className="mb-2.5 text-[11px] text-red-700/80 dark:text-red-300/80">
+          {subtitle}
+        </p>
+      )}
       <dl className="flex flex-col gap-2 text-[11px] leading-relaxed">
         {items.map((it) => (
           <div key={it.label}>

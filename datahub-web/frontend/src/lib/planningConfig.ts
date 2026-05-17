@@ -49,8 +49,8 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "누가, 어디에 쓸 수 있나요?",
       "언제 시작해서 언제 끝나야 하나요?",
     ],
-    exampleTitle: "작성 예시",
-    exampleSubtitle: "실제 신청자가 이렇게 정리했습니다.",
+    exampleTitle: "검토 사항 예시",
+    exampleSubtitle: "",
     exampleItems: [
       {
         label: "제작 목적",
@@ -76,8 +76,8 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "누가, 어디에 쓸 수 있나요?",
       "얼마나 오래 쓸 건가요?",
     ],
-    exampleTitle: "작성 예시",
-    exampleSubtitle: "실제 신청자가 이렇게 정리했습니다.",
+    exampleTitle: "검토 사항 예시",
+    exampleSubtitle: "",
     exampleItems: [
       {
         label: "구매 대상 데이터",
@@ -95,8 +95,8 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "누가, 어디에 쓸 수 있나요?",
       "얼마나 오래 구독할 건가요?",
     ],
-    exampleTitle: "작성 예시",
-    exampleSubtitle: "실제 신청자가 이렇게 정리했습니다.",
+    exampleTitle: "검토 사항 예시",
+    exampleSubtitle: "",
     exampleItems: [
       {
         label: "구독 대상 데이터",
