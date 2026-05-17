@@ -154,7 +154,11 @@ export function ApplicationFormContainer({
       <ProgressHistoryBlock history={history} />
       <SubmittedSummaryBlock type={type} />
 
-      <TrackingActions onCancel={onCancel} onProceedToApproval={onProceedToApproval} />
+      <TrackingActions
+        prevPath={prevPath}
+        onCancel={onCancel}
+        onProceedToApproval={onProceedToApproval}
+      />
     </div>
   );
 }
@@ -253,29 +257,44 @@ function DraftActions({
 }
 
 function TrackingActions({
+  prevPath,
   onCancel,
   onProceedToApproval,
 }: {
+  prevPath?: string;
   onCancel: () => void;
   onProceedToApproval: () => void;
 }) {
   return (
-    <div className="mt-2 flex flex-col items-stretch justify-end gap-2 sm:flex-row sm:items-center">
-      <button
-        type="button"
-        onClick={onCancel}
-        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        신청 취소
-      </button>
-      <button
-        type="button"
-        onClick={onProceedToApproval}
-        className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
-      >
-        전자결재 품의로
-        <ArrowRight size={14} aria-hidden="true" />
-      </button>
+    <div className="mt-2 flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
+      <div>
+        {prevPath && (
+          <Link
+            href={prevPath}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            이전 단계 보기
+          </Link>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          신청 취소
+        </button>
+        <button
+          type="button"
+          onClick={onProceedToApproval}
+          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
+        >
+          전자결재 품의로
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }
