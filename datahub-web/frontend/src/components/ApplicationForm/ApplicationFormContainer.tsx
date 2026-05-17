@@ -269,10 +269,10 @@ export function ApplicationFormContainer({
     setStatus("submitted");
   };
 
-  // '전자결재 품의' / '결재 본문 복사' 둘 다 같은 ApprovalCopyModal 트리거.
-  //   substep 3 (전자결재 품의 페이지) 로 가는 네비게이션은 stepper 로만 — 본 흐름에서는
-  //   사용자가 본문 텍스트 복사 후 g portal 에 직접 붙여 넣는 것이 핵심.
+  // '결재 본문 복사' 버튼 — ApprovalCopyModal (텍스트 복사) 오픈.
   const onShowApprovalCopy = () => setApprovalCopyOpen(true);
+  // '전자결재 품의 →' 버튼 — substep 3 (전자결재 품의 페이지) 로 이동.
+  const onProceedToApproval = () => router.push(nextPath);
 
 
   // 작성 모드 양식 카드 — draft 또는 추적 모드에서 '신청서 화면' 토글 시 노출.
@@ -419,7 +419,7 @@ export function ApplicationFormContainer({
 
       <TrackingActions
         onShowForm={() => setShowFormView(true)}
-        onShowApprovalCopy={onShowApprovalCopy}
+        onProceedToApproval={onProceedToApproval}
       />
 
       {approvalCopyOpen && (
@@ -534,10 +534,10 @@ function DraftActions({
 
 function TrackingActions({
   onShowForm,
-  onShowApprovalCopy,
+  onProceedToApproval,
 }: {
   onShowForm: () => void;
-  onShowApprovalCopy: () => void;
+  onProceedToApproval: () => void;
 }) {
   return (
     <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
@@ -551,7 +551,7 @@ function TrackingActions({
       </button>
       <button
         type="button"
-        onClick={onShowApprovalCopy}
+        onClick={onProceedToApproval}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
       >
         전자결재 품의
