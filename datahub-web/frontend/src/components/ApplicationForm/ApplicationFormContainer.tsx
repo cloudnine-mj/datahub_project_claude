@@ -6,10 +6,11 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
+import { api } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
@@ -40,7 +41,7 @@ const PAGE_TITLE: Record<ApplicationType, string> = {
   subscribe: "데이터 구독 신청",
 };
 
-const APPLICANT_INFO = {
+const FALLBACK_APPLICANT_INFO = {
   name: "김데이터",
   department: "AI Platform",
   email: "kim.data@lgresearch.ai",
@@ -56,6 +57,26 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
+  const [formId, setFormId] = useState<number | null>(null);
+  const [applicant, setApplicant] = useState(FALLBACK_APPLICANT_INFO);
+  const [submitting, setSubmitting] = useState(false);
+
+  // 로그인 사용자 정보 — 백엔드 신청에 첨부될 submitter 필드용.
+  useEffect(() => {
+    api
+      .me()
+      .then((m) => {
+        setApplicant({
+          name: m.user.name ?? FALLBACK_APPLICANT_INFO.name,
+          department: m.user.department ?? FALLBACK_APPLICANT_INFO.department,
+          email: m.user.email ?? FALLBACK_APPLICANT_INFO.email,
+        });
+      })
+      .catch(() => {
+        /* 비로그인 / 미연결 — fallback 값 그대로 사용. */
+      });
+  }, []);
 
   const formType = APPLICATION_TO_FORM_TYPE[type];
   const schema = FORM_SCHEMAS[formType];
@@ -65,12 +86,60 @@ export function ApplicationFormContainer({
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const onSaveDraft = () => console.log("[stub] 임시 저장", values);
+  /** projectName 추출 — FORM_SCHEMAS 의 projectField 가 가리키는 값. 비어있으면 '(미입력)'. */
+  function deriveProjectName(): string {
+    const raw = values[schema.projectField];
+    if (typeof raw === "string" && raw.trim()) return raw.trim();
+    if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+      const first = raw[0] as Record<string, unknown>;
+      const name = first.service_name;
+      if (typeof name === "string" && name.trim()) return name.trim();
+    }
+    if (raw != null) return String(raw);
+    return "(미입력)";
+  }
+
+  /** 임시 저장 / 제출 공용 — 첫 호출은 POST(submitForm), 이후는 PATCH(updateForm). */
+  async function persist(asDraft: boolean): Promise<boolean> {
+    if (submitting) return false;
+    setSubmitting(true);
+    try {
+      const body = {
+        form_type: formType,
+        project_name: deriveProjectName(),
+        payload: values,
+        status: asDraft ? "draft" : "submitted",
+        submitter_name: applicant.name || undefined,
+        submitter_email: applicant.email || undefined,
+        submitter_department: applicant.department || undefined,
+      };
+      const result = formId
+        ? await api.updateForm(formId, body)
+        : await api.submitForm(body);
+      setFormId(result.id);
+      // 다른 페이지(거버넌스 요청 목록 / 신청 처리 큐) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
+      router.refresh();
+      return true;
+    } catch (e) {
+      const msg = (e as Error).message || "저장에 실패했습니다.";
+      console.error("[form] persist failed", e);
+      window.alert(`저장에 실패했습니다.\n${msg}`);
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const onSaveDraft = async () => {
+    const ok = await persist(true);
+    if (ok) console.log("[form] 임시 저장 완료");
+  };
   // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
   const onOpenPreview = () => setPreviewOpen(true);
-  // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 상태 전이.
-  const onConfirmSubmit = () => {
-    console.log("[stub] 신청서 제출", values);
+  // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 백엔드 제출 + 상태 전이.
+  const onConfirmSubmit = async () => {
+    const ok = await persist(false);
+    if (!ok) return;
     setPreviewOpen(false);
     setStatus("submitted");
   };
@@ -82,6 +151,7 @@ export function ApplicationFormContainer({
   };
 
   const onProceedToApproval = () => router.push(nextPath);
+
 
   if (status === "draft") {
     return (
@@ -111,7 +181,7 @@ export function ApplicationFormContainer({
               onOpenPreview();
             }}
           >
-            <SubmitterReadOnlySection />
+            <SubmitterReadOnlySection applicant={applicant} />
             {schema.sections.map((s, i) => (
               <ApplicationFormSection
                 key={`${s.title}-${i}`}
@@ -165,7 +235,11 @@ export function ApplicationFormContainer({
 
 // --- 신청자 정보 (읽기 전용, 토글 가능) ---
 
-function SubmitterReadOnlySection() {
+function SubmitterReadOnlySection({
+  applicant,
+}: {
+  applicant: { name: string; department: string; email: string };
+}) {
   const [open, setOpen] = useState(false);
   return (
     <section>
@@ -188,9 +262,9 @@ function SubmitterReadOnlySection() {
 
       {open && (
         <div className="space-y-3.5">
-          <ReadOnlyRow label="신청자 이름" value={APPLICANT_INFO.name} />
-          <ReadOnlyRow label="소속" value={APPLICANT_INFO.department} />
-          <ReadOnlyRow label="이메일" value={APPLICANT_INFO.email} />
+          <ReadOnlyRow label="신청자 이름" value={applicant.name} />
+          <ReadOnlyRow label="소속" value={applicant.department} />
+          <ReadOnlyRow label="이메일" value={applicant.email} />
         </div>
       )}
     </section>
