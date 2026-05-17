@@ -20,7 +20,7 @@ export function HomeDashboard() {
     <div className="flex flex-col gap-5">
       <QuickStartTiles />
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_240px]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_240px]">
         <div className="flex flex-col gap-3">
           <TodoWidget items={MOCK_TODOS} />
           <InProgressWidget items={MOCK_IN_PROGRESS} />
