@@ -4,11 +4,16 @@
 // admin 이 아니면 권한 없음 안내. 기존 detail 페이지의 진행 상태 패널에서 액션 수행.
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Lock, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Lock, Search } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
+import {
+  RequestStatusTabs,
+  type StatusTab,
+  type TabFilter,
+} from "@/components/RequestStatusTabs";
 import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
@@ -16,13 +21,17 @@ const PAGE_SIZES = [5, 10, 20, 50, 100];
 // 반려는 admin 액션에서 제거됨 → 필터에서도 노출 안 함
 const STATUS_OPTIONS = STATUSES.filter((s) => s.value !== "rejected");
 
+// 탭 필터 → FormStatus 매핑 (요청 목록 페이지와 동일 규칙).
+const TAB_TO_STATUSES: Record<TabFilter, FormStatus[]> = {
+  all: STATUS_OPTIONS.map((s) => s.value),
+  "in-progress": ["draft", "submitted", "reviewing"],
+  completed: ["approved"],
+};
+
 export default function AdminFormsPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [items, setItems] = useState<FormListItem[] | null>(null);
-  // 상태 필터 — 기본은 전체 선택. 다중 선택 가능.
-  const [statusFilter, setStatusFilter] = useState<Set<FormStatus>>(
-    () => new Set(STATUS_OPTIONS.map((s) => s.value)),
-  );
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -36,12 +45,12 @@ export default function AdminFormsPage() {
     refetch();
   }, [refetch]);
 
-  // 상태 필터 + 검색 (신청 종류 / 프로젝트명 / 신청자 / 요청번호 / 상태 라벨)
-  const filtered = useMemo(() => {
+  // 탭 카운트 산정용 — 상태 필터 적용 전, 반려 제외 + 검색 적용 후.
+  const beforeStatusFilter = useMemo(() => {
     if (!items) return null;
     const q = query.trim().toLowerCase();
     return items.filter((it) => {
-      if (!statusFilter.has(it.status as FormStatus)) return false;
+      if (it.status === "rejected") return false;
       if (!q) return true;
       const statusLabel = STATUSES.find((s) => s.value === it.status)?.label ?? "";
       const haystack = [
@@ -55,11 +64,36 @@ export default function AdminFormsPage() {
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [items, statusFilter, query]);
+  }, [items, query]);
+
+  const filtered = useMemo(() => {
+    if (!beforeStatusFilter) return null;
+    const allowed = new Set<FormStatus>(TAB_TO_STATUSES[activeTab]);
+    return beforeStatusFilter.filter((it) => allowed.has(it.status as FormStatus));
+  }, [beforeStatusFilter, activeTab]);
+
+  const tabs: StatusTab[] = useMemo(() => {
+    const base = beforeStatusFilter ?? [];
+    const inProgressSet = new Set<FormStatus>(TAB_TO_STATUSES["in-progress"]);
+    const completedSet = new Set<FormStatus>(TAB_TO_STATUSES["completed"]);
+    return [
+      { value: "all", label: "전체", count: base.length },
+      {
+        value: "in-progress",
+        label: "진행 중",
+        count: base.filter((it) => inProgressSet.has(it.status as FormStatus)).length,
+      },
+      {
+        value: "completed",
+        label: "완료",
+        count: base.filter((it) => completedSet.has(it.status as FormStatus)).length,
+      },
+    ];
+  }, [beforeStatusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, query, pageSize]);
+  }, [activeTab, query, pageSize]);
 
   const totalPages = filtered ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1;
   const pageItems = useMemo(() => {
@@ -97,7 +131,7 @@ export default function AdminFormsPage() {
         전체 사용자의 신청을 검토 / 승인할 수 있습니다. 프로젝트명을 클릭해 신청 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
-      {/* 툴바 — 페이지 크기 + 검색 + 상태 필터 */}
+      {/* 툴바 — 페이지 크기 + 검색 */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="relative">
           <select
@@ -119,10 +153,13 @@ export default function AdminFormsPage() {
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
-        <StatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="mt-4">
+        <RequestStatusTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
@@ -175,96 +212,6 @@ export default function AdminFormsPage() {
         <div className="mt-3 flex items-center justify-between">
           <span className="text-xs text-gray-500">총 {filtered?.length ?? 0} 건</span>
           <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** 신청 상태 다중 선택 드롭다운 — 임시저장 / 제출됨 / 검토 중 / 승인 완료. */
-function StatusFilterDropdown({
-  selected,
-  onChange,
-}: {
-  selected: Set<FormStatus>;
-  onChange: (next: Set<FormStatus>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
-
-  function toggle(value: FormStatus) {
-    const next = new Set(selected);
-    if (next.has(value)) next.delete(value);
-    else next.add(value);
-    onChange(next);
-  }
-
-  function selectAll() {
-    onChange(new Set(STATUS_OPTIONS.map((s) => s.value)));
-  }
-
-  const isAll = selected.size === STATUS_OPTIONS.length;
-  const summary = isAll
-    ? "상태: 전체"
-    : selected.size === 0
-    ? "상태: 없음"
-    : "상태: " + STATUS_OPTIONS.filter((s) => selected.has(s.value)).map((s) => s.label).join(", ");
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex max-w-[300px] items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
-      >
-        <span className="truncate">{summary}</span>
-        <ChevronDown size={14} className="shrink-0 text-gray-400" />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
-          <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-            <span className="text-xs font-bold text-gray-700">상태 필터</span>
-            <button
-              type="button"
-              onClick={selectAll}
-              className="text-xs font-semibold text-blue-600 hover:underline"
-            >
-              전체 선택
-            </button>
-          </div>
-          <ul>
-            {STATUS_OPTIONS.map((s) => {
-              const checked = selected.has(s.value);
-              return (
-                <li key={s.value}>
-                  <label
-                    className={
-                      "flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm " +
-                      (checked ? "bg-blue-50/50 font-semibold text-blue-700" : "hover:bg-gray-50")
-                    }
-                  >
-                    <span>{s.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(s.value)}
-                      className="h-4 w-4 rounded text-blue-500 focus:ring-blue-500"
-                    />
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
         </div>
       )}
     </div>
