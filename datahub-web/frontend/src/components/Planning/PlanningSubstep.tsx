@@ -22,8 +22,19 @@ import { PHASE1_PHASES, buildPhase1SubSteps } from "@/lib/phase1Substeps";
 
 export function PlanningSubstep() {
   const [type, setType] = useState<PlanningType>("service");
+  // 검토 항목 + 용역 요건 체크 — 유형별 라벨이 다를 수 있어 raw label key 기반.
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
 
   const review = PLANNING_REVIEW_CONFIG[type];
+
+  const onTypeChange = (next: PlanningType) => {
+    setType(next);
+    // 유형 전환 시 체크 초기화 (질문 라벨이 달라짐).
+    setChecks({});
+  };
+  const onToggle = (key: string) => {
+    setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="space-y-3">
@@ -42,10 +53,14 @@ export function PlanningSubstep() {
 
       <HelpBanner message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
 
-      <TypeSelector value={type} onChange={setType} />
+      <TypeSelector value={type} onChange={onTypeChange} />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <ReviewQuestionsCard questions={review.questions} />
+        <ReviewQuestionsCard
+          questions={review.questions}
+          checks={checks}
+          onToggle={onToggle}
+        />
         <ReviewExampleCard
           title={review.exampleTitle}
           subtitle={review.exampleSubtitle}
@@ -54,7 +69,11 @@ export function PlanningSubstep() {
       </div>
 
       {review.requirements && review.requirements.length > 0 && (
-        <RequirementsCard requirements={review.requirements} />
+        <RequirementsCard
+          requirements={review.requirements}
+          checks={checks}
+          onToggle={onToggle}
+        />
       )}
 
       <PlanningFooter nextPath="/governance/forms/intake" type={type} />
