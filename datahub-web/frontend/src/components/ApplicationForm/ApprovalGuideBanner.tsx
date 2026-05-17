@@ -27,7 +27,7 @@ export function ApprovalGuideBanner() {
               className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-1.5 py-px text-[11px] text-gray-700 align-[1px] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
             >
               <Copy size={11} aria-hidden="true" />
-              결재 본문 복사
+              전자결재 본문 복사
             </span>{" "}
             버튼을 누르면 신청 내용을 G Portal 전자결재 품의서 본문에 그대로 붙여 넣을 수 있어요.
           </p>

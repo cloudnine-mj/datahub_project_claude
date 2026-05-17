@@ -124,7 +124,7 @@ export function ApprovalCopyModal({
             아래 표를 복사하여{" "}
             <strong className="font-medium">G Portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
             <br />
-            <strong className="font-medium">[결재 본문 복사]</strong> 버튼을 누르면 자동으로 다음 단계인 전자결재 품의로 이동합니다.
+            <strong className="font-medium">[전자결재 본문 복사]</strong> 버튼을 누르면 자동으로 다음 단계인 전자결재 품의로 이동합니다.
           </span>
         </div>
 
@@ -174,7 +174,7 @@ export function ApprovalCopyModal({
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
           >
             <Copy size={14} aria-hidden="true" />
-            결재 본문 복사
+            전자결재 본문 복사
           </button>
         </div>
       </div>
