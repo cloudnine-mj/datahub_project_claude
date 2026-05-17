@@ -1,5 +1,5 @@
 // 추적 모드 미리보기 — FORM_SCHEMAS 기반 결재 본문 데이터 생성.
-//   g portal 전자결재 품의서 본문 입력란(HTML rich editor)에 그대로 붙여 넣을 수 있도록
+//   G Portal 전자결재 품의서 본문 입력란(HTML rich editor)에 그대로 붙여 넣을 수 있도록
 //   HTML 표 + 평문 fallback 두 가지를 함께 제공.
 
 import {
@@ -67,7 +67,7 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** g portal 결재 본문 입력란(HTML rich editor)에 붙여 넣을 표 형태 HTML. */
+/** G Portal 결재 본문 입력란(HTML rich editor)에 붙여 넣을 표 형태 HTML. */
 export function generateApprovalHtml(data: ApprovalData): string {
   const rowsHtml = data.rows
     .map(

@@ -1,4 +1,4 @@
-// 추적 모드의 '전자결재 본문 복사' 모달 — 제출된 신청을 g portal 결재 본문에 붙여 넣을
+// 추적 모드의 '전자결재 본문 복사' 모달 — 제출된 신청을 G Portal 결재 본문에 붙여 넣을
 //   표 형태로 노출. 복사 시 HTML(text/html) + 평문(text/plain) 두 형태를 클립보드에 함께 적재해
 //   품의서 rich editor 에 그대로 붙여 넣으면 표가 유지됨.
 //   복사 후 모달은 자동으로 닫지 않음 (사용자가 직접 닫음).
@@ -122,7 +122,7 @@ export function ApprovalCopyModal({
           />
           <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
             아래 표를 복사하여{" "}
-            <strong className="font-medium">g portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
+            <strong className="font-medium">G Portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
             <br />
             <strong className="font-medium">[결재 본문 복사]</strong> 버튼을 누르면 자동으로 다음 단계인 전자결재 품의로 이동합니다.
           </span>

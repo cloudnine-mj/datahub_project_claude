@@ -1,5 +1,5 @@
 // 1. 기획 / substep 4: 결재 승인 확인.
-//   g portal 외부 진행 후 승인 결과를 신청자가 직접 확인하는 단순 체크 화면.
+//   G Portal 외부 진행 후 승인 결과를 신청자가 직접 확인하는 단순 체크 화면.
 
 "use client";
 
@@ -36,7 +36,7 @@ export default function Page() {
     >
       <PhaseBlock icon={CheckCircle2} title="결재 승인 확인">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-          g portal 전자결재에서 결재가 승인되었는지 확인하세요.
+          G Portal 전자결재에서 결재가 승인되었는지 확인하세요.
         </p>
         <PhaseChecklistRow
           id="approval-confirmed"

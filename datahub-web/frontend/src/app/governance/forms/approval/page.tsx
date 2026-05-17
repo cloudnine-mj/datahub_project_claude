@@ -1,5 +1,5 @@
 // 1. 기획 / substep 3: 전자결재 품의.
-//   결재선 / 통보 대상 / g portal 외부 진행 3 블록 구성.
+//   결재선 / 통보 대상 / G Portal 외부 진행 3 블록 구성.
 //   결재선·통보 대상은 회사 가이드라인에 명시된 고정 데이터.
 
 "use client";
@@ -47,7 +47,7 @@ export default function Page() {
       nextPath={next.path}
       nextLabel={next.label}
     >
-      <HelpBanner message="Datahub에서 작성한 신청서를 기반으로 g portal 전자결재에 품의를 작성하고 승인 요청을 진행합니다." />
+      <HelpBanner message="Datahub에서 작성한 신청서를 기반으로 G Portal 전자결재에 품의를 작성하고 승인 요청을 진행합니다." />
 
       <PhaseBlock icon={GitBranch} title="결재선">
         <InfoRow>신청자의 소속 조직장 전결</InfoRow>
@@ -63,16 +63,16 @@ export default function Page() {
         </ul>
       </PhaseBlock>
 
-      <PhaseBlock icon={ExternalLink} title="g portal 전자결재 진행">
+      <PhaseBlock icon={ExternalLink} title="G Portal 전자결재 진행">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-          g portal 전자결재에서 품의를 작성하고 승인 요청해 주세요.
+          G Portal 전자결재에서 품의를 작성하고 승인 요청해 주세요.
         </p>
         <button
           type="button"
           onClick={openGPortal}
           className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
-          g portal 전자결재로 이동
+          G Portal 전자결재로 이동
           <ExternalLink size={13} aria-hidden="true" />
         </button>
       </PhaseBlock>

@@ -29,7 +29,7 @@ export function ApprovalGuideBanner() {
               <Copy size={11} aria-hidden="true" />
               결재 본문 복사
             </span>{" "}
-            버튼을 누르면 신청 내용을 g portal 전자결재 품의서 본문에 그대로 붙여 넣을 수 있어요.
+            버튼을 누르면 신청 내용을 G Portal 전자결재 품의서 본문에 그대로 붙여 넣을 수 있어요.
           </p>
         </div>
       </div>
