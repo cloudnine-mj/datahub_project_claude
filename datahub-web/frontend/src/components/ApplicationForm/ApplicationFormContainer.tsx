@@ -408,18 +408,13 @@ export function ApplicationFormContainer({
 
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock history={history} />
-      <SubmittedSummaryBlock
-        type={type}
-        values={values}
-        applicant={applicant}
-        onShowApprovalCopy={onShowApprovalCopy}
-      />
+      <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
 
       {status === "approved" && <ApprovalGuideBanner />}
 
       <TrackingActions
         onShowForm={() => setShowFormView(true)}
-        onProceedToApproval={onProceedToApproval}
+        onShowApprovalCopy={onShowApprovalCopy}
       />
 
       {approvalCopyOpen && (
@@ -429,6 +424,10 @@ export function ApplicationFormContainer({
           applicantName={applicant.name}
           applicantDepartment={applicant.department}
           onClose={() => setApprovalCopyOpen(false)}
+          onProceedNext={() => {
+            setApprovalCopyOpen(false);
+            onProceedToApproval();
+          }}
         />
       )}
     </div>
@@ -534,10 +533,10 @@ function DraftActions({
 
 function TrackingActions({
   onShowForm,
-  onProceedToApproval,
+  onShowApprovalCopy,
 }: {
   onShowForm: () => void;
-  onProceedToApproval: () => void;
+  onShowApprovalCopy: () => void;
 }) {
   return (
     <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
@@ -551,7 +550,7 @@ function TrackingActions({
       </button>
       <button
         type="button"
-        onClick={onProceedToApproval}
+        onClick={onShowApprovalCopy}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
       >
         전자결재 품의

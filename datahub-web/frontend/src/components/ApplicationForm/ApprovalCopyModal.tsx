@@ -1,12 +1,12 @@
 // 추적 모드의 '전자결재 본문 복사' 모달 — 제출된 신청을 g portal 결재 본문에 붙여 넣을
 //   평문 텍스트 형태로 노출. textarea readonly + monospace.
 //   복사 후 모달은 자동으로 닫지 않음 (사용자가 직접 닫음).
-//   하단 액션: [닫기] [결재 본문 복사 — primary].
+//   하단 액션: [닫기] [텍스트 복사].
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, X } from "lucide-react";
+import { ArrowRight, Check, Copy, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   type ApplicationType,
@@ -19,6 +19,8 @@ interface Props {
   applicantName: string;
   applicantDepartment: string;
   onClose: () => void;
+  /** 제공 시 footer 에 '다음 단계로 진행' 버튼 노출 — 클릭하면 모달 닫고 핸들러 호출. */
+  onProceedNext?: () => void;
 }
 
 const MONO_STACK =
@@ -30,6 +32,7 @@ export function ApprovalCopyModal({
   applicantName,
   applicantDepartment,
   onClose,
+  onProceedNext,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,11 +151,23 @@ export function ApprovalCopyModal({
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
           >
             <Copy size={14} aria-hidden="true" />
             결재 본문 복사
           </button>
+          {onProceedNext && (
+            <button
+              type="button"
+              onClick={() => {
+                onProceedNext();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
+            >
+              다음 단계로
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </div>
