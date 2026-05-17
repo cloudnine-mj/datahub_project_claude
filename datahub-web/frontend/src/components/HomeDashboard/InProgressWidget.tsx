@@ -1,8 +1,9 @@
-// 위젯: 진행 중인 신청 — 각 row 에 현재 단계 + 진행률 바.
-//   배지·진행률 바 모두 브랜드 빨강 톤 (신청서 양식과 통일).
+// 위젯: 진행중인 신청 — 현재 단계 + 수정일 표.
+//   컬럼: 분류(80px) / 제목 / 단계(80px, info 파랑) / 수정일(60px, 우측 정렬).
 
 "use client";
 
+import { CountBadge } from "./CountBadge";
 import { TypeChip } from "./TypeChip";
 import type { InProgressItem } from "./widget-mock-data";
 
@@ -12,49 +13,61 @@ interface Props {
 
 export function InProgressWidget({ items }: Props) {
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
-      <h2 className="flex items-center gap-1.5 text-[13px] font-medium text-gray-900 dark:text-gray-100">
-        진행 중인 신청
-        {items.length > 0 && (
-          <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium leading-none text-red-700 dark:bg-red-900/30 dark:text-red-300">
-            {items.length}
-          </span>
-        )}
-      </h2>
+    <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
+      <header className="mb-3 flex items-center gap-2">
+        <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+          진행중인 신청
+        </h2>
+        <CountBadge count={items.length} />
+      </header>
+
       {items.length === 0 ? (
-        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+        <p className="py-5 text-center text-[11px] text-gray-400 dark:text-gray-500">
           진행 중인 신청이 없습니다
         </p>
       ) : (
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {items.map((it) => (
-            <li key={it.id}>
-              <button
-                type="button"
+        <table className="w-full border-collapse text-[11px]">
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-800">
+              <th className="w-[80px] py-1.5 text-left font-normal text-gray-400 dark:text-gray-500">
+                분류
+              </th>
+              <th className="py-1.5 text-left font-normal text-gray-400 dark:text-gray-500">
+                제목
+              </th>
+              <th className="w-[80px] py-1.5 text-left font-normal text-gray-400 dark:text-gray-500">
+                단계
+              </th>
+              <th className="w-[60px] py-1.5 text-right font-normal text-gray-400 dark:text-gray-500">
+                수정일
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it, idx) => (
+              <tr
+                key={it.id}
                 onClick={() => console.log("in-progress click", it.requestId)}
-                className="flex w-full flex-col gap-1.5 rounded-md bg-gray-50/60 px-2 py-1.5 text-left transition hover:bg-gray-100 dark:bg-gray-800/40 dark:hover:bg-gray-800"
+                className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                  idx < items.length - 1
+                    ? "border-b border-gray-100 dark:border-gray-800/60"
+                    : ""
+                }`}
               >
-                <div className="flex items-center gap-2">
+                <td className="py-2">
                   <TypeChip type={it.type} />
-                  <span className="flex-1 truncate text-xs text-gray-800 dark:text-gray-200">
-                    {it.title}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="shrink-0 text-[10px] text-gray-500 dark:text-gray-400">
-                    {it.phase}. {it.phaseLabel}
-                  </span>
-                  <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{ width: `${it.progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+                </td>
+                <td className="py-2 text-gray-800 dark:text-gray-200">{it.title}</td>
+                <td className="py-2 text-blue-700 dark:text-blue-300">
+                  {it.phase}. {it.phaseLabel}
+                </td>
+                <td className="py-2 text-right text-gray-400 dark:text-gray-500">
+                  {it.modifiedAt}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );

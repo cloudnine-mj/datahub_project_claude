@@ -1,5 +1,5 @@
 // 신청 유형 칩 — 위젯 row 좌측에서 유형을 한 눈에 구분.
-//   6 variant (용역/구매/구독 + 로그/API/생산성). 폰트 weight 500.
+//   대시보드 한정으로 6 variant 유지 (용역/구매/구독 + 로그/API/생산성).
 
 import type { RequestType } from "./widget-mock-data";
 
@@ -10,7 +10,7 @@ const STYLE: Record<RequestType, { label: string; cls: string }> = {
   },
   purchase: {
     label: "구매",
-    cls: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200",
+    cls: "bg-[#E6F1FB] text-[#0C447C] dark:bg-blue-900/40 dark:text-blue-200",
   },
   subscribe: {
     label: "구독",
