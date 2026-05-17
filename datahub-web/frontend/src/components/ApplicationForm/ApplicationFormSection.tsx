@@ -282,6 +282,8 @@ function ApproverListInput({
   const remove = (name: string) => onChange(value.filter((n) => n !== name));
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    // 한글(IME) 조합 중 Enter 는 글자 확정 용도 — 칩으로 추가하지 않음.
+    if (e.nativeEvent.isComposing || e.key === "Process") return;
     if (e.key === "Enter") {
       e.preventDefault();
       add();
@@ -318,7 +320,6 @@ function ApproverListInput({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onKey}
-        onBlur={add}
         placeholder={placeholder}
         disabled={disabled}
         className={INPUT_BASE}
