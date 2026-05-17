@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, X } from "lucide-react";
+import { ArrowRight, Check, Copy, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   type ApplicationType,
@@ -19,6 +19,8 @@ interface Props {
   applicantName: string;
   applicantDepartment: string;
   onClose: () => void;
+  /** 제공 시 footer 에 '다음 단계로 진행' 버튼 노출 — 클릭하면 모달 닫고 핸들러 호출. */
+  onProceedNext?: () => void;
 }
 
 const MONO_STACK =
@@ -30,6 +32,7 @@ export function ApprovalCopyModal({
   applicantName,
   applicantDepartment,
   onClose,
+  onProceedNext,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +140,7 @@ export function ApprovalCopyModal({
           </div>
         )}
 
-        <div className="mt-[18px] flex items-center justify-end gap-2">
+        <div className="mt-[18px] flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -153,6 +156,18 @@ export function ApprovalCopyModal({
             <Copy size={14} aria-hidden="true" />
             텍스트 복사
           </button>
+          {onProceedNext && (
+            <button
+              type="button"
+              onClick={() => {
+                onProceedNext();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
+            >
+              다음 단계로
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
     </div>
