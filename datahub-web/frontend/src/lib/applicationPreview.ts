@@ -1,5 +1,6 @@
-// 추적 모드 미리보기 — FORM_SCHEMAS 기반 평문 텍스트 생성.
-//   g portal 전자결재 본문에 그대로 붙여 넣을 수 있는 포맷.
+// 추적 모드 미리보기 — FORM_SCHEMAS 기반 결재 본문 데이터 생성.
+//   g portal 전자결재 품의서 본문 입력란(HTML rich editor)에 그대로 붙여 넣을 수 있도록
+//   HTML 표 + 평문 fallback 두 가지를 함께 제공.
 
 import {
   APPLICATION_TO_FORM_TYPE,
@@ -8,30 +9,33 @@ import {
 import { FORM_SCHEMAS } from "./formSchemas";
 import { valueToText } from "./formPreview";
 
-/** g portal 전자결재 본문 평문 텍스트.
- *  - 제목: '[{schema.label}서]' (예: '데이터 구독 신청서')
- *  - 본문: 신청자 + schema.sections 의 텍스트화 가능한 필드를 1, 2, 3 번호 매김
- *  - checkbox / approver_list / service_blocks / service_list 등 본문에 부적합한 type 제외
- *  - 빈 값은 라인 자체를 건너뜀
- */
-export function generateApprovalText(
+export interface ApprovalRow {
+  label: string;
+  value: string;
+}
+
+export interface ApprovalData {
+  /** '데이터 구독 신청서' 같은 문서 제목. */
+  title: string;
+  rows: ApprovalRow[];
+  footer: string;
+}
+
+/** 결재 본문에 노출할 행 데이터 — 신청자 + schema.sections 의 텍스트화 가능한 필드. */
+export function buildApprovalData(
   type: ApplicationType,
   payload: Record<string, unknown>,
   applicantName: string,
   applicantDepartment: string,
-): string {
+): ApprovalData {
   const formType = APPLICATION_TO_FORM_TYPE[type];
   const schema = FORM_SCHEMAS[formType];
 
-  const lines: string[] = [];
-  lines.push(`[${schema.label}서]`);
-  lines.push("");
-
-  let idx = 1;
   const applicant = applicantDepartment
     ? `${applicantName} (${applicantDepartment})`
     : applicantName;
-  lines.push(`${idx++}. 신청자: ${applicant}`);
+
+  const rows: ApprovalRow[] = [{ label: "신청자", value: applicant }];
 
   for (const section of schema.sections) {
     for (const f of section.fields) {
@@ -45,11 +49,55 @@ export function generateApprovalText(
       }
       const v = valueToText(f, payload[f.key]);
       if (!v.trim()) continue;
-      lines.push(`${idx++}. ${f.label}: ${v}`);
+      rows.push({ label: f.label, value: v });
     }
   }
 
+  return {
+    title: `${schema.label}서`,
+    rows,
+    footer: "※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.",
+  };
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** g portal 결재 본문 입력란(HTML rich editor)에 붙여 넣을 표 형태 HTML. */
+export function generateApprovalHtml(data: ApprovalData): string {
+  const rowsHtml = data.rows
+    .map(
+      (r) => `<tr>
+  <td style="border:1px solid #d1d5db; padding:6px 10px; background:#f9fafb; font-weight:bold; white-space:nowrap;">${escapeHtml(r.label)}</td>
+  <td style="border:1px solid #d1d5db; padding:6px 10px;">${escapeHtml(r.value)}</td>
+</tr>`,
+    )
+    .join("\n");
+
+  return `<p><strong>[${escapeHtml(data.title)}]</strong></p>
+<table style="border-collapse:collapse; border:1px solid #d1d5db;" cellspacing="0" cellpadding="0">
+<tbody>
+${rowsHtml}
+</tbody>
+</table>
+<p>${escapeHtml(data.footer)}</p>`;
+}
+
+/** 평문 fallback — rich text 미지원 환경(메모장 등)에 붙여 넣을 때 사용. */
+export function generateApprovalText(data: ApprovalData): string {
+  const lines: string[] = [];
+  lines.push(`[${data.title}]`);
   lines.push("");
-  lines.push("※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.");
+  data.rows.forEach((r, i) => {
+    lines.push(`${i + 1}. ${r.label}: ${r.value}`);
+  });
+  lines.push("");
+  lines.push(data.footer);
   return lines.join("\n");
 }

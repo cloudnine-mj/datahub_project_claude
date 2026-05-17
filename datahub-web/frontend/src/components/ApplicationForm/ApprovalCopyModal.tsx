@@ -1,14 +1,18 @@
 // 추적 모드의 '전자결재 본문 복사' 모달 — 제출된 신청을 g portal 결재 본문에 붙여 넣을
-//   평문 텍스트 형태로 노출. textarea readonly + monospace.
+//   표 형태로 노출. 복사 시 HTML(text/html) + 평문(text/plain) 두 형태를 클립보드에 함께 적재해
+//   품의서 rich editor 에 그대로 붙여 넣으면 표가 유지됨.
 //   복사 후 모달은 자동으로 닫지 않음 (사용자가 직접 닫음).
-//   하단 액션: [닫기] [텍스트 복사].
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Copy, Info, X } from "lucide-react";
 import { type ApplicationType } from "@/lib/applicationFormConfig";
-import { generateApprovalText } from "@/lib/applicationPreview";
+import {
+  buildApprovalData,
+  generateApprovalHtml,
+  generateApprovalText,
+} from "@/lib/applicationPreview";
 
 interface Props {
   type: ApplicationType;
@@ -16,12 +20,9 @@ interface Props {
   applicantName: string;
   applicantDepartment: string;
   onClose: () => void;
-  /** 제공 시 footer 에 '다음 단계로 진행' 버튼 노출 — 클릭하면 모달 닫고 핸들러 호출. */
+  /** 제공 시 복사 성공 후 자동으로 호출 — 다음 단계로 이동. */
   onProceedNext?: () => void;
 }
-
-const MONO_STACK =
-  "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
 
 export function ApprovalCopyModal({
   type,
@@ -32,14 +33,12 @@ export function ApprovalCopyModal({
   onProceedNext,
 }: Props) {
   const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 모달 열리기 전 포커스된 요소 — 닫힐 때 포커스 복원.
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
 
-    // body 스크롤 락
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -55,15 +54,27 @@ export function ApprovalCopyModal({
     };
   }, [onClose]);
 
-  const text = generateApprovalText(type, payload, applicantName, applicantDepartment);
+  const data = buildApprovalData(type, payload, applicantName, applicantDepartment);
+  const html = generateApprovalHtml(data);
+  const plain = generateApprovalText(data);
 
   const onCopy = async () => {
     setError(null);
     try {
-      await navigator.clipboard.writeText(text);
+      // rich editor 가 표를 그대로 받을 수 있도록 text/html + text/plain 동시 적재.
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plain], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
     } catch (e) {
       console.error("[approval-copy] failed", e);
-      setError("복사 실패. 텍스트를 직접 선택해 복사해 주세요.");
+      setError("복사 실패. 표를 직접 선택해 복사해 주세요.");
       return;
     }
     if (onProceedNext) {
@@ -110,26 +121,36 @@ export function ApprovalCopyModal({
             className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
           />
           <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
-            아래 텍스트를 복사하여{" "}
+            아래 표를 복사하여{" "}
             <strong className="font-medium">g portal 전자결재 품의서 본문</strong>에 붙여 넣으세요.
           </span>
         </div>
 
-        <textarea
-          ref={textareaRef}
-          readOnly
-          value={text}
-          aria-label="전자결재 본문 텍스트"
-          style={{
-            minHeight: 240,
-            padding: "18px 22px",
-            fontFamily: MONO_STACK,
-            fontSize: 13,
-            lineHeight: 1.9,
-            resize: "none",
-          }}
-          className="w-full select-text rounded-lg border border-gray-200 bg-gray-50 text-gray-800 focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-200"
-        />
+        <div className="max-h-[420px] overflow-auto rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-700 dark:bg-gray-800/40">
+          <p className="mb-3 text-[13px] font-medium text-gray-900 dark:text-gray-100">
+            [{data.title}]
+          </p>
+          <table className="w-full border-collapse text-[13px]">
+            <tbody>
+              {data.rows.map((r, idx) => (
+                <tr key={`${r.label}-${idx}`}>
+                  <th
+                    scope="row"
+                    className="w-[140px] whitespace-nowrap border border-gray-200 bg-white px-3 py-1.5 text-left font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                  >
+                    {r.label}
+                  </th>
+                  <td className="border border-gray-200 bg-white px-3 py-1.5 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                    {r.value}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-3 text-[12px] text-gray-500 dark:text-gray-400">
+            {data.footer}
+          </p>
+        </div>
 
         {error && (
           <div
