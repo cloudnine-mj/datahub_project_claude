@@ -29,7 +29,7 @@ const TILES: Tile[] = [
     icon: FileText,
     path: "/governance/forms/product_log_usage/new",
   },
-  { id: "api", label: "API 활용", icon: Code, path: "/governance/forms/api_usage_plan/new" },
+  { id: "api", label: "API 활용", icon: Code, path: "/governance/api-applications/planning" },
   {
     id: "productivity",
     label: "업무생산성",

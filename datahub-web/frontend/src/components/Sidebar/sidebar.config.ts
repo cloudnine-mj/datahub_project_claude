@@ -83,7 +83,7 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         id: "api-plan",
         label: "API 활용 계획서",
         icon: Code,
-        path: "/governance/forms/api_usage_plan/new",
+        path: "/governance/api-applications/planning",
       },
       {
         id: "productivity",
