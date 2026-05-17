@@ -42,9 +42,6 @@ export function ApprovalCopyModal({
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
-    // 텍스트 즉시 복사 가능하도록 textarea 에 포커스 (Cmd+A → Cmd+C 흐름).
-    textareaRef.current?.focus();
-    textareaRef.current?.select();
 
     // body 스크롤 락
     const prevOverflow = document.body.style.overflow;
