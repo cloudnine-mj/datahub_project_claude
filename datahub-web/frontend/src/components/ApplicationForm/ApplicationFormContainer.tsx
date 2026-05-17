@@ -108,6 +108,8 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
+  const [showFormView, setShowFormView] = useState(false);
   // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
   const [formId, setFormId] = useState<number | null>(null);
   const [applicant, setApplicant] = useState(FALLBACK_APPLICANT_INFO);
@@ -257,61 +259,55 @@ export function ApplicationFormContainer({
     setStatus("submitted");
   };
 
-  const onCancel = () => {
-    if (!window.confirm("신청을 취소하시겠습니까? 다시 작성 모드로 돌아갑니다.")) return;
-    console.log("[stub] 신청 취소");
-    setStatus("draft");
-    setValues({});
-    setFormId(null);
-    // 다시 작성 모드로 돌아가면 진행 이력도 초기화 (임시 저장 흔적은 다음 저장 시 새로 기록).
-    setHistory([]);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem(STORAGE_KEY(type));
-    }
-  };
-
   const onProceedToApproval = () => router.push(nextPath);
 
+
+  // 작성 모드 양식 카드 — draft 또는 추적 모드에서 '신청서 화면' 토글 시 노출.
+  const renderFormCard = (readOnly: boolean) => (
+    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 sm:px-6 sm:py-5">
+      <header className="flex items-center gap-2">
+        <FileText
+          size={16}
+          aria-hidden="true"
+          className="text-gray-500 dark:text-gray-400"
+        />
+        <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+          신청서 작성
+        </h2>
+        <ApplicationTypeChip type={type} />
+      </header>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {readOnly
+          ? "제출된 신청서 내용을 확인할 수 있습니다."
+          : "계획 수립 단계에서 정리한 내용을 입력하세요."}
+      </p>
+
+      <form
+        className="mt-5 space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!readOnly) onOpenPreview();
+        }}
+      >
+        <SubmitterReadOnlySection applicant={applicant} />
+        {schema.sections.map((s, i) => (
+          <ApplicationFormSection
+            key={`${s.title}-${i}`}
+            section={s}
+            values={values}
+            onChange={onChange}
+            disabled={readOnly}
+          />
+        ))}
+      </form>
+    </section>
+  );
 
   if (status === "draft") {
     return (
       <>
         <StatusBanner status={status} />
-
-        <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 sm:px-6 sm:py-5">
-          <header className="flex items-center gap-2">
-            <FileText
-              size={16}
-              aria-hidden="true"
-              className="text-gray-500 dark:text-gray-400"
-            />
-            <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-              신청서 작성
-            </h2>
-            <ApplicationTypeChip type={type} />
-          </header>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            계획 수립 단계에서 정리한 내용을 입력하세요.
-          </p>
-
-          <form
-            className="mt-5 space-y-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onOpenPreview();
-            }}
-          >
-            <SubmitterReadOnlySection applicant={applicant} />
-            {schema.sections.map((s, i) => (
-              <ApplicationFormSection
-                key={`${s.title}-${i}`}
-                section={s}
-                values={values}
-                onChange={onChange}
-              />
-            ))}
-          </form>
-        </section>
+        {renderFormCard(false)}
 
         <DraftActions
           prevPath={prevPath}
@@ -340,6 +336,33 @@ export function ApplicationFormContainer({
     );
   }
 
+  // 추적 모드에서 '← 신청서 화면' 클릭한 상태 — 양식을 읽기 전용으로 노출.
+  if (showFormView) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 pb-1">
+          <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100">
+            {PAGE_TITLE[type]}
+          </h2>
+          <ApplicationTypeChip type={type} />
+        </div>
+
+        {renderFormCard(true)}
+
+        <div className="mt-2 flex justify-start">
+          <button
+            type="button"
+            onClick={() => setShowFormView(false)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            진행 상태로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // tracking mode (submitted / reviewing / approved)
   return (
     <div className="space-y-4">
@@ -356,7 +379,7 @@ export function ApplicationFormContainer({
 
       <TrackingActions
         prevPath={prevPath}
-        onCancel={onCancel}
+        onShowForm={() => setShowFormView(true)}
         onProceedToApproval={onProceedToApproval}
       />
     </div>
@@ -462,11 +485,11 @@ function DraftActions({
 
 function TrackingActions({
   prevPath,
-  onCancel,
+  onShowForm,
   onProceedToApproval,
 }: {
   prevPath?: string;
-  onCancel: () => void;
+  onShowForm: () => void;
   onProceedToApproval: () => void;
 }) {
   return (
@@ -485,10 +508,11 @@ function TrackingActions({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={onShowForm}
           className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
-          신청 취소
+          <ArrowLeft size={14} aria-hidden="true" />
+          신청서 화면
         </button>
         <button
           type="button"
