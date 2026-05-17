@@ -4,6 +4,7 @@
 
 "use client";
 
+import { Copy } from "lucide-react";
 import {
   MOCK_SUBMITTED_PAYLOAD,
   type ApplicationType,
@@ -42,12 +43,15 @@ interface Props {
   /** 실 입력값 — 비어있으면 MOCK_SUBMITTED_PAYLOAD 로 fallback. */
   values?: Record<string, unknown>;
   applicant?: { name: string; department: string };
+  /** '결재 본문 복사' 버튼 클릭 핸들러 — 모달은 상위 컨테이너가 관리. */
+  onShowApprovalCopy: () => void;
 }
 
 export function SubmittedSummaryBlock({
   type,
   values,
   applicant = { name: "김데이터", department: "AI Platform" },
+  onShowApprovalCopy,
 }: Props) {
   const rows = SUMMARY_ROWS[type];
   const mock = MOCK_SUBMITTED_PAYLOAD[type];
@@ -60,10 +64,18 @@ export function SubmittedSummaryBlock({
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
-      <header className="mb-3 flex items-center">
+      <header className="mb-3 flex items-center justify-between">
         <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
           제출된 신청 내용
         </h2>
+        <button
+          type="button"
+          onClick={onShowApprovalCopy}
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <Copy size={12} aria-hidden="true" />
+          결재 본문 복사
+        </button>
       </header>
 
       <dl className="divide-y divide-gray-100 dark:divide-gray-800">
