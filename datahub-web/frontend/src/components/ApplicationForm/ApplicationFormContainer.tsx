@@ -18,6 +18,7 @@ import { ApplicationPreviewModal } from "./ApplicationPreviewModal";
 import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
 import { ProgressHistoryBlock } from "./ProgressHistoryBlock";
+import { ApprovalGuideBanner } from "./ApprovalGuideBanner";
 import { SubmittedSummaryBlock } from "./SubmittedSummaryBlock";
 import {
   APPLICATION_TO_FORM_TYPE,
@@ -396,6 +397,8 @@ export function ApplicationFormContainer({
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock history={history} />
       <SubmittedSummaryBlock type={type} />
+
+      {status === "approved" && <ApprovalGuideBanner />}
 
       <TrackingActions
         onShowForm={() => setShowFormView(true)}
