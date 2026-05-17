@@ -247,7 +247,12 @@ export function ApplicationFormContainer({
 
   const onSaveDraft = async () => {
     const ok = await persist(true);
-    if (ok) showToast("임시 저장되었습니다");
+    if (ok) {
+      showToast("임시 저장되었습니다");
+      // 추적 모드에서 '신청서 화면' 으로 들어와 임시 저장한 경우, 상태도 draft 로 내려와야 UI 가 일관됨.
+      setStatus("draft");
+      setShowFormView(false);
+    }
   };
   // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
   const onOpenPreview = () => setPreviewOpen(true);
@@ -256,6 +261,7 @@ export function ApplicationFormContainer({
     const ok = await persist(false);
     if (!ok) return;
     setPreviewOpen(false);
+    setShowFormView(false);
     setStatus("submitted");
   };
 
@@ -347,7 +353,32 @@ export function ApplicationFormContainer({
           <ApplicationTypeChip type={type} />
         </div>
 
-        {renderFormCard(true)}
+        {/* 추적 모드에서 들어왔지만 편집 가능 — 임시 저장 / 신청서 제출 동일 동작. */}
+        {renderFormCard(false)}
+
+        <DraftActions
+          prevPath={prevPath}
+          onSaveDraft={onSaveDraft}
+          onSubmit={onOpenPreview}
+        />
+
+        {toast && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-xs font-medium text-white shadow-lg dark:bg-gray-100 dark:text-gray-900"
+          >
+            {toast}
+          </div>
+        )}
+
+        {previewOpen && (
+          <ApplicationPreviewModal
+            type={type}
+            onClose={() => setPreviewOpen(false)}
+            onConfirmSubmit={onConfirmSubmit}
+          />
+        )}
       </div>
     );
   }
