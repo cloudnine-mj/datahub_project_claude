@@ -24,7 +24,7 @@ export function FinalStepBody({ final, onToggle }: Props) {
         className="h-3.5 w-3.5 shrink-0 rounded border-gray-300 text-brand focus:ring-brand"
       />
       <span className="text-[13px] text-gray-800 dark:text-gray-200">
-        최종 데이터를 수령했다
+        최종 데이터 수령
       </span>
     </label>
   );

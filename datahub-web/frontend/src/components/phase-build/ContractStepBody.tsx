@@ -63,7 +63,7 @@ export function ContractStepBody({
         />
         <div className="min-w-0 flex-1">
           <p className="text-[13px] text-gray-800 dark:text-gray-200">
-            데이터 활용 협약이 체결되었다
+            데이터 활용 협약 체결
           </p>
           <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
             별도 협약 체결 또는 계약서에 활용 협약 조항 포함

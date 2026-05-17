@@ -47,11 +47,11 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       description:
         "용역 제작 시 다음 항목을 사전에 정리해 두세요. 신청서 작성 단계에서 입력합니다.",
       items: [
-        { id: "purpose", label: "제작 목적을 정의했다" },
-        { id: "method", label: "제작 방법을 정의했다" },
-        { id: "quantity", label: "제작 수량을 정의했다" },
-        { id: "scope", label: "활용 범위를 정의했다" },
-        { id: "period", label: "작업 기간을 정의했다" },
+        { id: "purpose", label: "제작 목적 정의" },
+        { id: "method", label: "제작 방법 정의" },
+        { id: "quantity", label: "제작 수량 정의" },
+        { id: "scope", label: "활용 범위 정의" },
+        { id: "period", label: "작업 기간 정의" },
       ],
     },
     {
@@ -63,12 +63,12 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       items: [
         {
           id: "budget-1000",
-          label: "예상 작업 규모가 1,000만원 이상이다",
+          label: "예상 작업 규모 1,000만원 이상",
           description: "제작 데이터의 수량과 작업 난이도를 고려해 산정",
         },
         {
           id: "lead-3weeks",
-          label: "착수일 기준 3주 전까지 전자결재 단계를 완결할 수 있다",
+          label: "착수일 기준 3주 전까지 전자결재 단계 완결 가능",
         },
       ],
     },
@@ -82,10 +82,10 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       description:
         "데이터 구매 시 다음 항목을 사전에 정리해 두세요. 신청서 작성 단계에서 입력합니다.",
       items: [
-        { id: "target", label: "구매 대상 데이터를 정의했다" },
-        { id: "purpose", label: "구매 목적을 정의했다" },
-        { id: "scope", label: "활용 범위를 정의했다" },
-        { id: "period", label: "필요 기간을 정의했다" },
+        { id: "target", label: "구매 대상 데이터 정의" },
+        { id: "purpose", label: "구매 목적 정의" },
+        { id: "scope", label: "활용 범위 정의" },
+        { id: "period", label: "필요 기간 정의" },
       ],
     },
     {
@@ -94,8 +94,8 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       icon: Coins,
       iconVariant: "info",
       items: [
-        { id: "budget", label: "구매 예산을 확인했다" },
-        { id: "cost", label: "구매 비용을 확인했다" },
+        { id: "budget", label: "구매 예산 확인" },
+        { id: "cost", label: "구매 비용 확인" },
       ],
     },
   ],
@@ -108,10 +108,10 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       description:
         "데이터 구독 시 다음 항목을 사전에 정리해 두세요. 신청서 작성 단계에서 입력합니다.",
       items: [
-        { id: "target", label: "구독 대상 데이터를 정의했다" },
-        { id: "purpose", label: "구독 목적을 정의했다" },
-        { id: "scope", label: "활용 범위를 정의했다" },
-        { id: "period", label: "필요 기간을 정의했다" },
+        { id: "target", label: "구독 대상 데이터 정의" },
+        { id: "purpose", label: "구독 목적 정의" },
+        { id: "scope", label: "활용 범위 정의" },
+        { id: "period", label: "필요 기간 정의" },
       ],
     },
     {
@@ -120,8 +120,8 @@ export const PLANNING_CONFIG: Record<PlanningType, PlanningChecklistBlock[]> = {
       icon: Coins,
       iconVariant: "info",
       items: [
-        { id: "budget", label: "구독 예산을 확인했다" },
-        { id: "cost", label: "구독 비용을 확인했다" },
+        { id: "budget", label: "구독 예산 확인" },
+        { id: "cost", label: "구독 비용 확인" },
       ],
     },
   ],

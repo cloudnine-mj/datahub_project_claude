@@ -40,7 +40,7 @@ export default function Page() {
         </p>
         <PhaseChecklistRow
           id="approval-confirmed"
-          label="결재가 승인되었음을 확인했다"
+          label="결재 승인 확인"
           checked={confirmed}
           onToggle={() => setConfirmed((v) => !v)}
         />

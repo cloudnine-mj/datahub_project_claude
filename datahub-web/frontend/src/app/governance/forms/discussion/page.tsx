@@ -76,7 +76,7 @@ export default function Page() {
         </p>
         <PhaseChecklistRow
           id="discussion-confirmed"
-          label="담당자와 논의 후 신청서를 확정했다"
+          label="담당자 논의 및 신청서 확정"
           checked={confirmed}
           onToggle={() => setConfirmed((v) => !v)}
         />

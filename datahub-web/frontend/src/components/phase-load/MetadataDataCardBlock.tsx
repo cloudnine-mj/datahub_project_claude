@@ -30,7 +30,7 @@ export function MetadataDataCardBlock({
         <li>
           <PhaseChecklistRow
             id="metadata-done"
-            label="메타데이터 작성을 완료했다"
+            label="메타데이터 작성 완료"
             checked={metadataChecked}
             onToggle={onToggleMetadata}
             trailing={
@@ -41,7 +41,7 @@ export function MetadataDataCardBlock({
         <li>
           <PhaseChecklistRow
             id="datacard-done"
-            label="데이터카드 작성을 완료했다"
+            label="데이터카드 작성 완료"
             checked={datacardChecked}
             onToggle={onToggleDatacard}
             trailing={
