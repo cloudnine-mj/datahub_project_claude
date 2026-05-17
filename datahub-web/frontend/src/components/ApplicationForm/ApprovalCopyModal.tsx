@@ -154,7 +154,7 @@ export function ApprovalCopyModal({
             className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
           >
             <Copy size={14} aria-hidden="true" />
-            텍스트 복사
+            결재 본문 복사
           </button>
           {onProceedNext && (
             <button
