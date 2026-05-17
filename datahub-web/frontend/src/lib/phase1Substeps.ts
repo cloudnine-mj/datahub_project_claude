@@ -79,5 +79,5 @@ export function nextPhase1Substep(currentId: Phase1SubstepId): {
     return { label: "2단계로 진행", path: "/governance/forms/intake/build" };
   }
   const next = SUBSTEP_DEFS[idx + 1];
-  return { label: `${next.label}으로`, path: next.path };
+  return { label: next.label, path: next.path };
 }
