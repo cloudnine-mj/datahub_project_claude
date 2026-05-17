@@ -408,12 +408,7 @@ export function ApplicationFormContainer({
 
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock history={history} />
-      <SubmittedSummaryBlock
-        type={type}
-        values={values}
-        applicant={applicant}
-        onShowApprovalCopy={onShowApprovalCopy}
-      />
+      <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
 
       {status === "approved" && <ApprovalGuideBanner />}
 
