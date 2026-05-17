@@ -231,7 +231,7 @@ export function ApplicationFormContainer({
       }
       // 진행 이력에 현재 시각으로 항목 추가/갱신 (mock 날짜 대신).
       upsertHistory(asDraft ? "임시 저장" : "제출됨");
-      // 다른 페이지(거버넌스 요청 목록 / 신청 처리 큐) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
+      // 다른 페이지(거버넌스 요청 목록 / 거버넌스 요청 관리) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
       router.refresh();
       return true;
     } catch (e) {

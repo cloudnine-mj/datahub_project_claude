@@ -125,7 +125,7 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
     items: [
       {
         id: "approval-queue",
-        label: "신청 처리 큐",
+        label: "거버넌스 요청 관리",
         icon: Inbox,
         path: "/governance/admin/forms",
       },
