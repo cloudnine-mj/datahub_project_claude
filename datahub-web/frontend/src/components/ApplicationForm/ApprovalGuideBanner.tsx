@@ -3,7 +3,7 @@
 //   본문 안의 '미리보기' 단어는 실제 버튼 모양 인라인 칩으로 표현해, 사용자에게
 //   어떤 버튼을 눌러야 하는지 시각적으로 안내.
 
-import { Eye, Info } from "lucide-react";
+import { Copy, Info } from "lucide-react";
 
 export function ApprovalGuideBanner() {
   return (
@@ -26,10 +26,10 @@ export function ApprovalGuideBanner() {
               aria-hidden="true"
               className="inline-flex items-center gap-1 rounded border border-gray-200 bg-white px-1.5 py-px text-[11px] text-gray-700 align-[1px] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
             >
-              <Eye size={11} aria-hidden="true" />
-              미리보기
+              <Copy size={11} aria-hidden="true" />
+              결재 본문 복사
             </span>{" "}
-            버튼을 누르면 신청 내용을 복사해서 g portal 전자결재 품의서에 붙여 넣을 수 있어요.
+            버튼을 누르면 신청 내용을 g portal 전자결재 품의서 본문에 그대로 붙여 넣을 수 있어요.
           </p>
         </div>
       </div>

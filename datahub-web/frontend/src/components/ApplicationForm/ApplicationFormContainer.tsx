@@ -14,7 +14,7 @@ import { api, type ApprovalEntry, type FormStatus } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
-import { ApplicationPreviewModal } from "./ApplicationPreviewModal";
+import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
 import { ProgressHistoryBlock } from "./ProgressHistoryBlock";
@@ -333,7 +333,7 @@ export function ApplicationFormContainer({
         )}
 
         {previewOpen && (
-          <ApplicationPreviewModal
+          <PreSubmitPreviewModal
             type={type}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
@@ -374,7 +374,7 @@ export function ApplicationFormContainer({
         )}
 
         {previewOpen && (
-          <ApplicationPreviewModal
+          <PreSubmitPreviewModal
             type={type}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
@@ -396,7 +396,7 @@ export function ApplicationFormContainer({
 
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock history={history} />
-      <SubmittedSummaryBlock type={type} />
+      <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
 
       {status === "approved" && <ApprovalGuideBanner />}
 

@@ -1,16 +1,16 @@
-// 제출된 신청 내용 카드 — 유형별 주요 4개 필드만 요약 표.
-//   '미리보기' 버튼으로 양식 전체는 모달(ApplicationPreviewModal) 노출.
-//   필드 라벨은 FORM_SCHEMAS 와 동일하게 맞춤, 값은 MOCK_SUBMITTED_PAYLOAD 에서 가져옴.
+// 제출된 신청 내용 카드 — 유형별 주요 4개 필드 요약 + '결재 본문 복사' 버튼.
+//   '결재 본문 복사' 버튼 클릭 시 ApprovalCopyModal (textarea + 복사) 오픈.
+//   실 입력값(values) 이 전달되면 우선 사용, 없으면 MOCK_SUBMITTED_PAYLOAD 로 fallback.
 
 "use client";
 
 import { useState } from "react";
-import { Eye } from "lucide-react";
+import { Copy } from "lucide-react";
 import {
   MOCK_SUBMITTED_PAYLOAD,
   type ApplicationType,
 } from "@/lib/applicationFormConfig";
-import { ApplicationPreviewModal } from "./ApplicationPreviewModal";
+import { ApprovalCopyModal } from "./ApprovalCopyModal";
 
 interface SummaryRow {
   /** FORM_SCHEMAS 의 field key. */
@@ -40,39 +40,53 @@ const SUMMARY_ROWS: Record<ApplicationType, SummaryRow[]> = {
   ],
 };
 
-const APPLICANT_LABEL = "김데이터 (AI Platform)";
-
 interface Props {
   type: ApplicationType;
+  /** 실 입력값 — 비어있으면 MOCK_SUBMITTED_PAYLOAD 로 fallback. */
+  values?: Record<string, unknown>;
+  /** 결재 본문 텍스트의 신청자 표기용. */
+  applicant?: { name: string; department: string };
 }
 
-export function SubmittedSummaryBlock({ type }: Props) {
-  const [previewOpen, setPreviewOpen] = useState(false);
+export function SubmittedSummaryBlock({
+  type,
+  values,
+  applicant = { name: "김데이터", department: "AI Platform" },
+}: Props) {
+  const [copyOpen, setCopyOpen] = useState(false);
   const rows = SUMMARY_ROWS[type];
-  const payload = MOCK_SUBMITTED_PAYLOAD[type];
+  const mock = MOCK_SUBMITTED_PAYLOAD[type];
+  // 실 입력값 우선 — 누락 키는 mock 로 채움.
+  const effective: Record<string, unknown> = { ...mock, ...(values ?? {}) };
+
+  const applicantLabel = applicant.department
+    ? `${applicant.name} (${applicant.department})`
+    : applicant.name;
 
   return (
     <>
       <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
         <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">제출된 신청 내용</h2>
+          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+            제출된 신청 내용
+          </h2>
           <button
             type="button"
-            onClick={() => setPreviewOpen(true)}
+            onClick={() => setCopyOpen(true)}
             className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            <Eye size={12} aria-hidden="true" />
-            미리보기
+            <Copy size={12} aria-hidden="true" />
+            결재 본문 복사
           </button>
         </header>
 
         <dl className="divide-y divide-gray-100 dark:divide-gray-800">
           <div className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1">
             <dt className="text-sm text-gray-500 dark:text-gray-400">신청자</dt>
-            <dd className="text-sm text-gray-900 dark:text-gray-100">{APPLICANT_LABEL}</dd>
+            <dd className="text-sm text-gray-900 dark:text-gray-100">{applicantLabel}</dd>
           </div>
           {rows.map((r) => {
-            const v = payload[r.key];
+            const v = effective[r.key];
             const text =
               v == null || v === "" ? "—" : typeof v === "string" ? v : String(v);
             return (
@@ -88,8 +102,14 @@ export function SubmittedSummaryBlock({ type }: Props) {
         </dl>
       </section>
 
-      {previewOpen && (
-        <ApplicationPreviewModal type={type} onClose={() => setPreviewOpen(false)} />
+      {copyOpen && (
+        <ApprovalCopyModal
+          type={type}
+          payload={effective}
+          applicantName={applicant.name}
+          applicantDepartment={applicant.department}
+          onClose={() => setCopyOpen(false)}
+        />
       )}
     </>
   );
