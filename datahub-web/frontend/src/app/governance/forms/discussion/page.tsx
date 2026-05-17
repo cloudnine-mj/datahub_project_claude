@@ -47,7 +47,7 @@ export default function Page() {
       nextPath={next.path}
       nextLabel={next.label}
     >
-      <HelpBanner message="지정된 담당자와 데이터 구축/구매/구독을 논의한 후 신청서를 확정합니다. Datahub에서 진행합니다." />
+      <HelpBanner message="지정된 담당자와 데이터 구축/구매/구독을 논의한 후 신청서를 확정합니다." />
 
       <PhaseBlock icon={UserCheck} title="지정된 담당자">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
