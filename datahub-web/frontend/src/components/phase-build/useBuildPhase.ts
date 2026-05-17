@@ -59,11 +59,11 @@ export function useBuildPhase() {
     agreementConfirmed: false,
   });
   const [delivery, setDelivery] = useState<DeliveryStep>({
-    status: "locked",
+    status: "current",
     intermediateUploads: [],
     feedbacks: [],
   });
-  const [final, setFinal] = useState<FinalStep>({ status: "locked", received: false });
+  const [final, setFinal] = useState<FinalStep>({ status: "current", received: false });
 
   const onChangeApprovalNumber = useCallback((v: string) => {
     setContract((c) => ({ ...c, approvalNumber: v }));
