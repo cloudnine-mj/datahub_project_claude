@@ -4,7 +4,7 @@
 
 "use client";
 
-export type TabFilter = "all" | "in-progress" | "completed";
+export type TabFilter = "all" | "draft" | "in-progress" | "completed";
 
 export interface StatusTab {
   value: TabFilter;

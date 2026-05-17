@@ -23,12 +23,14 @@ const PAGE_SIZES = [5, 10, 20, 50, 100];
 const STATUS_OPTIONS = STATUSES.filter((s) => s.value !== "rejected");
 
 // 탭 필터 → FormStatus 매핑.
-//   진행 중: draft / submitted / reviewing
+//   임시저장: draft
+//   진행 중: submitted / reviewing
 //   완료: approved
 //   전체: 반려 제외한 모든 상태
 const TAB_TO_STATUSES: Record<TabFilter, FormStatus[]> = {
   all: STATUS_OPTIONS.map((s) => s.value),
-  "in-progress": ["draft", "submitted", "reviewing"],
+  draft: ["draft"],
+  "in-progress": ["submitted", "reviewing"],
   completed: ["approved"],
 };
 
@@ -101,10 +103,16 @@ export default function GovernanceFormsListPage() {
 
   const tabs: StatusTab[] = useMemo(() => {
     const base = beforeStatusFilter ?? [];
+    const draftSet = new Set<FormStatus>(TAB_TO_STATUSES["draft"]);
     const inProgressSet = new Set<FormStatus>(TAB_TO_STATUSES["in-progress"]);
     const completedSet = new Set<FormStatus>(TAB_TO_STATUSES["completed"]);
     return [
       { value: "all", label: "전체", count: base.length },
+      {
+        value: "draft",
+        label: "임시저장",
+        count: base.filter((it) => draftSet.has(it.status as FormStatus)).length,
+      },
       {
         value: "in-progress",
         label: "진행 중",

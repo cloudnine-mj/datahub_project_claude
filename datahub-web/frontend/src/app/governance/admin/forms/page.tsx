@@ -24,7 +24,8 @@ const STATUS_OPTIONS = STATUSES.filter((s) => s.value !== "rejected");
 // 탭 필터 → FormStatus 매핑 (요청 목록 페이지와 동일 규칙).
 const TAB_TO_STATUSES: Record<TabFilter, FormStatus[]> = {
   all: STATUS_OPTIONS.map((s) => s.value),
-  "in-progress": ["draft", "submitted", "reviewing"],
+  draft: ["draft"],
+  "in-progress": ["submitted", "reviewing"],
   completed: ["approved"],
 };
 
@@ -74,10 +75,16 @@ export default function AdminFormsPage() {
 
   const tabs: StatusTab[] = useMemo(() => {
     const base = beforeStatusFilter ?? [];
+    const draftSet = new Set<FormStatus>(TAB_TO_STATUSES["draft"]);
     const inProgressSet = new Set<FormStatus>(TAB_TO_STATUSES["in-progress"]);
     const completedSet = new Set<FormStatus>(TAB_TO_STATUSES["completed"]);
     return [
       { value: "all", label: "전체", count: base.length },
+      {
+        value: "draft",
+        label: "임시저장",
+        count: base.filter((it) => draftSet.has(it.status as FormStatus)).length,
+      },
       {
         value: "in-progress",
         label: "진행 중",
