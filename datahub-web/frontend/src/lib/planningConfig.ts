@@ -43,11 +43,11 @@ export interface PlanningReview {
 export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
   service: {
     questions: [
-      "제작 목적이 무엇인가요?",
-      "어떻게 제작할 건가요?",
-      "얼마나 필요한가요?",
-      "누가, 어디에 쓸 수 있나요?",
-      "언제 시작해서 언제 끝나야 하나요?",
+      "제작 목적",
+      "제작 방법",
+      "제작 수량",
+      "활용 범위",
+      "작업 기간",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
@@ -63,18 +63,18 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
     ],
     requirements: [
       {
-        main: "예상 작업 규모가 1,000만원 이상인가요?",
+        main: "예상 작업 규모 1,000만원 이상",
         sub: "제작 데이터의 수량과 작업 난이도를 고려해 산정",
       },
-      { main: "착수일 기준 3주 전까지 전자결재를 완결할 수 있나요?" },
+      { main: "착수일 기준 3주 전까지 전자결재 단계 완결 가능" },
     ],
   },
   purchase: {
     questions: [
-      "어떤 데이터를 구매하나요?",
-      "왜 필요한가요?",
-      "누가, 어디에 쓸 수 있나요?",
-      "얼마나 오래 쓸 건가요?",
+      "구매 대상 데이터",
+      "구매 목적",
+      "활용 범위",
+      "필요 기간",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
@@ -90,10 +90,10 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
   },
   subscribe: {
     questions: [
-      "어떤 데이터를 구독하나요?",
-      "왜 필요한가요?",
-      "누가, 어디에 쓸 수 있나요?",
-      "얼마나 오래 구독할 건가요?",
+      "구독 대상 데이터",
+      "구독 목적",
+      "활용 범위",
+      "필요 기간",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
