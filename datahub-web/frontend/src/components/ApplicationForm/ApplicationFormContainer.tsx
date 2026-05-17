@@ -159,21 +159,21 @@ export function ApplicationFormContainer({
 // --- 신청자 정보 (읽기 전용, 토글 가능) ---
 
 function SubmitterReadOnlySection() {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <section>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="mb-4 flex w-full items-center gap-2 text-left"
+        className="mb-4 inline-flex items-center gap-2 text-left"
       >
         <span aria-hidden="true" className="block h-4 w-[3px] rounded-sm bg-brand" />
-        <h3 className="flex-1 text-[14px] font-medium text-gray-900 dark:text-gray-100">
+        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
           신청자 정보
         </h3>
         <ChevronDown
-          size={16}
+          size={14}
           aria-hidden="true"
           className={`text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`}
         />
