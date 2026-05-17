@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Info, X } from "lucide-react";
+import { Copy, Info, X } from "lucide-react";
 import { type ApplicationType } from "@/lib/applicationFormConfig";
 import { generateApprovalText } from "@/lib/applicationPreview";
 
@@ -31,7 +31,6 @@ export function ApprovalCopyModal({
   onClose,
   onProceedNext,
 }: Props) {
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 모달 열리기 전 포커스된 요소 — 닫힐 때 포커스 복원.
@@ -62,17 +61,12 @@ export function ApprovalCopyModal({
     setError(null);
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch (e) {
       console.error("[approval-copy] failed", e);
       setError("복사 실패. 텍스트를 직접 선택해 복사해 주세요.");
-      // 복사 실패하면 자동 진행도 보류 — 사용자가 직접 텍스트 선택 후 다시 시도해야 함.
       return;
     }
-    // 복사 성공 + 다음 단계 핸들러가 있으면 자동 진행.
     if (onProceedNext) {
-      // 토스트가 잠깐 보이도록 살짝 지연 (UX 안정감).
       setTimeout(() => onProceedNext(), 250);
     }
   };
@@ -137,17 +131,12 @@ export function ApprovalCopyModal({
           className="w-full select-text rounded-lg border border-gray-200 bg-gray-50 text-gray-800 focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-200"
         />
 
-        {(copied || error) && (
+        {error && (
           <div
             aria-live="polite"
-            className={`mt-2 inline-flex items-center gap-1 text-[11px] font-medium ${
-              copied
-                ? "text-green-700 dark:text-green-300"
-                : "text-red-700 dark:text-red-300"
-            }`}
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-red-700 dark:text-red-300"
           >
-            {copied && <Check size={12} aria-hidden="true" />}
-            {copied ? "복사되었습니다. g portal에 붙여 넣으세요." : error}
+            {error}
           </div>
         )}
 
