@@ -130,16 +130,16 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         path: "/governance/admin/forms",
       },
       {
-        id: "stats",
-        label: "통계·리포트",
-        icon: BarChart3,
-        path: "/governance/admin/stats",
-      },
-      {
         id: "manage",
         label: "정책·양식 관리",
         icon: Settings,
         path: "/governance/forms/my",
+      },
+      {
+        id: "stats",
+        label: "통계·리포트",
+        icon: BarChart3,
+        path: "/governance/admin/stats",
       },
     ],
   },
