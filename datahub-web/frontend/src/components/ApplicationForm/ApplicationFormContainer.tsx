@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, type ApprovalEntry, type FormStatus } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
@@ -36,6 +36,45 @@ function nowShort(): string {
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${m}/${day} ${hh}:${mm}`;
+}
+
+/** ISO timestamp → 'M/d HH:mm'. 잘못된 입력은 그대로 반환. */
+function isoToShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function statusToAction(status: FormStatus): HistoryAction | null {
+  if (status === "draft") return "임시 저장";
+  if (status === "submitted") return "제출됨";
+  if (status === "reviewing") return "검토 시작";
+  if (status === "approved") return "승인 완료";
+  return null;
+}
+
+function buildHistoryFromBackend(entries: ApprovalEntry[]): StatusHistoryItem[] {
+  return entries
+    .map((e, i): StatusHistoryItem | null => {
+      const action = statusToAction(e.status);
+      if (!action) return null;
+      return {
+        id: `srv-${i}-${e.changed_at}`,
+        action,
+        actor: e.changed_by,
+        actorRole: "신청자",
+        timestamp: isoToShort(e.changed_at),
+        comment: e.comment ?? undefined,
+      };
+    })
+    .filter((x): x is StatusHistoryItem => !!x);
+}
+
+/** ApplicationType 별 sessionStorage 키 — 사용자가 같은 type 페이지로 돌아오면 마지막 신청 id 복원. */
+const STORAGE_KEY = (t: ApplicationType) => `datahub:lastFormId:${t}`;
+
+function isAppStatus(s: string): s is ApplicationStatus {
+  return s === "draft" || s === "submitted" || s === "reviewing" || s === "approved";
 }
 
 interface Props {
@@ -96,6 +135,38 @@ export function ApplicationFormContainer({
       });
   }, []);
 
+  // 사용자가 같은 유형 신청서로 돌아왔을 때, 직전에 저장/제출한 form 을 복원.
+  //   - sessionStorage 에서 마지막 id 조회
+  //   - api.getForm 으로 백엔드에서 payload/status/approval_history 가져와 state 복원
+  //   - 실패 시 sessionStorage 정리하고 기본 동작
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedIdStr = sessionStorage.getItem(STORAGE_KEY(type));
+    if (!savedIdStr) return;
+    const savedId = Number(savedIdStr);
+    if (!Number.isFinite(savedId)) {
+      sessionStorage.removeItem(STORAGE_KEY(type));
+      return;
+    }
+    api
+      .getForm(savedId)
+      .then((f) => {
+        // 다른 유형의 form 이 잘못 저장된 경우 무시
+        if (f.form_type !== APPLICATION_TO_FORM_TYPE[type]) return;
+        setFormId(f.id);
+        setValues((f.payload ?? {}) as Record<string, unknown>);
+        if (isAppStatus(f.status)) {
+          setStatus(f.status);
+        }
+        if (f.approval_history && f.approval_history.length > 0) {
+          setHistory(buildHistoryFromBackend(f.approval_history));
+        }
+      })
+      .catch(() => {
+        sessionStorage.removeItem(STORAGE_KEY(type));
+      });
+  }, [type]);
+
   const formType = APPLICATION_TO_FORM_TYPE[type];
   const schema = FORM_SCHEMAS[formType];
 
@@ -148,6 +219,10 @@ export function ApplicationFormContainer({
         ? await api.updateForm(formId, body)
         : await api.submitForm(body);
       setFormId(result.id);
+      // 같은 유형으로 다시 들어왔을 때 복원할 수 있도록 sessionStorage 에 기록.
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEY(type), String(result.id));
+      }
       // 진행 이력에 현재 시각으로 항목 추가/갱신 (mock 날짜 대신).
       upsertHistory(asDraft ? "임시 저장" : "제출됨");
       // 다른 페이지(거버넌스 요청 목록 / 신청 처리 큐) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
@@ -186,8 +261,13 @@ export function ApplicationFormContainer({
     if (!window.confirm("신청을 취소하시겠습니까? 다시 작성 모드로 돌아갑니다.")) return;
     console.log("[stub] 신청 취소");
     setStatus("draft");
+    setValues({});
+    setFormId(null);
     // 다시 작성 모드로 돌아가면 진행 이력도 초기화 (임시 저장 흔적은 다음 저장 시 새로 기록).
     setHistory([]);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEY(type));
+    }
   };
 
   const onProceedToApproval = () => router.push(nextPath);
