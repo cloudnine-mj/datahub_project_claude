@@ -23,9 +23,12 @@ export function MyDatasetsWidget({ items }: Props) {
         </div>
         <Link
           href="/governance/forms/my"
-          className="text-[11px] text-blue-700 hover:underline dark:text-blue-300"
+          aria-disabled="true"
+          tabIndex={-1}
+          onClick={(e) => e.preventDefault()}
+          className="cursor-not-allowed text-[11px] text-gray-400 dark:text-gray-500"
         >
-          바로가기 →
+          준비중
         </Link>
       </header>
 
