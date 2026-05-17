@@ -19,7 +19,7 @@ export function PlanningFooter({ nextPath, type }: Props) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/40">
       <p className="text-xs text-gray-500 dark:text-gray-400">
-        모든 항목을 정리·확인했다면 신청서 작성으로 진행하세요.
+        모든 항목에 답할 수 있다면 신청서 작성으로 진행하세요.
       </p>
       <Link
         href={hrefWithType}
