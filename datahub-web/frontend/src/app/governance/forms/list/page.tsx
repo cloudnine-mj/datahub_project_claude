@@ -139,11 +139,7 @@ export default function GovernanceFormsListPage() {
         전체 사용자의 신청 현황을 확인할 수 있습니다. 프로젝트명을 클릭하면 상세 페이지로 이동합니다.
       </p>
 
-      <div className="mt-4">
-        <RequestStatusTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="relative">
           <select
             value={pageSize}
@@ -176,7 +172,11 @@ export default function GovernanceFormsListPage() {
         </label>
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="mt-4">
+        <RequestStatusTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
