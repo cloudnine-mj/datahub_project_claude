@@ -8,6 +8,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import type { FieldDef, SectionDef } from "@/lib/formSchemas";
+import { DateField } from "@/components/DateField";
 
 interface Props {
   section: SectionDef;
@@ -141,13 +142,11 @@ function FieldInput({
 
   if (field.type === "date") {
     return (
-      <input
+      <DateField
         id={id}
-        type="date"
         value={(value as string) ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(v) => onChange(v)}
         disabled={disabled}
-        className={INPUT_BASE}
       />
     );
   }
