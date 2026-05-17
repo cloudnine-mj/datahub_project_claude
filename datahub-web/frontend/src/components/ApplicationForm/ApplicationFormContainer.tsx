@@ -61,6 +61,8 @@ export function ApplicationFormContainer({
   const [formId, setFormId] = useState<number | null>(null);
   const [applicant, setApplicant] = useState(FALLBACK_APPLICANT_INFO);
   const [submitting, setSubmitting] = useState(false);
+  // 임시 저장 등 단발성 알림 — 일정 시간 후 자동 사라짐.
+  const [toast, setToast] = useState<string | null>(null);
 
   // 로그인 사용자 정보 — 백엔드 신청에 첨부될 submitter 필드용.
   useEffect(() => {
@@ -130,9 +132,14 @@ export function ApplicationFormContainer({
     }
   }
 
+  const showToast = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 2000);
+  };
+
   const onSaveDraft = async () => {
     const ok = await persist(true);
-    if (ok) console.log("[form] 임시 저장 완료");
+    if (ok) showToast("임시 저장되었습니다");
   };
   // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
   const onOpenPreview = () => setPreviewOpen(true);
@@ -198,6 +205,16 @@ export function ApplicationFormContainer({
           onSaveDraft={onSaveDraft}
           onSubmit={onOpenPreview}
         />
+
+        {toast && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-xs font-medium text-white shadow-lg dark:bg-gray-100 dark:text-gray-900"
+          >
+            {toast}
+          </div>
+        )}
 
         {previewOpen && (
           <ApplicationPreviewModal
