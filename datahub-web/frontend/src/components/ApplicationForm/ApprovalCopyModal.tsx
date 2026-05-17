@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Copy, X } from "lucide-react";
+import { Check, Copy, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   type ApplicationType,
@@ -73,6 +73,13 @@ export function ApprovalCopyModal({
     } catch (e) {
       console.error("[approval-copy] failed", e);
       setError("복사 실패. 텍스트를 직접 선택해 복사해 주세요.");
+      // 복사 실패하면 자동 진행도 보류 — 사용자가 직접 텍스트 선택 후 다시 시도해야 함.
+      return;
+    }
+    // 복사 성공 + 다음 단계 핸들러가 있으면 자동 진행.
+    if (onProceedNext) {
+      // 토스트가 잠깐 보이도록 살짝 지연 (UX 안정감).
+      setTimeout(() => onProceedNext(), 250);
     }
   };
 
@@ -151,23 +158,11 @@ export function ApprovalCopyModal({
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
           >
             <Copy size={14} aria-hidden="true" />
             결재 본문 복사
           </button>
-          {onProceedNext && (
-            <button
-              type="button"
-              onClick={() => {
-                onProceedNext();
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
-            >
-              다음 단계로
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          )}
         </div>
       </div>
     </div>
