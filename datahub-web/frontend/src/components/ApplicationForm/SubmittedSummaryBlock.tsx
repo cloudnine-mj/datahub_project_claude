@@ -1,16 +1,14 @@
 // 제출된 신청 내용 카드 — 유형별 주요 4개 필드 요약 + '결재 본문 복사' 버튼.
-//   '결재 본문 복사' 버튼 클릭 시 ApprovalCopyModal (textarea + 복사) 오픈.
+//   클릭 시 상위 컨테이너의 ApprovalCopyModal 을 트리거 (모달 자체는 컨테이너가 보유).
 //   실 입력값(values) 이 전달되면 우선 사용, 없으면 MOCK_SUBMITTED_PAYLOAD 로 fallback.
 
 "use client";
 
-import { useState } from "react";
 import { Copy } from "lucide-react";
 import {
   MOCK_SUBMITTED_PAYLOAD,
   type ApplicationType,
 } from "@/lib/applicationFormConfig";
-import { ApprovalCopyModal } from "./ApprovalCopyModal";
 
 interface SummaryRow {
   /** FORM_SCHEMAS 의 field key. */
@@ -46,14 +44,16 @@ interface Props {
   values?: Record<string, unknown>;
   /** 결재 본문 텍스트의 신청자 표기용. */
   applicant?: { name: string; department: string };
+  /** '결재 본문 복사' 버튼 클릭 핸들러 — 모달은 상위 컨테이너가 관리. */
+  onShowApprovalCopy: () => void;
 }
 
 export function SubmittedSummaryBlock({
   type,
   values,
   applicant = { name: "김데이터", department: "AI Platform" },
+  onShowApprovalCopy,
 }: Props) {
-  const [copyOpen, setCopyOpen] = useState(false);
   const rows = SUMMARY_ROWS[type];
   const mock = MOCK_SUBMITTED_PAYLOAD[type];
   // 실 입력값 우선 — 누락 키는 mock 로 채움.
@@ -64,53 +64,41 @@ export function SubmittedSummaryBlock({
     : applicant.name;
 
   return (
-    <>
-      <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
-        <header className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            제출된 신청 내용
-          </h2>
-          <button
-            type="button"
-            onClick={() => setCopyOpen(true)}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            <Copy size={12} aria-hidden="true" />
-            결재 본문 복사
-          </button>
-        </header>
+    <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
+      <header className="mb-3 flex items-center justify-between">
+        <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+          제출된 신청 내용
+        </h2>
+        <button
+          type="button"
+          onClick={onShowApprovalCopy}
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        >
+          <Copy size={12} aria-hidden="true" />
+          결재 본문 복사
+        </button>
+      </header>
 
-        <dl className="divide-y divide-gray-100 dark:divide-gray-800">
-          <div className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1">
-            <dt className="text-sm text-gray-500 dark:text-gray-400">신청자</dt>
-            <dd className="text-sm text-gray-900 dark:text-gray-100">{applicantLabel}</dd>
-          </div>
-          {rows.map((r) => {
-            const v = effective[r.key];
-            const text =
-              v == null || v === "" ? "—" : typeof v === "string" ? v : String(v);
-            return (
-              <div
-                key={r.key}
-                className="grid grid-cols-[120px_1fr] gap-3 py-3 last:pb-1"
-              >
-                <dt className="text-sm text-gray-500 dark:text-gray-400">{r.label}</dt>
-                <dd className="text-sm text-gray-900 dark:text-gray-100">{text}</dd>
-              </div>
-            );
-          })}
-        </dl>
-      </section>
-
-      {copyOpen && (
-        <ApprovalCopyModal
-          type={type}
-          payload={effective}
-          applicantName={applicant.name}
-          applicantDepartment={applicant.department}
-          onClose={() => setCopyOpen(false)}
-        />
-      )}
-    </>
+      <dl className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1">
+          <dt className="text-sm text-gray-500 dark:text-gray-400">신청자</dt>
+          <dd className="text-sm text-gray-900 dark:text-gray-100">{applicantLabel}</dd>
+        </div>
+        {rows.map((r) => {
+          const v = effective[r.key];
+          const text =
+            v == null || v === "" ? "—" : typeof v === "string" ? v : String(v);
+          return (
+            <div
+              key={r.key}
+              className="grid grid-cols-[120px_1fr] gap-3 py-3 last:pb-1"
+            >
+              <dt className="text-sm text-gray-500 dark:text-gray-400">{r.label}</dt>
+              <dd className="text-sm text-gray-900 dark:text-gray-100">{text}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    </section>
   );
 }

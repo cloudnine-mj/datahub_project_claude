@@ -14,6 +14,7 @@ import { api, type ApprovalEntry, type FormStatus } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
+import { ApprovalCopyModal } from "./ApprovalCopyModal";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
@@ -109,6 +110,8 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  // 추적 모드에서 '결재 본문 복사' / '전자결재 품의' 버튼 → 같은 ApprovalCopyModal 오픈.
+  const [approvalCopyOpen, setApprovalCopyOpen] = useState(false);
   // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
   const [showFormView, setShowFormView] = useState(false);
   // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
@@ -266,7 +269,10 @@ export function ApplicationFormContainer({
     setStatus("submitted");
   };
 
-  const onProceedToApproval = () => router.push(nextPath);
+  // '전자결재 품의' / '결재 본문 복사' 둘 다 같은 ApprovalCopyModal 트리거.
+  //   substep 3 (전자결재 품의 페이지) 로 가는 네비게이션은 stepper 로만 — 본 흐름에서는
+  //   사용자가 본문 텍스트 복사 후 g portal 에 직접 붙여 넣는 것이 핵심.
+  const onShowApprovalCopy = () => setApprovalCopyOpen(true);
 
 
   // 작성 모드 양식 카드 — draft 또는 추적 모드에서 '신청서 화면' 토글 시 노출.
@@ -402,14 +408,29 @@ export function ApplicationFormContainer({
 
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock history={history} />
-      <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
+      <SubmittedSummaryBlock
+        type={type}
+        values={values}
+        applicant={applicant}
+        onShowApprovalCopy={onShowApprovalCopy}
+      />
 
       {status === "approved" && <ApprovalGuideBanner />}
 
       <TrackingActions
         onShowForm={() => setShowFormView(true)}
-        onProceedToApproval={onProceedToApproval}
+        onShowApprovalCopy={onShowApprovalCopy}
       />
+
+      {approvalCopyOpen && (
+        <ApprovalCopyModal
+          type={type}
+          payload={{ ...values }}
+          applicantName={applicant.name}
+          applicantDepartment={applicant.department}
+          onClose={() => setApprovalCopyOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -513,10 +534,10 @@ function DraftActions({
 
 function TrackingActions({
   onShowForm,
-  onProceedToApproval,
+  onShowApprovalCopy,
 }: {
   onShowForm: () => void;
-  onProceedToApproval: () => void;
+  onShowApprovalCopy: () => void;
 }) {
   return (
     <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
@@ -530,7 +551,7 @@ function TrackingActions({
       </button>
       <button
         type="button"
-        onClick={onProceedToApproval}
+        onClick={onShowApprovalCopy}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
       >
         전자결재 품의
