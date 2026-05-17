@@ -24,7 +24,19 @@ import {
   mockHistoryFor,
   type ApplicationStatus,
   type ApplicationType,
+  type HistoryAction,
+  type StatusHistoryItem,
 } from "@/lib/applicationFormConfig";
+
+/** 'M/d HH:mm' 형식의 현재 시각 — history 항목 timestamp 용. */
+function nowShort(): string {
+  const d = new Date();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${m}/${day} ${hh}:${mm}`;
+}
 
 interface Props {
   type: ApplicationType;
@@ -63,6 +75,10 @@ export function ApplicationFormContainer({
   const [submitting, setSubmitting] = useState(false);
   // 임시 저장 등 단발성 알림 — 일정 시간 후 자동 사라짐.
   const [toast, setToast] = useState<string | null>(null);
+  // 진행 이력 — URL 로 직접 status 를 받은 데모 모드면 mock 으로 채우고, 사용자 실제 액션은 실시간 timestamp 로 누적.
+  const [history, setHistory] = useState<StatusHistoryItem[]>(() =>
+    mockHistoryFor(initialStatus),
+  );
 
   // 로그인 사용자 정보 — 백엔드 신청에 첨부될 submitter 필드용.
   useEffect(() => {
@@ -82,7 +98,20 @@ export function ApplicationFormContainer({
 
   const formType = APPLICATION_TO_FORM_TYPE[type];
   const schema = FORM_SCHEMAS[formType];
-  const history = mockHistoryFor(status);
+
+  /** 동일 action 은 최신값으로 갱신 (예: 임시 저장 여러 번 → 마지막 한 줄만 노출). */
+  function upsertHistory(action: HistoryAction) {
+    setHistory((prev) => [
+      ...prev.filter((h) => h.action !== action),
+      {
+        id: `${action}-${Date.now()}`,
+        action,
+        actor: applicant.name,
+        actorRole: "신청자",
+        timestamp: nowShort(),
+      },
+    ]);
+  }
 
   const onChange = (key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -119,6 +148,8 @@ export function ApplicationFormContainer({
         ? await api.updateForm(formId, body)
         : await api.submitForm(body);
       setFormId(result.id);
+      // 진행 이력에 현재 시각으로 항목 추가/갱신 (mock 날짜 대신).
+      upsertHistory(asDraft ? "임시 저장" : "제출됨");
       // 다른 페이지(거버넌스 요청 목록 / 신청 처리 큐) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
       router.refresh();
       return true;
@@ -155,6 +186,8 @@ export function ApplicationFormContainer({
     if (!window.confirm("신청을 취소하시겠습니까? 다시 작성 모드로 돌아갑니다.")) return;
     console.log("[stub] 신청 취소");
     setStatus("draft");
+    // 다시 작성 모드로 돌아가면 진행 이력도 초기화 (임시 저장 흔적은 다음 저장 시 새로 기록).
+    setHistory([]);
   };
 
   const onProceedToApproval = () => router.push(nextPath);
