@@ -13,7 +13,7 @@ interface Props {
 
 export function TodoWidget({ items }: Props) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
+    <section className="min-h-[280px] rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
       <header className="mb-3 flex items-center gap-2">
         <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
           나의 할일
