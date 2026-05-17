@@ -9,7 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, FileText, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Eye, FileText, Save } from "lucide-react";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
@@ -156,23 +156,36 @@ export function ApplicationFormContainer({
   );
 }
 
-// --- 신청자 정보 (읽기 전용) ---
+// --- 신청자 정보 (읽기 전용, 토글 가능) ---
 
 function SubmitterReadOnlySection() {
+  const [open, setOpen] = useState(true);
   return (
     <section>
-      <header className="mb-4 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="mb-4 flex w-full items-center gap-2 text-left"
+      >
         <span aria-hidden="true" className="block h-4 w-[3px] rounded-sm bg-brand" />
-        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+        <h3 className="flex-1 text-[14px] font-medium text-gray-900 dark:text-gray-100">
           신청자 정보
         </h3>
-      </header>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className={`text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
 
-      <div className="space-y-3.5">
-        <ReadOnlyRow label="신청자 이름" value={APPLICANT_INFO.name} />
-        <ReadOnlyRow label="소속" value={APPLICANT_INFO.department} />
-        <ReadOnlyRow label="이메일" value={APPLICANT_INFO.email} />
-      </div>
+      {open && (
+        <div className="space-y-3.5">
+          <ReadOnlyRow label="신청자 이름" value={APPLICANT_INFO.name} />
+          <ReadOnlyRow label="소속" value={APPLICANT_INFO.department} />
+          <ReadOnlyRow label="이메일" value={APPLICANT_INFO.email} />
+        </div>
+      )}
     </section>
   );
 }
