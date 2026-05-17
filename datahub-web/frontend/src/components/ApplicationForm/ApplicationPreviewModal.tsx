@@ -1,9 +1,10 @@
 // 제출된 신청서 미리보기 모달 — EAS 본문 에디터에 그대로 붙여넣을 수 있는 HTML 표 형태.
-//   추적 모드 전용 (draft 모드는 FormBuilder 자체 미리보기 사용).
-//   값은 데모용 MOCK_SUBMITTED_PAYLOAD 에서 가져옴 — 실 API 연동 시 type 외에 values 도 prop 으로 받도록 확장.
+//   draft 모드의 '신청서 제출' 클릭 시 → 이 모달이 먼저 뜨고, 안에서 최종 '제출' 확정.
+//   추적 모드(미리보기 버튼)에서도 동일 모달 사용 — onConfirmSubmit 미제공 시 제출 버튼 숨김.
 
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
@@ -18,9 +19,15 @@ import {
 interface Props {
   type: ApplicationType;
   onClose: () => void;
+  /** 미리보기 후 실제 제출 확정 핸들러. 제공 시 footer 에 '신청서 제출' 버튼 노출. */
+  onConfirmSubmit?: () => void;
 }
 
-export function ApplicationPreviewModal({ type, onClose }: Props) {
+export function ApplicationPreviewModal({
+  type,
+  onClose,
+  onConfirmSubmit,
+}: Props) {
   const [copyDone, setCopyDone] = useState(false);
 
   useEffect(() => {
@@ -41,6 +48,16 @@ export function ApplicationPreviewModal({ type, onClose }: Props) {
     } catch (e) {
       console.error("[preview] 복사 실패", e);
     }
+  };
+
+  // 제출 확정 — 편의상 미리 클립보드에 복사도 함께 (EAS 본문에 바로 붙여넣을 수 있도록).
+  const onSubmitConfirm = async () => {
+    try {
+      await copyApplicationPreviewToClipboard(type);
+    } catch (e) {
+      console.error("[preview] 복사 실패", e);
+    }
+    onConfirmSubmit?.();
   };
 
   return (
@@ -92,10 +109,24 @@ export function ApplicationPreviewModal({ type, onClose }: Props) {
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
+            className={`inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium transition ${
+              onConfirmSubmit
+                ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                : "border-transparent bg-brand text-white hover:bg-brand-dark"
+            }`}
           >
             {copyDone ? "복사됨!" : "복사하기"}
           </button>
+          {onConfirmSubmit && (
+            <button
+              type="button"
+              onClick={onSubmitConfirm}
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
+            >
+              신청서 제출
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          )}
         </footer>
       </div>
     </div>

@@ -9,7 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronDown, Eye, FileText, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
@@ -65,10 +65,13 @@ export function ApplicationFormContainer({
     setValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const onPreview = () => setPreviewOpen(true);
   const onSaveDraft = () => console.log("[stub] 임시 저장", values);
-  const onSubmit = () => {
+  // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
+  const onOpenPreview = () => setPreviewOpen(true);
+  // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 상태 전이.
+  const onConfirmSubmit = () => {
     console.log("[stub] 신청서 제출", values);
+    setPreviewOpen(false);
     setStatus("submitted");
   };
 
@@ -105,7 +108,7 @@ export function ApplicationFormContainer({
             className="mt-5 space-y-6"
             onSubmit={(e) => {
               e.preventDefault();
-              onSubmit();
+              onOpenPreview();
             }}
           >
             <SubmitterReadOnlySection />
@@ -123,14 +126,14 @@ export function ApplicationFormContainer({
         <DraftActions
           prevPath={prevPath}
           onSaveDraft={onSaveDraft}
-          onPreview={onPreview}
-          onSubmit={onSubmit}
+          onSubmit={onOpenPreview}
         />
 
         {previewOpen && (
           <ApplicationPreviewModal
             type={type}
             onClose={() => setPreviewOpen(false)}
+            onConfirmSubmit={onConfirmSubmit}
           />
         )}
       </>
@@ -212,14 +215,13 @@ function ReadOnlyRow({ label, value }: { label: string; value: string }) {
 interface DraftActionsProps {
   prevPath?: string;
   onSaveDraft: () => void;
-  onPreview: () => void;
+  /** 신청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
   onSubmit: () => void;
 }
 
 function DraftActions({
   prevPath,
   onSaveDraft,
-  onPreview,
   onSubmit,
 }: DraftActionsProps) {
   return (
@@ -236,7 +238,6 @@ function DraftActions({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <SecondaryButton onClick={onPreview} icon={Eye} label="미리보기" />
         <SecondaryButton onClick={onSaveDraft} icon={Save} label="임시 저장" />
         <button
           type="button"
