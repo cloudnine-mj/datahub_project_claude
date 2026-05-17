@@ -37,7 +37,7 @@ const TILES: Tile[] = [
     path: "/governance/forms/productivity_tool/new",
   },
   { id: "requests", label: "요청 조회", icon: ListFilter, path: "/governance/forms/list" },
-  { id: "guide", label: "가이드", icon: BookOpen, path: "/governance/guideline" },
+  { id: "process", label: "프로세스", icon: BookOpen, path: "/governance/process" },
 ];
 
 export function QuickStartTiles() {
