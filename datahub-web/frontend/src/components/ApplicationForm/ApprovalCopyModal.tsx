@@ -5,8 +5,8 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { Copy, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Copy, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   type ApplicationType,
@@ -21,6 +21,9 @@ interface Props {
   onClose: () => void;
 }
 
+const MONO_STACK =
+  "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace";
+
 export function ApprovalCopyModal({
   type,
   payload,
@@ -30,13 +33,30 @@ export function ApprovalCopyModal({
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 모달 열리기 전 포커스된 요소 — 닫힐 때 포커스 복원.
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    // 텍스트 즉시 복사 가능하도록 textarea 에 포커스 (Cmd+A → Cmd+C 흐름).
+    textareaRef.current?.focus();
+    textareaRef.current?.select();
+
+    // body 스크롤 락
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      previousFocusRef.current?.focus?.();
+    };
   }, [onClose]);
 
   const text = generateApprovalText(type, payload, applicantName, applicantDepartment);
@@ -49,87 +69,91 @@ export function ApprovalCopyModal({
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
       console.error("[approval-copy] failed", e);
-      setError("복사 실패. 직접 텍스트를 선택해 복사해 주세요");
+      setError("복사 실패. 텍스트를 직접 선택해 복사해 주세요.");
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="전자결재 본문 복사"
+      aria-labelledby="approval-copy-title"
     >
       <div
-        className="w-full max-w-2xl rounded-lg bg-white shadow-xl dark:bg-gray-900"
+        className="w-full max-w-[640px] rounded-xl bg-white px-6 pt-6 pb-5 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-          <div>
-            <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-              전자결재 본문 복사
-            </h2>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              아래 텍스트를 복사하여 g portal 전자결재 품의서 본문에 붙여 넣으세요. (
-              {APPLICATION_TYPE_LABEL[type]} 신청)
-            </p>
-          </div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <h2
+            id="approval-copy-title"
+            className="text-base font-medium text-gray-900 dark:text-gray-100"
+          >
+            전자결재 본문 복사
+          </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            className="rounded p-0.5 text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-200"
           >
             <X size={16} aria-hidden="true" />
           </button>
-        </header>
-
-        <div className="px-6 py-4">
-          <textarea
-            readOnly
-            value={text}
-            aria-label="결재 본문 텍스트"
-            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 font-mono text-xs leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-200"
-            style={{ minHeight: 220 }}
-          />
         </div>
 
-        <footer className="flex items-center justify-between gap-2 border-t border-gray-200 px-6 py-3 dark:border-gray-800">
-          <p
+        <p className="mb-[18px] text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          아래 텍스트를 복사하여 g portal 전자결재 품의서 본문에 붙여 넣으세요. (
+          {APPLICATION_TYPE_LABEL[type]} 신청)
+        </p>
+
+        <textarea
+          ref={textareaRef}
+          readOnly
+          value={text}
+          aria-label="전자결재 본문 텍스트"
+          style={{
+            minHeight: 220,
+            padding: "16px 18px",
+            fontFamily: MONO_STACK,
+            fontSize: 13,
+            lineHeight: 1.8,
+            resize: "none",
+          }}
+          className="w-full select-text rounded-lg border border-gray-200 bg-gray-50 text-gray-800 focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-200"
+        />
+
+        {(copied || error) && (
+          <div
             aria-live="polite"
-            className={`text-xs font-medium ${
+            className={`mt-2 inline-flex items-center gap-1 text-[11px] font-medium ${
               copied
                 ? "text-green-700 dark:text-green-300"
-                : error
-                ? "text-red-700 dark:text-red-300"
-                : "text-transparent"
+                : "text-red-700 dark:text-red-300"
             }`}
           >
-            {error
-              ? error
-              : copied
-              ? "복사되었습니다. g portal에 붙여 넣으세요"
-              : "복사 안내"}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-            >
-              닫기
-            </button>
-            <button
-              type="button"
-              onClick={onCopy}
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
-            >
-              <Copy size={14} aria-hidden="true" />
-              텍스트 복사
-            </button>
+            {copied && <Check size={11} aria-hidden="true" />}
+            {copied ? "복사되었습니다. g portal에 붙여 넣으세요." : error}
           </div>
-        </footer>
+        )}
+
+        <div className="mt-[18px] flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-200 bg-white px-[18px] py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            닫기
+          </button>
+          <button
+            type="button"
+            onClick={onCopy}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-[18px] py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
+          >
+            <Copy size={14} aria-hidden="true" />
+            텍스트 복사
+          </button>
+        </div>
       </div>
     </div>
   );
