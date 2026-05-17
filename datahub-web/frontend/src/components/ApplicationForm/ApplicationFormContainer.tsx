@@ -348,17 +348,6 @@ export function ApplicationFormContainer({
         </div>
 
         {renderFormCard(true)}
-
-        <div className="mt-2 flex justify-start">
-          <button
-            type="button"
-            onClick={() => setShowFormView(false)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            <ArrowLeft size={14} aria-hidden="true" />
-            진행 상태로 돌아가기
-          </button>
-        </div>
       </div>
     );
   }
