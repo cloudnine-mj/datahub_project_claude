@@ -22,13 +22,10 @@ export function MyDatasetsWidget({ items }: Props) {
           <CountBadge count={items.length} />
         </div>
         <Link
-          href="/governance/forms/my"
-          aria-disabled="true"
-          tabIndex={-1}
-          onClick={(e) => e.preventDefault()}
-          className="cursor-not-allowed text-[11px] text-gray-400 dark:text-gray-500"
+          href="/governance/coming-soon?from=datasets"
+          className="text-[11px] text-blue-700 hover:underline dark:text-blue-300"
         >
-          준비중
+          바로가기 →
         </Link>
       </header>
 
