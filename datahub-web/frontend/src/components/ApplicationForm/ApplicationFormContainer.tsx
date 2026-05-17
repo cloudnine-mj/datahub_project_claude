@@ -335,6 +335,9 @@ export function ApplicationFormContainer({
         {previewOpen && (
           <PreSubmitPreviewModal
             type={type}
+            payload={values}
+            applicantName={applicant.name}
+            applicantDepartment={applicant.department}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
           />
@@ -376,6 +379,9 @@ export function ApplicationFormContainer({
         {previewOpen && (
           <PreSubmitPreviewModal
             type={type}
+            payload={values}
+            applicantName={applicant.name}
+            applicantDepartment={applicant.department}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
           />

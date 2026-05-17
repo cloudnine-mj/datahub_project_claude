@@ -82,13 +82,13 @@ export function ApprovalCopyModal({
       aria-labelledby="approval-copy-title"
     >
       <div
-        className="w-full max-w-[640px] rounded-xl bg-white px-6 pt-6 pb-5 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:bg-gray-900"
+        className="w-full max-w-[640px] rounded-xl bg-white px-7 pt-6 pb-5 shadow-[0_4px_20px_rgba(0,0,0,0.1)] dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between">
           <h2
             id="approval-copy-title"
-            className="text-base font-medium text-gray-900 dark:text-gray-100"
+            className="text-[17px] font-medium text-gray-900 dark:text-gray-100"
           >
             전자결재 본문 복사
           </h2>
@@ -113,11 +113,11 @@ export function ApprovalCopyModal({
           value={text}
           aria-label="전자결재 본문 텍스트"
           style={{
-            minHeight: 220,
-            padding: "16px 18px",
+            minHeight: 240,
+            padding: "18px 22px",
             fontFamily: MONO_STACK,
             fontSize: 13,
-            lineHeight: 1.8,
+            lineHeight: 1.9,
             resize: "none",
           }}
           className="w-full select-text rounded-lg border border-gray-200 bg-gray-50 text-gray-800 focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-800/40 dark:text-gray-200"
@@ -132,7 +132,7 @@ export function ApprovalCopyModal({
                 : "text-red-700 dark:text-red-300"
             }`}
           >
-            {copied && <Check size={11} aria-hidden="true" />}
+            {copied && <Check size={12} aria-hidden="true" />}
             {copied ? "복사되었습니다. g portal에 붙여 넣으세요." : error}
           </div>
         )}
@@ -141,14 +141,14 @@ export function ApprovalCopyModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-[18px] py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="rounded-lg border border-gray-200 bg-white px-5 py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             닫기
           </button>
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-[18px] py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
           >
             <Copy size={14} aria-hidden="true" />
             텍스트 복사
