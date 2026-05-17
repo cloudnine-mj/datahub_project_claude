@@ -62,6 +62,33 @@ function FieldRow({
   onChange: (v: unknown) => void;
   disabled: boolean;
 }) {
+  // 체크박스는 라벨이 길어서(체크리스트 안내문) 별도 가로 레이아웃: 체크박스 + 인라인 라벨.
+  if (field.type === "checkbox") {
+    return (
+      <label
+        htmlFor={field.key}
+        className="flex cursor-pointer items-start gap-2.5 py-1"
+      >
+        <input
+          id={field.key}
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+          className="mt-[3px] h-3.5 w-3.5 shrink-0 rounded border-gray-300 text-brand focus:ring-brand"
+        />
+        <span className="text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
+          {field.label}
+          {field.required && (
+            <span aria-hidden="true" className="ml-0.5 text-brand">
+              *
+            </span>
+          )}
+        </span>
+      </label>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
       <label
