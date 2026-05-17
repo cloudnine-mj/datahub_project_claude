@@ -45,6 +45,9 @@ export function ApplicationFormSection({
             value={values[f.key]}
             onChange={(v) => onChange(f.key, v)}
             disabled={disabled}
+            // 섹션 헤더에 이미 * 가 있으면(필수 섹션) 필드 레벨 * 는 숨김.
+            // 선택 섹션에서 특정 필드만 required 인 경우에만 필드 * 노출.
+            hideRequiredMark={!section.optional}
           />
         ))}
       </div>
@@ -57,12 +60,16 @@ function FieldRow({
   value,
   onChange,
   disabled,
+  hideRequiredMark,
 }: {
   field: FieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
   disabled: boolean;
+  hideRequiredMark: boolean;
 }) {
+  const showRequired = field.required && !hideRequiredMark;
+
   // 체크박스는 라벨이 길어서(체크리스트 안내문) 별도 가로 레이아웃: 체크박스 + 인라인 라벨.
   if (field.type === "checkbox") {
     return (
@@ -80,7 +87,7 @@ function FieldRow({
         />
         <span className="text-[13px] leading-relaxed text-gray-800 dark:text-gray-200">
           {field.label}
-          {field.required && (
+          {showRequired && (
             <span aria-hidden="true" className="ml-0.5 text-brand">
               *
             </span>
@@ -97,7 +104,7 @@ function FieldRow({
         className="pt-1.5 text-[13px] text-gray-500 dark:text-gray-400"
       >
         {field.label}
-        {field.required && (
+        {showRequired && (
           <span aria-hidden="true" className="ml-0.5 text-brand">
             *
           </span>
