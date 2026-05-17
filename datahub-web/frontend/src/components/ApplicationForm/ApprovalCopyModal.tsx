@@ -147,9 +147,6 @@ export function ApprovalCopyModal({
               ))}
             </tbody>
           </table>
-          <p className="mt-3 text-[12px] text-gray-500 dark:text-gray-400">
-            {data.footer}
-          </p>
         </div>
 
         {error && (

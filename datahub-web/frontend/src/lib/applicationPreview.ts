@@ -18,7 +18,6 @@ export interface ApprovalData {
   /** '데이터 구독 신청서' 같은 문서 제목. */
   title: string;
   rows: ApprovalRow[];
-  footer: string;
 }
 
 /** 결재 본문에 노출할 행 데이터 — 신청자 + schema.sections 의 텍스트화 가능한 필드. */
@@ -56,7 +55,6 @@ export function buildApprovalData(
   return {
     title: `${schema.label}서`,
     rows,
-    footer: "※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.",
   };
 }
 
@@ -85,8 +83,7 @@ export function generateApprovalHtml(data: ApprovalData): string {
 <tbody>
 ${rowsHtml}
 </tbody>
-</table>
-<p>${escapeHtml(data.footer)}</p>`;
+</table>`;
 }
 
 /** 평문 fallback — rich text 미지원 환경(메모장 등)에 붙여 넣을 때 사용. */
@@ -97,7 +94,5 @@ export function generateApprovalText(data: ApprovalData): string {
   data.rows.forEach((r, i) => {
     lines.push(`${i + 1}. ${r.label}: ${r.value}`);
   });
-  lines.push("");
-  lines.push(data.footer);
   return lines.join("\n");
 }
