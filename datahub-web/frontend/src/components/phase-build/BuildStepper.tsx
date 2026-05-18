@@ -1,12 +1,13 @@
 // 2단계 페이지 전용 stepper — phase pill + 3 substep 진행 바.
 //   substep 라벨 클릭 시 페이지 이동이 아닌 같은 페이지 내 해당 카드로 부드럽게 스크롤.
-//   잠긴 substep 은 disabled (자물쇠 아이콘).
-//   완료 = 녹색 #1D9E75 bar, 현재 = brand red bar + weight 500 label, 잠금 = 회색 bar.
+//   완료 = 녹색 #1D9E75 bar, 첫 current = brand red bar + weight 500 label,
+//   첫 current 이후의 current/locked = 회색 bar + 회색 라벨 (시각적으로 한 단계만 강조).
+//   모든 substep 클릭으로 스크롤 가능 (정식 잠금 동작은 페이지 본문 카드가 담당).
 
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Check, Lock } from "lucide-react";
+import { ChevronRight, Check } from "lucide-react";
 import type { StepStatus } from "./useBuildPhase";
 
 interface Substep {
@@ -21,6 +22,9 @@ interface Props {
 }
 
 export function BuildStepper({ substeps, onScrollTo }: Props) {
+  // 여러 substep 이 동시에 'current' 일 수 있는 데모 모드에서, 시각적으로는 첫 current 만 강조.
+  const firstCurrentIdx = substeps.findIndex((s) => s.status === "current");
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
       {/* phase pill */}
@@ -50,18 +54,17 @@ export function BuildStepper({ substeps, onScrollTo }: Props) {
 
       {/* substep bars */}
       <div className="grid grid-cols-3 gap-1.5">
-        {substeps.map((s) => {
+        {substeps.map((s, idx) => {
           const isDone = s.status === "done";
-          const isCurrent = s.status === "current";
-          const isLocked = s.status === "locked";
+          const isCurrentVisual = s.status === "current" && idx === firstCurrentIdx;
 
           const bar = isDone
             ? "bg-[#1D9E75]"
-            : isCurrent
+            : isCurrentVisual
             ? "bg-brand"
             : "bg-gray-200 dark:bg-gray-700";
 
-          const labelClass = isCurrent
+          const labelClass = isCurrentVisual
             ? "font-medium text-red-700 dark:text-red-300"
             : isDone
             ? "text-gray-700 dark:text-gray-300"
@@ -71,12 +74,9 @@ export function BuildStepper({ substeps, onScrollTo }: Props) {
             <button
               key={s.id}
               type="button"
-              disabled={isLocked}
               onClick={() => onScrollTo(s.id)}
-              aria-current={isCurrent ? "step" : undefined}
-              className={`block w-full text-center disabled:cursor-not-allowed disabled:opacity-60 ${
-                isLocked ? "" : "cursor-pointer"
-              }`}
+              aria-current={isCurrentVisual ? "step" : undefined}
+              className="block w-full cursor-pointer text-center"
             >
               <div className={`mb-1.5 h-1 rounded-full ${bar}`} />
               <div
@@ -84,9 +84,6 @@ export function BuildStepper({ substeps, onScrollTo }: Props) {
               >
                 {isDone && (
                   <Check size={11} aria-hidden="true" className="text-[#1D9E75]" />
-                )}
-                {isLocked && (
-                  <Lock size={10} aria-hidden="true" className="text-gray-400 dark:text-gray-500" />
                 )}
                 <span className="whitespace-normal">{s.label}</span>
               </div>
