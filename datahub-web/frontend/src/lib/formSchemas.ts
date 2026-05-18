@@ -49,6 +49,13 @@ export interface FieldDef {
    */
   hintWhen?: string | string[];
   /**
+   * hint 노출 톤.
+   *   'gray' (기본) — secondary 회색 단락 텍스트
+   *   'amber'       — amber 배경 박스 + ti-alert-circle 아이콘. 추가 검토 안내 등 강조용.
+   *   'info'        — info 배경 박스 + ti-info-circle 아이콘.
+   */
+  hintTone?: "gray" | "amber" | "info";
+  /**
    * true 면 다음 필드를 같은 행(행 1개)에 인라인으로 함께 렌더링.
    * 다음 필드의 label 이 두 입력 사이에 인라인 레이블로 배치됨.
    * 예: 목표 데이터 수량(number) → 단위(text) 를 한 줄에.
@@ -167,6 +174,23 @@ const dataProduction: FormSchema = {
 };
 
 // 화면 9 — 데이터 구매 신청
+// 데이터 구매/구독 공통 Compliance 라디오 — '확인 필요' 선택 시 amber 안내 노출.
+const COMPLIANCE_FIELD: FieldDef = {
+  key: "compliance_확인_여부",
+  label: "Compliance 확인 여부",
+  type: "radio",
+  options: ["확인 완료", "확인 필요"],
+  required: true,
+  hint:
+    "신청서 제출 후 Compliance 팀의 추가 검토가 진행됩니다. 라이선스 검토 결과에 따라 계약 조건이 조정될 수 있습니다. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
+  hintLink: {
+    url: "https://legal.lgresearch.ai/#/app/law/save",
+    label: "법무팀 자문 시스템",
+  },
+  hintWhen: "확인 필요",
+  hintTone: "amber",
+};
+
 const dataPurchase: FormSchema = {
   type: "data_purchase",
   label: "데이터 구매 신청",
@@ -174,30 +198,97 @@ const dataPurchase: FormSchema = {
   projectField: "프로젝트명",
   sections: [
     {
-      title: "신청 정보",
+      title: "기본 정보",
       fields: [
-        { key: "프로젝트명", label: "프로젝트명", type: "text", required: true },
-        { key: "구매_희망_데이터셋", label: "구매 희망 데이터셋", type: "text", required: true },
-        { key: "판매_업체", label: "판매 업체", type: "text" },
-        { key: "사용_예상_금액", label: "사용 예상 금액 (예산)", type: "text", placeholder: "예: 5,000,000원" },
-        { key: "사용_목적_및_기대_효과", label: "사용 목적 및 기대 효과", type: "textarea" },
-        { key: "데이터_품질_검수_담당자", label: "데이터 품질/검수 담당자", type: "text" },
         {
-          key: "compliance_확인_여부",
-          label: "Compliance 확인 여부",
-          type: "radio",
-          options: ["확인 완료", "확인 필요"],
-          hint: "* 라이선스·개인정보·외부 공유 가능 여부에 대해 법무팀 자문을 받았는지 확인 후 제출해주세요. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
-          hintLink: {
-            url: "https://legal.lgresearch.ai/#/app/law/save",
-            label: "법무팀 자문 시스템",
-          },
+          key: "프로젝트명",
+          label: "프로젝트명",
+          type: "text",
+          placeholder: "PMS 기준 프로젝트명을 입력하세요",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "조직장 사전 승인",
+      fields: [
+        {
+          key: "조직장_승인_완료",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          type: "checkbox",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "데이터 정보",
+      fields: [
+        {
+          key: "구매_희망_데이터셋",
+          label: "구매 희망 데이터셋",
+          type: "text",
+          placeholder: "데이터셋명 또는 상세 설명",
+          required: true,
+        },
+        { key: "사용_시작일", label: "사용 시작일", type: "date", required: true },
+        { key: "사용_종료일", label: "사용 종료일", type: "date", required: true },
+        {
+          key: "판매_업체",
+          label: "판매 업체",
+          type: "text",
+          placeholder: "업체명 (예: AI허브, Scale AI 등)",
+          required: true,
         },
         {
-          key: "데이터셋_저장_레포지토리",
-          label: "데이터셋 저장 레포지토리",
-          type: "select",
-          options: DATASET_REPOSITORIES,
+          key: "사용_예상_금액",
+          label: "사용 예상 금액 (예산)",
+          type: "text",
+          placeholder: "예: KRW 5,000,000",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "사용 목적 및 활용 계획",
+      fields: [
+        {
+          key: "사용_목적_및_기대_효과",
+          label: "사용 목적/기대 효과",
+          type: "textarea",
+          placeholder: "사용 모델 및 서비스명을 포함해 작성해 주세요",
+          hint: "예: EXAONE 음성 인식 모델 의료 도메인 성능 개선",
+          required: true,
+        },
+        {
+          key: "데이터_품질_검수_담당자",
+          label: "데이터 품질/검수 담당자",
+          type: "text",
+          placeholder: "사내 담당자 이름·소속",
+          hint: "데이터 수령 후 품질을 검증할 사내 담당자",
+          required: true,
+        },
+        {
+          key: "활용_가능_범위",
+          label: "활용 가능 범위",
+          type: "textarea",
+          placeholder: "예: 사내 모델 학습 한정, 외부 공개 모델 제외",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "Compliance 확인",
+      fields: [COMPLIANCE_FIELD],
+    },
+    {
+      title: "기타",
+      optional: true,
+      fields: [
+        {
+          key: "기타_추가_내용",
+          label: "추가 내용",
+          type: "textarea",
+          placeholder: "담당자가 알아야 할 추가 내용이 있다면 작성해 주세요",
         },
       ],
     },
@@ -211,14 +302,98 @@ const dataSubscription: FormSchema = {
   projectField: "프로젝트명",
   sections: [
     {
-      title: "신청 정보",
+      title: "기본 정보",
       fields: [
-        { key: "프로젝트명", label: "프로젝트명", type: "text", required: true },
-        { key: "구독_희망_데이터셋", label: "구독 희망 데이터셋", type: "text", required: true },
-        { key: "구독_업체", label: "구독 업체", type: "text" },
-        { key: "구독_기간", label: "구독 기간", type: "text", placeholder: "예: 12개월" },
-        { key: "월_사용_예상_금액", label: "월 사용 예상 금액", type: "text" },
-        { key: "사용_목적", label: "사용 목적", type: "textarea" },
+        {
+          key: "프로젝트명",
+          label: "프로젝트명",
+          type: "text",
+          placeholder: "PMS 기준 프로젝트명을 입력하세요",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "조직장 사전 승인",
+      fields: [
+        {
+          key: "조직장_승인_완료",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          type: "checkbox",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "데이터 정보",
+      fields: [
+        {
+          key: "구독_희망_데이터셋",
+          label: "구독 희망 데이터셋",
+          type: "text",
+          placeholder: "데이터셋명 또는 상세 설명",
+          required: true,
+        },
+        { key: "구독_시작일", label: "구독 시작일", type: "date", required: true },
+        { key: "구독_종료일", label: "구독 종료일", type: "date", required: true },
+        {
+          key: "구독_업체",
+          label: "구독 업체",
+          type: "text",
+          placeholder: "업체명",
+          required: true,
+        },
+        {
+          key: "월_사용_예상_금액",
+          label: "월 사용 예상 금액",
+          type: "text",
+          placeholder: "예: KRW 300,000",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "사용 목적 및 활용 계획",
+      fields: [
+        {
+          key: "사용_목적_및_기대_효과",
+          label: "사용 목적/기대 효과",
+          type: "textarea",
+          placeholder: "사용 모델 및 서비스명을 포함해 작성해 주세요",
+          hint: "예: 뉴스 분류 모델 학습 데이터 정기 수급",
+          required: true,
+        },
+        {
+          key: "데이터_품질_검수_담당자",
+          label: "데이터 품질/검수 담당자",
+          type: "text",
+          placeholder: "사내 담당자 이름·소속",
+          hint: "데이터 수신 후 품질을 검증할 사내 담당자",
+          required: true,
+        },
+        {
+          key: "활용_가능_범위",
+          label: "활용 가능 범위",
+          type: "textarea",
+          placeholder: "예: 사내 분석 도구에 통합, API 호출 inference용",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "Compliance 확인",
+      fields: [COMPLIANCE_FIELD],
+    },
+    {
+      title: "기타",
+      optional: true,
+      fields: [
+        {
+          key: "기타_추가_내용",
+          label: "추가 내용",
+          type: "textarea",
+          placeholder: "담당자가 알아야 할 추가 내용이 있다면 작성해 주세요",
+        },
       ],
     },
   ],

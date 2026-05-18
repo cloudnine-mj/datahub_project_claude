@@ -6,7 +6,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { X } from "lucide-react";
+import { AlertCircle, Info, X } from "lucide-react";
 import type { FieldDef, SectionDef } from "@/lib/formSchemas";
 import { DateField } from "@/components/DateField";
 
@@ -339,40 +339,65 @@ function FieldHint({ field, value }: { field: FieldDef; value: unknown }) {
   const link = field.hintLink;
   const hint = field.hint;
   const hasToken = hint.includes("{link}") && link;
+  const tone = field.hintTone ?? "gray";
 
-  return (
-    <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-      {hasToken && link ? (
+  const body = hasToken && link ? (
+    <>
+      {hint.split("{link}")[0]}
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:opacity-80"
+      >
+        {link.label}
+      </a>
+      {hint.split("{link}")[1]}
+    </>
+  ) : (
+    <>
+      {hint}
+      {link && (
         <>
-          {hint.split("{link}")[0]}
+          {" "}
           <a
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-red-700 underline underline-offset-2 hover:opacity-80 dark:text-red-300"
+            className="underline underline-offset-2 hover:opacity-80"
           >
             {link.label}
           </a>
-          {hint.split("{link}")[1]}
-        </>
-      ) : (
-        <>
-          {hint}
-          {link && (
-            <>
-              {" "}
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-700 underline underline-offset-2 hover:opacity-80 dark:text-red-300"
-              >
-                {link.label}
-              </a>
-            </>
-          )}
         </>
       )}
-    </p>
+    </>
+  );
+
+  if (tone === "amber") {
+    return (
+      <div className="mt-2 flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 dark:bg-amber-900/30">
+        <AlertCircle
+          size={13}
+          aria-hidden="true"
+          className="mt-px shrink-0 text-amber-800 dark:text-amber-300"
+        />
+        <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">{body}</p>
+      </div>
+    );
+  }
+  if (tone === "info") {
+    return (
+      <div className="mt-2 flex items-start gap-2 rounded-md bg-blue-50 px-3 py-2 dark:bg-blue-950/40">
+        <Info
+          size={13}
+          aria-hidden="true"
+          className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
+        />
+        <p className="text-[11px] leading-relaxed text-blue-700 dark:text-blue-300">{body}</p>
+      </div>
+    );
+  }
+  return (
+    <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">{body}</p>
   );
 }
