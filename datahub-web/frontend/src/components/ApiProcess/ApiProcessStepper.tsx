@@ -23,15 +23,31 @@ import {
 interface Props {
   /** 현재 위치한 substep. phase 는 자동 판단. */
   currentSubstep: ApiSubstepId;
+  /** 개별 substep 의 상태를 외부에서 override (예: 운영 단계 내부 진행). */
+  substepStatusMap?: Partial<Record<ApiSubstepId, StepStatus>>;
+  /** true 면 현재 phase 의 substep 그룹만 노출. (다른 phase 는 phase pill 만 보임) */
+  onlyCurrentPhase?: boolean;
 }
 
-export function ApiProcessStepper({ currentSubstep }: Props) {
+export function ApiProcessStepper({
+  currentSubstep,
+  substepStatusMap,
+  onlyCurrentPhase,
+}: Props) {
   const currentPhase = phaseOf(currentSubstep).id;
-  const statuses = buildSubstepStatuses(currentSubstep);
+  const baseStatuses = buildSubstepStatuses(currentSubstep);
+  const statuses: Record<ApiSubstepId, StepStatus> = {
+    ...baseStatuses,
+    ...substepStatusMap,
+  };
+
+  const phasesToRender = onlyCurrentPhase
+    ? API_PROCESS.filter((p) => p.id === currentPhase)
+    : API_PROCESS;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
-      {/* Phase pill 영역 */}
+      {/* Phase pill 영역 — 항상 전체 phase pill 노출 */}
       <div className="mb-3.5 flex flex-wrap items-center gap-2">
         <span className="mr-1 text-[11px] text-gray-500 dark:text-gray-400">전체</span>
         {API_PROCESS.map((phase, i) => (
@@ -48,9 +64,9 @@ export function ApiProcessStepper({ currentSubstep }: Props) {
         ))}
       </div>
 
-      {/* 각 phase 의 substep 그룹 */}
+      {/* substep 그룹 — onlyCurrentPhase 면 현재 phase 만 */}
       <div className="space-y-3.5">
-        {API_PROCESS.map((phase) => (
+        {phasesToRender.map((phase) => (
           <SubstepGroup
             key={phase.id}
             phase={phase}
