@@ -256,7 +256,6 @@ const dataPurchase: FormSchema = {
           label: "사용 목적/기대 효과",
           type: "textarea",
           placeholder: "사용 모델 및 서비스명을 포함해 작성해 주세요",
-          hint: "예: EXAONE 음성 인식 모델 의료 도메인 성능 개선",
           required: true,
         },
         {
@@ -264,7 +263,6 @@ const dataPurchase: FormSchema = {
           label: "데이터 품질/검수 담당자",
           type: "text",
           placeholder: "사내 담당자 이름·소속",
-          hint: "데이터 수령 후 품질을 검증할 사내 담당자",
           required: true,
         },
         {
@@ -360,7 +358,6 @@ const dataSubscription: FormSchema = {
           label: "사용 목적/기대 효과",
           type: "textarea",
           placeholder: "사용 모델 및 서비스명을 포함해 작성해 주세요",
-          hint: "예: 뉴스 분류 모델 학습 데이터 정기 수급",
           required: true,
         },
         {
@@ -368,7 +365,6 @@ const dataSubscription: FormSchema = {
           label: "데이터 품질/검수 담당자",
           type: "text",
           placeholder: "사내 담당자 이름·소속",
-          hint: "데이터 수신 후 품질을 검증할 사내 담당자",
           required: true,
         },
         {
