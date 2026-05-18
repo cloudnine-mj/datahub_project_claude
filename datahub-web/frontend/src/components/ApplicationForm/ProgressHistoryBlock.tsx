@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function ProgressHistoryBlock({ history }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   if (history.length === 0) return null;
 
