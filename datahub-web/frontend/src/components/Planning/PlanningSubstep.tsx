@@ -1,16 +1,15 @@
 // 1. 기획 / 계획 수립 substep — 좌측 검토 질문 + 우측 작성 예시 분할.
-//   체크박스 자기 점검 — 진행 차단 조건 없음.
-//   유형 전환 시 좌우 양쪽 컨텐츠가 동시에 교체.
-//   용역 유형만 하단에 '용역 제작 요건 확인' 카드 추가.
-//   유형 선택 + 체크 상태는 sessionStorage 에 저장 — 다른 단계 다녀와도 복원.
+//   유형(service/purchase/subscribe) 은 URL ?type= 으로 명시. 사이드바에서 3개 메뉴로
+//   분리되었으므로 페이지 내 유형 선택 토글은 노출하지 않음.
+//   체크 상태는 sessionStorage 에 유형별로 저장 — 다른 단계 다녀와도 복원.
 
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ProcessStepper } from "@/components/ProcessStepper";
 import { HelpBanner } from "@/components/HelpBanner";
-import { TypeSelector } from "@/components/Planning/TypeSelector";
 import { ReviewQuestionsCard } from "@/components/Planning/ReviewQuestionsCard";
 import { ReviewExampleCard } from "@/components/Planning/ReviewExampleCard";
 import { RequirementsCard } from "@/components/Planning/RequirementsCard";
@@ -19,54 +18,47 @@ import {
   PLANNING_REVIEW_CONFIG,
   type PlanningType,
 } from "@/lib/planningConfig";
+import {
+  APPLICATION_TYPE_META,
+  isPlanningType,
+} from "@/lib/applicationTypeMeta";
 import { PHASE1_PHASES, buildPhase1SubSteps } from "@/lib/phase1Substeps";
 
 const TYPE_KEY = "datahub:planningType";
 const CHECKS_KEY = (t: PlanningType) => `datahub:planningChecks:${t}`;
 
-function isPlanningType(v: string): v is PlanningType {
-  return v === "purchase" || v === "subscribe" || v === "service";
-}
-
 export function PlanningSubstep() {
-  const [type, setType] = useState<PlanningType>("service");
-  // 검토 항목 + 용역 요건 체크 — 유형별 라벨이 다를 수 있어 raw label key 기반.
+  const search = useSearchParams();
+  const urlType = search.get("type");
+  const [type, setType] = useState<PlanningType>(() =>
+    isPlanningType(urlType) ? urlType : "service",
+  );
   const [checks, setChecks] = useState<Record<string, boolean>>({});
 
-  // 마운트 시 sessionStorage 에서 직전 선택 유형 + 체크 상태 복원.
+  // URL ?type= 우선 → sessionStorage → 기본값(service). 결정된 type 은
+  // sessionStorage 에도 저장해 다른 substep 이 그대로 이어받게 함.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const savedType = sessionStorage.getItem(TYPE_KEY);
-    const resolvedType: PlanningType =
-      savedType && isPlanningType(savedType) ? savedType : "service";
-    setType(resolvedType);
-    try {
-      const savedChecks = sessionStorage.getItem(CHECKS_KEY(resolvedType));
-      if (savedChecks) setChecks(JSON.parse(savedChecks));
-    } catch {
-      /* 깨진 JSON — 무시 */
+    let resolved: PlanningType = "service";
+    if (isPlanningType(urlType)) {
+      resolved = urlType;
+    } else {
+      const saved = sessionStorage.getItem(TYPE_KEY);
+      if (isPlanningType(saved)) resolved = saved;
     }
-  }, []);
+    setType(resolved);
+    sessionStorage.setItem(TYPE_KEY, resolved);
+    try {
+      const savedChecks = sessionStorage.getItem(CHECKS_KEY(resolved));
+      setChecks(savedChecks ? JSON.parse(savedChecks) : {});
+    } catch {
+      setChecks({});
+    }
+  }, [urlType]);
 
   const review = PLANNING_REVIEW_CONFIG[type];
-
-  const onTypeChange = (next: PlanningType) => {
-    setType(next);
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(TYPE_KEY, next);
-    }
-    // 유형 전환 시 체크 — 해당 유형으로 저장된 값이 있으면 복원, 없으면 빈 객체.
-    let restored: Record<string, boolean> = {};
-    if (typeof window !== "undefined") {
-      try {
-        const raw = sessionStorage.getItem(CHECKS_KEY(next));
-        if (raw) restored = JSON.parse(raw);
-      } catch {
-        /* 깨진 JSON — 무시 */
-      }
-    }
-    setChecks(restored);
-  };
+  const meta = APPLICATION_TYPE_META[type];
+  const Icon = meta.icon;
 
   const onToggle = (key: string) => {
     setChecks((prev) => {
@@ -83,10 +75,21 @@ export function PlanningSubstep() {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
-          { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+          { label: meta.label, href: `/governance/forms/planning?type=${type}` },
           { label: "1. 기획 · 계획 수립" },
         ]}
       />
+
+      {/* 유형별 페이지 헤더 */}
+      <header className="mb-1">
+        <div className="mb-1 flex items-center gap-2">
+          <Icon size={18} aria-hidden="true" className="text-brand" />
+          <h1 className="text-[20px] font-medium text-gray-900 dark:text-gray-100">
+            {meta.label}
+          </h1>
+        </div>
+        <p className="text-[12px] text-gray-500 dark:text-gray-400">{meta.description}</p>
+      </header>
 
       <ProcessStepper
         phases={PHASE1_PHASES}
@@ -94,8 +97,6 @@ export function PlanningSubstep() {
       />
 
       <HelpBanner message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
-
-      <TypeSelector value={type} onChange={onTypeChange} />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <ReviewQuestionsCard
@@ -118,7 +119,7 @@ export function PlanningSubstep() {
         />
       )}
 
-      <PlanningFooter nextPath="/governance/forms/intake" type={type} />
+      <PlanningFooter nextPath={`/governance/forms/intake?type=${type}`} type={type} />
     </div>
   );
 }

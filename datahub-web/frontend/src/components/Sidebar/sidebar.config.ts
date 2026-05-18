@@ -9,12 +9,14 @@ import {
   BookOpen,
   ClipboardList,
   Code,
-  Database,
   FileText,
+  Hammer,
   Home,
   Inbox,
+  RefreshCw,
   Route,
   Settings,
+  ShoppingCart,
   Users,
 } from "lucide-react";
 
@@ -67,10 +69,22 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
     label: "신청서",
     items: [
       {
-        id: "data-intake",
-        label: "데이터 용역/구매/구독",
-        icon: Database,
-        path: "/governance/forms/planning",
+        id: "data-service",
+        label: "데이터 용역 제작",
+        icon: Hammer,
+        path: "/governance/forms/planning?type=service",
+      },
+      {
+        id: "data-purchase",
+        label: "데이터 구매",
+        icon: ShoppingCart,
+        path: "/governance/forms/planning?type=purchase",
+      },
+      {
+        id: "data-subscribe",
+        label: "데이터 구독",
+        icon: RefreshCw,
+        path: "/governance/forms/planning?type=subscribe",
       },
       {
         id: "product-log",
