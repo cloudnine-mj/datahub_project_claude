@@ -16,6 +16,7 @@ export function ApprovalBodyInlineTable({ data }: Props) {
         border: "0.5px solid #d1d5db",
         borderRadius: 6,
         padding: 16,
+        maxWidth: "50%",
       }}
     >
       <table
