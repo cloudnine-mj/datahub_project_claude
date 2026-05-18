@@ -12,10 +12,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
-import { buildApprovalData } from "@/lib/applicationPreview";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
-import { ApprovalCopyModal } from "./ApprovalCopyModal";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { StatusBanner } from "./StatusBanner";
 import { ProgressStatusBlock } from "./ProgressStatusBlock";
@@ -111,8 +109,8 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
-  // 추적 모드에서 '결재 본문 복사' / '전자결재 품의' 버튼 → 같은 ApprovalCopyModal 오픈.
-  const [approvalCopyOpen, setApprovalCopyOpen] = useState(false);
+  // 추적 모드 '전자결재 품의' 버튼 → 전자결재 substep(/forms/approval) 로 이동.
+  //   결재 본문 미리보기·표 형태 복사는 해당 페이지가 직접 제공.
   // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
   const [showFormView, setShowFormView] = useState(false);
   // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
@@ -270,8 +268,6 @@ export function ApplicationFormContainer({
     setStatus("submitted");
   };
 
-  // '결재 본문 복사' 버튼 — ApprovalCopyModal (텍스트 복사) 오픈.
-  const onShowApprovalCopy = () => setApprovalCopyOpen(true);
   // '전자결재 품의 →' 버튼 — substep 3 (전자결재 품의 페이지) 로 이동.
   const onProceedToApproval = () => router.push(nextPath);
 
@@ -415,19 +411,9 @@ export function ApplicationFormContainer({
 
       <TrackingActions
         onShowForm={() => setShowFormView(true)}
-        onShowApprovalCopy={onShowApprovalCopy}
+        onShowApprovalCopy={onProceedToApproval}
       />
 
-      {approvalCopyOpen && (
-        <ApprovalCopyModal
-          data={buildApprovalData(type, { ...values }, applicant.name, applicant.department)}
-          onClose={() => setApprovalCopyOpen(false)}
-          onProceedNext={() => {
-            setApprovalCopyOpen(false);
-            onProceedToApproval();
-          }}
-        />
-      )}
     </div>
   );
 }
