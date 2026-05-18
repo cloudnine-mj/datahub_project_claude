@@ -62,10 +62,6 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       { label: "작업 기간", value: "2026-07-01 ~ 2026-09-30 (3개월)" },
     ],
     requirements: [
-      {
-        main: "예상 작업 규모 1,000만원 이상",
-        sub: "제작 데이터의 수량과 작업 난이도를 고려해 산정",
-      },
       { main: "착수일 기준 3주 전까지 전자결재 단계 완결 가능" },
     ],
   },
