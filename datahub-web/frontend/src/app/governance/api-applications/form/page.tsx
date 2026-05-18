@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ApiProcessStepper } from "@/components/ApiProcess/ApiProcessStepper";
 import {
@@ -85,14 +85,6 @@ export default function Page() {
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => console.log("[stub] 미리보기", values)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            <Eye size={13} aria-hidden="true" />
-            미리보기
-          </button>
           <button
             type="button"
             onClick={onSaveDraft}
