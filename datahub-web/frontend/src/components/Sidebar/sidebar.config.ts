@@ -16,7 +16,6 @@ import {
   Route,
   Settings,
   Users,
-  Wrench,
 } from "lucide-react";
 
 export type BadgeVariant = "info" | "danger" | "neutral";
@@ -84,12 +83,6 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         label: "API 활용 계획서",
         icon: Code,
         path: "/governance/api-applications/planning",
-      },
-      {
-        id: "productivity",
-        label: "업무생산성 도구",
-        icon: Wrench,
-        path: "/governance/forms/productivity_tool/new",
       },
     ],
   },
