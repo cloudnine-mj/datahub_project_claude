@@ -29,16 +29,29 @@ const CATEGORY_LABELS: Record<CategoryId, string> = {
   tool: "업무 도구",
 };
 
-// 시스템에 존재하는 모든 양식 — 단일 출처.
-// FORM_SCHEMAS 키와 1:1 대응되지 않는 케이스(데이터 용역/구매/구독 통합 플로우 등) 도 포함.
+// 시스템에 존재하는 모든 신청서 양식 — 각 항목은 곧바로 해당 양식 화면으로 진입.
+// 멀티스텝 플로우의 계획 수립 / 결재 / 적재 등 다른 substep 은 포함하지 않음.
 const CATALOG: CatalogItem[] = [
   {
-    id: "data-intake",
+    id: "data_production",
     category: "data",
-    label: "데이터 용역/구매/구독",
-    description:
-      "데이터 용역 제작 / 구매 / 구독 3 유형을 하나의 멀티스텝 플로우(계획·신청·결재·구축·적재) 로 통합.",
-    href: "/governance/forms/planning",
+    label: FORM_TYPE_LABELS["data_production"],
+    description: FORM_SCHEMAS["data_production"]?.description ?? "",
+    href: "/governance/forms/intake?type=service",
+  },
+  {
+    id: "data_purchase",
+    category: "data",
+    label: FORM_TYPE_LABELS["data_purchase"],
+    description: FORM_SCHEMAS["data_purchase"]?.description ?? "",
+    href: "/governance/forms/intake?type=purchase",
+  },
+  {
+    id: "data_subscription",
+    category: "data",
+    label: FORM_TYPE_LABELS["data_subscription"],
+    description: FORM_SCHEMAS["data_subscription"]?.description ?? "",
+    href: "/governance/forms/intake?type=subscribe",
   },
   {
     id: "data_production_plan",
@@ -52,7 +65,7 @@ const CATALOG: CatalogItem[] = [
     category: "log-api",
     label: FORM_TYPE_LABELS["api_usage_plan"],
     description: FORM_SCHEMAS["api_usage_plan"]?.description ?? "",
-    href: "/governance/api-applications/planning",
+    href: "/governance/api-applications/form",
   },
   {
     id: "product_log_usage",
