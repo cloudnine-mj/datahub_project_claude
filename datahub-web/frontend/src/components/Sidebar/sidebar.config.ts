@@ -136,6 +136,18 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         path: "/governance/admin/forms-catalog",
       },
       {
+        id: "policy-manage",
+        label: "정책 관리",
+        icon: BookOpen,
+        path: "/governance/policy",
+      },
+      {
+        id: "process-manage",
+        label: "프로세스 관리",
+        icon: Route,
+        path: "/governance/process",
+      },
+      {
         id: "stats",
         label: "통계·리포트",
         icon: BarChart3,
