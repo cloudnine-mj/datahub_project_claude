@@ -1,13 +1,13 @@
 // API 활용 계획서 · 1단계 기획 · 계획 수립.
-//   2-phase ProcessStepper + 전체 흐름 요약 패널을 노출하는 데모 페이지.
+//   페이지 헤더 + ProcessStepper + 안내 배너 + 사전 품의서 라디오 + 좌우 분할
+//   (검토 사항 / 작성 예시) + 예산 체크박스 + 하단 [신청서 작성으로] 액션.
 
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { ApiProcessStepper } from "@/components/ApiProcess/ApiProcessStepper";
-import { ApiProcessSummary } from "@/components/ApiProcess/ApiProcessSummary";
+import { ApiPlanningSubstep } from "@/components/api-planning/ApiPlanningSubstep";
 
 export default function Page() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
@@ -16,8 +16,7 @@ export default function Page() {
         ]}
       />
 
-      <ApiProcessStepper currentSubstep="planning" />
-      <ApiProcessSummary currentSubstep="planning" />
+      <ApiPlanningSubstep />
     </div>
   );
 }
