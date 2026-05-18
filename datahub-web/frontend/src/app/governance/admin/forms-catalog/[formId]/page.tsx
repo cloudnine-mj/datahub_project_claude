@@ -7,7 +7,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ApplicationFormSection } from "@/components/ApplicationForm/ApplicationFormSection";
 import {
@@ -61,19 +61,6 @@ export default function Page({ params }: { params: { formId: string } }) {
           카탈로그로 돌아가기
         </button>
       </header>
-
-      {/* 미리보기 헤더 */}
-      <div className="mb-1 mt-3.5 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <Eye size={14} aria-hidden="true" className="text-blue-700 dark:text-blue-300" />
-          <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
-            양식 미리보기
-          </span>
-        </div>
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">
-          실제 신청 페이지와 동일한 양식이 표시됩니다
-        </p>
-      </div>
 
       {/* 양식 본문 — 관리자 미리보기이므로 편집 가능 */}
       <FormRenderer entry={entry} />
