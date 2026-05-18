@@ -1,6 +1,6 @@
 // 1. 기획 / substep 3: 전자결재 품의.
 //   결재선 카드 + G Portal 전자결재 진행 카드(품의 안내 + 결재 본문 표 미리보기
-//   + [표 형태로 복사] / [G Portal 전자결재로 이동]).
+//   + [결재 본문 복사] / [G Portal 전자결재로 이동]).
 //   결재 본문은 sessionStorage 의 신청 유형(TYPE_KEY) 기준 mock 데이터로 구성 — 실 데이터
 //   연동 시 api.getForm 으로 교체.
 
@@ -77,7 +77,7 @@ export default function Page() {
     if (r.ok) {
       setToast(
         r.mode === "html"
-          ? "결재 본문이 표 형태로 복사되었습니다. G Portal 전자결재 본문에 붙여 넣으면 표로 표시됩니다."
+          ? "결재 본문이 복사되었습니다. G Portal 전자결재 본문에 붙여 넣으면 표로 표시됩니다."
           : "결재 본문이 복사되었습니다. (브라우저 호환성 문제로 텍스트 형태)",
       );
     } else {
@@ -191,7 +191,7 @@ export default function Page() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             <Copy size={13} aria-hidden="true" />
-            표 형태로 복사
+            결재 본문 복사
           </button>
           <button
             type="button"
