@@ -7,7 +7,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Info } from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ApplicationFormSection } from "@/components/ApplicationForm/ApplicationFormSection";
 import {
@@ -82,27 +82,6 @@ export default function Page({ params }: { params: { formId: string } }) {
       <fieldset disabled className="pointer-events-none m-0 min-w-0 border-0 p-0 opacity-95">
         <FormRenderer entry={entry} />
       </fieldset>
-
-      {/* 양식 정의 파일 안내 박스 */}
-      <div className="mt-3 flex items-start gap-2 rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
-        <Info
-          size={14}
-          aria-hidden="true"
-          className="mt-0.5 shrink-0 text-gray-500 dark:text-gray-400"
-        />
-        <div className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-          이 양식은{" "}
-          <code className="rounded bg-white px-1 py-0.5 font-mono text-[10px] text-gray-700 dark:bg-gray-900 dark:text-gray-300">
-            {entry.usagePath}
-          </code>{" "}
-          에서 실제 사용됩니다.
-          <br />
-          양식 정의:{" "}
-          <code className="rounded bg-white px-1 py-0.5 font-mono text-[10px] text-gray-700 dark:bg-gray-900 dark:text-gray-300">
-            {entry.componentPath}
-          </code>
-        </div>
-      </div>
     </div>
   );
 }
