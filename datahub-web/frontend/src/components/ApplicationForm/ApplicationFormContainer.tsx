@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus } from "@/lib/api";
 import { FORM_SCHEMAS } from "@/lib/formSchemas";
+import { buildApprovalData } from "@/lib/applicationPreview";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import { ApprovalCopyModal } from "./ApprovalCopyModal";
@@ -419,10 +420,7 @@ export function ApplicationFormContainer({
 
       {approvalCopyOpen && (
         <ApprovalCopyModal
-          type={type}
-          payload={{ ...values }}
-          applicantName={applicant.name}
-          applicantDepartment={applicant.department}
+          data={buildApprovalData(type, { ...values }, applicant.name, applicant.department)}
           onClose={() => setApprovalCopyOpen(false)}
           onProceedNext={() => {
             setApprovalCopyOpen(false);

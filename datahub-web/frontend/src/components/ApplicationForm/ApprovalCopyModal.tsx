@@ -1,37 +1,26 @@
-// 추적 모드의 '전자결재 본문 복사' 모달 — 제출된 신청을 G Portal 결재 본문에 붙여 넣을
-//   표 형태로 노출. 복사 시 HTML(text/html) + 평문(text/plain) 두 형태를 클립보드에 함께 적재해
-//   품의서 rich editor 에 그대로 붙여 넣으면 표가 유지됨.
-//   복사 후 모달은 자동으로 닫지 않음 (사용자가 직접 닫음).
+// 전자결재 본문 복사 모달 — 결재 본문 데이터(ApprovalData) 를 G Portal 품의서
+//   rich editor 에 붙여 넣을 수 있도록 표 형태로 노출. 복사 시 HTML(text/html) +
+//   평문(text/plain) 두 형태를 클립보드에 함께 적재.
+//   데이터 빌드는 호출 측에서 buildApprovalData / buildApiApprovalData 등으로 수행.
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Copy, Info, X } from "lucide-react";
-import { type ApplicationType } from "@/lib/applicationFormConfig";
 import {
-  buildApprovalData,
   generateApprovalHtml,
   generateApprovalText,
+  type ApprovalData,
 } from "@/lib/applicationPreview";
 
 interface Props {
-  type: ApplicationType;
-  payload: Record<string, unknown>;
-  applicantName: string;
-  applicantDepartment: string;
+  data: ApprovalData;
   onClose: () => void;
   /** 제공 시 복사 성공 후 자동으로 호출 — 다음 단계로 이동. */
   onProceedNext?: () => void;
 }
 
-export function ApprovalCopyModal({
-  type,
-  payload,
-  applicantName,
-  applicantDepartment,
-  onClose,
-  onProceedNext,
-}: Props) {
+export function ApprovalCopyModal({ data, onClose, onProceedNext }: Props) {
   const [error, setError] = useState<string | null>(null);
   // 모달 열리기 전 포커스된 요소 — 닫힐 때 포커스 복원.
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -54,7 +43,6 @@ export function ApprovalCopyModal({
     };
   }, [onClose]);
 
-  const data = buildApprovalData(type, payload, applicantName, applicantDepartment);
   const html = generateApprovalHtml(data);
   const plain = generateApprovalText(data);
 
