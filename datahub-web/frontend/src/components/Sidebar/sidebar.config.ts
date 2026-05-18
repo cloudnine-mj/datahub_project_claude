@@ -131,9 +131,9 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
       },
       {
         id: "manage",
-        label: "정책·양식 관리",
+        label: "신청서 양식 카탈로그",
         icon: Settings,
-        path: "/governance/forms/my",
+        path: "/governance/admin/forms-catalog",
       },
       {
         id: "stats",
