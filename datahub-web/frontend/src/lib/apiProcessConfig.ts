@@ -50,9 +50,9 @@ export const API_PROCESS: ApiPhaseDef[] = [
     label: "2. 운영",
     groupLabel: "2단계 · 운영",
     substeps: [
-      { id: "api-operate", label: "API 활용", path: `${BASE}/operate` },
-      { id: "cost", label: "비용 처리", path: `${BASE}/cost` },
-      { id: "store", label: "결과물 적재", path: `${BASE}/store` },
+      { id: "api-operate", label: "API 활용", path: `${BASE}/operate#api-usage` },
+      { id: "cost", label: "비용 처리", path: `${BASE}/operate#cost-process` },
+      { id: "store", label: "결과물 적재", path: `${BASE}/operate#final-store` },
     ],
   },
 ];
