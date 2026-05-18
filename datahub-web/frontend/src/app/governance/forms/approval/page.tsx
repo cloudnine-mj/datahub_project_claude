@@ -13,6 +13,7 @@ import {
   FileText,
   GitBranch,
   Info,
+  UsersRound,
 } from "lucide-react";
 import { PhaseLayout } from "@/components/PhaseLayout";
 import {
@@ -38,6 +39,12 @@ import { ApprovalBodyInlineTable } from "@/components/ApprovalBodyInlineTable";
 const TYPE_KEY = "datahub:planningType";
 const DEMO_APPLICANT = { name: "Karlo Lee", department: "Data Platform" };
 const G_PORTAL_URL = "https://gportal.lgresearch.ai/portal/main/portalMain.do";
+
+const NOTIFY_TARGETS = [
+  "AI Biz. Development Team장 (박용민)",
+  "Data Governance Team장 (김의순)",
+  "Data Governance Team 실무자 (김은솔)",
+];
 
 export default function Page() {
   const prev = prevPhase1Substep("approval");
@@ -122,6 +129,24 @@ export default function Page() {
         <div className="rounded-md bg-gray-50 px-3 py-2.5 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200">
           신청자의 소속 조직장 전결
         </div>
+      </section>
+
+      {/* 통보 대상 카드 */}
+      <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
+        <header className="mb-2 flex items-center gap-1.5">
+          <UsersRound size={14} aria-hidden="true" className="text-gray-600 dark:text-gray-300" />
+          <h2 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">통보 대상</h2>
+        </header>
+        <ul className="flex flex-col gap-1.5">
+          {NOTIFY_TARGETS.map((t) => (
+            <li
+              key={t}
+              className="rounded-md bg-gray-50 px-3 py-2 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200"
+            >
+              {t}
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* G Portal 전자결재 진행 카드 */}
