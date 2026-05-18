@@ -1,14 +1,10 @@
 // API 활용 계획서 · 1단계 기획 · 전자결재 품의.
-//   결재선(신청자 소속 조직장 전결) + 통보 대상 + G Portal 진행 안내(품의서 가이드 표)
-//   + 액션 버튼.
-//   - 비용부서/프로젝트: 지급수수료-API 고정
-//   - [결재 본문 복사] → ApprovalCopyModal 재사용
-//   - [G Portal 전자결재로 이동] → 외부 링크
-//   - 하단 [← 신청서 작성 다시 보기] / [2단계 운영으로 진행 →]
+//   결재선 + 통보 대상 + G Portal 전자결재 진행(결재 본문 표 미리보기 + 복사/이동 버튼).
+//   데이터 신청 approval 페이지와 같은 패턴 — 모달 대신 인라인 표 미리보기 + copyHtmlAndPlain.
 
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,15 +12,20 @@ import {
   ArrowRight,
   Copy,
   ExternalLink,
-  ListChecks,
+  FileText,
+  Info,
   Route,
   UsersRound,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ApiProcessStepper } from "@/components/ApiProcess/ApiProcessStepper";
-import { HelpBanner } from "@/components/HelpBanner";
-import { ApprovalCopyModal } from "@/components/ApplicationForm/ApprovalCopyModal";
+import { ApprovalBodyInlineTable } from "@/components/ApprovalBodyInlineTable";
 import { buildApiApprovalData } from "@/lib/apiApprovalData";
+import {
+  generateApprovalHtml,
+  generateApprovalText,
+} from "@/lib/applicationPreview";
+import { copyHtmlAndPlain } from "@/lib/clipboardCopy";
 
 const G_PORTAL_URL = "https://gportal.lgresearch.ai/portal/main/portalMain.do";
 
@@ -52,15 +53,35 @@ const DEMO_FORM = {
 
 export default function Page() {
   const router = useRouter();
-  const [copyOpen, setCopyOpen] = useState(false);
-  const projectName = DEMO_FORM.projectName;
+  const [toast, setToast] = useState<string | null>(null);
+
+  const approvalData = useMemo(
+    () => buildApiApprovalData(DEMO_APPLICANT, DEMO_FORM),
+    [],
+  );
+
+  const onCopy = async () => {
+    const html = generateApprovalHtml(approvalData);
+    const plain = generateApprovalText(approvalData);
+    const r = await copyHtmlAndPlain(html, plain);
+    if (r.ok) {
+      setToast(
+        r.mode === "html"
+          ? "결재 본문이 복사되었습니다. G Portal 전자결재 본문에 붙여 넣으면 표로 표시됩니다."
+          : "결재 본문이 복사되었습니다. (브라우저 호환성 문제로 텍스트 형태)",
+      );
+    } else {
+      setToast("복사에 실패했습니다. 표를 직접 선택해 복사해 주세요.");
+    }
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const openGPortal = () => {
     window.open(G_PORTAL_URL, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
@@ -71,7 +92,21 @@ export default function Page() {
 
       <ApiProcessStepper currentSubstep="approval" />
 
-      <HelpBanner message="Datahub에서 작성한 신청서를 기반으로 G Portal 전자결재에 품의를 작성하고 승인 요청을 진행합니다." />
+      {/* 안내 배너 */}
+      <div
+        role="note"
+        className="flex items-start gap-2.5 rounded-lg bg-blue-50 px-3.5 py-3 dark:bg-blue-950/40"
+      >
+        <Info
+          size={16}
+          aria-hidden="true"
+          className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
+        />
+        <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
+          Datahub에서 작성한 신청서를 기반으로{" "}
+          <strong className="font-medium">G Portal 전자결재</strong>에 품의를 작성하고 승인 요청을 진행합니다.
+        </span>
+      </div>
 
       {/* 결재선 카드 */}
       <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
@@ -102,7 +137,7 @@ export default function Page() {
         </ul>
       </section>
 
-      {/* G Portal 진행 카드 */}
+      {/* G Portal 전자결재 진행 카드 */}
       <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
         <header className="mb-1 flex items-center gap-1.5">
           <ExternalLink
@@ -115,61 +150,32 @@ export default function Page() {
           </h2>
         </header>
         <p className="mb-3.5 text-[12px] text-gray-500 dark:text-gray-400">
-          G Portal 전자결재에서 품의를 작성하고 승인 요청해 주세요.
+          아래 표를 복사하면 G Portal 전자결재 본문에 그대로 붙여 넣을 수 있습니다.
         </p>
 
-        {/* 품의서 작성 가이드 */}
-        <div className="mb-3 rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
-          <div className="mb-2.5 flex items-center gap-1.5">
-            <ListChecks
+        {/* 결재 본문 미리보기 */}
+        <div className="mb-3">
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <FileText
               size={13}
               aria-hidden="true"
               className="text-gray-600 dark:text-gray-300"
             />
-            <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200">
-              품의서 작성 가이드
+            <span className="text-[12px] font-medium text-gray-900 dark:text-gray-100">
+              결재 본문
+            </span>
+            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              미리보기
             </span>
           </div>
-          <table className="w-full border-collapse">
-            <tbody>
-              <GuideRow label="품의유형" value="일반 품의" />
-              <GuideRow
-                label="제목"
-                value={
-                  <>
-                    API 활용 신청 —{" "}
-                    {projectName ? (
-                      projectName
-                    ) : (
-                      <span className="text-gray-400 dark:text-gray-500">
-                        {"{프로젝트명}"}
-                      </span>
-                    )}
-                  </>
-                }
-              />
-              <GuideRow
-                label="비용부서/프로젝트"
-                value="신청자 소속 조직 / 지급수수료-API"
-              />
-              <GuideRow
-                label="내역"
-                noBorder
-                value={
-                  <span className="text-blue-700 dark:text-blue-300">
-                    Datahub에서 복사한 결재 본문을 붙여 넣기
-                  </span>
-                }
-              />
-            </tbody>
-          </table>
+          <ApprovalBodyInlineTable data={approvalData} />
         </div>
 
         {/* 액션 버튼 */}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setCopyOpen(true)}
+            onClick={onCopy}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             <Copy size={13} aria-hidden="true" />
@@ -205,44 +211,14 @@ export default function Page() {
         </button>
       </div>
 
-      {copyOpen && (
-        <ApprovalCopyModal
-          data={buildApiApprovalData(DEMO_APPLICANT, DEMO_FORM)}
-          onClose={() => setCopyOpen(false)}
-          onProceedNext={() => {
-            setCopyOpen(false);
-            router.push("/governance/api-applications/operate");
-          }}
-        />
+      {toast && (
+        <div
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-md bg-gray-900 px-4 py-2 text-[12px] text-white shadow-lg dark:bg-gray-100 dark:text-gray-900"
+        >
+          {toast}
+        </div>
       )}
     </div>
-  );
-}
-
-function GuideRow({
-  label,
-  value,
-  noBorder,
-}: {
-  label: string;
-  value: React.ReactNode;
-  noBorder?: boolean;
-}) {
-  return (
-    <tr
-      className={
-        noBorder
-          ? ""
-          : "border-b border-gray-200 dark:border-gray-700"
-      }
-    >
-      <th
-        scope="row"
-        className="w-[140px] py-2 pr-3 text-left text-[11px] font-normal text-gray-500 dark:text-gray-400"
-      >
-        {label}
-      </th>
-      <td className="py-2 text-[12px] text-gray-900 dark:text-gray-100">{value}</td>
-    </tr>
   );
 }
