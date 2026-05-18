@@ -1,6 +1,6 @@
 // API 활용 계획서 · 1단계 기획 · 전자결재 품의.
-//   결재선 + 통보 대상 + G Portal 전자결재 진행(결재 본문 표 미리보기 + 복사/이동 버튼).
-//   데이터 신청 approval 페이지와 같은 패턴 — 모달 대신 인라인 표 미리보기 + copyHtmlAndPlain.
+//   결재선 + G Portal 전자결재 진행(결재 본문 표 미리보기 + 복사/이동 버튼).
+//   데이터 신청과 달리 통보 대상 섹션은 두지 않음.
 
 "use client";
 
@@ -15,7 +15,6 @@ import {
   FileText,
   Info,
   Route,
-  UsersRound,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ApiProcessStepper } from "@/components/ApiProcess/ApiProcessStepper";
@@ -28,12 +27,6 @@ import {
 import { copyHtmlAndPlain } from "@/lib/clipboardCopy";
 
 const G_PORTAL_URL = "https://gportal.lgresearch.ai/portal/main/portalMain.do";
-
-const NOTIFY_TARGETS = [
-  "AI Biz. Development Team장 (박용민)",
-  "Data Governance Team장 (김의순)",
-  "Data Governance Team 실무자 (김은솔)",
-];
 
 // 데모용 신청서 데이터 — 실 폼이 생기면 storage / API 에서 로드.
 const DEMO_APPLICANT = { name: "김데이터", department: "AI Platform" };
@@ -117,24 +110,6 @@ export default function Page() {
         <div className="rounded-md bg-gray-50 px-3 py-2.5 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200">
           신청자의 소속 조직장 전결
         </div>
-      </section>
-
-      {/* 통보 대상 카드 */}
-      <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
-        <header className="mb-2 flex items-center gap-1.5">
-          <UsersRound size={14} aria-hidden="true" className="text-gray-600 dark:text-gray-300" />
-          <h2 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">통보 대상</h2>
-        </header>
-        <ul className="flex flex-col gap-1.5">
-          {NOTIFY_TARGETS.map((t) => (
-            <li
-              key={t}
-              className="rounded-md bg-gray-50 px-3 py-2 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200"
-            >
-              {t}
-            </li>
-          ))}
-        </ul>
       </section>
 
       {/* G Portal 전자결재 진행 카드 */}
