@@ -20,6 +20,15 @@ export interface InspectionFeedback {
   author: string;
   content: string;
   createdAt: string;
+  attachments: FeedbackAttachment[];
+}
+
+export interface FeedbackAttachment {
+  id: string;
+  filename: string;
+  filesize: number;
+  /** Blob URL (URL.createObjectURL) — 데모 단계에서 다운로드 트리거 용. */
+  downloadUrl: string;
 }
 
 export interface ContractStep {
@@ -90,7 +99,13 @@ export function useBuildPhase() {
     });
   }, []);
 
-  const addFeedback = useCallback((content: string) => {
+  const addFeedback = useCallback((content: string, files: File[] = []) => {
+    const attachments: FeedbackAttachment[] = files.map((f, i) => ({
+      id: `att-${Date.now()}-${i}`,
+      filename: f.name,
+      filesize: f.size,
+      downloadUrl: URL.createObjectURL(f),
+    }));
     setDelivery((d) => ({
       ...d,
       feedbacks: [
@@ -100,6 +115,7 @@ export function useBuildPhase() {
           author: "김데이터",
           content,
           createdAt: shortDate(),
+          attachments,
         },
       ],
     }));

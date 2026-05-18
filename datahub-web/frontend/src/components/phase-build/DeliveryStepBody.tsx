@@ -1,36 +1,24 @@
 // 중간 수령·검수·피드백 단계 body (current 상태) — 서브 영역 2개.
 //   1) 중간 납품 데이터: 누적 목록 + '새 중간 납품 적재' 점선 버튼
-//   2) 검수 결과 및 피드백: 누적 카드 + 입력란 + '기록' 버튼
-//   가이드라인 안내대로 회차 카드 구조 / 진행률 바 등은 추가하지 않음.
+//   2) 검수 결과 및 피드백: 누적 카드(텍스트 + 다운로드 가능 첨부) +
+//      입력 카드(textarea + 파일 첨부 + 드래그앤드롭 + [기록])
 
 "use client";
 
-import { useState, type KeyboardEvent } from "react";
-import { CloudUpload, File } from "lucide-react";
-import type { DeliveryStep } from "./useBuildPhase";
+import { useState } from "react";
+import { CloudUpload, Download, File } from "lucide-react";
+import type { DeliveryStep, FeedbackAttachment } from "./useBuildPhase";
+import { FeedbackInput } from "./FeedbackInput";
+import { formatFileSize, getFileIcon } from "./feedback-utils";
 
 interface Props {
   delivery: DeliveryStep;
   onAddUpload: () => void;
-  onAddFeedback: (content: string) => void;
+  onAddFeedback: (content: string, files?: File[]) => void;
 }
 
 export function DeliveryStepBody({ delivery, onAddUpload, onAddFeedback }: Props) {
-  const [draft, setDraft] = useState("");
-
-  const onSubmitFeedback = () => {
-    const t = draft.trim();
-    if (!t) return;
-    onAddFeedback(t);
-    setDraft("");
-  };
-
-  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      onSubmitFeedback();
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <>
@@ -74,9 +62,9 @@ export function DeliveryStepBody({ delivery, onAddUpload, onAddFeedback }: Props
         trailing={`기록 ${delivery.feedbacks.length}건`}
       >
         {delivery.feedbacks.length > 0 && (
-          <div className="mb-2.5 flex flex-col gap-2">
+          <ul className="mb-2.5 flex flex-col gap-2">
             {delivery.feedbacks.map((f) => (
-              <div
+              <li
                 key={f.id}
                 className="rounded-md bg-gray-50 px-2.5 py-2 text-[11px] dark:bg-gray-800/40"
               >
@@ -87,32 +75,63 @@ export function DeliveryStepBody({ delivery, onAddUpload, onAddFeedback }: Props
                   <span>·</span>
                   <span>{f.createdAt}</span>
                 </div>
-                <p className="leading-relaxed text-gray-600 dark:text-gray-300">
-                  {f.content}
-                </p>
-              </div>
+                {f.content && (
+                  <p className="leading-relaxed text-gray-700 dark:text-gray-200">
+                    {f.content}
+                  </p>
+                )}
+                {f.attachments.length > 0 && (
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {f.attachments.map((a) => (
+                      <li key={a.id}>
+                        <RecordedAttachment att={a} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={onKey}
-            placeholder="검수 결과와 피드백을 입력하세요"
-            className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-          />
-          <button
-            type="button"
-            onClick={onSubmitFeedback}
-            className="shrink-0 rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            기록
-          </button>
-        </div>
+
+        <FeedbackInput
+          onSubmit={(text, files) => onAddFeedback(text, files)}
+          onError={(msg) => {
+            setError(msg);
+            setTimeout(() => setError(null), 3000);
+          }}
+        />
+
+        {error && (
+          <p className="mt-1.5 whitespace-pre-line text-[11px] text-red-700 dark:text-red-300">
+            {error}
+          </p>
+        )}
       </SubArea>
     </>
+  );
+}
+
+function RecordedAttachment({ att }: { att: FeedbackAttachment }) {
+  const { Icon, className } = getFileIcon(att.filename);
+  return (
+    <a
+      href={att.downloadUrl}
+      download={att.filename}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex w-fit items-center gap-1.5 rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-800 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    >
+      <Icon size={13} aria-hidden="true" className={`shrink-0 ${className}`} />
+      <span>{att.filename}</span>
+      <span className="text-gray-400 dark:text-gray-500">·</span>
+      <span className="text-gray-400 dark:text-gray-500">{formatFileSize(att.filesize)}</span>
+      <Download
+        size={11}
+        aria-hidden="true"
+        className="ml-1 text-gray-400 dark:text-gray-500"
+      />
+    </a>
   );
 }
 
