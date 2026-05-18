@@ -67,23 +67,31 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** G Portal 결재 본문 입력란(HTML rich editor)에 붙여 넣을 표 형태 HTML. */
+/** G Portal 결재 본문 입력란(HTML rich editor)에 붙여 넣을 표 형태 HTML.
+ *  - 외부 에디터 호환성을 위해 모든 스타일을 inline 으로, 색상은 hex 로 작성 (CSS 변수 X).
+ *  - 제목은 colspan 2 헤더로 표 내부에 포함, 안내문(※) 은 표 밖 <p> 로 분리.
+ */
 export function generateApprovalHtml(data: ApprovalData): string {
   const rowsHtml = data.rows
     .map(
       (r) => `<tr>
-  <td style="border:1px solid #d1d5db; padding:6px 10px; background:#f9fafb; font-weight:bold; white-space:nowrap;">${escapeHtml(r.label)}</td>
-  <td style="border:1px solid #d1d5db; padding:6px 10px;">${escapeHtml(r.value)}</td>
+<td style="border:1px solid #888; padding:8px 12px; background:#F5F5F5; font-weight:500; width:180px;">${escapeHtml(r.label)}</td>
+<td style="border:1px solid #888; padding:8px 12px;">${escapeHtml(r.value)}</td>
 </tr>`,
     )
     .join("\n");
 
-  return `<p><strong>[${escapeHtml(data.title)}]</strong></p>
-<table style="border-collapse:collapse; border:1px solid #d1d5db;" cellspacing="0" cellpadding="0">
+  return `<table style="width:100%; border-collapse:collapse; font-size:13px; color:#222;">
+<thead>
+<tr>
+<th colspan="2" style="border:1px solid #888; padding:10px 12px; background:#F5F5F5; font-weight:700; text-align:center; font-size:14px;">${escapeHtml(data.title)}</th>
+</tr>
+</thead>
 <tbody>
 ${rowsHtml}
 </tbody>
-</table>`;
+</table>
+<p style="font-size:12px; color:#666; margin-top:12px;">※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.</p>`;
 }
 
 /** 평문 fallback — rich text 미지원 환경(메모장 등)에 붙여 넣을 때 사용. */
@@ -91,8 +99,10 @@ export function generateApprovalText(data: ApprovalData): string {
   const lines: string[] = [];
   lines.push(`[${data.title}]`);
   lines.push("");
-  data.rows.forEach((r, i) => {
-    lines.push(`${i + 1}. ${r.label}: ${r.value}`);
+  data.rows.forEach((r) => {
+    lines.push(`${r.label}: ${r.value}`);
   });
+  lines.push("");
+  lines.push("※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.");
   return lines.join("\n");
 }
