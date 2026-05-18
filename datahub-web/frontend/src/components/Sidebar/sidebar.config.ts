@@ -130,12 +130,6 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         path: "/governance/admin/forms",
       },
       {
-        id: "manage",
-        label: "신청서 양식 카탈로그",
-        icon: Settings,
-        path: "/governance/admin/forms-catalog",
-      },
-      {
         id: "policy-manage",
         label: "정책 관리",
         icon: BookOpen,
@@ -146,6 +140,12 @@ export const GOVERNANCE_GROUPS: MenuGroup[] = [
         label: "프로세스 관리",
         icon: Route,
         path: "/governance/process",
+      },
+      {
+        id: "manage",
+        label: "신청서 양식 카탈로그",
+        icon: Settings,
+        path: "/governance/admin/forms-catalog",
       },
       {
         id: "stats",
