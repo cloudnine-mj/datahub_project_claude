@@ -69,19 +69,14 @@ export default function Page({ params }: { params: { formId: string } }) {
           <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
             양식 미리보기
           </span>
-          <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-            읽기 전용
-          </span>
         </div>
         <p className="text-[11px] text-gray-400 dark:text-gray-500">
           실제 신청 페이지와 동일한 양식이 표시됩니다
         </p>
       </div>
 
-      {/* 양식 본문 (readonly) */}
-      <fieldset disabled className="pointer-events-none m-0 min-w-0 border-0 p-0 opacity-95">
-        <FormRenderer entry={entry} />
-      </fieldset>
+      {/* 양식 본문 — 관리자 미리보기이므로 편집 가능 */}
+      <FormRenderer entry={entry} />
     </div>
   );
 }
@@ -113,6 +108,9 @@ function ApiFormPreview() {
 
 function SchemaFormPreview({ formType }: { formType: FormType }) {
   const schema = FORM_SCHEMAS[formType];
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const onChange = (key: string, value: unknown) =>
+    setValues((prev) => ({ ...prev, [key]: value }));
   if (!schema) return null;
 
   return (
@@ -158,9 +156,8 @@ function SchemaFormPreview({ formType }: { formType: FormType }) {
           <ApplicationFormSection
             key={s.title}
             section={s}
-            values={{}}
-            onChange={() => {}}
-            disabled
+            values={values}
+            onChange={onChange}
           />
         ))}
       </div>
