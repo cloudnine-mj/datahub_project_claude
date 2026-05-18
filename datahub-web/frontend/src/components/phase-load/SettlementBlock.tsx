@@ -4,23 +4,22 @@
 
 "use client";
 
-import { useState } from "react";
 import { Receipt } from "lucide-react";
 import { PhaseBlock } from "@/components/PhaseBlock";
 import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
 
-const STEPS: { id: string; label: string }[] = [
+export const SETTLEMENT_STEPS: { id: string; label: string }[] = [
   { id: "delivery-confirm", label: "최종 데이터 수령 및 적재 확인" },
   { id: "completion-notify", label: "작업 종료 통보" },
   { id: "cost-process", label: "비용 처리" },
 ];
 
-export function SettlementBlock() {
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+interface Props {
+  checked: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}
 
-  const toggle = (id: string) =>
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-
+export function SettlementBlock({ checked, onToggle }: Props) {
   return (
     <PhaseBlock
       icon={Receipt}
@@ -36,13 +35,13 @@ export function SettlementBlock() {
         처리를 진행합니다.
       </p>
       <ul className="space-y-1.5">
-        {STEPS.map((s) => (
+        {SETTLEMENT_STEPS.map((s) => (
           <li key={s.id}>
             <PhaseChecklistRow
               id={s.id}
               label={s.label}
               checked={!!checked[s.id]}
-              onToggle={() => toggle(s.id)}
+              onToggle={() => onToggle(s.id)}
             />
           </li>
         ))}

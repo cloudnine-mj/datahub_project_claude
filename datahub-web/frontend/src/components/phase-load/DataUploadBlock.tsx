@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { CloudUpload } from "lucide-react";
 import { PhaseBlock } from "@/components/PhaseBlock";
 
@@ -14,10 +14,13 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function DataUploadBlock() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+interface Props {
+  file: File | null;
+  onFileChange: (f: File | null) => void;
+}
 
+export function DataUploadBlock({ file, onFileChange }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const openPicker = () => inputRef.current?.click();
 
   return (
@@ -38,7 +41,7 @@ export function DataUploadBlock() {
           ref={inputRef}
           type="file"
           className="hidden"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
         />
         <button
           type="button"
