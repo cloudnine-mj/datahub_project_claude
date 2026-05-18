@@ -64,14 +64,14 @@ export function useOperatePhase() {
     paymentMethod: "",
   });
   const [costProcess, setCostProcess] = useState<CostProcessStep>({
-    status: "locked",
+    status: "current",
     // 1단계 전자결재 품의 substep 에서 발급된 품의번호 — 데모 데이터.
     approvalNumber: "P-2026-0418",
     costCenter: "Data Governance Team",
     costRecords: [],
   });
   const [finalStore, setFinalStore] = useState<FinalStoreStep>({
-    status: "locked",
+    status: "current",
     storageUploaded: false,
     metadataCompleted: false,
     dataCardCompleted: false,

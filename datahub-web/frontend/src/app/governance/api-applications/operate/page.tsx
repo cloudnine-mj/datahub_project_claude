@@ -31,11 +31,22 @@ export default function Page() {
   const storeRef = useRef<HTMLElement>(null);
 
   // 상단 stepper 에 운영 substep 상태 반영.
-  const substepStatusMap = {
-    "api-operate": toApiStepStatus(phase.apiUsage.status),
-    cost: toApiStepStatus(phase.costProcess.status),
-    store: toApiStepStatus(phase.finalStore.status),
-  };
+  // 여러 substep 이 동시에 'current' 일 수 있는 데모 모드에서, 시각적으로는 첫 current 만 강조.
+  const rawStatuses: Array<["api-operate" | "cost" | "store", ApiStepStatus]> = [
+    ["api-operate", toApiStepStatus(phase.apiUsage.status)],
+    ["cost", toApiStepStatus(phase.costProcess.status)],
+    ["store", toApiStepStatus(phase.finalStore.status)],
+  ];
+  let currentSeen = false;
+  const substepStatusMap = Object.fromEntries(
+    rawStatuses.map(([id, status]) => {
+      if (status === "current") {
+        if (currentSeen) return [id, "pending" as ApiStepStatus];
+        currentSeen = true;
+      }
+      return [id, status];
+    }),
+  ) as Record<"api-operate" | "cost" | "store", ApiStepStatus>;
 
   const finalCanComplete =
     phase.finalStore.storageUploaded &&
