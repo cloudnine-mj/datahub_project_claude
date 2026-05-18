@@ -1,8 +1,13 @@
-// 3단계 / 블록 3 — 비용 처리 및 작업 종료 (담당자 영역, 신청자 읽기 전용).
-//   3 row 각각 빈 원 아이콘 + 라벨. 체크박스 아님 — 클릭 비활성.
+// 3단계 / 블록 3 — 비용 처리 및 작업 종료 (담당자 영역).
+//   원래는 신청자 읽기 전용이지만, 데모에서는 체크 토글 가능하도록 풀어둠.
+//   정식 운영 시 다시 읽기 전용으로 복구 (PhaseChecklistRow 의 onToggle 제거).
 
-import { Circle, Receipt } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Receipt } from "lucide-react";
 import { PhaseBlock } from "@/components/PhaseBlock";
+import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
 
 const STEPS: { id: string; label: string }[] = [
   { id: "delivery-confirm", label: "최종 데이터 수령 및 적재 확인" },
@@ -11,6 +16,11 @@ const STEPS: { id: string; label: string }[] = [
 ];
 
 export function SettlementBlock() {
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  const toggle = (id: string) =>
+    setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+
   return (
     <PhaseBlock
       icon={Receipt}
@@ -27,19 +37,13 @@ export function SettlementBlock() {
       </p>
       <ul className="space-y-1.5">
         {STEPS.map((s) => (
-          <li
-            key={s.id}
-            aria-disabled="true"
-            className="flex items-center gap-2.5 rounded-md bg-gray-50 px-3 py-2 dark:bg-gray-800/40"
-          >
-            <Circle
-              size={14}
-              aria-hidden="true"
-              className="shrink-0 text-gray-300 dark:text-gray-600"
+          <li key={s.id}>
+            <PhaseChecklistRow
+              id={s.id}
+              label={s.label}
+              checked={!!checked[s.id]}
+              onToggle={() => toggle(s.id)}
             />
-            <span className="text-[13px] text-gray-500 dark:text-gray-400">
-              {s.label}
-            </span>
           </li>
         ))}
       </ul>
