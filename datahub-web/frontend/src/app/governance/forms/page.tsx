@@ -20,10 +20,15 @@ export default function FormsIndexPage() {
       <div className="mt-6 space-y-3">
         {TYPES.map((t) => {
           const schema = FORM_SCHEMAS[t];
+          // API 활용 계획서는 2단계(기획/운영) ProcessStepper 기반 새 플로우로 진입.
+          const href =
+            t === "api_usage_plan"
+              ? "/governance/api-applications/planning"
+              : `/governance/forms/${t}/new`;
           return (
             <Link
               key={t}
-              href={`/governance/forms/${t}/new`}
+              href={href}
               className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-5 py-4 transition hover:border-brand/40 hover:shadow-sm"
             >
               <div className="flex min-w-0 flex-1 items-start gap-3">
