@@ -1,8 +1,10 @@
 // 3단계 / 블록 2 — 메타데이터 및 데이터카드 작성.
 //   2 체크 row (각 row 우측에 '작성' 버튼). 신청서 내용이 초안으로 반영.
+//   데모: '작성' 클릭 시 /governance/coming-soon 으로 이동 (실제 작성 화면은 준비중).
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { PhaseBlock } from "@/components/PhaseBlock";
 import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
@@ -20,6 +22,8 @@ export function MetadataDataCardBlock({
   onToggleMetadata,
   onToggleDatacard,
 }: Props) {
+  const router = useRouter();
+
   return (
     <PhaseBlock icon={BookOpen} title="메타데이터 및 데이터카드 작성">
       <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
@@ -34,7 +38,9 @@ export function MetadataDataCardBlock({
             checked={metadataChecked}
             onToggle={onToggleMetadata}
             trailing={
-              <WriteButton onClick={() => console.log("[stub] 메타데이터 작성")} />
+              <WriteButton
+                onClick={() => router.push("/governance/coming-soon?from=metadata")}
+              />
             }
           />
         </li>
@@ -45,7 +51,9 @@ export function MetadataDataCardBlock({
             checked={datacardChecked}
             onToggle={onToggleDatacard}
             trailing={
-              <WriteButton onClick={() => console.log("[stub] 데이터카드 작성")} />
+              <WriteButton
+                onClick={() => router.push("/governance/coming-soon?from=datacard")}
+              />
             }
           />
         </li>
