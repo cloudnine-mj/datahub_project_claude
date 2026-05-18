@@ -140,23 +140,6 @@ export default function Page() {
           아래 표를 복사하면 G Portal 전자결재 본문에 그대로 붙여 넣을 수 있습니다.
         </p>
 
-        {/* G Portal 입력 정보 안내 */}
-        <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md bg-gray-50 px-3 py-2 text-[11px] dark:bg-gray-800/40">
-          <Info size={12} aria-hidden="true" className="text-gray-400 dark:text-gray-500" />
-          <strong className="font-medium text-gray-900 dark:text-gray-100">
-            G Portal 입력 정보
-          </strong>
-          <span className="text-gray-400 dark:text-gray-500">·</span>
-          <span className="text-gray-600 dark:text-gray-300">품의유형: 일반 품의</span>
-          <span className="text-gray-400 dark:text-gray-500">·</span>
-          <span className="text-gray-600 dark:text-gray-300">
-            비용부서:{" "}
-            <strong className="font-medium text-gray-900 dark:text-gray-100">
-              Data Governance Team / 7552
-            </strong>
-          </span>
-        </div>
-
         {/* 결재 본문 미리보기 */}
         <div className="mb-3">
           <div className="mb-1.5 flex items-center gap-1.5">

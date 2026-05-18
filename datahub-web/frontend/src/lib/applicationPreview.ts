@@ -90,8 +90,7 @@ export function generateApprovalHtml(data: ApprovalData): string {
 <tbody>
 ${rowsHtml}
 </tbody>
-</table>
-<p style="font-size:12px; color:#666; margin-top:12px;">※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.</p>`;
+</table>`;
 }
 
 /** 평문 fallback — rich text 미지원 환경(메모장 등)에 붙여 넣을 때 사용. */
@@ -102,7 +101,5 @@ export function generateApprovalText(data: ApprovalData): string {
   data.rows.forEach((r) => {
     lines.push(`${r.label}: ${r.value}`);
   });
-  lines.push("");
-  lines.push("※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.");
   return lines.join("\n");
 }

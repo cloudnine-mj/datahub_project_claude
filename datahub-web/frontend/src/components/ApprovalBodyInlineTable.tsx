@@ -69,16 +69,6 @@ export function ApprovalBodyInlineTable({ data }: Props) {
           ))}
         </tbody>
       </table>
-      <p
-        style={{
-          fontSize: 11,
-          color: "#666",
-          marginTop: 10,
-          marginBottom: 0,
-        }}
-      >
-        ※ 본 신청은 Datahub에서 검토를 완료한 사항입니다.
-      </p>
     </div>
   );
 }
