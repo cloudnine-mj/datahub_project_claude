@@ -48,6 +48,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "제작 수량",
       "활용 범위",
       "작업 기간",
+      "예산 검토 및 확인",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
@@ -60,6 +61,10 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       { label: "제작 수량", value: "20,000건 (음성 + 라벨)" },
       { label: "활용 범위", value: "사내 모델 학습 한정, 외부 공개 모델 제외" },
       { label: "작업 기간", value: "2026-07-01 ~ 2026-09-30 (3개월)" },
+      {
+        label: "예산 검토 및 확인",
+        value: "건당 2,500원 × 20,000건 = 약 5,000만원 (재무팀 사전 협의 완료)",
+      },
     ],
     requirements: [
       { main: "착수일 기준 3주 전까지 전자결재 단계 완결 가능" },
@@ -71,6 +76,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "구매 목적",
       "활용 범위",
       "필요 기간",
+      "예산 검토 및 확인",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
@@ -82,6 +88,10 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       { label: "구매 목적", value: "음성 인식 모델 fine-tuning용 학습 데이터 확보" },
       { label: "활용 범위", value: "사내 모델 학습 한정 (외부 공개 모델 제외)" },
       { label: "필요 기간", value: "영구 사용권 (라이선스 만료 없음)" },
+      {
+        label: "예산 검토 및 확인",
+        value: "라이선스 1회 결제 약 2,500만원 (재무팀 승인 완료)",
+      },
     ],
   },
   subscribe: {
@@ -90,6 +100,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
       "구독 목적",
       "활용 범위",
       "필요 기간",
+      "예산 검토 및 확인",
     ],
     exampleTitle: "검토 사항 예시",
     exampleSubtitle: "",
@@ -104,6 +115,10 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
         value: "사내 분석 도구에 통합, API 호출 inference용",
       },
       { label: "필요 기간", value: "12개월 구독 (효과 검증 후 갱신 검토)" },
+      {
+        label: "예산 검토 및 확인",
+        value: "월 30만원 × 12개월 = 360만원 (연간 예산 반영 완료)",
+      },
     ],
   },
 };
