@@ -50,7 +50,8 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
     api.me().then(setMe).catch(() => setMe(null));
   }, []);
 
-  const canWrite = me?.permissions.can_write_policy ?? false;
+  // 작성하기 버튼 — admin 권한 + 관리 그룹 진입(?manage=1) 일 때만.
+  const hasWritePerm = me?.permissions.can_write_policy ?? false;
   const isAdmin = me?.user.role === "admin";
   // 사이드바 '관리' 그룹에서 진입한 경우(?manage=1) 만 admin 도구 노출.
   const searchParams = useSearchParams();
@@ -144,7 +145,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
         )}
 
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
-        {canWrite && (
+        {hasWritePerm && isManage && (
           <Link
             href="/governance/policy/new"
             className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"

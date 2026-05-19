@@ -78,7 +78,8 @@ export function BoardListView({ board, compact = false }: Props) {
     api.me().then(setMe).catch(() => setMe(null));
   }, [board]);
 
-  const canWrite = me?.permissions[`can_write_${board}` as const] ?? false;
+  // 작성하기 버튼 — admin 권한 + 관리 그룹 진입(?manage=1) 일 때만. 가이드 그룹에선 숨김.
+  const hasWritePerm = me?.permissions[`can_write_${board}` as const] ?? false;
   const isAdmin = me?.user.role === "admin";
   // 사이드바 '관리' 그룹에서 진입한 경우만 admin 도구(상태 필터, 임시저장 행 등) 노출.
   // 가이드 그룹의 같은 URL 진입은 일반 사용자 시점과 동일.
@@ -171,7 +172,7 @@ export function BoardListView({ board, compact = false }: Props) {
         )}
 
         {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
-        {canWrite && (
+        {hasWritePerm && isManage && (
           <div className="ml-auto">
             <Link
               href={`/governance/${boardSegment(board)}/new`}
