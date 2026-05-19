@@ -16,6 +16,7 @@ import {
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 
 const ASSIGNEES: { typeLabel: string; description: string }[] = [
   {
@@ -32,12 +33,13 @@ export default function Page() {
   const [confirmed, setConfirmed] = useState(false);
   const prev = prevPhase1Substep("discussion");
   const next = nextPhase1Substep("discussion");
+  const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
-        { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+        typeCrumb,
         { label: "1. 기획 · 담당자 논의·확정" },
       ]}
       phases={PHASE1_PHASES}

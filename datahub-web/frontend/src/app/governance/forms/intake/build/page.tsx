@@ -23,10 +23,12 @@ import { ContractStepBody } from "@/components/phase-build/ContractStepBody";
 import { DeliveryStepBody } from "@/components/phase-build/DeliveryStepBody";
 import { FinalStepBody } from "@/components/phase-build/FinalStepBody";
 import { useBuildPhase } from "@/components/phase-build/useBuildPhase";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 
 export default function Page() {
   const router = useRouter();
   const phase = useBuildPhase();
+  const typeCrumb = useApplicationTypeBreadcrumb();
 
   const contractRef = useRef<HTMLElement>(null);
   const deliveryRef = useRef<HTMLElement>(null);
@@ -48,7 +50,7 @@ export default function Page() {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
-          { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+          typeCrumb,
           { label: "2. 구축" },
         ]}
       />

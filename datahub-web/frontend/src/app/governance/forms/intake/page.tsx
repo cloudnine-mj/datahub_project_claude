@@ -23,6 +23,7 @@ import type {
   ApplicationStatus,
   ApplicationType,
 } from "@/lib/applicationFormConfig";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 
 const ALL_TYPES: ApplicationType[] = ["service", "purchase", "subscribe"];
 
@@ -64,11 +65,13 @@ export default function Page() {
     setResolved({ type: t, status: s });
   }, [urlType, urlStatus]);
 
+  const typeCrumb = useApplicationTypeBreadcrumb();
+
   return (
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
-        { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+        typeCrumb,
         { label: "1. 기획 · 신청서 작성" },
       ]}
       phases={PHASE1_PHASES}

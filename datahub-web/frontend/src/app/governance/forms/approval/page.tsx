@@ -34,6 +34,7 @@ import {
   type ApplicationType,
 } from "@/lib/applicationFormConfig";
 import { isPlanningType } from "@/lib/applicationTypeMeta";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 import { ApprovalBodyInlineTable } from "@/components/ApprovalBodyInlineTable";
 
 const TYPE_KEY = "datahub:planningType";
@@ -52,6 +53,7 @@ export default function Page() {
 
   const [type, setType] = useState<ApplicationType>("service");
   const [toast, setToast] = useState<string | null>(null);
+  const typeCrumb = useApplicationTypeBreadcrumb();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -94,7 +96,7 @@ export default function Page() {
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
-        { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+        typeCrumb,
         { label: "1. 기획 · 전자결재 품의" },
       ]}
       phases={PHASE1_PHASES}

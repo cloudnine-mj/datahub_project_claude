@@ -14,17 +14,19 @@ import {
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 
 export default function Page() {
   const [confirmed, setConfirmed] = useState(false);
   const prev = prevPhase1Substep("approval-check");
   const next = nextPhase1Substep("approval-check");
+  const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
-        { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+        typeCrumb,
         { label: "1. 기획 · 결재 승인 확인" },
       ]}
       phases={PHASE1_PHASES}

@@ -36,3 +36,11 @@ export const APPLICATION_TYPE_META: Record<PlanningType, ApplicationTypeMeta> = 
 export function isPlanningType(v: string | null | undefined): v is PlanningType {
   return v === "service" || v === "purchase" || v === "subscribe";
 }
+
+/** 추적/substep 페이지 공통 — sessionStorage 기준 현재 유형의 라벨/링크.
+ *  훅 형태로 제공해 각 substep 페이지의 Breadcrumb 항목을 일관되게 구성. */
+export function getPlanningTypeFromStorage(): PlanningType {
+  if (typeof window === "undefined") return "service";
+  const saved = window.sessionStorage.getItem("datahub:planningType");
+  return isPlanningType(saved) ? saved : "service";
+}

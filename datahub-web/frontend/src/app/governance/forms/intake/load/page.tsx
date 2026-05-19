@@ -12,6 +12,7 @@ import {
   SettlementBlock,
   SETTLEMENT_STEPS,
 } from "@/components/phase-load/SettlementBlock";
+import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
 
 export default function Page() {
   // 블록 1 — 업로드 파일.
@@ -53,12 +54,13 @@ export default function Page() {
 
   // 모든 블록이 완료되어야 '신청 완료 처리' 버튼 활성. (데모에서는 단순 시각 단서 — 항상 통과시켜도 무방.)
   const canProceed = uploadDone && metadataDone && settleDone;
+  const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
-        { label: "데이터 용역/구매/구독", href: "/governance/forms/planning" },
+        typeCrumb,
         { label: "3. 적재" },
       ]}
       phases={[
