@@ -425,58 +425,37 @@ export function ApplicationFormContainer({
   );
 }
 
-// --- 신청자 정보 (읽기 전용, 토글 가능) ---
+// --- 신청자 정보 (읽기 전용) ---
+// 빨간 막대 + '신청자 정보' 헤더 + 회색 라운드 박스 (이름/소속/이메일 dl).
+// 카탈로그 미리보기와 동일 디자인. 토글 X — 항상 노출.
 
 function SubmitterReadOnlySection({
   applicant,
 }: {
   applicant: { name: string; department: string; email: string };
 }) {
-  const [open, setOpen] = useState(false);
   return (
     <section>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="mb-4 inline-flex items-center gap-2 text-left"
-      >
-        <span aria-hidden="true" className="block h-4 w-[3px] rounded-sm bg-brand" />
-        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+      <div className="mb-3 flex items-center gap-1.5">
+        <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+        <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
           신청자 정보
         </h3>
-        <ChevronDown
-          size={14}
-          aria-hidden="true"
-          className={`text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`}
-        />
-      </button>
-
-      {open && (
-        <div className="space-y-3.5">
-          <ReadOnlyRow label="신청자 이름" value={applicant.name} />
-          <ReadOnlyRow label="소속" value={applicant.department} />
-          <ReadOnlyRow label="이메일" value={applicant.email} />
-        </div>
-      )}
+      </div>
+      <div className="rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
+        <dl
+          className="grid gap-y-2 gap-x-3.5 text-[12px]"
+          style={{ gridTemplateColumns: "120px 1fr" }}
+        >
+          <dt className="text-gray-500 dark:text-gray-400">이름</dt>
+          <dd className="text-gray-900 dark:text-gray-100">{applicant.name}</dd>
+          <dt className="text-gray-500 dark:text-gray-400">소속</dt>
+          <dd className="text-gray-900 dark:text-gray-100">{applicant.department}</dd>
+          <dt className="text-gray-500 dark:text-gray-400">이메일</dt>
+          <dd className="text-gray-900 dark:text-gray-100">{applicant.email}</dd>
+        </dl>
+      </div>
     </section>
-  );
-}
-
-function ReadOnlyRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid grid-cols-1 gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
-      <span className="pt-1.5 text-[13px] text-gray-500 dark:text-gray-400">
-        {label}
-      </span>
-      <input
-        type="text"
-        value={value}
-        readOnly
-        disabled
-        className="w-full cursor-not-allowed rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-[13px] text-gray-500 dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-400"
-      />
-    </div>
   );
 }
 
