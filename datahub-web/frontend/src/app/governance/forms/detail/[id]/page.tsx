@@ -16,14 +16,6 @@ import { approverInitials } from "@/lib/utils";
 import { FormPreviewModal } from "@/components/FormPreviewModal";
 import { copyPreviewToClipboard, type PreviewData } from "@/lib/formPreview";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
-import { determineUserRole } from "@/lib/requestRole";
-import { AssigneeProcessingCard } from "@/components/governance/AssigneeProcessingCard";
-
-const DATA_REQUEST_TYPES = new Set([
-  "data_production",
-  "data_purchase",
-  "data_subscription",
-]);
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -101,18 +93,6 @@ export default function Page({ params }: { params: { id: string } }) {
   const label = FORM_TYPE_LABELS[form.form_type];
   const allFields = schema.sections.flatMap((s) => s.fields);
 
-  // 현재 사용자 역할 — 신청자 / 명시적 담당자 / 잠재 담당자 / 무관.
-  const role = determineUserRole(form, me);
-  const showAssigneeCard = DATA_REQUEST_TYPES.has(form.form_type);
-  const roleBadge =
-    role === "applicant"
-      ? { label: "신청자 시점", cls: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" }
-      : role === "admin"
-      ? { label: "관리자 시점", cls: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300" }
-      : role === "assignee" || role === "potential-assignee"
-      ? { label: "담당자 시점", cls: "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200" }
-      : null;
-
   return (
     <div>
       <Breadcrumb
@@ -131,13 +111,6 @@ export default function Page({ params }: { params: { id: string } }) {
 
       <div className="mb-6 flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">{label}</h1>
-        {roleBadge && (
-          <span
-            className={`rounded px-2 py-0.5 text-[11px] font-medium ${roleBadge.cls}`}
-          >
-            {roleBadge.label}
-          </span>
-        )}
         <button
           type="button"
           onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
@@ -211,19 +184,6 @@ export default function Page({ params }: { params: { id: string } }) {
           </tbody>
         </table>
       </div>
-
-      {/* 담당자 처리 카드 — 데이터 용역/구매/구독에만 노출. 역할 기반 편집/읽기 모드 분기. */}
-      {showAssigneeCard && !hideForm && (
-        <div className="mt-4">
-          <AssigneeProcessingCard
-            role={role}
-            initialAssignees={form.participants ?? []}
-            primaryAssigneeName={
-              form.form_type === "data_production" ? "김은솔" : "박용민"
-            }
-          />
-        </div>
-      )}
 
       {form.attachments.length > 0 && (
         <div className="mt-4">
