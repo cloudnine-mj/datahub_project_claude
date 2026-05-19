@@ -108,6 +108,17 @@ const dataProduction: FormSchema = {
   projectField: "관련_프로젝트_PMS",
   sections: [
     {
+      title: "조직장 사전 승인",
+      fields: [
+        {
+          key: "조직장_승인_완료",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          type: "checkbox",
+          required: true,
+        },
+      ],
+    },
+    {
       title: "요청 정보",
       fields: [
         { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능, PMS 기준)", required: true },
