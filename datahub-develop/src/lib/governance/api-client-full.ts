@@ -115,7 +115,10 @@ export interface FormMessageAttachment {
 type BoardType = "policy" | "process";
 
 /** 백엔드 camelCase → 옛 snake_case shape 로 변환. 컴포넌트 호환성 유지용. */
-function adaptPost(p: Record<string, unknown>): PostDetail {
+function adaptPost(p: Record<string, unknown>): PostDetail & Record<string, unknown> {
+  const attachments = ((p.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
+    (a) => ({ id: a.id, filename: a.filename, size_bytes: a.sizeBytes, sizeBytes: a.sizeBytes }),
+  );
   return {
     id: String(p.id),
     board_type: p.boardType as BoardType,
@@ -137,19 +140,53 @@ function adaptPost(p: Record<string, unknown>): PostDetail {
     tldr: (p.tldr as string | null) ?? null,
     action_items: (p.actionItems as string[] | null) ?? null,
     examples: (p.examples as string | null) ?? null,
-    attachments: ((p.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
-      (a) => ({ id: a.id, filename: a.filename, size_bytes: a.sizeBytes }),
-    ),
+    attachments: attachments as unknown as PostDetail["attachments"],
+    // camelCase 호환
+    boardType: p.boardType,
+    docNo: p.docNo,
+    docType: p.docType,
+    isDraft: !!p.isDraft,
+    authorName: p.authorName,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    appliesTo: p.appliesTo,
+    actionItems: p.actionItems,
   };
 }
 
-function adaptForm(f: Record<string, unknown>): FormDetail {
+function adaptForm(f: Record<string, unknown>): FormDetail & Record<string, unknown> {
   const participants = Array.isArray((f.payload as Record<string, unknown> | null)?.["참조자"])
     ? ((f.payload as Record<string, unknown>)["참조자"] as string[]).filter(
         (s): s is string => typeof s === "string" && s.trim().length > 0,
       )
     : [];
+  const camelHistory = (f.approvalHistory as { status: string; changedBy?: string; changedAt?: string; comment?: string | null }[] | null) ?? null;
+  // snake_case 호환 — datahub-web 옛 FormDetail/ApprovalEntry shape
+  const snakeHistory = camelHistory
+    ? camelHistory.map((e) => ({
+        status: e.status,
+        changed_by: e.changedBy ?? "",
+        changed_at: e.changedAt ?? "",
+        comment: e.comment ?? null,
+      }))
+    : null;
+  const attachments = ((f.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
+    (a) => ({ id: a.id, filename: a.filename, sizeBytes: a.sizeBytes, size_bytes: a.sizeBytes }),
+  );
+
+  let approvedAt: string | null = null;
+  if ((f.status as string) === "approved" && Array.isArray(camelHistory)) {
+    for (let i = camelHistory.length - 1; i >= 0; i--) {
+      const entry = camelHistory[i];
+      if (entry?.status === "approved" && entry.changedAt) {
+        approvedAt = entry.changedAt;
+        break;
+      }
+    }
+  }
+
   return {
+    // camelCase
     id: f.id as string,
     requestNo: f.requestNo as string,
     formType: f.formType as FormType,
@@ -164,11 +201,23 @@ function adaptForm(f: Record<string, unknown>): FormDetail {
     submitterDepartment: (f.submitterDepartment as string | null) ?? null,
     payload: (f.payload as Record<string, unknown>) ?? {},
     updatedAt: f.updatedAt as string,
-    attachments: ((f.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
-      (a) => ({ id: a.id, filename: a.filename, sizeBytes: a.sizeBytes }),
-    ),
-    approvalHistory: (f.approvalHistory as FormDetail["approvalHistory"]) ?? null,
+    attachments: attachments as unknown as FormDetail["attachments"],
+    approvalHistory: camelHistory as unknown as FormDetail["approvalHistory"],
     editHistory: (f.editHistory as FormDetail["editHistory"]) ?? null,
+    approvedAt,
+    // snake_case 호환 (옛 datahub-web 컴포넌트)
+    request_no: f.requestNo,
+    form_type: f.formType,
+    project_name: f.projectName,
+    submitter_name: f.submitterName,
+    submitter_email: f.submitterEmail,
+    submitter_department: f.submitterDepartment,
+    submitted_at: f.submittedAt,
+    updated_at: f.updatedAt,
+    parent_form_id: f.parentFormId,
+    approval_history: snakeHistory,
+    edit_history: f.editHistory,
+    approved_at: approvedAt,
   };
 }
 
@@ -226,7 +275,20 @@ export const api = {
     if (params.form_type) qs.set("form_type", params.form_type);
     if (params.mine !== undefined) qs.set("mine", String(params.mine));
     const q = qs.toString();
-    return request<FormListItem[]>(`/governance/forms${q ? `?${q}` : ""}`);
+    const rows = (await request<Record<string, unknown>[]>(
+      `/governance/forms${q ? `?${q}` : ""}`,
+    )) ?? [];
+    // 옛 컴포넌트 호환 위해 snake_case 도 함께 노출.
+    return rows.map((r) => ({
+      ...r,
+      request_no: r.requestNo,
+      form_type: r.formType,
+      project_name: r.projectName,
+      submitter_name: r.submitterName,
+      submitted_at: r.submittedAt,
+      parent_form_id: r.parentFormId,
+      approved_at: r.approvedAt,
+    })) as unknown as FormListItem[];
   },
   getForm: async (id: string | number) =>
     adaptForm((await request(`/governance/forms/${id}`)) as Record<string, unknown>),
@@ -320,13 +382,13 @@ export const api = {
     const rows = (await request<Record<string, unknown>[]>(
       `/governance/posts?board=${board}`,
     )) ?? [];
-    return rows.map(adaptPost);
+    return rows.map(adaptPost) as unknown as PostListItem[];
   },
   listMyPosts: async (board: BoardType): Promise<PostListItem[]> => {
     const rows = (await request<Record<string, unknown>[]>(
       `/governance/posts?board=${board}&mine=true`,
     )) ?? [];
-    return rows.map(adaptPost);
+    return rows.map(adaptPost) as unknown as PostListItem[];
   },
   getPost: async (_board: BoardType, id: string | number) =>
     adaptPost((await request(`/governance/posts/${id}`)) as Record<string, unknown>),
