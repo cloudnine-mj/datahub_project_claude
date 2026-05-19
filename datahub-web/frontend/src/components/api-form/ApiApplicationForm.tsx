@@ -349,7 +349,7 @@ function ServiceCard({ index, service, onChange, onRemove, canRemove }: ServiceC
             onChange({ estimatedCost: e.target.value === "" ? 0 : Number(e.target.value) })
           }
           placeholder="예: 3,000"
-          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
       </div>
     </div>
