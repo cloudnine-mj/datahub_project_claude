@@ -16,7 +16,9 @@ import { approverInitials } from "@/lib/utils";
 import { FormPreviewModal } from "@/components/FormPreviewModal";
 import { copyPreviewToClipboard, type PreviewData } from "@/lib/formPreview";
 import { findFirstEmptyRequired } from "@/lib/formValidation";
-import { HistoryTimeline } from "@/components/governance/HistoryTimeline";
+import { ProgressHistoryBlock } from "@/components/ApplicationForm/ProgressHistoryBlock";
+import { getChatRole } from "@/lib/getChatRole";
+import { approvalHistoryToStatusItems } from "@/lib/historyAdapter";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -186,24 +188,27 @@ export default function Page({ params }: { params: { id: string } }) {
         </table>
       </div>
 
-      {/* 진행 이력 + 사용자 메시지 — 시스템 이벤트 토글 / composer 포함. observer 는 composer 미노출. */}
-      {from !== "list" && (
-        <div className="mt-4">
-          <HistoryTimeline
-            history={form.approval_history}
-            me={me}
-            isApplicant={
-              !!me && me.user.email.toLowerCase() === form.submitter_email.toLowerCase()
-            }
-            canPostMessage={
-              !!me &&
-              (me.user.email.toLowerCase() === form.submitter_email.toLowerCase() ||
-                me.user.role === "admin")
-            }
-            participants={["참여자 모두", form.submitter_name, ...(form.participants ?? [])]}
-          />
-        </div>
-      )}
+      {/* 진행 이력 + 사용자 메시지 — 시스템 이벤트 토글 / composer 포함.
+          chatRole 자동 판정: 신청자 본인 / 담당자(김은솔) / 어드민 → composer 노출.
+          observer 는 composer 미노출 (목록 진입 + 본인 신청 아닌 일반 사용자). */}
+      {(() => {
+        const chatRole = getChatRole(form, me);
+        if (chatRole === "observer") return null;
+        return (
+          <div className="mt-4">
+            <ProgressHistoryBlock
+              history={approvalHistoryToStatusItems(
+                form.approval_history,
+                form.submitter_name,
+              )}
+              canPostMessage
+              currentUserName={me?.user.name ?? "나"}
+              currentUserRole={chatRole}
+              applicantName={form.submitter_name}
+            />
+          </div>
+        );
+      })()}
 
       {form.attachments.length > 0 && (
         <div className="mt-4">
