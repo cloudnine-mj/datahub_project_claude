@@ -1,0 +1,152 @@
+{{- if .Values.postgresql.enabled }}
+# =============================================================================
+# PostgreSQL — initdb Secret
+# initdb.sh를 ConfigMap 대신 Secret으로 저장하여 비밀번호 평문 노출 방지.
+# 컨테이너 내에서 환경변수(WEB_DB_PW)를 참조하므로 ConfigMap에 비밀번호가
+# 포함되지 않는다.
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-postgresql-initdb
+  labels:
+    app: {{ .Release.Name }}-postgresql
+stringData:
+  initdb.sh: |
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+      CREATE USER ${PORTAL_DB_USER} WITH ENCRYPTED PASSWORD '${WEB_DB_PW}';
+      CREATE DATABASE ${PORTAL_DB_NAME} OWNER ${PORTAL_DB_USER};
+    EOSQL
+
+---
+# =============================================================================
+# PostgreSQL — PersistentVolumeClaim
+# =============================================================================
+{{- if .Values.postgresql.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.postgresql.persistence.storageClass }}
+  storageClassName: {{ .Values.postgresql.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}
+
+---
+# =============================================================================
+# PostgreSQL — Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgresql
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.auth.postgresPassword | quote }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            # initdb.sh에서 사용하는 환경 변수 — Secret에서 주입
+            - name: PORTAL_DB_USER
+              value: {{ .Values.postgresql.auth.webUser | quote }}
+            - name: PORTAL_DB_NAME
+              value: {{ .Values.postgresql.auth.webDatabase | quote }}
+            - name: WEB_DB_PW
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: WEB_DB_PW
+          volumeMounts:
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+            {{- if .Values.postgresql.persistence.enabled }}
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.postgresql.resources.requests.cpu | quote }}
+              memory: {{ .Values.postgresql.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.postgresql.resources.limits.cpu | quote }}
+              memory: {{ .Values.postgresql.resources.limits.memory | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: initdb
+          secret:
+            secretName: {{ .Release.Name }}-postgresql-initdb
+            defaultMode: 0755
+        {{- if .Values.postgresql.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-postgresql
+        {{- end }}
+
+---
+# =============================================================================
+# PostgreSQL — Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+  {{- with .Values.postgresql.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.postgresql.service.type }}
+  ports:
+    - port: {{ .Values.postgresql.service.port }}
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-postgresql
+{{- end }}

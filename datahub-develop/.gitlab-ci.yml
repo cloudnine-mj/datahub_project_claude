@@ -1,0 +1,182 @@
+# =============================================================================
+# datahub (DataHub Web) — CI/CD
+#
+# 브랜치 → 환경 매핑 (스테이지는 클러스터 단위 물리 격리):
+#   develop  → lgair-datahub-dev   (https://dev.datahub.lgair-data.com)
+#   staging  → lgair-datahub-stg   (https://stg.datahub.lgair-data.com)
+#   main     → lgair-datahub-prd   (https://datahub.lgair-data.com)
+#
+# 필수 GitLab CI/CD Variables (Environment scope = dev/stg/prd):
+#   NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#   WEB_DB_PW — web DB 비밀번호 (DATABASE_URL 구성에 사용, governance#100)
+#   DATAHUB_SERVICE_TOKEN — datahub-api 가 "datahub-web" 으로 식별하는 X-Service-Token 값
+#                          (file 전송 channel 분기 — signed-url 분기 진입에 필요)
+# =============================================================================
+
+default:
+  tags:
+    - datahub-k8s
+
+variables:
+  GAR_REGISTRY: us-central1-docker.pkg.dev
+  GAR_PROJECT: lgair-dg-data-hub
+  GAR_REPO: datahub
+  IMAGE_NAME: web
+  IMAGE_FULL: ${GAR_REGISTRY}/${GAR_PROJECT}/${GAR_REPO}/${IMAGE_NAME}
+  HELM_RELEASE: dh-web
+  HELM_CHART: deploy/helm/web-chart
+  HELM_NAMESPACE: lgair-datahub
+
+# ── Pipeline Workflow ────────────────────────────────────────────────────────
+#
+# 파이프라인 생성 규칙 (중복 방지 + feature 브랜치 MR pipeline 자동 생성):
+#   • MR 이벤트 (feature 브랜치 push + MR 존재) → detached merge request pipeline
+#   • 기본 브랜치(develop/staging/main) push   → branch pipeline
+#   • v* 태그 push                              → tag pipeline
+#   • MR 이 있는 feature 브랜치 직접 push       → MR pipeline 만 (중복 방지)
+#   • MR 이 없는 feature 브랜치 직접 push       → pipeline 생성 안 됨 (의도적)
+#
+# 이 룰이 없으면 feature 브랜치에 대한 MR pipeline 이 자동 생성되지 않아
+# `merge_when_pipeline_succeeds` 가 영원히 대기하는 회귀가 발생한다.
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH =~ /^(develop|staging|main)$/ && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_TAG'
+
+stages:
+  - build
+  - deploy
+
+# -----------------------------------------------------------------------------
+# build: Docker 이미지 빌드 + GAR 푸시
+# 태그: $CI_COMMIT_SHA + 브랜치 식별자(develop/staging/latest)
+# -----------------------------------------------------------------------------
+.build_template:
+  stage: build
+  image: google/cloud-sdk:alpine
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: /certs/client
+  before_script:
+    - apk add --no-cache docker-cli
+    - gcloud auth configure-docker ${GAR_REGISTRY} --quiet
+  script:
+    # NEXT_PUBLIC_* 환경변수는 `npm run build` 시점에 클라이언트 번들에 inline.
+    # runtime Pod env (deploy 템플릿) 로는 브라우저 JS 에 반영 안 되므로 반드시
+    # --build-arg 로 전달해야 /auth/device, /auth/complete 같은 클라이언트 라우트
+    # 에서 올바른 API URL 을 사용함.
+    - |
+      docker build \
+        --cache-from ${IMAGE_FULL}:${IMAGE_TAG_ENV} \
+        --build-arg NEXT_PUBLIC_PLATFORM_API_URL=${NEXT_PUBLIC_PLATFORM_API_URL} \
+        --tag ${IMAGE_FULL}:${CI_COMMIT_SHA} \
+        --tag ${IMAGE_FULL}:${IMAGE_TAG_ENV} \
+        .
+    - docker push ${IMAGE_FULL}:${CI_COMMIT_SHA}
+    - docker push ${IMAGE_FULL}:${IMAGE_TAG_ENV}
+
+build:develop:
+  extends: .build_template
+  variables:
+    IMAGE_TAG_ENV: "develop"
+    NEXT_PUBLIC_PLATFORM_API_URL: "https://api-dev.datahub.lgair-data.com"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+build:staging:
+  extends: .build_template
+  variables:
+    IMAGE_TAG_ENV: "staging"
+    NEXT_PUBLIC_PLATFORM_API_URL: "https://api-stg.datahub.lgair-data.com"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+
+build:main:
+  extends: .build_template
+  variables:
+    IMAGE_TAG_ENV: "latest"
+    NEXT_PUBLIC_PLATFORM_API_URL: "https://api.datahub.lgair-data.com"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+# -----------------------------------------------------------------------------
+# deploy: helm upgrade --install (환경별)
+# -----------------------------------------------------------------------------
+.deploy_template:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  before_script:
+    - apk add --no-cache openssl kubectl curl bash
+    - gcloud components install gke-gcloud-auth-plugin --quiet
+    - gcloud container clusters get-credentials "${GCLOUD_CLUSTER}" --region us-central1 --project ${GAR_PROJECT}
+    - curl -sSL https://get.helm.sh/helm-v3.16.3-linux-amd64.tar.gz | tar xz -C /tmp
+    - install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm
+    # 필수 시크릿 검증
+    - '[ -n "${NEXTAUTH_SECRET}" ]    || { echo "FATAL: NEXTAUTH_SECRET is empty."; exit 1; }'
+    - '[ -n "${GOOGLE_CLIENT_ID}" ]   || { echo "FATAL: GOOGLE_CLIENT_ID is empty."; exit 1; }'
+    - '[ -n "${GOOGLE_CLIENT_SECRET}" ] || { echo "FATAL: GOOGLE_CLIENT_SECRET is empty."; exit 1; }'
+    - '[ -n "${WEB_DB_PW}" ]          || { echo "FATAL: WEB_DB_PW is empty."; exit 1; }'
+    - '[ -n "${INTERNAL_SERVICE_SECRET_TO_DIA}" ] || { echo "WARN: INTERNAL_SERVICE_SECRET_TO_DIA is empty — BFF AI proxy will 500 fail-fast. Register CI Variable (DIA INTERNAL_SERVICE_INCOMING_SECRET 과 동일 값)."; }'
+    - '[ -n "${DATAHUB_SERVICE_TOKEN}" ] || { echo "WARN: DATAHUB_SERVICE_TOKEN is empty — datahub-api 가 caller 를 default 로 인식해 파일 전송이 storage-client 분기로 동작 (Web 의도와 불일치). Register CI Variable (datahub-api SERVICE_TOKEN_WEB 와 동일 값)."; }'
+  script:
+    - |
+      # 공유 PostgreSQL cross-namespace URL (governance#100)
+      DB_HOST="dh-db-postgresql.lgair-datahub-db.svc.cluster.local"
+      WEB_DATABASE_URL="postgresql://management_admin:${WEB_DB_PW}@${DB_HOST}:5432/management_db?schema=public"
+
+      helm upgrade --install ${HELM_RELEASE} ${HELM_CHART} \
+        --namespace ${HELM_NAMESPACE} \
+        --create-namespace \
+        --values ${HELM_CHART}/values.yaml \
+        --values ${HELM_CHART}/${VALUES_FILE} \
+        --set "web.image.tag=${CI_COMMIT_SHA}" \
+        --set "web.secrets.DATABASE_URL=${WEB_DATABASE_URL}" \
+        --set "web.secrets.NEXTAUTH_SECRET=${NEXTAUTH_SECRET}" \
+        --set "web.secrets.GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}" \
+        --set "web.secrets.GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}" \
+        --set "web.secrets.INTERNAL_SERVICE_SECRET_TO_DIA=${INTERNAL_SERVICE_SECRET_TO_DIA}" \
+        --set "web.secrets.DATAHUB_SERVICE_TOKEN=${DATAHUB_SERVICE_TOKEN}" \
+        --wait --timeout 10m
+    - kubectl rollout status deployment/${HELM_RELEASE} -n ${HELM_NAMESPACE} --timeout=5m
+
+deploy:develop:
+  extends: .deploy_template
+  variables:
+    GCLOUD_CLUSTER: "lgair-datahub-dev"
+    VALUES_FILE: "values-dev.yaml"
+  environment:
+    name: dev
+    url: https://dev.datahub.lgair-data.com
+  needs: ["build:develop"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+deploy:staging:
+  extends: .deploy_template
+  variables:
+    GCLOUD_CLUSTER: "lgair-datahub-stg"
+    VALUES_FILE: "values-staging.yaml"
+  environment:
+    name: stg
+    url: https://stg.datahub.lgair-data.com
+  needs: ["build:staging"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+
+deploy:main:
+  extends: .deploy_template
+  variables:
+    GCLOUD_CLUSTER: "lgair-datahub-prd"
+    VALUES_FILE: "values-prd.yaml"
+  environment:
+    name: prd
+    url: https://datahub.lgair-data.com
+  needs: ["build:main"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

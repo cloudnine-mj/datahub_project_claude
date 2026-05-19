@@ -1,0 +1,78 @@
+# =============================================================================
+# web-chart: DataHub 웹 포털 Helm Chart 기본값
+# 신규 클러스터: lgair-datahub-prd (us-central1)
+# =============================================================================
+
+# =============================================================================
+# PostgreSQL
+# =============================================================================
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    postgresPassword: ""           # 환경별 values 파일에서 설정 (예: values-dev.yaml)
+    webUser: management_admin
+    webPassword: ""             # 환경별 values 파일에서 설정 (예: values-dev.yaml)
+    webDatabase: management_db
+  persistence:
+    enabled: true
+    storageClass: standard-rwo
+    size: 10Gi
+  service:
+    type: ClusterIP
+    port: 5432
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+# =============================================================================
+# DataHub Web (Next.js)
+# =============================================================================
+web:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: us-central1-docker.pkg.dev/lgair-dg-data-hub/datahub/web
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3000
+  config:
+    NEXT_PUBLIC_PLATFORM_API_URL: ""    # 환경별 values 파일에서 설정
+    PLATFORM_API_INTERNAL_URL: ""       # K8s 내부 서비스 URL (서버사이드 API 호출용, 환경별 values에서 설정)
+    INTELLIGENCE_API_INTERNAL_URL: ""   # data-intelligence-api cluster 내부 URL (BFF → DIA proxy, 환경별 values에서 설정)
+  secrets:
+    DATABASE_URL: ""                    # 비워두면 postgresql 연결정보로 자동 생성
+    NEXTAUTH_SECRET: ""                 # GitLab CI/CD Variable: NEXTAUTH_SECRET
+    NEXTAUTH_URL: ""                    # 환경별 values 파일에서 설정
+    GOOGLE_CLIENT_ID: ""                # GitLab CI/CD Variable: GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_SECRET: ""            # GitLab CI/CD Variable: GOOGLE_CLIENT_SECRET
+    INTERNAL_SERVICE_SECRET_TO_DIA: ""  # CI Variable: BFF → DIA HS256 (DIA INTERNAL_SERVICE_INCOMING_SECRET 과 동일 값)
+  ingress:
+    enabled: true
+    className: nginx
+    host: ""                       # 환경별 values 파일에서 설정
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/whitelist-source-range: "203.247.149.40/29,61.100.40.18/32,10.1.251.0/24,165.85.218.127/32,165.85.218.128/32,140.209.203.20/32,140.209.203.114/32,134.231.208.126/32,134.231.208.21/32,34.56.23.209/32,34.69.21.196/32,34.44.90.1/32,210.98.176.131/32,10.128.0.0/20,10.105.0.0/16,35.222.144.28/32,35.222.221.89/32,34.170.180.252/32"
+      nginx.ingress.kubernetes.io/limit-rps: "10"
+      nginx.ingress.kubernetes.io/limit-connections: "20"
+    tls:
+      enabled: true
+      secretName: "web-tls"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"

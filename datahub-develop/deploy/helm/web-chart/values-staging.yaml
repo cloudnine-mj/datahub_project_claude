@@ -1,0 +1,38 @@
+# =============================================================================
+# staging 환경 오버라이드 — lgair-datahub-stg 클러스터
+# Cluster  : gke_lgair-dg-data-hub_us-central1_lgair-datahub-stg
+# Namespace: lgair-datahub
+# Helm     : release = dh-web, chart = web-chart
+# 진입: https://stg.datahub.lgair-data.com
+# =============================================================================
+
+web:
+  image:
+    tag: staging
+  replicaCount: 2
+  config:
+    NEXT_PUBLIC_PLATFORM_API_URL: "https://api-stg.datahub.lgair-data.com"
+    PLATFORM_API_INTERNAL_URL: "http://dh-platform.lgair-datahub.svc.cluster.local:8080"
+    INTELLIGENCE_API_INTERNAL_URL: "http://dh-intelligence-agent.lgair-datahub.svc.cluster.local:8000"
+  secrets:
+    NEXTAUTH_URL: "https://stg.datahub.lgair-data.com"
+  ingress:
+    enabled: true
+    host: stg.datahub.lgair-data.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      enabled: true
+      secretName: "web-tls"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+# 공유 PostgreSQL (dh-db)로 이관 — 인차트 PostgreSQL 비활성화 (governance#100)
+# DATABASE_URL은 CI에서 --set web.secrets.DATABASE_URL 로 주입
+postgresql:
+  enabled: false

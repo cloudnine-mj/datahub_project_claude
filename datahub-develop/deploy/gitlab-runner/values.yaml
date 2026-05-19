@@ -1,0 +1,52 @@
+# GitLab Runner Helm Chart values
+# Chart: gitlab/gitlab-runner from https://charts.gitlab.io
+# Cluster: GKE lgair-datahub-prd (us-central1)
+
+gitlabUrl: "https://gitlab.lgresearch.ai/"
+
+# Concurrency — 4 nodes available
+concurrent: 4
+checkInterval: 5
+
+# RBAC for runner pod management
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: "gitlab-runner"
+
+# Runner configuration
+runners:
+  # Authentication token — stored in K8s Secret (NEVER inline)
+  secret: gitlab-runner-secret
+
+  # Executor config (TOML embedded in YAML)
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        namespace = "gitlab-runner"
+        image = "ubuntu:22.04"
+        privileged = true
+        cpu_request = "500m"
+        memory_request = "512Mi"
+        cpu_limit = "8"
+        memory_limit = "16Gi"
+        service_cpu_request = "500m"
+        service_memory_request = "512Mi"
+        helper_cpu_request = "200m"
+        helper_memory_request = "256Mi"
+        dns_policy = "default"
+        [[runners.kubernetes.volumes.empty_dir]]
+          name = "docker-certs"
+          mount_path = "/certs/client"
+          medium = "Memory"
+
+# Runner manager pod resources
+resources:
+  limits:
+    memory: 256Mi
+    cpu: 500m
+  requests:
+    memory: 128Mi
+    cpu: 100m

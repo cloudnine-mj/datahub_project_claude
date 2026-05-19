@@ -1,0 +1,161 @@
+{{- if .Values.web.enabled }}
+# =============================================================================
+# Web — ConfigMap (비민감 설정)
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    app: {{ .Release.Name }}
+data:
+  NEXT_PUBLIC_PLATFORM_API_URL: {{ .Values.web.config.NEXT_PUBLIC_PLATFORM_API_URL | quote }}
+  PLATFORM_API_INTERNAL_URL: {{ .Values.web.config.PLATFORM_API_INTERNAL_URL | default "http://dp-platform.lgair-datahub:8080" | quote }}
+  INTELLIGENCE_API_INTERNAL_URL: {{ .Values.web.config.INTELLIGENCE_API_INTERNAL_URL | default "http://dh-intelligence-agent.lgair-datahub.svc.cluster.local:8000" | quote }}
+
+---
+# =============================================================================
+# Web — Secret (민감 설정)
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-secret
+  labels:
+    app: {{ .Release.Name }}
+type: Opaque
+stringData:
+  {{- if .Values.web.secrets.DATABASE_URL }}
+  DATABASE_URL: {{ .Values.web.secrets.DATABASE_URL | quote }}
+  {{- else }}
+  DATABASE_URL: {{ printf "postgresql://%s:%s@%s-postgresql:5432/%s?schema=public" .Values.postgresql.auth.webUser .Values.postgresql.auth.webPassword .Release.Name .Values.postgresql.auth.webDatabase | quote }}
+  {{- end }}
+  WEB_DB_PW: {{ .Values.postgresql.auth.webPassword | quote }}
+  NEXTAUTH_URL: {{ .Values.web.secrets.NEXTAUTH_URL | quote }}
+  NEXTAUTH_SECRET: {{ .Values.web.secrets.NEXTAUTH_SECRET | quote }}
+  GOOGLE_CLIENT_ID: {{ .Values.web.secrets.GOOGLE_CLIENT_ID | quote }}
+  GOOGLE_CLIENT_SECRET: {{ .Values.web.secrets.GOOGLE_CLIENT_SECRET | quote }}
+  {{- if .Values.web.secrets.DATAHUB_SERVICE_TOKEN }}
+  # datahub-api ServiceCallerMiddleware 식별용 토큰 (X-Service-Token 헤더).
+  # 환경별 (dev/stg/prd) 다른 value 가 CI --set 으로 주입된다.
+  DATAHUB_SERVICE_TOKEN: {{ .Values.web.secrets.DATAHUB_SERVICE_TOKEN | quote }}
+  {{- end }}
+
+---
+# =============================================================================
+# Web — Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: web
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.web.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          {{- if .Values.web.extraEnv }}
+          env:
+            {{- range .Values.web.extraEnv }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.web.resources.requests.cpu | quote }}
+              memory: {{ .Values.web.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.web.resources.limits.cpu | quote }}
+              memory: {{ .Values.web.resources.limits.memory | quote }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.web.service.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.web.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+---
+# =============================================================================
+# Web — Service
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+  {{- if and .Values.web.service.annotations (eq .Values.web.service.type "LoadBalancer") }}
+  annotations:
+    {{- toYaml .Values.web.service.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.web.service.type }}
+  ports:
+    - port: {{ .Values.web.service.port }}
+      targetPort: {{ .Values.web.service.port }}
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}
+
+{{- if .Values.web.ingress.enabled }}
+---
+# =============================================================================
+# Web — Ingress
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+  {{- with .Values.web.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.web.ingress.className }}
+  {{- if .Values.web.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.web.ingress.host }}
+      secretName: {{ .Values.web.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.web.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  number: {{ .Values.web.service.port }}
+{{- end }}
+{{- end }}

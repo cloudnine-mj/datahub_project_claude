@@ -1,0 +1,40 @@
+# =============================================================================
+# dev 환경 오버라이드 — lgair-datahub-dev 클러스터
+# Cluster  : gke_lgair-dg-data-hub_us-central1_lgair-datahub-dev
+# Namespace: lgair-datahub
+# Helm     : release = dh-web, chart = web-chart
+# 진입: https://dev.datahub.lgair-data.com
+#
+# 시크릿은 모두 CI에서 --set으로 주입 (GitLab CI/CD Variables + environment scope=dev).
+# =============================================================================
+
+web:
+  image:
+    tag: develop
+  replicaCount: 1
+  config:
+    NEXT_PUBLIC_PLATFORM_API_URL: "https://api-dev.datahub.lgair-data.com"
+    PLATFORM_API_INTERNAL_URL: "http://dh-platform.lgair-datahub.svc.cluster.local:8080"
+    INTELLIGENCE_API_INTERNAL_URL: "http://dh-intelligence-agent.lgair-datahub.svc.cluster.local:8000"
+  secrets:
+    NEXTAUTH_URL: "https://dev.datahub.lgair-data.com"
+  ingress:
+    enabled: true
+    host: dev.datahub.lgair-data.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      enabled: true
+      secretName: "web-tls"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+# 공유 PostgreSQL (dh-db)로 이관 — 인차트 PostgreSQL 비활성화 (governance#100)
+# DATABASE_URL은 CI에서 --set web.secrets.DATABASE_URL 로 주입
+postgresql:
+  enabled: false

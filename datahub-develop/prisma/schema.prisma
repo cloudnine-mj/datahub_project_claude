@@ -1,0 +1,385 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ──────────────────────────────────────────────────────
+//
+// 인증은 datahub-api 가 단일 소스로 담당한다 (datahub-auth-redesign §16).
+// NextAuth adapter 테이블(Account / Session / VerificationToken), UserRole enum,
+// User.role 컬럼은 §16 에서 제거. Web 의 User row 는 플랜/승인/데이터카드 등
+// Web 전용 엔티티의 FK 타겟으로만 남는다.
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  labId         String?
+  techCellId    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  lab       Lab?      @relation("LabMembers", fields: [labId], references: [id])
+  techCell  TechCell? @relation("TechCellMembers", fields: [techCellId], references: [id])
+
+  // Leadership
+  ledLabs            Lab[]      @relation("LabLeader")
+  ledTechCells       TechCell[] @relation("TechCellLeader")
+  pmProjects         Project[]  @relation("PMLeader")
+  tmProjects         Project[]  @relation("TMLeader")
+
+  // Plans & Reports
+  authoredPlans      Plan[]              @relation("PlanAuthor")
+  managedPlans       Plan[]              @relation("DataManager")
+  qualityPlans       Plan[]              @relation("QualityManager")
+  authoredReports    ConstructionReport[] @relation("ReportAuthor")
+  managedReports     ConstructionReport[] @relation("ReportDataManager")
+  qualityReports     ConstructionReport[] @relation("ReportQualityManager")
+
+  // Approvals
+  approvalSteps      ApprovalStep[]
+
+  // Data Cards
+  createdDataCards   DataCard[]
+}
+
+// ─── Organization ──────────────────────────────────────────────
+
+model Lab {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  leaderId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leader    User?      @relation("LabLeader", fields: [leaderId], references: [id])
+  members   User[]     @relation("LabMembers")
+  techCells TechCell[]
+  projects  Project[]  @relation("ProjectLab")
+  plans     Plan[]     @relation("PlanLab")
+  budgets   Budget[]   @relation("LabBudget")
+}
+
+model TechCell {
+  id        String   @id @default(cuid())
+  name      String
+  labId     String
+  leaderId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lab      Lab       @relation(fields: [labId], references: [id], onDelete: Cascade)
+  leader   User?     @relation("TechCellLeader", fields: [leaderId], references: [id])
+  members  User[]    @relation("TechCellMembers")
+  plans    Plan[]    @relation("PlanTechCell")
+  budgets  Budget[]  @relation("TechCellBudget")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  pmsCode     String?       @unique
+  pmLeaderId  String?
+  tmLeaderId  String?
+  labId       String?
+  budget      Float         @default(0)
+  quarter     String?
+  year        Int?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  pmLeader  User?   @relation("PMLeader", fields: [pmLeaderId], references: [id])
+  tmLeader  User?   @relation("TMLeader", fields: [tmLeaderId], references: [id])
+  lab       Lab?    @relation("ProjectLab", fields: [labId], references: [id])
+  plans     Plan[]
+  reports   ConstructionReport[]
+  budgets   Budget[] @relation("ProjectBudget")
+}
+
+// ─── Plan (기획서) ─────────────────────────────────────────────
+
+enum PurposeType {
+  DATA_CONSTRUCTION
+  OTHER
+}
+
+enum UsageScope {
+  CONFIDENTIAL
+  INTERNAL
+  MODEL_SERVICE
+}
+
+enum PlanStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Plan {
+  id                String      @id @default(cuid())
+  projectId         String
+  authorId          String
+  quarter           String?
+  period            String?
+  dataManagerId     String?
+  estimatedCost     Float       @default(0)
+  purposeType       PurposeType @default(DATA_CONSTRUCTION)
+  purpose           String?     @db.Text
+  complianceChecked Boolean     @default(false)
+  dataName          String
+  modality          String      @default("Text")
+  dataDescription   String?     @db.Text
+  estimatedDataCount String?
+  license           String?
+  qualityManagerId  String?
+  usageScope        UsageScope  @default(INTERNAL)
+  completionDate    DateTime?
+  reportDueDate     DateTime?
+  status            PlanStatus  @default(DRAFT)
+  techCellId        String?
+  labId             String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  project        Project   @relation(fields: [projectId], references: [id])
+  author         User      @relation("PlanAuthor", fields: [authorId], references: [id])
+  dataManager    User?     @relation("DataManager", fields: [dataManagerId], references: [id])
+  qualityManager User?     @relation("QualityManager", fields: [qualityManagerId], references: [id])
+  techCell       TechCell? @relation("PlanTechCell", fields: [techCellId], references: [id])
+  lab            Lab?      @relation("PlanLab", fields: [labId], references: [id])
+
+  approvalRequests ApprovalRequest[] @relation("PlanApproval")
+  reports          ConstructionReport[]
+  dataCards        DataCard[]
+  costRecords      CostRecord[]
+}
+
+// ─── Approval (결재) ───────────────────────────────────────────
+
+enum ApprovalType {
+  PROJECT
+  LAB
+  TECH_CELL
+  PROJECT_TECH_CELL
+}
+
+model ApprovalConfig {
+  id       String       @id @default(cuid())
+  type     ApprovalType @unique
+  steps    Json
+  isActive Boolean      @default(true)
+
+  requests ApprovalRequest[]
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+}
+
+model ApprovalRequest {
+  id          String                @id @default(cuid())
+  planId      String?
+  reportId    String?
+  configId    String
+  status      ApprovalRequestStatus @default(PENDING)
+  currentStep Int                   @default(1)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  plan   Plan?              @relation("PlanApproval", fields: [planId], references: [id])
+  report ConstructionReport? @relation("ReportApproval", fields: [reportId], references: [id])
+  config ApprovalConfig     @relation(fields: [configId], references: [id])
+  steps  ApprovalStep[]
+}
+
+enum ApprovalStepStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ApprovalStep {
+  id         String             @id @default(cuid())
+  requestId  String
+  stepOrder  Int
+  approverId String
+  status     ApprovalStepStatus @default(PENDING)
+  comment    String?            @db.Text
+  decidedAt  DateTime?
+
+  request  ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver User            @relation(fields: [approverId], references: [id])
+
+  @@unique([requestId, stepOrder])
+}
+
+// ─── Report (보고서) ───────────────────────────────────────────
+
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+model ConstructionReport {
+  id                String       @id @default(cuid())
+  planId            String
+  projectId         String
+  authorId          String
+  actualPeriodStart DateTime?
+  actualPeriodEnd   DateTime?
+  dataManagerId     String?
+  actualCost        Float        @default(0)
+  dataDescription   String?      @db.Text
+  dataName          String
+  dataSize          String?
+  dataQuantity      Int?
+  qualityManagerId  String?
+  usageScope        UsageScope   @default(INTERNAL)
+  storageLocation   String?
+  utilizationStatus String?
+  utilizationDate   String?
+  needsMoreData     Boolean      @default(false)
+  followUpPlan      String?      @db.Text
+  status            ReportStatus @default(DRAFT)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  plan           Plan     @relation(fields: [planId], references: [id])
+  project        Project  @relation(fields: [projectId], references: [id])
+  author         User     @relation("ReportAuthor", fields: [authorId], references: [id])
+  dataManager    User?    @relation("ReportDataManager", fields: [dataManagerId], references: [id])
+  qualityManager User?    @relation("ReportQualityManager", fields: [qualityManagerId], references: [id])
+
+  approvalRequests ApprovalRequest[] @relation("ReportApproval")
+  dataCards        DataCard[]
+}
+
+// ─── Data Card ─────────────────────────────────────────────────
+
+model DataCard {
+  id              String   @id @default(cuid())
+  reportId        String?
+  planId          String?
+  dataName        String
+  description     String?  @db.Text
+  dataType        String   @default("Text")
+  size            String?
+  quantity        Int?
+  format          String?
+  storageLocation String?
+  accessScope     UsageScope @default(INTERNAL)
+  tags            String[]
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  report    ConstructionReport? @relation(fields: [reportId], references: [id])
+  plan      Plan?               @relation(fields: [planId], references: [id])
+  createdBy User                @relation(fields: [createdById], references: [id])
+}
+
+// ─── Budget ────────────────────────────────────────────────────
+
+enum BudgetTargetType {
+  PROJECT
+  LAB
+  TECH_CELL
+}
+
+model Budget {
+  id          String           @id @default(cuid())
+  targetType  BudgetTargetType
+  targetId    String
+  quarter     String
+  year        Int
+  totalAmount Float            @default(0)
+  usedAmount  Float            @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  project  Project?  @relation("ProjectBudget", fields: [targetId], references: [id], map: "Budget_project_fkey")
+  lab      Lab?      @relation("LabBudget", fields: [targetId], references: [id], map: "Budget_lab_fkey")
+  techCell TechCell? @relation("TechCellBudget", fields: [targetId], references: [id], map: "Budget_techCell_fkey")
+
+  costRecords CostRecord[]
+
+  @@unique([targetType, targetId, quarter, year])
+}
+
+model CostRecord {
+  id            String   @id @default(cuid())
+  budgetId      String
+  planId        String?
+  amount        Float
+  description   String?
+  cardUsageDate DateTime?
+  createdAt     DateTime @default(now())
+
+  budget Budget @relation(fields: [budgetId], references: [id])
+  plan   Plan?  @relation(fields: [planId], references: [id])
+}
+
+/// BFF / Web 자체 audit 로그.
+///
+/// datahub-api 의 audit_logs 와는 별개 — BFF route 에서 datahub-api 호출
+/// 전후 + 입력 검증 실패 + 네트워크 에러 등 datahub-api 에 도달 안 하는
+/// 케이스도 모두 기록한다.
+///
+/// 운영 상 추적 목적: "사용자가 토큰 발급 시도했는데 실패" 같은 BFF 자체
+/// 응답을 audit 으로 남겨야 단서 확보 가능 (datahub-api audit 은 BFF 도달
+/// 후에만 기록).
+model AuditLog {
+  id           String   @id @default(cuid())
+  timestamp    DateTime @default(now())
+  /// NextAuth session 의 사용자 식별자. 인증 전 호출이면 null.
+  userEmail    String?
+  /// 호출 유형. 'access_token_create' / 'access_token_revoke' /
+  /// 'access_token_rotate' / 'access_token_list' 등.
+  action       String
+  /// 상위 자원 종류 ('access_token', 'repo', 'organization' …).
+  resourceType String?
+  /// 자원 식별자 (id / prefix / name). 옵션.
+  resourceId   String?
+  /// 요청 method + path (예: 'POST /api/settings/access-tokens').
+  route        String?
+  /// HTTP status code 응답.
+  status       Int
+  /// 'success' | 'failure'. status>=400 이면 자동 'failure'.
+  outcome      String   @default("success")
+  /// 응답 detail (datahub-api 가 준 detail 또는 BFF 자체 메시지). 길이 제한
+  /// 위해 텍스트는 잘라 저장 — 본 컬럼은 raw token 등 민감값을 절대 포함
+  /// 시키지 않는다 (헬퍼가 redact).
+  detail       String?
+  /// X-Forwarded-For 또는 connection IP (없으면 null).
+  ipAddress    String?
+  /// User-Agent 또는 호출 메타 (옵션).
+  userAgent    String?
+
+  @@index([timestamp])
+  @@index([action])
+  @@index([userEmail, timestamp])
+  @@index([outcome, timestamp])
+}

@@ -1,0 +1,72 @@
+{{- if .Values.web.enabled }}
+# =============================================================================
+# Prisma Migrate Job — chart upgrade 마다 마이그레이션 자동 적용
+#
+# datahub-api 의 db-chart 가 management_db + management_admin 을 보장한 후
+# (deploy:db job 이 먼저 실행됨), 본 Job 이 dh-web 이미지로 npx prisma migrate
+# deploy 를 실행. dh-web pod rollout 보다 먼저 실행되어야 새 schema 가 코드와
+# 일치.
+#
+# helm hook:
+#   post-install / post-upgrade — chart upgrade 마다 실행
+#   helm-weight 5 — dh-web Deployment rollout (weight 10) 전에 끝나도록
+#
+# 안전성:
+#   prisma migrate deploy 는 advisory lock 으로 multi-instance 안전.
+#   기존 schema 와 동일하면 no-op (idempotent).
+# =============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-prisma-migrate
+  labels:
+    app: {{ .Release.Name }}
+    component: prisma-migrate
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "5"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: prisma-migrate
+    spec:
+      restartPolicy: OnFailure
+      # Next.js standalone build 의 final image 는 nextjs(uid 1001) 로 실행되며
+      # /app/node_modules/@prisma/engines 가 read-only. prisma CLI 는 startup 에
+      # engine binary 위치를 확인하며 필요 시 쓰기 시도 → EACCES. migrate 는
+      # 일회성 hook 이므로 root 로 실행해 회피한다 (보안 영향 미미).
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      containers:
+        - name: prisma-migrate
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "[prisma-migrate] Applying migrations to $DATABASE_URL host"
+              cd /app
+              # standalone build 에 node_modules/.bin/prisma symlink 가 빠져있어
+              # `npx prisma` 가 not-found. entrypoint 를 node 로 직접 호출.
+              # migrate deploy 는 advisory lock + idempotent (prod-safe).
+              node node_modules/prisma/build/index.js migrate deploy
+              echo "[prisma-migrate] done"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+{{- end }}

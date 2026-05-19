@@ -1,0 +1,28 @@
+deploy/helm/portal-chart/secrets/*.json
+deploy/helm/portal-chart/secrets/*.key
+
+# Node / Next.js build artifacts
+node_modules/
+.next/
+next-env.d.ts
+out/
+tsconfig.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Logs / editors
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Pencil 디자인 원본 (별도 관리, 레포 추적 대상 아님)
+docs/pencils/*
+
+# Playwright
+/test-results
+/playwright-report
+/playwright/.cache
