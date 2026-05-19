@@ -99,7 +99,7 @@ function computeKpi(forms: FormListItem[]): KpiStat {
 }
 
 function toCsv(rows: FormListItem[]): string {
-  const header = ["신청번호", "신청 종류", "프로젝트명", "신청자", "상태", "제출일", "승인 완료일"];
+  const header = ["신청번호", "신청 종류", "신청서명", "신청자", "상태", "제출일", "승인 완료일"];
   const body = rows.map((r) => {
     const item = r as FormListItem & { approvedAt?: string | null };
     return [
@@ -207,7 +207,7 @@ export default function Page() {
 
       <h1 className="text-[22px] font-medium tracking-tight">거버넌스 요청 관리</h1>
       <p className="mt-1 text-sm text-gray-500">
-        전체 사용자의 신청을 검토 / 승인할 수 있습니다. 프로젝트명을 클릭해 상세 페이지로 이동한 뒤 처리해 주세요.
+        전체 사용자의 신청을 검토 / 승인할 수 있습니다. 신청서명을 클릭해 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
       {/* KPI 카드 4개 */}
@@ -273,7 +273,7 @@ export default function Page() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="프로젝트명, 신청자로 검색"
+          placeholder="신청서명, 신청자로 검색"
           className="min-w-[200px] flex-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[13px] placeholder:text-gray-400 focus:border-brand focus:outline-none"
         />
         <button
@@ -310,7 +310,7 @@ export default function Page() {
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
               <th className="px-3 py-2.5 font-medium">신청 종류</th>
-              <th className="px-3 py-2.5 font-medium">프로젝트명</th>
+              <th className="px-3 py-2.5 font-medium">신청서명</th>
               <th className="px-3 py-2.5 font-medium">신청자</th>
               <th className="px-3 py-2.5 font-medium">상태</th>
               <th className="px-3 py-2.5 font-medium">제출일</th>

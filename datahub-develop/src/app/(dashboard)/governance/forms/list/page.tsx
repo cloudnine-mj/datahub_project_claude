@@ -167,7 +167,7 @@ export default function GovernanceFormsListPage() {
       />
       <h1 className="text-3xl font-bold tracking-tight">거버넌스 요청 목록</h1>
       <p className="mt-1.5 text-sm text-gray-500">
-        전체 사용자의 신청 현황을 확인할 수 있습니다. 프로젝트명을 클릭하면 상세 페이지로 이동합니다.
+        전체 사용자의 신청 현황을 확인할 수 있습니다. 신청서명을 클릭하면 상세 페이지로 이동합니다.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -189,7 +189,7 @@ export default function GovernanceFormsListPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="신청 종류, 프로젝트명, 신청자, 요청번호로 검색"
+            placeholder="신청 종류, 신청서명, 신청자, 요청번호로 검색"
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
@@ -248,7 +248,7 @@ export default function GovernanceFormsListPage() {
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
                 <th className="px-6 py-3 font-medium">신청 종류</th>
-                <th className="px-6 py-3 font-medium">프로젝트명</th>
+                <th className="px-6 py-3 font-medium">신청서명</th>
                 <th className="w-32 px-6 py-3 font-medium">신청자</th>
                 <th className="w-28 px-6 py-3 font-medium">상태</th>
                 <th className="w-44 px-6 py-3 font-medium">제출일</th>
