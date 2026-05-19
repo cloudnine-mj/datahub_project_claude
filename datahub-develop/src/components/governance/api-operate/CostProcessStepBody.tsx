@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { Info, Link2, Plus } from "lucide-react";
 import type { CostProcessStep, CostRecord, Currency } from "./useOperatePhase";
+import { NumberInput } from "@/components/governance/NumberInput";
 
 interface Props {
   costProcess: CostProcessStep;
@@ -162,10 +163,9 @@ function MonthlyCostList({
             </div>
             <div className="flex-1">
               <p className="mb-1 text-[11px] text-gray-500 dark:text-gray-400">금액</p>
-              <input
-                type="number"
+              <NumberInput
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(_n, raw) => setAmount(raw)}
                 placeholder="예: 580"
                 className="w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900"
               />

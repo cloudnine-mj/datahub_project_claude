@@ -8,6 +8,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { FileText, Plus, Upload, X } from "lucide-react";
+import { NumberInput } from "@/components/governance/NumberInput";
 
 export type Currency = "USD" | "KRW";
 
@@ -346,13 +347,9 @@ function ServiceCard({ index, service, onChange, onRemove, canRemove }: ServiceC
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-[12px] font-medium text-gray-500 dark:text-gray-400">
             {currencySymbol(service)}
           </span>
-          <input
-            type="number"
-            min={0}
+          <NumberInput
             value={service.estimatedCost === 0 ? "" : service.estimatedCost}
-            onChange={(e) =>
-              onChange({ estimatedCost: e.target.value === "" ? 0 : Number(e.target.value) })
-            }
+            onChange={(n) => onChange({ estimatedCost: n })}
             placeholder="예: 3,000"
             className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
           />

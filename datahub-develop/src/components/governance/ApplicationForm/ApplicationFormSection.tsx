@@ -9,6 +9,7 @@ import { useState, type KeyboardEvent } from "react";
 import { AlertCircle, Info, X } from "lucide-react";
 import type { FieldDef, SectionDef } from "@/lib/governance/forms/schemas";
 import { DateField } from "@/components/governance/DateField";
+import { NumberInput } from "@/components/governance/NumberInput";
 
 interface Props {
   section: SectionDef;
@@ -160,11 +161,10 @@ function FieldInput({
 
   if (field.type === "number") {
     return (
-      <input
+      <NumberInput
         id={id}
-        type="number"
         value={(value as string | number) ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(_n, raw) => onChange(raw)}
         placeholder={field.placeholder}
         disabled={disabled}
         className={INPUT_BASE}

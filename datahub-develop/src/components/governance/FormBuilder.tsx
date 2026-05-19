@@ -12,6 +12,7 @@ import { approverInitials } from "@/lib/governance/forms/utils-bridge";
 import { Breadcrumb } from "./Breadcrumb";
 import { FormPreviewModal } from "./FormPreviewModal";
 import { FormProcessBar } from "./FormProcessBar";
+import { NumberInput } from "./NumberInput";
 
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -661,10 +662,9 @@ function FieldInput({
       return <DateField value={(value as string) ?? ""} onChange={(v) => onChange(v)} />;
     case "number":
       return (
-        <input
-          type="number"
+        <NumberInput
           value={(value as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(_n, raw) => onChange(raw)}
           placeholder={field.placeholder}
           className={common}
         />
