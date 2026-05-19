@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export default function middleware(req: NextRequest) {
+  // Local-dev only — datahub-api 없이 라우트 보호 우회. 운영에서 절대 사용 X.
+  if (process.env.DEV_AUTH_BYPASS === "1") {
+    return NextResponse.next();
+  }
   const token = req.cookies.get("platform_token")?.value;
   if (!token) {
     const loginUrl = new URL("/login", req.url);
