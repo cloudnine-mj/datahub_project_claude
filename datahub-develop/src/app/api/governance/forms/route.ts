@@ -52,17 +52,33 @@ export async function GET(request: NextRequest) {
       version: true,
       parentFormId: true,
       payload: true,
+      approvalHistory: true,
     },
   });
 
-  // payload['참조자'] 만 추출해 participants 로 노출 (datahub-web 호환).
+  // payload['참조자'] → participants, approvalHistory 의 마지막 approved 이벤트 → approvedAt
   const items = forms.map((f) => {
     const raw = (f.payload as Record<string, unknown> | null)?.["참조자"];
     const participants = Array.isArray(raw)
       ? raw.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
       : [];
-    const { payload, ...rest } = f;
-    return { ...rest, participants };
+
+    let approvedAt: string | null = null;
+    if (f.status === "approved" && Array.isArray(f.approvalHistory)) {
+      const history = f.approvalHistory as { status?: string; changedAt?: string }[];
+      for (let i = history.length - 1; i >= 0; i--) {
+        const entry = history[i];
+        if (entry?.status === "approved" && entry.changedAt) {
+          approvedAt = entry.changedAt;
+          break;
+        }
+      }
+    }
+
+    const { payload, approvalHistory, ...rest } = f;
+    void payload;
+    void approvalHistory;
+    return { ...rest, participants, approvedAt };
   });
 
   return audit.ok(200, NextResponse.json(items));
