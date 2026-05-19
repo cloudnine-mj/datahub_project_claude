@@ -107,6 +107,8 @@ export default function Page({ params }: { params: { id: string } }) {
   const roleBadge =
     role === "applicant"
       ? { label: "신청자 시점", cls: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" }
+      : role === "admin"
+      ? { label: "관리자 시점", cls: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300" }
       : role === "assignee" || role === "potential-assignee"
       ? { label: "담당자 시점", cls: "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200" }
       : null;
