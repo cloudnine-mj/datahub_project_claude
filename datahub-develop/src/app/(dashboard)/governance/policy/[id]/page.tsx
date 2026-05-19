@@ -1,5 +1,11 @@
-import { PostDetail } from "@/components/governance/posts/post-detail";
+"use client";
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <PostDetail board="policy" id={params.id} />;
+import { useParams } from "next/navigation";
+import { PolicyDetailView } from "@/components/governance/PolicyDetailView";
+
+export default function Page() {
+  const params = useParams();
+  const id = params?.id as string;
+  // PolicyDetailView 는 number postId 를 받지만 string cuid 도 그대로 fetch 에 사용 가능.
+  return <PolicyDetailView postId={id as unknown as number} />;
 }

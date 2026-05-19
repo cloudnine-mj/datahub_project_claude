@@ -1,5 +1,10 @@
-import { PostDetail } from "@/components/governance/posts/post-detail";
+"use client";
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <PostDetail board="process" id={params.id} />;
+import { useParams } from "next/navigation";
+import { PostDetailView } from "@/components/governance/PostDetailView";
+
+export default function Page() {
+  const params = useParams();
+  const id = params?.id as string;
+  return <PostDetailView board="process" postId={id as unknown as number} />;
 }
