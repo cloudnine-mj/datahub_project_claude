@@ -176,7 +176,42 @@ function adaptForm(f: Record<string, unknown>): FormDetail {
 
 export const api = {
   // me / logout
-  me: () => request<Me>("/auth/me").then((m) => m),
+  me: async (): Promise<Me> => {
+    interface MeResponse {
+      user: {
+        id: string;
+        email: string;
+        name: string | null;
+        image: string | null;
+        role: "USER" | "ADMIN" | string;
+        labId: string | null;
+        techCellId: string | null;
+        permissions: unknown[];
+      } | null;
+    }
+    const r = (await request("/auth/me")) as MeResponse;
+    if (!r.user) {
+      throw new Error("not authenticated");
+    }
+    // datahub-develop role(USER/ADMIN) → datahub-web 컴포넌트가 기대하는 role(admin/editor/viewer) 매핑
+    const role: "admin" | "editor" | "viewer" =
+      r.user.role === "ADMIN" || r.user.role === "admin" ? "admin" : "editor";
+    return {
+      user: {
+        id: r.user.id,
+        email: r.user.email,
+        name: r.user.name ?? r.user.email.split("@")[0],
+        role,
+        department: null,
+      },
+      // datahub-develop 은 permissions 가 array. datahub-web 컴포넌트는 boolean 객체를
+      // 기대 — admin 이면 모두 true, 일반 사용자는 모두 false (게시판 작성은 admin 만).
+      permissions: {
+        can_write_policy: role === "admin",
+        can_write_process: role === "admin",
+      },
+    };
+  },
   logout: async () => {
     try {
       await fetch(`${BASE}/auth/logout`, { method: "POST", credentials: "include" });
