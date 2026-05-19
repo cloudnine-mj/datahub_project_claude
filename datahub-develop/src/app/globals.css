@@ -60,4 +60,21 @@
     appearance: none;
     margin: 0;
   }
+
+  /* 모든 type="date" 입력에서 달력 picker icon 을 텍스트 왼쪽으로 이동. */
+  input[type="date"] {
+    position: relative;
+    padding-left: 2rem;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.6;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
 }
