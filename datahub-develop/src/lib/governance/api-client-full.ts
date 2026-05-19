@@ -112,7 +112,7 @@ export interface FormMessageAttachment {
   size_bytes: number;
 }
 
-type BoardType = "policy" | "process";
+export type BoardType = "policy" | "process";
 
 /** 백엔드 camelCase → 옛 snake_case shape 로 변환. 컴포넌트 호환성 유지용. */
 function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<string, unknown> {

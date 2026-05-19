@@ -11,10 +11,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Pin, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/governance/api-client-full";
-import { Breadcrumb } from "./Breadcrumb";
-import { EmptyState } from "./EmptyState";
+import { Breadcrumb } from "@/components/governance/Breadcrumb";
+import { EmptyState } from "@/components/governance/EmptyState";
 import { BOARD_LABELS, PROCESS_CATEGORIES, formatDate } from "@/lib/governance/forms/utils-bridge";
-import { DocTypePill } from "./DocTypePill";
+import { DocTypePill } from "@/components/governance/DocTypePill";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
