@@ -51,8 +51,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   } catch {
     return audit.fail(400, "invalid JSON body");
   }
+  // 본문은 비워도 OK — 첨부 파일만 있는 메시지를 허용.
   const text = (body.body ?? "").trim();
-  if (!text) return audit.fail(400, "메시지 본문을 입력하세요.");
 
   const form = await prisma.governanceForm.findUnique({
     where: { id: params.id },

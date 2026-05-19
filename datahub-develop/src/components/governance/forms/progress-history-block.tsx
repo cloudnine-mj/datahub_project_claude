@@ -172,8 +172,8 @@ export function ProgressHistoryBlock({
 
   if (history.length === 0 && messages.length === 0) return null;
 
-  // 백엔드 검증과 일치 — 본문이 비어있으면 첨부만 있어도 전송 불가 (메시지 생성 단계에 본문 필수).
-  const canSend = !sending && draftText.trim().length > 0;
+  // 본문 또는 첨부 중 하나만 있어도 전송 가능. 둘 다 비어있을 때만 disabled.
+  const canSend = !sending && (draftText.trim().length > 0 || draftFiles.length > 0);
   const onSend = async () => {
     if (!canSend) return;
     const text = draftText.trim();
