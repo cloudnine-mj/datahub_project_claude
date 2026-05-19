@@ -131,8 +131,8 @@ export function PostNewView({ board }: { board: BoardType }) {
         is_draft: asDraft,
         visibility,
         author_name: authorName.trim() || undefined,
-        // 태그는 정책/프로세스 모두 지원. 비어 있으면 null 로 전송.
-        tags: tags.length > 0 ? tags : null,
+        // 태그는 정책 보드만 지원. 프로세스 보드는 항상 null 로 전송 (편집 시 기존 태그도 클리어).
+        tags: isPolicy && tags.length > 0 ? tags : null,
         // 중요도(severity) UI 는 비활성 상태지만 편집 시 기존 값 보존을 위해
         // 정책 보드에 한해 state 그대로 다시 전송.
         ...(isPolicy && {
@@ -238,10 +238,12 @@ export function PostNewView({ board }: { board: BoardType }) {
               </Field>
             )}
 
-            {/* 태그 — 정책/프로세스 모두 노출. 필수 아님. */}
-            <Field label="태그">
-              <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
-            </Field>
+            {/* 태그 — 정책 보드만. 프로세스 보드는 단순한 가이드 문서라 태그 미사용. */}
+            {isPolicy && (
+              <Field label="태그">
+                <TagInput value={tags} onChange={setTags} draft={tagDraft} onDraft={setTagDraft} />
+              </Field>
+            )}
 
             <Field label="내용" required hint="마크다운 지원">
               <textarea

@@ -97,7 +97,6 @@ export function BoardListView({ board, compact = false }: Props) {
         p.author_name,
         p.doc_type ?? "",
         p.category ?? "",
-        (p.tags ?? []).join(" "),
       ]
         .join(" ")
         .toLowerCase();
@@ -151,7 +150,7 @@ export function BoardListView({ board, compact = false }: Props) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="제목, 작성자, 유형, 카테고리, 태그로 검색"
+            placeholder="제목, 작성자, 유형, 카테고리로 검색"
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
@@ -188,19 +187,18 @@ export function BoardListView({ board, compact = false }: Props) {
               <th className="w-32 px-6 py-3 font-medium">작성자</th>
               <th className="w-40 px-6 py-3 text-right font-medium">작성일</th>
               <th className="w-40 px-6 py-3 text-right font-medium">수정일</th>
-              <th className="w-48 px-6 py-3 font-medium">태그</th>
             </tr>
           </thead>
           <tbody>
             {pageItems === null ? (
               <tr>
-                <td colSpan={isProcess ? 7 : 6} className="px-6 py-16 text-center text-gray-400">
+                <td colSpan={isProcess ? 6 : 5} className="px-6 py-16 text-center text-gray-400">
                   불러오는 중...
                 </td>
               </tr>
             ) : pageItems.length === 0 ? (
               <tr>
-                <td colSpan={isProcess ? 7 : 6}>
+                <td colSpan={isProcess ? 6 : 5}>
                   <EmptyState
                     message={
                       posts && posts.length > 0
@@ -244,22 +242,6 @@ export function BoardListView({ board, compact = false }: Props) {
                     <td className="px-6 py-4 text-gray-600">{p.author_name}</td>
                     <td className="px-6 py-4 text-right text-gray-400">{formatDate(p.created_at)}</td>
                     <td className="px-6 py-4 text-right text-gray-400">{formatDate(p.updated_at)}</td>
-                    <td className="px-6 py-4">
-                      {(p.tags ?? []).length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {(p.tags ?? []).slice(0, 3).map((t) => (
-                            <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                              #{t}
-                            </span>
-                          ))}
-                          {(p.tags ?? []).length > 3 && (
-                            <span className="text-xs text-gray-400">+{(p.tags ?? []).length - 3}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
                   </tr>
                 );
               })
