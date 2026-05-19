@@ -7,6 +7,7 @@
 import {
   BarChart3,
   BookOpen,
+  Box,
   ClipboardList,
   Code,
   FileText,
@@ -33,6 +34,7 @@ const items: SectionNavItem[] = [
   { title: "데이터 구독", href: "/governance/forms/planning?type=subscribe", icon: RefreshCw, group: "신청서" },
   { title: "Product 로그 활용", href: "/governance/forms/product_log_usage/new", icon: FileText, group: "신청서" },
   { title: "API 활용 계획서", href: "/governance/api-applications/planning", icon: Code, group: "신청서" },
+  { title: "업무생산성 도구 신청", href: "/governance/forms/productivity_tool/new", icon: Box, group: "신청서" },
 
   // 가이드
   { title: "프로세스 안내", href: "/governance/process", icon: Route, group: "가이드" },
