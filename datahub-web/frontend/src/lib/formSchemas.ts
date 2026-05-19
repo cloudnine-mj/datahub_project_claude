@@ -275,7 +275,7 @@ const dataPurchase: FormSchema = {
       ],
     },
     {
-      title: "Compliance 확인",
+      title: "데이터셋에 대한 compliance 확인 여부",
       fields: [COMPLIANCE_FIELD],
     },
     {
@@ -377,7 +377,7 @@ const dataSubscription: FormSchema = {
       ],
     },
     {
-      title: "Compliance 확인",
+      title: "데이터셋에 대한 compliance 확인 여부",
       fields: [COMPLIANCE_FIELD],
     },
     {
