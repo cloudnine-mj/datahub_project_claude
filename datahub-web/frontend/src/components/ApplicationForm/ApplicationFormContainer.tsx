@@ -404,7 +404,13 @@ export function ApplicationFormContainer({
       </div>
 
       <ProgressStatusBlock status={status} history={history} />
-      <ProgressHistoryBlock history={history} />
+      <ProgressHistoryBlock
+        history={history}
+        canPostMessage
+        currentUserName={applicant.name}
+        currentUserRole="applicant"
+        participants={["참여자 모두", "Data Governance Team"]}
+      />
       <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
 
       {status === "approved" && <ApprovalGuideBanner />}
