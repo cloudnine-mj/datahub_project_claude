@@ -1,11 +1,20 @@
-// 사이드바 최상위 메뉴 — Dashboard / Governance.
+// 사이드바 최상위 메뉴 — Datahub 전 영역 진입점.
 //   현재 경로 prefix 매치로 active 표시. governance 트리 펼침은 부모(Sidebar)에서 관리.
+//   Governance 외 항목은 아직 미구현 — coming-soon 페이지로 안내.
 
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, ShieldCheck } from "lucide-react";
+import {
+  BarChart3,
+  Box,
+  Building2,
+  Database,
+  FolderKanban,
+  LayoutGrid,
+  ShieldCheck,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface TopItem {
@@ -18,7 +27,36 @@ interface TopItem {
 }
 
 const TOP_ITEMS: TopItem[] = [
+  { id: "models", label: "Models", path: "/coming-soon?from=models", icon: Box, matchPrefix: "/models" },
+  {
+    id: "datasets",
+    label: "Datasets",
+    path: "/coming-soon?from=datasets",
+    icon: Database,
+    matchPrefix: "/datasets",
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    path: "/coming-soon?from=projects",
+    icon: FolderKanban,
+    matchPrefix: "/projects",
+  },
   { id: "dashboard", label: "Dashboard", path: "/dashboard", icon: LayoutGrid },
+  {
+    id: "analytics",
+    label: "Analytics",
+    path: "/coming-soon?from=analytics",
+    icon: BarChart3,
+    matchPrefix: "/analytics",
+  },
+  {
+    id: "organizations",
+    label: "Organizations",
+    path: "/coming-soon?from=organizations",
+    icon: Building2,
+    matchPrefix: "/organizations",
+  },
   { id: "governance", label: "Governance", path: "/governance", icon: ShieldCheck },
 ];
 
