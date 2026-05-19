@@ -197,6 +197,7 @@ export default function Page({ params }: { params: { id: string } }) {
         return (
           <div className="mt-4">
             <ProgressHistoryBlock
+              formId={form.id}
               history={approvalHistoryToStatusItems(
                 form.approval_history,
                 form.submitter_name,

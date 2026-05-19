@@ -188,6 +188,27 @@ export interface FormCommentItem {
   created_at: string;
 }
 
+export interface FormMessageAttachment {
+  id: number;
+  filename: string;
+  size_bytes: number;
+}
+
+/** 진행 이력 타임라인 메시지 — 신청자 ↔ 담당자(김은솔) 양방향 채팅. */
+export interface FormMessageItem {
+  id: number;
+  form_id: number;
+  sender_id: number;
+  sender_name: string;
+  sender_email: string;
+  sender_role: "applicant" | "assignee" | "admin";
+  recipient_name: string;
+  recipient_role: "담당자" | "신청자";
+  body: string;
+  created_at: string;
+  attachments: FormMessageAttachment[];
+}
+
 export interface FormDetail extends FormListItem {
   submitter_name: string;
   submitter_email: string;
@@ -341,6 +362,25 @@ export const api = {
     }),
   deleteFormComment: (formId: number, commentId: number) =>
     request<void>(`/forms/${formId}/comments/${commentId}`, { method: "DELETE" }),
+
+  /** 진행 이력 메시지 (양방향 채팅) — 누구나 조회 가능, 신청자/담당자/admin 만 작성 가능. */
+  listFormMessages: (formId: number) =>
+    request<FormMessageItem[]>(`/forms/${formId}/messages`),
+  createFormMessage: (formId: number, body: string) =>
+    request<FormMessageItem>(`/forms/${formId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ body }),
+    }),
+  uploadFormMessageAttachment: (formId: number, messageId: number, file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<FormMessageAttachment>(
+      `/forms/${formId}/messages/${messageId}/attachments`,
+      { method: "POST", body: fd },
+    );
+  },
+  formMessageAttachmentUrl: (formId: number, messageId: number, attId: number) =>
+    `${BASE}/forms/${formId}/messages/${messageId}/attachments/${attId}`,
 
   /** 로그아웃 — plat-api 의 refresh_token 폐기 + 쿠키 삭제. mock 모드면 X-User-Email 만 비움. */
   logout: async () => {

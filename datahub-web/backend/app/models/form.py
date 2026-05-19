@@ -133,3 +133,46 @@ class FormComment(Base):
     author_role: Mapped[str] = mapped_column(String(20))  # snapshot — 향후 role 이 바뀌어도 작성 당시 표시
     body: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class FormMessage(Base):
+    """진행 이력 타임라인의 사용자 메시지 — 신청자 ↔ 담당자(김은솔) 양방향 채팅.
+
+    FormComment 와 분리한 이유:
+      - FormComment 는 author 만 기록되고 단방향 스레드 모델
+      - FormMessage 는 회신 대상(recipient) 을 발신 시점에 자동 결정해 기록 — 양방향 채팅 UI 와 일치
+      - 첨부 파일을 메시지 단위로 묶어 보관 (FormMessageAttachment 1:N)
+    """
+
+    __tablename__ = "form_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    form_id: Mapped[int] = mapped_column(ForeignKey("forms.id", ondelete="CASCADE"), index=True)
+    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    sender_name: Mapped[str] = mapped_column(String(100))
+    sender_email: Mapped[str] = mapped_column(String(255))
+    # 발신자 채팅 역할 스냅샷 — applicant / assignee / admin
+    sender_role: Mapped[str] = mapped_column(String(20))
+    # 회신 대상 — 발신 시점에 결정. (Phase 2 로 다수 담당자 도입 시도 그대로 활용)
+    recipient_name: Mapped[str] = mapped_column(String(100))
+    recipient_role: Mapped[str] = mapped_column(String(20))  # '담당자' or '신청자'
+    body: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+    attachments: Mapped[list["FormMessageAttachment"]] = relationship(
+        back_populates="message", cascade="all, delete-orphan"
+    )
+
+
+class FormMessageAttachment(Base):
+    __tablename__ = "form_message_attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("form_messages.id", ondelete="CASCADE"), index=True
+    )
+    filename: Mapped[str] = mapped_column(String(255))
+    stored_path: Mapped[str] = mapped_column(String(500))
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+
+    message: Mapped[FormMessage] = relationship(back_populates="attachments")

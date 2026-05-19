@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -30,6 +30,7 @@ import {
   type ReplyTargetUser,
   type SenderRoleForChat,
 } from "@/lib/determineReplyTarget";
+import { api, type FormMessageItem } from "@/lib/api";
 
 interface UserMessage {
   id: string;
@@ -39,7 +40,12 @@ interface UserMessage {
   /** 'M/d HH:mm' short form 또는 ISO. */
   timestamp: string;
   text: string;
-  attachments: { name: string; size: number }[];
+  attachments: {
+    name: string;
+    size: number;
+    /** 백엔드 첨부 다운로드 URL (있을 때만). 로컬-only 메시지는 undefined. */
+    href?: string;
+  }[];
 }
 
 interface Props {
@@ -52,6 +58,30 @@ interface Props {
   currentUserRole?: SenderRoleForChat;
   /** 신청자 정보 — 담당자가 메시지 작성 시 회신 대상이 됨. */
   applicantName?: string;
+  /** 백엔드 신청 id — 주어지면 메시지를 API 로 조회·전송. 없으면 로컬 state 만 사용 (데모). */
+  formId?: number;
+}
+
+function isoToShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function backendMessageToUI(m: FormMessageItem): UserMessage {
+  return {
+    id: `srv-${m.id}`,
+    senderName: m.sender_name,
+    senderRole: m.sender_role,
+    replyTarget: { name: m.recipient_name, role: m.recipient_role },
+    timestamp: isoToShort(m.created_at),
+    text: m.body,
+    attachments: m.attachments.map((a) => ({
+      name: a.filename,
+      size: a.size_bytes,
+      href: api.formMessageAttachmentUrl(m.form_id, m.id, a.id),
+    })),
+  };
 }
 
 const SYSTEM_EVENT_ICON: Record<HistoryAction, LucideIcon> = {
@@ -87,12 +117,14 @@ export function ProgressHistoryBlock({
   currentUserName = "나",
   currentUserRole = "applicant",
   applicantName = "신청자",
+  formId,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [includeSystem, setIncludeSystem] = useState(true);
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const [draftText, setDraftText] = useState("");
   const [draftFiles, setDraftFiles] = useState<File[]>([]);
+  const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +133,21 @@ export function ProgressHistoryBlock({
     () => determineReplyTarget({ name: applicantName }, currentUserRole),
     [applicantName, currentUserRole],
   );
+
+  // 백엔드 메시지 조회 — formId 가 주어진 경우만. 진입 시 1회 + 작성 후 갱신.
+  const refetchMessages = useCallback(async () => {
+    if (!formId) return;
+    try {
+      const list = await api.listFormMessages(formId);
+      setMessages(list.map(backendMessageToUI));
+    } catch (e) {
+      console.error("[ProgressHistoryBlock] listFormMessages failed", e);
+    }
+  }, [formId]);
+
+  useEffect(() => {
+    void refetchMessages();
+  }, [refetchMessages]);
 
   // 시스템 이벤트 + 메시지 합쳐 시간순(과거→현재) 정렬.
   const items = useMemo(() => {
@@ -123,23 +170,55 @@ export function ProgressHistoryBlock({
 
   if (history.length === 0 && messages.length === 0) return null;
 
-  const canSend = draftText.trim().length > 0 || draftFiles.length > 0;
-  const onSend = () => {
+  // 백엔드 검증과 일치 — 본문이 비어있으면 첨부만 있어도 전송 불가 (메시지 생성 단계에 본문 필수).
+  const canSend = !sending && draftText.trim().length > 0;
+  const onSend = async () => {
     if (!canSend) return;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `msg-${Date.now()}`,
-        senderName: currentUserName,
-        senderRole: currentUserRole,
-        replyTarget,
-        timestamp: nowShort(),
-        text: draftText.trim(),
-        attachments: draftFiles.map((f) => ({ name: f.name, size: f.size })),
-      },
-    ]);
-    setDraftText("");
-    setDraftFiles([]);
+    const text = draftText.trim();
+    const files = draftFiles;
+
+    // formId 없으면 로컬 state 만 — 데모/미저장 신청용 fallback.
+    if (!formId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now()}`,
+          senderName: currentUserName,
+          senderRole: currentUserRole,
+          replyTarget,
+          timestamp: nowShort(),
+          text,
+          attachments: files.map((f) => ({ name: f.name, size: f.size })),
+        },
+      ]);
+      setDraftText("");
+      setDraftFiles([]);
+      return;
+    }
+
+    setSending(true);
+    try {
+      const created = await api.createFormMessage(formId, text);
+      // 첨부 파일 — 순차 업로드. 한 건 실패해도 나머지 시도.
+      for (const file of files) {
+        try {
+          await api.uploadFormMessageAttachment(formId, created.id, file);
+        } catch (err) {
+          console.error("[ProgressHistoryBlock] attachment upload failed", err);
+          setToast(`${file.name} 업로드 실패`);
+          setTimeout(() => setToast(null), 3000);
+        }
+      }
+      setDraftText("");
+      setDraftFiles([]);
+      await refetchMessages();
+    } catch (e) {
+      console.error("[ProgressHistoryBlock] createFormMessage failed", e);
+      setToast("메시지 전송에 실패했습니다.");
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setSending(false);
+    }
   };
 
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -423,7 +502,16 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
                     aria-hidden="true"
                     className="text-gray-400"
                   />
-                  <span>{a.name}</span>
+                  {a.href ? (
+                    <a
+                      href={a.href}
+                      className="text-blue-600 hover:underline dark:text-blue-300"
+                    >
+                      {a.name}
+                    </a>
+                  ) : (
+                    <span>{a.name}</span>
+                  )}
                   <span className="text-gray-400">·</span>
                   <span className="text-gray-400">{fmtSize(a.size)}</span>
                 </li>

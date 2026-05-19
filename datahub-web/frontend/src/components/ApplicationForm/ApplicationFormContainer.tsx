@@ -405,6 +405,7 @@ export function ApplicationFormContainer({
 
       <ProgressStatusBlock status={status} history={history} />
       <ProgressHistoryBlock
+        formId={formId ?? undefined}
         history={history}
         canPostMessage
         currentUserName={applicant.name}

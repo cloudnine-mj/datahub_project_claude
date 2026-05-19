@@ -123,3 +123,35 @@ class FormCommentOut(BaseModel):
     author_role: str
     body: str
     created_at: datetime
+
+
+class FormMessageAttachmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str
+    size_bytes: int
+
+
+class FormMessageCreate(BaseModel):
+    """채팅 메시지 생성 — body 가 비어도 첨부만 있는 메시지를 허용해야 하므로
+    빈 문자열 가능. 길이 상한은 4000자.
+    """
+
+    body: str = Field(default="", max_length=4000)
+
+
+class FormMessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    form_id: int
+    sender_id: int
+    sender_name: str
+    sender_email: str
+    sender_role: str
+    recipient_name: str
+    recipient_role: str
+    body: str
+    created_at: datetime
+    attachments: list[FormMessageAttachmentOut] = []

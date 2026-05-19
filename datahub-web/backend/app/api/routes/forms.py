@@ -29,7 +29,14 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.config import settings
 from app.db.session import get_db
-from app.models import Form, FormAttachment, FormComment, User
+from app.models import (
+    Form,
+    FormAttachment,
+    FormComment,
+    FormMessage,
+    FormMessageAttachment,
+    User,
+)
 from app.models.form import FORM_TYPES
 from app.models.form import STATUS_VALUES
 from app.schemas.form import (
@@ -39,6 +46,9 @@ from app.schemas.form import (
     FormCreate,
     FormDetail,
     FormListItem,
+    FormMessageAttachmentOut,
+    FormMessageCreate,
+    FormMessageOut,
     StatusChange,
 )
 
@@ -705,3 +715,181 @@ def delete_form_comment(
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="삭제 권한이 없습니다.")
     db.delete(comment)
     db.commit()
+
+
+# ── 진행 이력 메시지 — 신청자 ↔ 담당자 양방향 채팅 ────────────────────────
+# 권한:
+#   - 조회: 신청 조회 가능한 사용자(현재 로그인 사용자 전원)
+#   - 작성: 신청자 본인 / FIXED_ASSIGNEE(김은솔) / admin 만 (observer 차단)
+# 회신 대상 결정 (프런트 determineReplyTarget 와 동일):
+#   - assignee(김은솔) 발신 → 신청자에게 회신
+#   - 그 외 → FIXED_ASSIGNEE(김은솔) 에게 회신
+
+
+def _resolve_chat_role(form: Form, user: User) -> str | None:
+    """현재 사용자의 채팅 역할 — applicant / assignee / admin / None(observer)."""
+    if form.submitter_id == user.id:
+        return "applicant"
+    if user.email.lower() == settings.default_assignee_email.lower():
+        return "assignee"
+    if user.role == "admin":
+        return "admin"
+    return None
+
+
+def _resolve_recipient(form: Form, sender_role: str) -> tuple[str, str]:
+    """회신 대상 (name, role) — 발신자 역할 기준 자동 결정."""
+    if sender_role == "assignee":
+        return form.submitter_name, "신청자"
+    return settings.default_assignee_name, "담당자"
+
+
+@router.get("/{form_id}/messages", response_model=list[FormMessageOut])
+def list_form_messages(
+    form_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),  # noqa: ARG001 — 로그인 검증용
+) -> list[FormMessage]:
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+    return (
+        db.query(FormMessage)
+        .filter(FormMessage.form_id == form_id)
+        .order_by(FormMessage.created_at.asc())
+        .all()
+    )
+
+
+@router.post(
+    "/{form_id}/messages",
+    response_model=FormMessageOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_form_message(
+    form_id: int,
+    payload: FormMessageCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="form not found")
+    role = _resolve_chat_role(form, user)
+    if role is None:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail="이 신청서에 메시지를 작성할 권한이 없습니다.",
+        )
+    # 본문 + 첨부 둘 다 비어있으면 거부 — 첨부는 별도 POST 라 여기선 본문만 검사.
+    # (빈 본문 + 첨부 없음 메시지를 임시 생성한 뒤 첨부를 못 올린 케이스를 막기 위해)
+    # 첨부와 동시에 보낼 때는 프런트가 body 를 일부라도 채워서 보내거나, 빈 본문이라도
+    # 첨부를 함께 올리는 패턴이 정상 흐름. 빈 본문만 보내는 경우 차단.
+    if not payload.body.strip():
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="메시지 본문을 입력하세요."
+        )
+    recipient_name, recipient_role = _resolve_recipient(form, role)
+    msg = FormMessage(
+        form_id=form.id,
+        sender_id=user.id,
+        sender_name=user.name,
+        sender_email=user.email,
+        sender_role=role,
+        recipient_name=recipient_name,
+        recipient_role=recipient_role,
+        body=payload.body.strip(),
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+    return msg
+
+
+def _check_message_writer(msg: FormMessage, user: User) -> None:
+    """첨부 업로드/삭제 권한 — 메시지 작성자 본인 또는 admin."""
+    if msg.sender_id != user.id and user.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
+
+
+@router.post(
+    "/{form_id}/messages/{message_id}/attachments",
+    response_model=FormMessageAttachmentOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_message_attachment(
+    form_id: int,
+    message_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """메시지 첨부 파일 1개 업로드 — 50MB 제한.
+
+    저장 경로: `uploads/forms/{form_id}/messages/{message_id}/{token}_{원본파일명}`
+    """
+    msg = (
+        db.query(FormMessage)
+        .filter(FormMessage.id == message_id, FormMessage.form_id == form_id)
+        .first()
+    )
+    if not msg:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="message not found")
+    _check_message_writer(msg, user)
+
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"파일 크기는 {MAX_UPLOAD_BYTES // (1024 * 1024)}MB 이하여야 합니다.",
+        )
+
+    target_dir: Path = (
+        settings.upload_dir / "forms" / str(form_id) / "messages" / str(message_id)
+    )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = (file.filename or "unnamed").replace("/", "_").replace("\\", "_")
+    stored_name = f"{secrets.token_hex(8)}_{safe_name}"
+    target_path = target_dir / stored_name
+    target_path.write_bytes(contents)
+
+    att = FormMessageAttachment(
+        message_id=msg.id,
+        filename=safe_name,
+        stored_path=str(target_path),
+        size_bytes=len(contents),
+    )
+    db.add(att)
+    db.commit()
+    db.refresh(att)
+    return att
+
+
+@router.get("/{form_id}/messages/{message_id}/attachments/{att_id}")
+def download_message_attachment(
+    form_id: int,
+    message_id: int,
+    att_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),  # noqa: ARG001 — 로그인 검증용
+):
+    msg = (
+        db.query(FormMessage)
+        .filter(FormMessage.id == message_id, FormMessage.form_id == form_id)
+        .first()
+    )
+    if not msg:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="message not found")
+    att = (
+        db.query(FormMessageAttachment)
+        .filter(
+            FormMessageAttachment.id == att_id,
+            FormMessageAttachment.message_id == message_id,
+        )
+        .first()
+    )
+    if not att:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="attachment not found")
+    if not Path(att.stored_path).exists():
+        raise HTTPException(status.HTTP_410_GONE, detail="파일이 디스크에서 사라졌습니다.")
+    return FileResponse(att.stored_path, filename=att.filename)

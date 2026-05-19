@@ -58,6 +58,8 @@ def _ensure_users(db: Session) -> dict[str, User]:
         ("viewer@example.com", "Viewer Lee", "viewer", "Marketing"),
         # 신청 시드용 (REQ-2024-* 들 제출자)
         ("jun.lee@company.com", "이준혁", "editor", "데이터전략팀"),
+        # Phase 1 고정 담당자 — 채팅 양방향 회신의 '담당자' 측
+        (settings.default_assignee_email, settings.default_assignee_name, "editor", "Data Governance Team"),
     ]
     out: dict[str, User] = {}
     for email, name, role, dept in users_def:
