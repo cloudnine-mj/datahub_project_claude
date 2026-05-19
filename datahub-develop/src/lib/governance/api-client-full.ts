@@ -115,6 +115,57 @@ export interface FormMessageAttachment {
 type BoardType = "policy" | "process";
 
 /** 백엔드 camelCase → 옛 snake_case shape 로 변환. 컴포넌트 호환성 유지용. */
+function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<string, unknown> {
+  const attachments = ((m.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
+    (a) => ({
+      id: a.id,
+      filename: a.filename,
+      sizeBytes: a.sizeBytes,
+      size_bytes: a.sizeBytes,
+    }),
+  );
+  return {
+    id: m.id as string,
+    formId: m.formId as string,
+    senderId: m.senderId as string,
+    senderName: m.senderName as string,
+    senderEmail: m.senderEmail as string,
+    senderRole: m.senderRole as FormMessageItem["senderRole"],
+    recipientName: m.recipientName as string,
+    recipientRole: m.recipientRole as FormMessageItem["recipientRole"],
+    body: m.body as string,
+    createdAt: m.createdAt as string,
+    attachments: attachments as unknown as FormMessageItem["attachments"],
+    // snake_case
+    form_id: m.formId,
+    sender_id: m.senderId,
+    sender_name: m.senderName,
+    sender_email: m.senderEmail,
+    sender_role: m.senderRole,
+    recipient_name: m.recipientName,
+    recipient_role: m.recipientRole,
+    created_at: m.createdAt,
+  };
+}
+
+function adaptComment(c: Record<string, unknown>): FormCommentItem & Record<string, unknown> {
+  return {
+    id: c.id as string,
+    form_id: c.formId as string,
+    author_id: c.authorId as string,
+    author_name: c.authorName as string,
+    author_role: c.authorRole as FormCommentItem["author_role"],
+    body: c.body as string,
+    created_at: c.createdAt as string,
+    // camelCase
+    formId: c.formId,
+    authorId: c.authorId,
+    authorName: c.authorName,
+    authorRole: c.authorRole,
+    createdAt: c.createdAt,
+  };
+}
+
 function adaptPost(p: Record<string, unknown>): PostDetail & Record<string, unknown> {
   const attachments = ((p.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
     (a) => ({ id: a.id, filename: a.filename, size_bytes: a.sizeBytes, sizeBytes: a.sizeBytes }),
@@ -350,16 +401,18 @@ export const api = {
 
   // Form messages (양방향 채팅)
   listFormMessages: async (formId: string | number) => {
-    const list = (await request<FormMessageItem[]>(
+    const list = (await request<Record<string, unknown>[]>(
       `/governance/forms/${formId}/messages`,
     )) ?? [];
-    return list;
+    return list.map(adaptMessage) as unknown as FormMessageItem[];
   },
-  createFormMessage: (formId: string | number, body: string) =>
-    request<FormMessageItem>(`/governance/forms/${formId}/messages`, {
-      method: "POST",
-      body: JSON.stringify({ body }),
-    }),
+  createFormMessage: async (formId: string | number, body: string) => {
+    const r = (await request<Record<string, unknown>>(
+      `/governance/forms/${formId}/messages`,
+      { method: "POST", body: JSON.stringify({ body }) },
+    )) as Record<string, unknown>;
+    return adaptMessage(r) as unknown as FormMessageItem;
+  },
   uploadFormMessageAttachment: (_formId: string | number, _mid: string | number, _file: File) => {
     console.warn("[governance] uploadFormMessageAttachment Phase 5 미구현");
     return Promise.resolve({ id: "", filename: _file.name, size_bytes: _file.size });
@@ -367,13 +420,19 @@ export const api = {
   formMessageAttachmentUrl: (_formId: string | number, _mid: string | number, _aid: string | number) => "#",
 
   // Form comments
-  listFormComments: (formId: string | number) =>
-    request<FormCommentItem[]>(`/governance/forms/${formId}/comments`),
-  createFormComment: (formId: string | number, body: string) =>
-    request<FormCommentItem>(`/governance/forms/${formId}/comments`, {
-      method: "POST",
-      body: JSON.stringify({ body }),
-    }),
+  listFormComments: async (formId: string | number) => {
+    const rows = (await request<Record<string, unknown>[]>(
+      `/governance/forms/${formId}/comments`,
+    )) ?? [];
+    return rows.map(adaptComment) as unknown as FormCommentItem[];
+  },
+  createFormComment: async (formId: string | number, body: string) => {
+    const r = (await request<Record<string, unknown>>(
+      `/governance/forms/${formId}/comments`,
+      { method: "POST", body: JSON.stringify({ body }) },
+    )) as Record<string, unknown>;
+    return adaptComment(r) as unknown as FormCommentItem;
+  },
   deleteFormComment: (formId: string | number, commentId: string | number) =>
     request<void>(`/governance/forms/${formId}/comments/${commentId}`, { method: "DELETE" }),
 
