@@ -9,7 +9,7 @@
 import { useMemo, useRef, useState } from "react";
 import { FileText, Plus, Upload, X } from "lucide-react";
 
-export type Currency = "USD" | "KRW" | "OTHER";
+export type Currency = "USD" | "KRW";
 
 export interface ApiService {
   id: string;
@@ -17,7 +17,6 @@ export interface ApiService {
   startDate: string;
   endDate: string;
   currency: Currency;
-  customCurrency: string;
   estimatedCost: number;
 }
 
@@ -51,13 +50,11 @@ export function newService(): ApiService {
     startDate: "",
     endDate: "",
     currency: "USD",
-    customCurrency: "",
     estimatedCost: 0,
   };
 }
 
 function effectiveCurrency(svc: ApiService): string {
-  if (svc.currency === "OTHER") return svc.customCurrency.trim() || "OTHER";
   return svc.currency;
 }
 
@@ -275,15 +272,8 @@ interface ServiceCardProps {
 }
 
 function ServiceCard({ index, service, onChange, onRemove, canRemove }: ServiceCardProps) {
-  const customRef = useRef<HTMLInputElement>(null);
-  const otherSelected = service.currency === "OTHER";
-
   const setCurrency = (c: Currency) => {
     onChange({ currency: c });
-    if (c === "OTHER") {
-      // 다음 tick 에 포커스 이동.
-      setTimeout(() => customRef.current?.focus(), 0);
-    }
   };
 
   return (
@@ -348,22 +338,6 @@ function ServiceCard({ index, service, onChange, onRemove, canRemove }: ServiceC
             checked={service.currency === "KRW"}
             onChange={() => setCurrency("KRW")}
             label="KRW"
-          />
-          <CurrencyRadio
-            name={`currency-${service.id}`}
-            value="OTHER"
-            checked={otherSelected}
-            onChange={() => setCurrency("OTHER")}
-            label="그 외"
-          />
-          <input
-            ref={customRef}
-            type="text"
-            value={service.customCurrency}
-            onChange={(e) => onChange({ customCurrency: e.target.value.toUpperCase() })}
-            disabled={!otherSelected}
-            placeholder="EUR"
-            className="w-[80px] rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] focus:border-brand focus:outline-none disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:disabled:bg-gray-800/60"
           />
         </div>
 
