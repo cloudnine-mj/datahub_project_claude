@@ -290,35 +290,27 @@ export function FormBuilder({
         onSubmit={onSubmit}
         className={`space-y-8 ${hideForm ? "hidden" : ""}`}
       >
-        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력, 사용자 수정 불가 (readOnly).
-            헤더 클릭으로 펼침/접힘. */}
+        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력. 항상 노출, 회색 박스 + dl 레이아웃. */}
         <section>
-          <button
-            type="button"
-            onClick={() => setSubmitterOpen((v) => !v)}
-            aria-expanded={submitterOpen}
-            className="mb-3 flex w-full items-center gap-2 text-left"
-          >
-            <span className="block h-5 w-1 rounded-sm bg-brand" />
-            <h2 className="text-base font-bold">신청자 정보</h2>
-            <ChevronDown
-              size={16}
-              className={
-                "text-gray-400 transition-transform " + (submitterOpen ? "" : "-rotate-90")
-              }
-            />
-          </button>
-          {submitterOpen && (
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-              <table className="w-full text-sm">
-                <tbody>
-                  <SubmitterInputRow label="신청자 이름" value={submitterName} />
-                  <SubmitterInputRow label="소속" value={submitterDepartment} />
-                  <SubmitterInputRow label="이메일" value={submitterEmail} type="email" />
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="mb-3 flex items-center gap-1.5">
+            <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+            <h2 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+              신청자 정보
+            </h2>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
+            <dl
+              className="grid gap-y-2 gap-x-3.5 text-[12px]"
+              style={{ gridTemplateColumns: "120px 1fr" }}
+            >
+              <dt className="text-gray-500 dark:text-gray-400">이름</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{submitterName || "-"}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">소속</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{submitterDepartment || "-"}</dd>
+              <dt className="text-gray-500 dark:text-gray-400">이메일</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{submitterEmail || "-"}</dd>
+            </dl>
+          </div>
         </section>
 
         {schema.sections.map((section, sectionIdx) => {
