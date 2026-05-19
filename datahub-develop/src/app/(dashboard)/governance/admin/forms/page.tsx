@@ -261,11 +261,14 @@ export default function Page() {
           className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[13px] focus:border-brand focus:outline-none"
         >
           <option value="all">신청 종류 전체</option>
-          {Object.entries(FORM_TYPE_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
+          {Object.entries(FORM_TYPE_LABELS)
+            // 데이터 제작 계획서 / 업무생산성 도구는 필터 옵션에서 제외 — 거버넌스 요청 관리 흐름과 무관.
+            .filter(([k]) => k !== "data_production_plan" && k !== "productivity_tool")
+            .map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
         </select>
         <input
           value={query}
