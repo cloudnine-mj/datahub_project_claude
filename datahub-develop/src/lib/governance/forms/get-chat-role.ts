@@ -14,10 +14,20 @@ interface FormLike {
   submitterEmail: string;
 }
 
-interface MeLike {
+interface MeFlat {
   email: string;
   /** "USER" | "ADMIN" (datahub-api role). */
   role?: string;
+}
+
+interface MeNested {
+  user: MeFlat;
+}
+
+type MeLike = MeFlat | MeNested;
+
+function isNested(m: MeLike): m is MeNested {
+  return typeof (m as MeNested).user === "object" && (m as MeNested).user !== null;
 }
 
 /** Phase 1 고정 담당자 이메일 — server-side `GOVERNANCE_ASSIGNEE_EMAIL` 와 동일해야 함.
@@ -28,9 +38,11 @@ const FIXED_ASSIGNEE_EMAIL =
 
 export function getChatRole(form: FormLike | null, me: MeLike | null): ChatRole {
   if (!form || !me) return "observer";
-  const myEmail = me.email.toLowerCase();
+  const flat: MeFlat = isNested(me) ? me.user : me;
+  if (!flat?.email) return "observer";
+  const myEmail = flat.email.toLowerCase();
   if (myEmail === form.submitterEmail.toLowerCase()) return "applicant";
   if (myEmail === FIXED_ASSIGNEE_EMAIL.toLowerCase()) return "assignee";
-  if (me.role === "ADMIN" || me.role === "admin") return "admin";
+  if (flat.role === "ADMIN" || flat.role === "admin") return "admin";
   return "observer";
 }
