@@ -40,8 +40,8 @@ const items: SectionNavItem[] = [
 
   // 관리 (admin only — 추후 me.role === 'admin' 일 때만 노출하도록 컨디션 추가 가능)
   { title: "거버넌스 요청 관리", href: "/governance/admin/forms", icon: Inbox, group: "관리" },
-  { title: "프로세스 관리", href: "/governance/process", icon: Route, group: "관리" },
-  { title: "거버넌스 정책 관리", href: "/governance/policy", icon: BookOpen, group: "관리" },
+  { title: "프로세스 관리", href: "/governance/process?manage=1", icon: Route, group: "관리" },
+  { title: "거버넌스 정책 관리", href: "/governance/policy?manage=1", icon: BookOpen, group: "관리" },
   { title: "신청서 양식 카탈로그", href: "/governance/admin/forms-catalog", icon: Settings, group: "관리" },
   { title: "통계·리포트", href: "/governance/admin/stats", icon: BarChart3, group: "관리" },
 ];

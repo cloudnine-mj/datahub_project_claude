@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Pin, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/governance/api-client-full";
@@ -79,6 +80,11 @@ export function BoardListView({ board, compact = false }: Props) {
 
   const canWrite = me?.permissions[`can_write_${board}` as const] ?? false;
   const isAdmin = me?.user.role === "admin";
+  // 사이드바 '관리' 그룹에서 진입한 경우만 admin 도구(상태 필터, 임시저장 행 등) 노출.
+  // 가이드 그룹의 같은 URL 진입은 일반 사용자 시점과 동일.
+  const searchParams = useSearchParams();
+  const isManage = searchParams?.get("manage") === "1";
+  const showAdminTools = isAdmin && isManage;
   const label = BOARD_LABELS[board];
   const isProcess = board === "process";
 
@@ -89,8 +95,8 @@ export function BoardListView({ board, compact = false }: Props) {
     return posts.filter((p) => {
       // 카테고리 필터: category 가 있으면 set 매칭, 없으면 통과 (옛 데이터 호환)
       if (isProcess && p.category && !categoryFilter.has(p.category as CategoryKey)) return false;
-      // admin 상태 필터
-      if (isAdmin && !statusFilter.has(postStatusKey(p))) return false;
+      // 관리 그룹 진입 시에만 admin 상태 필터 적용
+      if (showAdminTools && !statusFilter.has(postStatusKey(p))) return false;
       if (!q) return true;
       const haystack = [
         p.title,
@@ -160,7 +166,7 @@ export function BoardListView({ board, compact = false }: Props) {
         )}
 
         {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 게시됨). */}
-        {isAdmin && (
+        {showAdminTools && (
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
 

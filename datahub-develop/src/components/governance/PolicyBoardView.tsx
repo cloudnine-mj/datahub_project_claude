@@ -11,6 +11,7 @@
  */
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
 import { api, type Me, type PostListItem } from "@/lib/governance/api-client-full";
@@ -51,13 +52,17 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
 
   const canWrite = me?.permissions.can_write_policy ?? false;
   const isAdmin = me?.user.role === "admin";
+  // 사이드바 '관리' 그룹에서 진입한 경우(?manage=1) 만 admin 도구 노출.
+  const searchParams = useSearchParams();
+  const isManage = searchParams?.get("manage") === "1";
+  const showAdminTools = isAdmin && isManage;
 
   // 검색 + (admin) 상태 필터
   const filtered = useMemo(() => {
     if (!posts) return null;
     const q = query.trim().toLowerCase();
     return posts.filter((p) => {
-      if (isAdmin && !statusFilter.has(postStatusKey(p))) return false;
+      if (showAdminTools && !statusFilter.has(postStatusKey(p))) return false;
       if (!q) return true;
       // 표에 노출되는 컬럼만 검색 대상 — 관리 번호 / 정책명 / 작성자 / 태그
       const haystack = [
@@ -133,8 +138,8 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           />
         </div>
 
-        {/* 게시글 상태 필터 — admin 만 노출 (임시 저장 / 게시됨). */}
-        {isAdmin && (
+        {/* 게시글 상태 필터 — 관리 그룹 진입(?manage=1) + admin 일 때만 노출. */}
+        {showAdminTools && (
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
 
