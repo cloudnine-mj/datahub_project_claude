@@ -14,8 +14,8 @@ import { PhaseLayout } from "@/components/PhaseLayout";
 import { PhaseBlock } from "@/components/PhaseBlock";
 import { ApplicationFormContainer } from "@/components/ApplicationForm/ApplicationFormContainer";
 import {
-  PHASE1_PHASES,
   buildPhase1SubSteps,
+  getPhase1Phases,
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
@@ -50,9 +50,6 @@ export default function Page() {
   const urlType = sp?.get("type") ?? null;
   const urlStatus = sp?.get("status") ?? null;
 
-  const prev = prevPhase1Substep("form");
-  const next = nextPhase1Substep("form");
-
   // SSR 단계에서는 sessionStorage 접근 불가 — 마운트 후 한 번 해석.
   const [resolved, setResolved] = useState<{
     type: ApplicationType | null;
@@ -65,6 +62,10 @@ export default function Page() {
     setResolved({ type: t, status: s });
   }, [urlType, urlStatus]);
 
+  const stageType = resolved?.type ?? undefined;
+  const prev = prevPhase1Substep("form", stageType);
+  const next = nextPhase1Substep("form", stageType);
+
   const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
@@ -74,8 +75,8 @@ export default function Page() {
         typeCrumb,
         { label: "1. 기획 · 신청서 작성" },
       ]}
-      phases={PHASE1_PHASES}
-      subSteps={buildPhase1SubSteps("form")}
+      phases={getPhase1Phases(stageType)}
+      subSteps={buildPhase1SubSteps("form", stageType)}
     >
       {resolved?.type ? (
         <ApplicationFormContainer

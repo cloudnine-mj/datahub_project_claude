@@ -9,17 +9,19 @@ import { PhaseLayout } from "@/components/PhaseLayout";
 import { PhaseBlock } from "@/components/PhaseBlock";
 import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
 import {
-  PHASE1_PHASES,
   buildPhase1SubSteps,
+  getPhase1Phases,
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
 import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
+import { usePlanningType } from "@/lib/usePlanningType";
 
 export default function Page() {
   const [confirmed, setConfirmed] = useState(false);
-  const prev = prevPhase1Substep("approval-check");
-  const next = nextPhase1Substep("approval-check");
+  const type = usePlanningType();
+  const prev = prevPhase1Substep("approval-check", type);
+  const next = nextPhase1Substep("approval-check", type);
   const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
@@ -29,8 +31,8 @@ export default function Page() {
         typeCrumb,
         { label: "1. 기획 · 결재 승인 확인" },
       ]}
-      phases={PHASE1_PHASES}
-      subSteps={buildPhase1SubSteps("approval-check")}
+      phases={getPhase1Phases(type)}
+      subSteps={buildPhase1SubSteps("approval-check", type)}
       prevPath={prev?.path}
       prevLabel={prev ? `${prev.label} 다시 보기` : undefined}
       nextPath={next.path}

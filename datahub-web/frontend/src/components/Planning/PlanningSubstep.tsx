@@ -22,7 +22,7 @@ import {
   APPLICATION_TYPE_META,
   isPlanningType,
 } from "@/lib/applicationTypeMeta";
-import { PHASE1_PHASES, buildPhase1SubSteps } from "@/lib/phase1Substeps";
+import { buildPhase1SubSteps, getPhase1Phases } from "@/lib/phase1Substeps";
 
 const TYPE_KEY = "datahub:planningType";
 const CHECKS_KEY = (t: PlanningType) => `datahub:planningChecks:${t}`;
@@ -92,8 +92,8 @@ export function PlanningSubstep() {
       </header>
 
       <ProcessStepper
-        phases={PHASE1_PHASES}
-        subSteps={buildPhase1SubSteps("planning")}
+        phases={getPhase1Phases(type)}
+        subSteps={buildPhase1SubSteps("planning", type)}
       />
 
       <HelpBanner message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />

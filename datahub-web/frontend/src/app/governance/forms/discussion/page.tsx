@@ -11,12 +11,13 @@ import { PhaseBlock } from "@/components/PhaseBlock";
 import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
 import { HelpBanner } from "@/components/HelpBanner";
 import {
-  PHASE1_PHASES,
   buildPhase1SubSteps,
+  getPhase1Phases,
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
 import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
+import { usePlanningType } from "@/lib/usePlanningType";
 
 const ASSIGNEES: { typeLabel: string; description: string }[] = [
   {
@@ -31,8 +32,9 @@ const ASSIGNEES: { typeLabel: string; description: string }[] = [
 
 export default function Page() {
   const [confirmed, setConfirmed] = useState(false);
-  const prev = prevPhase1Substep("discussion");
-  const next = nextPhase1Substep("discussion");
+  const type = usePlanningType();
+  const prev = prevPhase1Substep("discussion", type);
+  const next = nextPhase1Substep("discussion", type);
   const typeCrumb = useApplicationTypeBreadcrumb();
 
   return (
@@ -42,8 +44,8 @@ export default function Page() {
         typeCrumb,
         { label: "1. 기획 · 담당자 논의·확정" },
       ]}
-      phases={PHASE1_PHASES}
-      subSteps={buildPhase1SubSteps("discussion")}
+      phases={getPhase1Phases(type)}
+      subSteps={buildPhase1SubSteps("discussion", type)}
       prevPath={prev?.path}
       prevLabel={prev ? `${prev.label} 다시 보기` : undefined}
       nextPath={next.path}

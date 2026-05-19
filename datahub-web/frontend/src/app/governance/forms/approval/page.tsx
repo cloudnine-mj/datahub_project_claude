@@ -17,11 +17,12 @@ import {
 } from "lucide-react";
 import { PhaseLayout } from "@/components/PhaseLayout";
 import {
-  PHASE1_PHASES,
   buildPhase1SubSteps,
+  getPhase1Phases,
   nextPhase1Substep,
   prevPhase1Substep,
 } from "@/lib/phase1Substeps";
+import { usePlanningType } from "@/lib/usePlanningType";
 import {
   buildApprovalData,
   generateApprovalHtml,
@@ -48,8 +49,9 @@ const NOTIFY_TARGETS = [
 ];
 
 export default function Page() {
-  const prev = prevPhase1Substep("approval");
-  const next = nextPhase1Substep("approval");
+  const planningType = usePlanningType();
+  const prev = prevPhase1Substep("approval", planningType);
+  const next = nextPhase1Substep("approval", planningType);
 
   const [type, setType] = useState<ApplicationType>("service");
   const [toast, setToast] = useState<string | null>(null);
@@ -99,8 +101,8 @@ export default function Page() {
         typeCrumb,
         { label: "1. 기획 · 전자결재 품의" },
       ]}
-      phases={PHASE1_PHASES}
-      subSteps={buildPhase1SubSteps("approval")}
+      phases={getPhase1Phases(planningType)}
+      subSteps={buildPhase1SubSteps("approval", planningType)}
       prevPath={prev?.path}
       prevLabel={prev ? `${prev.label} 다시 보기` : undefined}
       nextPath={next.path}
