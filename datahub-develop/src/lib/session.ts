@@ -27,11 +27,39 @@ export interface PlatformSession {
   accessToken: string;
 }
 
+/**
+ * Local-dev only — datahub-api 없이 UI 검증할 때 사용.
+ * `.env` 에 `DEV_AUTH_BYPASS=1` 이면 mock 세션 반환. 운영 환경 절대 X.
+ */
+function devBypassSession(): PlatformSession | null {
+  if (process.env.DEV_AUTH_BYPASS !== "1") return null;
+  const email = process.env.DEV_AUTH_EMAIL ?? "dev@localhost";
+  const name = process.env.DEV_AUTH_NAME ?? email.split("@")[0];
+  const role: PlatformRole =
+    (process.env.DEV_AUTH_ROLE as PlatformRole | undefined) ?? "ADMIN";
+  return {
+    accessToken: "dev-bypass-token",
+    user: {
+      email,
+      name,
+      image: null,
+      role,
+      labId: null,
+      techCellId: null,
+      permissions: [],
+    },
+  };
+}
+
 export async function getPlatformToken(): Promise<string | null> {
+  if (process.env.DEV_AUTH_BYPASS === "1") return "dev-bypass-token";
   return cookies().get("platform_token")?.value ?? null;
 }
 
 export async function getSession(): Promise<PlatformSession | null> {
+  const dev = devBypassSession();
+  if (dev) return dev;
+
   const token = await getPlatformToken();
   if (!token) return null;
 
