@@ -2,7 +2,7 @@
 //   기존 데이터 신청과 달리 API 폼은 schema 가 아직 없어, 인자로 받은 구조에서 직접
 //   ApprovalData 를 구성. 정식 폼이 생기면 schema 기반으로 교체.
 
-import type { ApprovalData, ApprovalRow } from "./applicationPreview";
+import type { ApprovalData, ApprovalRow } from "./application-preview";
 
 export interface ApiServiceEntry {
   serviceName: string;

@@ -5,9 +5,9 @@
 import {
   APPLICATION_TO_FORM_TYPE,
   type ApplicationType,
-} from "./applicationFormConfig";
-import { FORM_SCHEMAS } from "./formSchemas";
-import { valueToText } from "./formPreview";
+} from "./application-config";
+import { FORM_SCHEMAS } from "./schemas";
+import { valueToText } from "./preview";
 
 export interface ApprovalRow {
   label: string;
