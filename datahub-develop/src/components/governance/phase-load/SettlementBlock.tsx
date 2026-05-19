@@ -5,8 +5,8 @@
 "use client";
 
 import { Receipt } from "lucide-react";
-import { PhaseBlock } from "@/components/PhaseBlock";
-import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
+import { PhaseBlock } from "@/components/governance/PhaseBlock";
+import { PhaseChecklistRow } from "@/components/governance/PhaseChecklistRow";
 
 export const SETTLEMENT_STEPS: { id: string; label: string }[] = [
   { id: "delivery-confirm", label: "최종 데이터 수령 및 적재 확인" },

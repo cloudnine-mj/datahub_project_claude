@@ -6,7 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen, CloudUpload } from "lucide-react";
-import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
+import { PhaseChecklistRow } from "@/components/governance/PhaseChecklistRow";
 import type { FinalStoreStep } from "./useOperatePhase";
 
 interface Props {

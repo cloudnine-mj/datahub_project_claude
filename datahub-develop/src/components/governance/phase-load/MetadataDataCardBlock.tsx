@@ -6,8 +6,8 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight, BookOpen } from "lucide-react";
-import { PhaseBlock } from "@/components/PhaseBlock";
-import { PhaseChecklistRow } from "@/components/PhaseChecklistRow";
+import { PhaseBlock } from "@/components/governance/PhaseBlock";
+import { PhaseChecklistRow } from "@/components/governance/PhaseChecklistRow";
 
 interface Props {
   metadataChecked: boolean;

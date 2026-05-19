@@ -6,7 +6,7 @@
 
 import { useRef } from "react";
 import { CloudUpload } from "lucide-react";
-import { PhaseBlock } from "@/components/PhaseBlock";
+import { PhaseBlock } from "@/components/governance/PhaseBlock";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
