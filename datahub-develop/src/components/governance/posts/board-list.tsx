@@ -11,9 +11,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pin, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Pin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { governanceApi, type GovernancePostItem } from "@/lib/governance/api-client";
+import { api as fullApi } from "@/lib/governance/api-client-full";
 
 interface Props {
   board: "policy" | "process";
@@ -32,6 +33,7 @@ export function BoardList({ board }: Props) {
   );
   const [pageSize, setPageSize] = useState<number>(10);
   const [page, setPage] = useState(1);
+  const [canWrite, setCanWrite] = useState(false);
 
   const isProcess = board === "process";
 
@@ -44,6 +46,18 @@ export function BoardList({ board }: Props) {
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
+      });
+    // 게시판 작성 권한 — admin 만. me 응답의 permissions.can_write_{board} 사용.
+    fullApi
+      .me()
+      .then((m) => {
+        if (cancelled) return;
+        setCanWrite(
+          board === "policy" ? !!m.permissions.can_write_policy : !!m.permissions.can_write_process,
+        );
+      })
+      .catch(() => {
+        /* 미인증/관리자 아님 — 작성 버튼 숨김 */
       });
     return () => {
       cancelled = true;
@@ -138,6 +152,17 @@ export function BoardList({ board }: Props) {
               );
             })}
           </div>
+        )}
+
+        {/* 작성하기 — admin 만 노출. 미인증/일반 사용자는 안 보임. */}
+        {canWrite && (
+          <Link
+            href={`/governance/${board}/new`}
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand/90"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            작성하기
+          </Link>
         )}
       </div>
 
