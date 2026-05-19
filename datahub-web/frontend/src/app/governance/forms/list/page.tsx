@@ -6,7 +6,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardX,
+  Filter,
+  List,
+  Search,
+} from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { StatusBadge, STATUSES } from "@/components/StatusBadge";
@@ -16,6 +24,7 @@ import {
   type TabFilter,
 } from "@/components/RequestStatusTabs";
 import { FORM_TYPE_LABELS, formatDateTime } from "@/lib/utils";
+import { isAssigneeByType } from "@/lib/roleMapping";
 
 const PAGE_SIZES = [5, 10, 20, 50, 100];
 
@@ -35,14 +44,30 @@ const TAB_TO_STATUSES: Record<TabFilter, FormStatus[]> = {
 };
 
 export default function GovernanceFormsListPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<FormListItem[] | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
-  // '내 업무만 보기' — 로그인 사용자가 신청자인 신청만 노출
-  const [mineOnly, setMineOnly] = useState(false);
+
+  // '내 업무만 보기' 상태는 URL ?filter=my 로 동기화 — 새로고침/공유 시 유지.
+  const mineOnly = searchParams?.get("filter") === "my";
+  const setMineOnly = useCallback(
+    (next: boolean) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      if (next) {
+        params.set("filter", "my");
+      } else {
+        params.delete("filter");
+      }
+      const qs = params.toString();
+      router.replace(qs ? `?${qs}` : "?");
+    },
+    [router, searchParams],
+  );
 
   const refetch = useCallback(() => {
     api.listForms({ mine: false }).then(setItems).catch(() => setItems([]));
@@ -78,7 +103,10 @@ export default function GovernanceFormsListPage() {
         const isParticipant = (it.participants || []).some((p) =>
           myIdentifiers.has(p.trim().toLowerCase()),
         );
-        if (!isMine && !isParticipant) return false;
+        // 명시적 식별자 매칭이 없어도 신청 유형 기반 임시 역할 매핑(ROLE_MAPPING) 에
+        // 포함된 사용자라면 본인 업무로 간주 (TODO: 추후 DB 기반 역할로 전환).
+        const isAssignee = isAssigneeByType(it.form_type, myIdentifiers);
+        if (!isMine && !isParticipant && !isAssignee) return false;
       }
       if (!q) return true;
       const statusLabel = STATUSES.find((s) => s.value === it.status)?.label ?? "";
@@ -168,22 +196,67 @@ export default function GovernanceFormsListPage() {
             className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-brand focus:outline-none"
           />
         </div>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-gray-700">
+        <label
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition ${
+            mineOnly
+              ? "bg-blue-50 font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+              : "text-gray-700 dark:text-gray-300"
+          } ${!me ? "cursor-not-allowed opacity-60" : ""}`}
+        >
           <input
             type="checkbox"
             checked={mineOnly}
             onChange={(e) => setMineOnly(e.target.checked)}
             disabled={!me}
-            className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <span>내 업무만 보기</span>
         </label>
       </div>
 
+      {mineOnly && (
+        <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 dark:bg-blue-950/40">
+          <Filter
+            size={12}
+            aria-hidden="true"
+            className="shrink-0 text-blue-700 dark:text-blue-300"
+          />
+          <span className="text-[11px] text-blue-700 dark:text-blue-300">
+            본인이 신청하거나 담당자로 지정된 요청만 표시 중
+          </span>
+        </div>
+      )}
+
       <div className="mt-4">
         <RequestStatusTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
+      {/* '내 업무만 보기' 활성 + 결과 0 건 — 친절한 빈 상태 안내. */}
+      {mineOnly && pageItems !== null && pageItems.length === 0 ? (
+        <div className="rounded-lg bg-gray-50 px-5 py-10 text-center dark:bg-gray-800/40">
+          <ClipboardX
+            size={28}
+            aria-hidden="true"
+            className="mx-auto mb-2 text-gray-400 dark:text-gray-500"
+          />
+          <p className="text-[13px] font-medium text-gray-700 dark:text-gray-200">
+            관련된 업무가 없습니다
+          </p>
+          <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+            본인이 신청하거나 담당자로 지정된 요청이 아직 없습니다.
+            <br />
+            전체 목록에서 다른 사용자의 신청 현황을 확인할 수 있습니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => setMineOnly(false)}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-blue-700 transition hover:bg-blue-50 dark:border-gray-700 dark:bg-gray-900 dark:text-blue-300 dark:hover:bg-blue-950/40"
+          >
+            <List size={13} aria-hidden="true" />
+            전체 목록 보기
+          </button>
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500">
@@ -231,10 +304,13 @@ export default function GovernanceFormsListPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       {pageItems && pageItems.length > 0 && (
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-gray-500">총 {filtered?.length ?? 0} 건</span>
+          <span className="text-xs text-gray-500">
+            총 {filtered?.length ?? 0} 건{mineOnly ? " 표시 (내 업무 기준)" : ""}
+          </span>
           <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </div>
       )}
