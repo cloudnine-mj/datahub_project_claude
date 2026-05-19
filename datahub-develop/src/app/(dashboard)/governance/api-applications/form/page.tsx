@@ -12,7 +12,7 @@ import {
   ApiApplicationForm,
   newService,
   type ApiFormValues,
-} from "@/components/api-form/ApiApplicationForm";
+} from "@/components/governance/api-form/ApiApplicationForm";
 
 // 데모용 신청자 정보 — 실제는 /me API 에서 로드.
 const APPLICANT = {

@@ -14,7 +14,7 @@ import {
   ApiApplicationForm,
   newService,
   type ApiFormValues,
-} from "@/components/api-form/ApiApplicationForm";
+} from "@/components/governance/api-form/ApiApplicationForm";
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import type { FormType } from "@/lib/governance/api-client-full";
 import { getCatalogEntry, type CatalogEntry } from "../catalog-config";

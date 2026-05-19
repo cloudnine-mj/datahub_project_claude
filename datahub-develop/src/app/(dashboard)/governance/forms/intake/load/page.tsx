@@ -6,12 +6,12 @@
 import { useMemo, useState } from "react";
 import { PhaseLayout } from "@/components/governance/PhaseLayout";
 import type { StepStatus, SubStep } from "@/components/governance/ProcessStepper";
-import { DataUploadBlock } from "@/components/phase-load/DataUploadBlock";
-import { MetadataDataCardBlock } from "@/components/phase-load/MetadataDataCardBlock";
+import { DataUploadBlock } from "@/components/governance/phase-load/DataUploadBlock";
+import { MetadataDataCardBlock } from "@/components/governance/phase-load/MetadataDataCardBlock";
 import {
   SettlementBlock,
   SETTLEMENT_STEPS,
-} from "@/components/phase-load/SettlementBlock";
+} from "@/components/governance/phase-load/SettlementBlock";
 import { useApplicationTypeBreadcrumb } from "@/lib/governance/forms/use-application-type-breadcrumb";
 import { usePlanningType } from "@/lib/governance/forms/use-planning-type";
 

@@ -10,13 +10,13 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, Folder, Zap } from "lucide-react";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { ApiProcessStepper } from "@/components/governance/ApiProcess/ApiProcessStepper";
-import { OperateStepCard } from "@/components/api-operate/OperateStepCard";
-import { ApiUsageStepBody } from "@/components/api-operate/ApiUsageStepBody";
-import { CostProcessStepBody } from "@/components/api-operate/CostProcessStepBody";
-import { FinalStoreStepBody } from "@/components/api-operate/FinalStoreStepBody";
-import { useOperatePhase } from "@/components/api-operate/useOperatePhase";
+import { OperateStepCard } from "@/components/governance/api-operate/OperateStepCard";
+import { ApiUsageStepBody } from "@/components/governance/api-operate/ApiUsageStepBody";
+import { CostProcessStepBody } from "@/components/governance/api-operate/CostProcessStepBody";
+import { FinalStoreStepBody } from "@/components/governance/api-operate/FinalStoreStepBody";
+import { useOperatePhase } from "@/components/governance/api-operate/useOperatePhase";
 import type { StepStatus as ApiStepStatus } from "@/lib/governance/forms/api-process-config";
-import type { StepStatus as OperateStatus } from "@/components/api-operate/useOperatePhase";
+import type { StepStatus as OperateStatus } from "@/components/governance/api-operate/useOperatePhase";
 
 function toApiStepStatus(s: OperateStatus): ApiStepStatus {
   if (s === "done") return "completed";
