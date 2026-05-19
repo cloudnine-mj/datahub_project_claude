@@ -208,6 +208,9 @@ function RadioOption({
 }
 
 function ChecklistCard({ items }: { items: string[] }) {
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
+  const toggle = (key: string) =>
+    setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
   return (
     <section className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900">
       <header className="mb-1.5 flex items-center gap-1.5">
@@ -220,14 +223,35 @@ function ChecklistCard({ items }: { items: string[] }) {
         아래 항목을 정리한 뒤 신청서 작성으로 진행하세요.
       </p>
       <ul className="flex flex-col gap-1.5">
-        {items.map((item) => (
-          <li
-            key={item}
-            className="rounded-md bg-gray-50 px-3 py-2 text-[12px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200"
-          >
-            {item}
-          </li>
-        ))}
+        {items.map((item) => {
+          const checked = !!checks[item];
+          const id = `api-checklist-${item}`;
+          return (
+            <li key={item}>
+              <label
+                htmlFor={id}
+                className="flex cursor-pointer items-start gap-2.5 rounded-md bg-gray-50 px-3 py-2 transition hover:bg-gray-100 dark:bg-gray-800/40 dark:hover:bg-gray-800"
+              >
+                <input
+                  id={id}
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(item)}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span
+                  className={`text-[12px] leading-[1.5] ${
+                    checked
+                      ? "text-gray-400 line-through dark:text-gray-500"
+                      : "text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  {item}
+                </span>
+              </label>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -236,15 +260,12 @@ function ChecklistCard({ items }: { items: string[] }) {
 function ExampleCard({ items }: { items: Array<{ label: string; value: string }> }) {
   return (
     <section className="rounded-xl border border-gray-200 bg-blue-50 px-4 py-3.5 dark:border-gray-800 dark:bg-blue-950/40">
-      <header className="mb-1.5 flex items-center gap-1.5">
+      <header className="mb-2.5 flex items-center gap-1.5">
         <Lightbulb size={14} aria-hidden="true" className="text-blue-700 dark:text-blue-300" />
         <h2 className="text-[13px] font-medium text-blue-700 dark:text-blue-300">
           작성 예시
         </h2>
       </header>
-      <p className="mb-2.5 text-[11px] text-blue-700 dark:text-blue-300">
-        실제 신청자가 이렇게 정리했습니다.
-      </p>
       <ul className="flex flex-col gap-2 text-[11px] leading-[1.6]">
         {items.map((it) => (
           <li key={it.label}>
