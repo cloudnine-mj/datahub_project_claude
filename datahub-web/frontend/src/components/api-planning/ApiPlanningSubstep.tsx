@@ -35,7 +35,7 @@ const CHECKLIST = [
 ];
 
 const EXAMPLES: Array<{ label: string; value: string }> = [
-  { label: "활용 API", value: "Anthropic Claude API, OpenAI GPT-4 API" },
+  { label: "활용 API", value: "Anthropic Claude API" },
   { label: "연관 프로젝트", value: "2026 고객 행동 분석 플랫폼 구축" },
   {
     label: "사용 목적",
