@@ -55,7 +55,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
     exampleItems: [
       {
         label: "예산 검토 및 확인",
-        value: "건당 2,500원 × 20,000건 = 약 5,000만원 (재무팀 사전 협의 완료)",
+        value: "건당 2,500원 × 20,000건 = 약 5,000만원",
       },
       {
         label: "제작 목적",
@@ -83,7 +83,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
     exampleItems: [
       {
         label: "예산 검토 및 확인",
-        value: "라이선스 1회 결제 약 2,500만원 (재무팀 승인 완료)",
+        value: "라이선스 1회 결제 약 2,500만원",
       },
       {
         label: "구매 대상 데이터",
@@ -107,7 +107,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
     exampleItems: [
       {
         label: "예산 검토 및 확인",
-        value: "월 30만원 × 12개월 = 360만원 (연간 예산 반영 완료)",
+        value: "월 30만원 × 12개월 = 360만원",
       },
       {
         label: "구독 대상 데이터",
