@@ -88,7 +88,25 @@ export function FormBuilder({
     api
       .getForm(editId)
       .then((f) => {
-        setValues(f.payload || {});
+        // payload 는 Record 일 수도, 더블 JSON 인코딩된 string 일 수도 있음 — 두 케이스 모두 처리.
+        let payload: Record<string, unknown> = {};
+        if (f.payload && typeof f.payload === "object" && !Array.isArray(f.payload)) {
+          payload = f.payload as Record<string, unknown>;
+        } else if (typeof f.payload === "string") {
+          try {
+            payload = JSON.parse(f.payload as string) as Record<string, unknown>;
+          } catch {
+            payload = {};
+          }
+        }
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[FormBuilder] loaded form for edit:", {
+            id: editId,
+            payloadKeys: Object.keys(payload),
+            submitter: { name: f.submitter_name, dept: f.submitter_department },
+          });
+        }
+        setValues(payload);
         setSubmitterName(f.submitter_name || "");
         setSubmitterDepartment(f.submitter_department || "");
         setSubmitterEmail(f.submitter_email || "");
