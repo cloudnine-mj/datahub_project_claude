@@ -199,11 +199,70 @@ async function main() {
 
   // Budget seed skipped — polymorphic FK constraint issue
 
+  // ─── Governance — sample assignee + form + chat ───────────────
+  // Phase 1 고정 담당자(김은솔). .env 의 GOVERNANCE_ASSIGNEE_EMAIL 와 동일해야
+  // 양방향 채팅이 정상 동작.
+
+  const assignee = await prisma.user.upsert({
+    where: { email: "kim.eunsol@company.com" },
+    update: {},
+    create: {
+      email: "kim.eunsol@company.com",
+      name: "김은솔",
+    },
+  });
+
+  // 빈 DB 일 때만 sample form 1건 삽입 (idempotent).
+  const existingForm = await prisma.governanceForm.findFirst();
+  if (!existingForm) {
+    const form = await prisma.governanceForm.create({
+      data: {
+        requestNo: "REQ-2026-00001",
+        formType: "data_purchase",
+        projectName: "샘플 데이터 구매 신청",
+        submitterId: pmUser.id,
+        submitterName: pmUser.name ?? "PM",
+        submitterEmail: pmUser.email,
+        submitterDepartment: "AI Platform",
+        status: "submitted",
+        approvalHistory: [
+          {
+            status: "submitted",
+            changedBy: pmUser.name ?? "PM",
+            changedAt: new Date().toISOString(),
+            comment: "최초 제출",
+          },
+        ],
+        payload: {
+          구매_희망_데이터셋: "한국어 음성 코퍼스 라이선스",
+          판매_업체: "예시 데이터 컴퍼니",
+          사용_예상_금액: "8,000,000원",
+          사용_목적_및_기대_효과: "음성 인식 모델 학습 데이터 보강",
+        },
+      },
+    });
+
+    // 데모 채팅 1건 — 신청자 → 담당자(김은솔)
+    await prisma.governanceFormMessage.create({
+      data: {
+        formId: form.id,
+        senderId: pmUser.id,
+        senderName: pmUser.name ?? "PM",
+        senderEmail: pmUser.email,
+        senderRole: "applicant",
+        recipientName: assignee.name ?? "김은솔",
+        recipientRole: "담당자",
+        body: "안녕하세요, 검토 부탁드립니다.",
+      },
+    });
+  }
+
   console.log("Seed completed!");
-  console.log("  Admin:  admin@lgai.com");
-  console.log("  PM:     pm@lgai.com");
-  console.log("  TM:     tm@lgai.com");
-  console.log("  User:   user@lgai.com");
+  console.log("  Admin:    admin@lgai.com");
+  console.log("  PM:       pm@lgai.com");
+  console.log("  TM:       tm@lgai.com");
+  console.log("  User:     user@lgai.com");
+  console.log("  Assignee: kim.eunsol@company.com (governance 담당자)");
 }
 
 main()

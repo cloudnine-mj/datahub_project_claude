@@ -1,7 +1,8 @@
 // 백엔드 ApprovalEntry[] → ProgressHistoryBlock 의 StatusHistoryItem[] 변환.
 //   - status → HistoryAction 매핑 (rejected/draft 같은 미지원 status 는 제외)
-//   - changed_by 가 submitter_name 과 일치하면 actorRole="신청자", 아니면 "Data Governance Team"
+//   - changedBy 가 submitterName 과 일치하면 actorRole="신청자", 아니면 "Data Governance Team"
 //   - timestamp 는 'M/d HH:mm' 짧은 표기로 변환
+//   - snake_case (옛 SQLite) / camelCase (Prisma) 양쪽 호환
 
 import type { ApprovalEntry, FormStatus } from "./types";
 import type {
@@ -32,14 +33,15 @@ export function approvalHistoryToStatusItems(
     .map((e, i): StatusHistoryItem | null => {
       const action = statusToAction(e.status);
       if (!action) return null;
-      const isApplicant =
-        submitterName && e.changed_by === submitterName ? true : false;
+      const actor = e.changedBy ?? e.changed_by ?? "";
+      const at = e.changedAt ?? e.changed_at ?? "";
+      const isApplicant = !!(submitterName && actor === submitterName);
       return {
-        id: `srv-${i}-${e.changed_at}`,
+        id: `srv-${i}-${at}`,
         action,
-        actor: e.changed_by,
+        actor,
         actorRole: isApplicant ? "신청자" : "Data Governance Team",
-        timestamp: isoToShort(e.changed_at),
+        timestamp: isoToShort(at),
         comment: e.comment ?? undefined,
       };
     })

@@ -99,12 +99,19 @@ GOVERNANCE_ASSIGNEE_NAME=김은솔
   - api-client.ts (governanceApi) 추가
   - .env.example 에 `GOVERNANCE_ASSIGNEE_EMAIL/_NAME` 추가
   - layout.tsx 에 "신청서 목록" 메뉴 추가
-- [ ] **Phase 4** — 나머지 페이지 + 컴포넌트 이전
-  - 페이지: `/governance/forms/[id]`, `/governance/forms/intake/*`, `/governance/forms/[type]/new`,
-    `/governance/process`, `/governance/policy`
-  - 컴포넌트: ApplicationForm/*, FormBuilder, phase-build/*, api-planning/*, ProcessStepper,
-    ProgressHistoryBlock, BoardListView, PolicyBoardView, PostNewView, PostDetailView 등
-  - 각 컴포넌트의 fetch 호출은 governanceApi 로 치환
+- [~] **Phase 4 partial** — 채팅 흐름 (detail 페이지) 이전 완료
+  - ProgressHistoryBlock 컴포넌트 + getChatRole 헬퍼 이전
+  - `(dashboard)/governance/forms/[id]` 상세 페이지 — 양방향 채팅 동작
+  - prisma/seed.ts 에 김은솔 user + 샘플 form + 데모 메시지 추가
+  - history-adapter 가 snake_case/camelCase 둘 다 처리
+  - **남은 페이지** (다음 세션):
+    - `/governance/forms/intake/planning|build|load|approval` (다단계 인테이크)
+    - `/governance/forms/[type]/new` (FormBuilder 7종)
+    - `/governance/process`, `/governance/policy` (게시판 — BoardListView/PolicyBoardView 포팅 필요)
+    - `/governance/forms/my`, `/governance/forms/admin` (필터 변형 — list 페이지 재사용 가능)
+  - **남은 컴포넌트**: ApplicationFormContainer, FormBuilder, phase-build/*, api-planning/*,
+    ProcessStepper, BoardListView, PolicyBoardView, PostNewView, PostDetailView,
+    Breadcrumb (storyboard 컴포넌트 검토), FormStatusPanel, FormProcessBar 등
 - [ ] **Phase 5** — 첨부 파일 endpoint + GCS bucket 통합
 - [ ] **Phase 6** — Seed (sample form/post 데이터) + Playwright smoke test
 - [ ] **Phase 7** — 빌드/린트 통과 + storyboard `/governance/page.tsx` 를 forms list 로 리다이렉트
