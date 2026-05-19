@@ -13,6 +13,7 @@ import {
   SETTLEMENT_STEPS,
 } from "@/components/phase-load/SettlementBlock";
 import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
+import { usePlanningType } from "@/lib/usePlanningType";
 
 export default function Page() {
   // 블록 1 — 업로드 파일.
@@ -55,22 +56,40 @@ export default function Page() {
   // 모든 블록이 완료되어야 '신청 완료 처리' 버튼 활성. (데모에서는 단순 시각 단서 — 항상 통과시켜도 무방.)
   const canProceed = uploadDone && metadataDone && settleDone;
   const typeCrumb = useApplicationTypeBreadcrumb();
+  const planningType = usePlanningType();
+  const isTwoPhase = planningType === "purchase" || planningType === "subscribe";
+
+  // 유형별 phase pill — 구매/구독은 2 phase(1.기획·2.적재), 용역은 3 phase(1.기획·2.구축·3.적재).
+  const phases = isTwoPhase
+    ? [
+        { id: "plan", label: "1. 기획", status: "done" as const, path: "/governance/forms/planning" },
+        { id: "load", label: "2. 적재", status: "current" as const },
+      ]
+    : [
+        { id: "plan", label: "1. 기획", status: "done" as const, path: "/governance/forms/planning" },
+        { id: "build", label: "2. 구축", status: "done" as const, path: "/governance/forms/intake/build" },
+        { id: "load", label: "3. 적재", status: "current" as const },
+      ];
+
+  // 이전 단계 경로/라벨도 유형별로 분기.
+  //   구매/구독: 1단계 마지막 substep(계약 체결) 으로 복귀
+  //   용역:     기존 2단계(구축) 로 복귀
+  const prevPath = isTwoPhase
+    ? "/governance/forms/intake/build"
+    : "/governance/forms/intake/build";
+  const prevLabel = isTwoPhase ? "1단계 다시 보기" : "2단계 다시 보기";
 
   return (
     <PhaseLayout
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: "3. 적재" },
+        { label: isTwoPhase ? "2. 적재" : "3. 적재" },
       ]}
-      phases={[
-        { id: "plan", label: "1. 기획", status: "done", path: "/governance/forms/planning" },
-        { id: "build", label: "2. 구축", status: "done", path: "/governance/forms/intake/build" },
-        { id: "load", label: "3. 적재", status: "current" },
-      ]}
+      phases={phases}
       subSteps={subSteps}
-      prevPath="/governance/forms/intake/build"
-      prevLabel="2단계 다시 보기"
+      prevPath={prevPath}
+      prevLabel={prevLabel}
       nextPath="/governance/home"
       nextLabel="신청 완료 처리"
       canProceed={canProceed}
