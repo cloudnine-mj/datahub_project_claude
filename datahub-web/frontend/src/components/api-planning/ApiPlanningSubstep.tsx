@@ -306,28 +306,28 @@ function BudgetCheckCard({
           checked={state.budgetConfirmed}
           onToggle={() => set("budgetConfirmed")}
         >
-          소속 조직의 가용 예산을 확인했습니다
+          소속 조직의 가용 예산 확인
         </CheckOption>
         <CheckOption
           id="card-available"
           checked={state.cardAvailable}
           onToggle={() => set("cardAvailable")}
         >
-          개인 법인카드 사용 가능 여부를 확인했습니다
+          개인 법인카드 사용 가능 여부 확인
         </CheckOption>
         <CheckOption
           id="costcenter-understood"
           checked={state.costCenterUnderstood}
           onToggle={() => set("costCenterUnderstood")}
         >
-          CostCenter <strong className="font-medium">지급수수료-API</strong> 사용 정책을 이해했습니다
+          CostCenter <strong className="font-medium">지급수수료-API</strong> 사용 정책 이해
         </CheckOption>
         <CheckOption
           id="manager-reported"
           checked={state.managerReported}
           onToggle={() => set("managerReported")}
         >
-          조직장에게 사전 보고를 완료했습니다{" "}
+          조직장 사전 보고 완료{" "}
           <span className="text-[11px] text-gray-400 dark:text-gray-500">(필요 시)</span>
         </CheckOption>
       </div>
