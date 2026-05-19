@@ -309,20 +309,11 @@ export function ProgressHistoryBlock({
 /** 답할 대상 정보 칩 — 자동 지정, 클릭 불가 div.
  *  Phase 2 (담당자 다수) 도입 시 이 컴포넌트만 <button> + dropdown 으로 교체. */
 function ReplyTargetChip({ target }: { target: ReplyTargetUser }) {
-  const tone =
-    target.role === "담당자"
-      ? "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200"
-      : "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
   return (
     <div className="mb-2 flex items-center gap-1.5 border-b border-gray-200 pb-2 dark:border-gray-700">
       <span className="text-[10px] text-gray-400 dark:text-gray-500">답할 대상</span>
       <span className="text-[10px] text-gray-400 dark:text-gray-500">→</span>
       <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] dark:border-gray-700 dark:bg-gray-900">
-        <span
-          className={`grid h-[14px] w-[14px] place-items-center rounded-full text-[8px] font-medium ${tone}`}
-        >
-          {initials(target.name)}
-        </span>
         <span className="text-gray-800 dark:text-gray-200">{target.name}</span>
         <span className="text-[9px] text-gray-400 dark:text-gray-500">{target.role}</span>
       </div>
