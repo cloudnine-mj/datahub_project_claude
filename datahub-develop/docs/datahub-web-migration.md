@@ -99,19 +99,26 @@ GOVERNANCE_ASSIGNEE_NAME=김은솔
   - api-client.ts (governanceApi) 추가
   - .env.example 에 `GOVERNANCE_ASSIGNEE_EMAIL/_NAME` 추가
   - layout.tsx 에 "신청서 목록" 메뉴 추가
-- [~] **Phase 4 partial** — 채팅 흐름 + 게시판 흐름 이전 완료
-  - ProgressHistoryBlock + getChatRole + `(dashboard)/governance/forms/[id]` (채팅)
-  - BoardList + PostDetail + `(dashboard)/governance/policy/*` + `/process/*` (게시판)
-  - history-adapter 가 snake_case/camelCase 둘 다 처리
-  - seed: 김은솔 user + 샘플 form + 데모 메시지 + 게시판 3건
-  - layout.tsx 에 정책/프로세스 nav 항목 추가
-  - **남은 페이지** (다음 세션):
-    - `/governance/forms/intake/planning|build|load|approval` (다단계 인테이크)
-    - `/governance/forms/[type]/new` (FormBuilder 7종)
-    - `/governance/{policy,process}/new` (admin 작성)
-    - `/governance/forms/my`, `/governance/forms/admin` (필터 변형 — list 페이지 재사용 가능)
-  - **남은 컴포넌트**: ApplicationFormContainer, FormBuilder, phase-build/*, api-planning/*,
-    ProcessStepper, PostNewView (admin 작성 폼), FormStatusPanel, FormProcessBar
+- [x] **Phase 4 — 벌크 이전** — datahub-web 컴포넌트/페이지 전체를 bulk copy 로 이전
+  - 컴포넌트: `src/components/governance/` 에 39개 + ApplicationForm/, phase-build/,
+    api-planning/, ApiProcess/, Planning/, HomeDashboard/ 디렉토리 통째로 복사
+    (Sidebar/Topbar/UserMenu/Footer 는 datahub-develop 의 layout 과 충돌하므로 제외)
+  - 페이지: `(dashboard)/governance/` 에 admin/, api-applications/, forms/[type]/{new,build,deploy},
+    forms/{intake,planning,approval,approval-check,discussion,submitted,my},
+    home/, coming-soon/, guideline/, new/, [id]/ 등 모두 복사
+  - 모든 import 경로 sed 로 일괄 치환 (`@/lib/api` → `@/lib/governance/api-client-full` 등)
+  - `api-client-full.ts`: 옛 `api` 와 동일 시그니처 wrapper — 컴포넌트 코드 수정 불필요
+    (camelCase ↔ snake_case 변환 adapter 포함)
+  - 추가 BFF route: `/api/governance/forms/[id]/{status,comments}`, `/api/governance/posts/[id]/pin`
+  - layout.tsx 에 신청서 카탈로그 / 내 문서 / admin 등 nav 항목 추가
+  - **알려진 한계**:
+    - 첨부 업로드/다운로드는 placeholder (Phase 5 GCS 통합 필요)
+    - 일부 컴포넌트가 `next/router` 대신 `next/navigation` 미사용일 수 있음
+    - datahub-develop 의 Tailwind 토큰(text-text-primary 등)과 datahub-web 의 임의 색상 혼재
+    - 빌드 시 일부 컴파일 에러 가능 — 사용자 검증 후 핫픽스
+- [ ] **Phase 5** — 첨부 파일 GCS bucket 통합 (storage 결정 후)
+- [ ] **Phase 6** — Seed 확장 + Playwright smoke test
+- [ ] **Phase 7** — storyboard `/governance/page.tsx` 를 forms/list 로 리다이렉트, 빌드 클린업
 - [ ] **Phase 5** — 첨부 파일 endpoint + GCS bucket 통합
 - [ ] **Phase 6** — Seed (sample form/post 데이터) + Playwright smoke test
 - [ ] **Phase 7** — 빌드/린트 통과 + storyboard `/governance/page.tsx` 를 forms list 로 리다이렉트
