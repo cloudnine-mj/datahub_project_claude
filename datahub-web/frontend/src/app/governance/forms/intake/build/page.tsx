@@ -1,7 +1,6 @@
-// 2. 구축 단계 — 3 substep 단계별 활성화 화면.
-//   3개 카드(계약 체결 / 중간 수령·검수·피드백 / 최종 데이터 수령) 가 한 페이지에 모두 노출되되,
-//   각 카드는 locked/current/done 상태에 따라 다른 디자인.
-//   stepper substep 클릭은 페이지 내 스크롤. 하단 '3단계로 진행' 은 모두 done 일 때만 활성.
+// 용역(service): 2. 구축 단계 — 3 카드(계약/중간 수령/최종 수령) 한 페이지 노출.
+// 구매·구독(purchase/subscribe): 1. 기획 마지막 substep '계약 체결' — 계약 카드만 노출,
+//   상단 stepper 도 2-phase ProcessStepper 로 교체. 완료 시 곧장 2단계 적재(load) 로 진행.
 
 "use client";
 
@@ -17,6 +16,7 @@ import {
   Package,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
+import { ProcessStepper } from "@/components/ProcessStepper";
 import { BuildStepper } from "@/components/phase-build/BuildStepper";
 import { BuildStepCard } from "@/components/phase-build/BuildStepCard";
 import { ContractStepBody } from "@/components/phase-build/ContractStepBody";
@@ -24,11 +24,18 @@ import { DeliveryStepBody } from "@/components/phase-build/DeliveryStepBody";
 import { FinalStepBody } from "@/components/phase-build/FinalStepBody";
 import { useBuildPhase } from "@/components/phase-build/useBuildPhase";
 import { useApplicationTypeBreadcrumb } from "@/lib/useApplicationTypeBreadcrumb";
+import { usePlanningType } from "@/lib/usePlanningType";
+import {
+  buildPhase1SubSteps,
+  getPhase1Phases,
+} from "@/lib/phase1Substeps";
 
 export default function Page() {
   const router = useRouter();
   const phase = useBuildPhase();
   const typeCrumb = useApplicationTypeBreadcrumb();
+  const planningType = usePlanningType();
+  const isTwoPhase = planningType === "purchase" || planningType === "subscribe";
 
   const contractRef = useRef<HTMLElement>(null);
   const deliveryRef = useRef<HTMLElement>(null);
@@ -51,22 +58,29 @@ export default function Page() {
         items={[
           { label: "Governance", href: "/governance/home" },
           typeCrumb,
-          { label: "2. 구축" },
+          { label: isTwoPhase ? "1. 기획 · 계약 체결" : "2. 구축" },
         ]}
       />
 
-      <BuildStepper
-        onScrollTo={scrollTo}
-        substeps={[
-          { id: "contract", label: "계약 체결", status: phase.contract.status },
-          {
-            id: "delivery",
-            label: "중간 수령·검수·피드백",
-            status: phase.delivery.status,
-          },
-          { id: "final", label: "최종 수령", status: phase.final.status },
-        ]}
-      />
+      {isTwoPhase ? (
+        <ProcessStepper
+          phases={getPhase1Phases(planningType)}
+          subSteps={buildPhase1SubSteps("contract", planningType)}
+        />
+      ) : (
+        <BuildStepper
+          onScrollTo={scrollTo}
+          substeps={[
+            { id: "contract", label: "계약 체결", status: phase.contract.status },
+            {
+              id: "delivery",
+              label: "중간 수령·검수·피드백",
+              status: phase.delivery.status,
+            },
+            { id: "final", label: "최종 수령", status: phase.final.status },
+          ]}
+        />
+      )}
 
       <BuildStepCard
         cardRef={contractRef}
@@ -87,8 +101,13 @@ export default function Page() {
               }}
             />
           ),
-          completeLabel: "계약 확인 완료 · 중간 수령으로",
-          onComplete: phase.completeContract,
+          completeLabel: isTwoPhase
+            ? "계약 확인 완료 · 2단계 적재로"
+            : "계약 확인 완료 · 중간 수령으로",
+          onComplete: () => {
+            phase.completeContract();
+            if (isTwoPhase) onProceedToLoad();
+          },
           canComplete: contractCanComplete,
         }}
         done={{
@@ -112,6 +131,8 @@ export default function Page() {
         }}
       />
 
+      {!isTwoPhase && (
+      <>
       <BuildStepCard
         cardRef={deliveryRef}
         id="delivery"
@@ -180,30 +201,38 @@ export default function Page() {
         }}
         locked={{ activationHint: "중간 수령·검수가 완료되면 활성화됩니다" }}
       />
+      </>
+      )}
 
       <div className="flex items-center justify-between gap-2">
         <Link
-          href="/governance/forms/planning"
+          href={isTwoPhase ? "/governance/forms/approval" : "/governance/forms/planning"}
           className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           <ArrowLeft size={14} aria-hidden="true" />
-          1단계 다시 보기
+          {isTwoPhase ? "전자결재 품의 다시 보기" : "1단계 다시 보기"}
         </Link>
-        <button
-          type="button"
-          aria-label="페이지 아래로 스크롤"
-          onClick={() => scrollTo("final")}
-          className="rounded-full p-1.5 text-gray-300 transition hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <ChevronDown size={16} aria-hidden="true" />
-        </button>
+        {!isTwoPhase && (
+          <button
+            type="button"
+            aria-label="페이지 아래로 스크롤"
+            onClick={() => scrollTo("final")}
+            className="rounded-full p-1.5 text-gray-300 transition hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+          >
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        )}
         <button
           type="button"
           onClick={onProceedToLoad}
-          disabled={!phase.allDone}
+          disabled={!isTwoPhase && !phase.allDone}
           className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-800 dark:disabled:text-gray-500"
         >
-          {phase.allDone ? "3단계로 진행" : "3단계로 진행 · 모든 단계 완료 후"}
+          {isTwoPhase
+            ? "2단계 적재로 진행"
+            : phase.allDone
+            ? "3단계로 진행"
+            : "3단계로 진행 · 모든 단계 완료 후"}
           <ArrowRight size={14} aria-hidden="true" />
         </button>
       </div>
