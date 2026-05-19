@@ -239,15 +239,18 @@ async function main() {
   }
 
   // ─── Governance — sample assignee + form + chat ───────────────
-  // Phase 1 고정 담당자(김은솔). .env 의 GOVERNANCE_ASSIGNEE_EMAIL 와 동일해야
-  // 양방향 채팅이 정상 동작.
+  // Phase 1 고정 담당자. .env 의 GOVERNANCE_ASSIGNEE_EMAIL / _NAME 를 읽어
+  // 양방향 채팅 판정과 일치시킴 (env 없으면 fallback 으로 김은솔).
+  const assigneeEmail =
+    process.env.GOVERNANCE_ASSIGNEE_EMAIL ?? "kim.eunsol@company.com";
+  const assigneeName = process.env.GOVERNANCE_ASSIGNEE_NAME ?? "김은솔";
 
   const assignee = await prisma.user.upsert({
-    where: { email: "kim.eunsol@company.com" },
-    update: {},
+    where: { email: assigneeEmail },
+    update: { name: assigneeName },
     create: {
-      email: "kim.eunsol@company.com",
-      name: "김은솔",
+      email: assigneeEmail,
+      name: assigneeName,
     },
   });
 
@@ -281,7 +284,7 @@ async function main() {
       },
     });
 
-    // 데모 채팅 1건 — 신청자 → 담당자(김은솔)
+    // 데모 채팅 1건 — 신청자 → 담당자
     await prisma.governanceFormMessage.create({
       data: {
         formId: form.id,
@@ -289,7 +292,7 @@ async function main() {
         senderName: pmUser.name ?? "PM",
         senderEmail: pmUser.email,
         senderRole: "applicant",
-        recipientName: assignee.name ?? "김은솔",
+        recipientName: assignee.name ?? assigneeName,
         recipientRole: "담당자",
         body: "안녕하세요, 검토 부탁드립니다.",
       },
@@ -301,7 +304,7 @@ async function main() {
   console.log("  PM:       pm@lgai.com");
   console.log("  TM:       tm@lgai.com");
   console.log("  User:     user@lgai.com");
-  console.log("  Assignee: kim.eunsol@company.com (governance 담당자)");
+  console.log(`  Assignee: ${assigneeEmail} (governance 담당자)`);
 }
 
 main()
