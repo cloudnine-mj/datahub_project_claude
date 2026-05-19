@@ -296,7 +296,7 @@ export default function Page() {
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full table-fixed text-[13px]">
           <colgroup>
-            <col style={{ width: 100 }} />
+            <col style={{ width: 160 }} />
             <col />
             <col style={{ width: 140 }} />
             <col style={{ width: 100 }} />
@@ -348,7 +348,7 @@ export default function Page() {
                     }
                     className="cursor-pointer border-t border-gray-100 transition hover:bg-gray-50"
                   >
-                    <td className="px-3 py-3 text-gray-600">
+                    <td className="whitespace-nowrap px-3 py-3 text-gray-600">
                       {FORM_TYPE_LABELS[it.formType] ?? it.formType}
                     </td>
                     <td className="px-3 py-3">
