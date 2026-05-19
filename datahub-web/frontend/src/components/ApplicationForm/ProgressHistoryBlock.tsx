@@ -1,15 +1,15 @@
 // 진행 이력 카드 — 시스템 이벤트(StatusHistoryItem) + 사용자 메시지 통합 타임라인.
 //   - 좌측 28px 아바타: 시스템=회색 + 아이콘, 신청자=파랑, 담당자=빨강, 어드민=보라
 //   - 헤더 우측 '시스템 이벤트 포함' 토글 + 접기/펼치기
-//   - 하단 composer: textarea + [첨부](최대 5개·각 50MB) + [수신자 지정] + [전송]
+//   - 하단 composer: textarea + [첨부](최대 5개·각 50MB) + [전송].
+//     답할 대상은 determineReplyTarget 으로 자동 지정 — 사용자가 선택 불가.
+//   - 메시지 헤더와 composer 의 화살표는 모두 → 텍스트 문자 (아이콘 사용 X)
 //   - 메시지는 데모용 로컬 state 보존 (실 백엔드 미연결)
 
 "use client";
 
 import { useMemo, useRef, useState } from "react";
 import {
-  ArrowRight,
-  AtSign,
   Check,
   ChevronDown,
   ChevronUp,
@@ -25,14 +25,17 @@ import type {
   HistoryAction,
   StatusHistoryItem,
 } from "@/lib/applicationFormConfig";
-
-type SenderRole = "applicant" | "assignee" | "admin";
+import {
+  determineReplyTarget,
+  type ReplyTargetUser,
+  type SenderRoleForChat,
+} from "@/lib/determineReplyTarget";
 
 interface UserMessage {
   id: string;
   senderName: string;
-  senderRole: SenderRole;
-  recipient: string;
+  senderRole: SenderRoleForChat;
+  replyTarget: ReplyTargetUser;
   /** 'M/d HH:mm' short form 또는 ISO. */
   timestamp: string;
   text: string;
@@ -41,13 +44,14 @@ interface UserMessage {
 
 interface Props {
   history: StatusHistoryItem[];
-  /** composer 노출 여부. 추적 모드 신청자/담당자 본인이면 true. */
+  /** composer 노출 여부. observer 면 false. */
   canPostMessage?: boolean;
   /** 현재 사용자 이름 (composer 발신자 표기용). */
   currentUserName?: string;
-  /** 현재 사용자 역할 (메시지 아바타/배지용). */
-  currentUserRole?: SenderRole;
-  participants?: string[];
+  /** 현재 사용자 채팅 역할 — 답할 대상 자동 결정에 사용. */
+  currentUserRole?: SenderRoleForChat;
+  /** 신청자 정보 — 담당자가 메시지 작성 시 회신 대상이 됨. */
+  applicantName?: string;
 }
 
 const SYSTEM_EVENT_ICON: Record<HistoryAction, LucideIcon> = {
@@ -82,16 +86,21 @@ export function ProgressHistoryBlock({
   canPostMessage = false,
   currentUserName = "나",
   currentUserRole = "applicant",
-  participants = ["참여자 모두"],
+  applicantName = "신청자",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [includeSystem, setIncludeSystem] = useState(true);
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const [draftText, setDraftText] = useState("");
   const [draftFiles, setDraftFiles] = useState<File[]>([]);
-  const [recipient, setRecipient] = useState<string>("참여자 모두");
-  const [recipientOpen, setRecipientOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 답할 대상 자동 지정 — 사용자 선택 불가. Phase 2 확장 시 lib 함수만 수정.
+  const replyTarget = useMemo(
+    () => determineReplyTarget({ name: applicantName }, currentUserRole),
+    [applicantName, currentUserRole],
+  );
 
   // 시스템 이벤트 + 메시지 합쳐 시간순(과거→현재) 정렬.
   const items = useMemo(() => {
@@ -123,7 +132,7 @@ export function ProgressHistoryBlock({
         id: `msg-${Date.now()}`,
         senderName: currentUserName,
         senderRole: currentUserRole,
-        recipient,
+        replyTarget,
         timestamp: nowShort(),
         text: draftText.trim(),
         attachments: draftFiles.map((f) => ({ name: f.name, size: f.size })),
@@ -131,14 +140,22 @@ export function ProgressHistoryBlock({
     ]);
     setDraftText("");
     setDraftFiles([]);
-    setRecipient("참여자 모두");
   };
 
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const list = Array.from(e.target.files ?? []);
+    const oversize = list.find((f) => f.size > 50 * 1024 * 1024);
+    if (oversize) {
+      setToast(`${oversize.name}: 50MB 를 초과하는 파일은 첨부할 수 없습니다.`);
+      setTimeout(() => setToast(null), 3000);
+    }
     const accepted = list
-      .slice(0, 5 - draftFiles.length)
-      .filter((f) => f.size <= 50 * 1024 * 1024);
+      .filter((f) => f.size <= 50 * 1024 * 1024)
+      .slice(0, 5 - draftFiles.length);
+    if (list.length > accepted.length && !oversize) {
+      setToast("최대 5개까지 첨부 가능합니다.");
+      setTimeout(() => setToast(null), 3000);
+    }
     setDraftFiles((prev) => [...prev, ...accepted].slice(0, 5));
     e.target.value = "";
   };
@@ -207,22 +224,18 @@ export function ProgressHistoryBlock({
           {canPostMessage && (
             <div className="mt-4 border-t border-gray-200 pt-3.5 dark:border-gray-800">
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/40">
-                {recipient !== "참여자 모두" && (
-                  <div className="mb-1.5 inline-flex items-center gap-1.5 rounded bg-white px-2 py-0.5 text-[10px] text-gray-700 ring-1 ring-inset ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700">
-                    <ArrowRight size={9} aria-hidden="true" />
-                    {recipient}
-                    <button
-                      type="button"
-                      onClick={() => setRecipient("참여자 모두")}
-                      className="ml-0.5 rounded p-0.5 text-gray-400 hover:text-gray-700"
-                      aria-label="수신자 해제"
-                    >
-                      <X size={9} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
+                {/* 답할 대상 — 자동 지정, 클릭 불가 div */}
+                <ReplyTargetChip target={replyTarget} />
+
+                <textarea
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  placeholder="메시지를 입력하세요"
+                  className="block min-h-[46px] w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
+                />
+
                 {draftFiles.length > 0 && (
-                  <ul className="mb-1.5 flex flex-wrap gap-1.5">
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
                     {draftFiles.map((f, i) => (
                       <li
                         key={`${f.name}-${i}`}
@@ -234,7 +247,6 @@ export function ProgressHistoryBlock({
                           className="text-gray-400"
                         />
                         <span>{f.name}</span>
-                        <span className="text-gray-400">·</span>
                         <span className="text-gray-400">{fmtSize(f.size)}</span>
                         <button
                           type="button"
@@ -250,12 +262,7 @@ export function ProgressHistoryBlock({
                     ))}
                   </ul>
                 )}
-                <textarea
-                  value={draftText}
-                  onChange={(e) => setDraftText(e.target.value)}
-                  placeholder="메시지를 입력하세요. 참여자 모두가 볼 수 있습니다."
-                  className="block min-h-[46px] w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
-                />
+
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -264,51 +271,20 @@ export function ProgressHistoryBlock({
                   onChange={onPickFiles}
                 />
                 <div className="mt-1.5 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                    >
-                      <Paperclip size={12} aria-hidden="true" />
-                      첨부
-                    </button>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setRecipientOpen((v) => !v)}
-                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                      >
-                        <AtSign size={12} aria-hidden="true" />
-                        수신자 지정
-                      </button>
-                      {recipientOpen && (
-                        <ul className="absolute left-0 top-full z-10 mt-1 min-w-[160px] overflow-hidden rounded-md border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-900">
-                          {participants.map((p) => (
-                            <li key={p}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRecipient(p);
-                                  setRecipientOpen(false);
-                                }}
-                                className="block w-full px-3 py-1.5 text-left text-[11px] text-gray-700 transition hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-                              >
-                                {p}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  >
+                    <Paperclip size={13} aria-hidden="true" />
+                    첨부
+                  </button>
                   <button
                     type="button"
                     onClick={onSend}
                     disabled={!canSend}
-                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-3 py-1.5 text-[12px] font-medium text-blue-700 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-900/30 dark:text-blue-300"
+                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-3 py-1.5 text-[12px] font-medium text-blue-700 transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:bg-blue-900/30 dark:text-blue-300 dark:disabled:bg-gray-700/40 dark:disabled:text-gray-500"
                   >
-                    <Send size={12} aria-hidden="true" />
                     전송
                   </button>
                 </div>
@@ -317,7 +293,40 @@ export function ProgressHistoryBlock({
           )}
         </>
       )}
+
+      {toast && (
+        <p
+          aria-live="polite"
+          className="mt-2 text-[11px] text-red-700 dark:text-red-300"
+        >
+          {toast}
+        </p>
+      )}
     </section>
+  );
+}
+
+/** 답할 대상 정보 칩 — 자동 지정, 클릭 불가 div.
+ *  Phase 2 (담당자 다수) 도입 시 이 컴포넌트만 <button> + dropdown 으로 교체. */
+function ReplyTargetChip({ target }: { target: ReplyTargetUser }) {
+  const tone =
+    target.role === "담당자"
+      ? "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200"
+      : "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
+  return (
+    <div className="mb-2 flex items-center gap-1.5 border-b border-gray-200 pb-2 dark:border-gray-700">
+      <span className="text-[10px] text-gray-400 dark:text-gray-500">답할 대상</span>
+      <span className="text-[10px] text-gray-400 dark:text-gray-500">→</span>
+      <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] dark:border-gray-700 dark:bg-gray-900">
+        <span
+          className={`grid h-[14px] w-[14px] place-items-center rounded-full text-[8px] font-medium ${tone}`}
+        >
+          {initials(target.name)}
+        </span>
+        <span className="text-gray-800 dark:text-gray-200">{target.name}</span>
+        <span className="text-[9px] text-gray-400 dark:text-gray-500">{target.role}</span>
+      </div>
+    </div>
   );
 }
 
@@ -378,7 +387,7 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
             "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200",
           badge:
             "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200",
-          label: "담당자",
+          label: msg.senderRole === "potential-assignee" ? "잠재 담당자" : "담당자",
         };
 
   return (
@@ -401,9 +410,10 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
             )}
             {tone.label}
           </span>
-          <ArrowRight size={10} aria-hidden="true" className="text-gray-400" />
-          <span className="text-[11px] text-gray-600 dark:text-gray-300">
-            {msg.recipient}
+          {/* 화살표는 → 텍스트 문자. ti-arrow-right / ti-corner-down-right 사용 금지. */}
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">→</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            {msg.replyTarget.name}
           </span>
           <span className="text-[10px] text-gray-400">·</span>
           <span className="text-[10px] text-gray-400">{msg.timestamp}</span>

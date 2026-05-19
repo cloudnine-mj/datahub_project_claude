@@ -409,7 +409,7 @@ export function ApplicationFormContainer({
         canPostMessage
         currentUserName={applicant.name}
         currentUserRole="applicant"
-        participants={["참여자 모두", "Data Governance Team"]}
+        applicantName={applicant.name}
       />
       <SubmittedSummaryBlock type={type} values={values} applicant={applicant} />
 
