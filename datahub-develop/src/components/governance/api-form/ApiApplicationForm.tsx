@@ -61,6 +61,33 @@ function effectiveCurrency(svc: ApiService): string {
   return svc.currency;
 }
 
+/** 통화 코드 → 입력 prefix 심볼. ISO 코드(EUR/JPY/...) 도 매핑.
+ *  매핑에 없는 통화는 그 자체 문자열(예: 'CHF') 을 prefix 로 노출. */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  KRW: "₩",
+  EUR: "€",
+  JPY: "¥",
+  CNY: "¥",
+  GBP: "£",
+  HKD: "HK$",
+  AUD: "A$",
+  CAD: "C$",
+  SGD: "S$",
+  TWD: "NT$",
+  INR: "₹",
+  VND: "₫",
+  THB: "฿",
+  IDR: "Rp",
+  MYR: "RM",
+  PHP: "₱",
+};
+
+function currencySymbol(svc: ApiService): string {
+  const code = effectiveCurrency(svc);
+  return CURRENCY_SYMBOLS[code] ?? code;
+}
+
 function calculateTotals(services: ApiService[]): Record<string, number> {
   const totals: Record<string, number> = {};
   for (const s of services) {
@@ -341,16 +368,21 @@ function ServiceCard({ index, service, onChange, onRemove, canRemove }: ServiceC
         </div>
 
         <label className="pt-2 text-gray-500 dark:text-gray-400">예상 비용</label>
-        <input
-          type="number"
-          min={0}
-          value={service.estimatedCost === 0 ? "" : service.estimatedCost}
-          onChange={(e) =>
-            onChange({ estimatedCost: e.target.value === "" ? 0 : Number(e.target.value) })
-          }
-          placeholder="예: 3,000"
-          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900 [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-        />
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-[12px] font-medium text-gray-500 dark:text-gray-400">
+            {currencySymbol(service)}
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={service.estimatedCost === 0 ? "" : service.estimatedCost}
+            onChange={(e) =>
+              onChange({ estimatedCost: e.target.value === "" ? 0 : Number(e.target.value) })
+            }
+            placeholder="예: 3,000"
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+          />
+        </div>
       </div>
     </div>
   );
