@@ -162,7 +162,7 @@ export default function Page() {
                       </td>
                       <td className="px-4 py-3">
                         <Link
-                          href={`/governance/forms/${it.id}?from=list`}
+                          href={`/governance/forms/detail/${it.id}?from=list`}
                           className="font-medium text-text-primary hover:text-brand"
                         >
                           {it.projectName}
@@ -184,7 +184,7 @@ export default function Page() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/governance/forms/${it.id}?from=list`}
+                          href={`/governance/forms/detail/${it.id}?from=list`}
                           className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:text-brand/80"
                         >
                           Open
