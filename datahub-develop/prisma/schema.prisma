@@ -342,6 +342,167 @@ model CostRecord {
   plan   Plan?  @relation(fields: [planId], references: [id])
 }
 
+// ─── Governance Board (Posts) ───────────────────────────────────
+//
+// `datahub-web` 의 게시판 모델 포팅 — 정책(policy) / 프로세스(process) 두 게시판
+// 모두 한 테이블에서 boardType 컬럼으로 구분. 정책 게시판에서만 사용되는 메타필드
+// (severity / tldr / actionItems 등) 는 옵션 컬럼으로 보관, 프로세스는 비워둠.
+
+model GovernancePost {
+  id          String   @id @default(cuid())
+  boardType   String   // "policy" | "process"
+  docNo       String?
+  docType     String?
+  title       String
+  category    String?
+  content     String   @db.Text
+  isDraft     Boolean  @default(false)
+  /// 상단 고정 — admin 만 토글. 정렬 시 pinned=true 가 최상단.
+  pinned      Boolean  @default(false)
+  /// 공개 범위 — "public" (default) | "admin"
+  visibility  String   @default("public")
+  authorId    String
+  authorName  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 정책 메타 — 모두 선택값, 프로세스 보드는 비워둠
+  summary     String?
+  tags        Json?
+  /// "low" | "medium" | "high" | "critical"
+  severity    String?
+  appliesTo   String?
+  tldr        String?  @db.Text
+  actionItems Json?
+  examples    String?  @db.Text
+
+  attachments GovernancePostAttachment[]
+
+  @@index([boardType])
+  @@index([docNo])
+  @@index([docType])
+  @@index([isDraft])
+  @@index([pinned])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+model GovernancePostAttachment {
+  id         String   @id @default(cuid())
+  postId     String
+  filename   String
+  storedPath String
+  sizeBytes  Int      @default(0)
+
+  post GovernancePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+// ─── Governance Forms (신청서) ──────────────────────────────────
+//
+// `datahub-web` 의 Form 모델 포팅 — data_production / data_purchase /
+// data_subscription / product_log_usage / data_production_plan /
+// api_usage_plan / productivity_tool 7종 유형의 신청서. 타입별 payload 가
+// 모두 달라 공통 메타(신청자/프로젝트/상태)만 컬럼화, 타입별 필드는 JSON payload.
+
+model GovernanceForm {
+  id                  String   @id @default(cuid())
+  requestNo           String   @unique
+  formType            String
+  projectName         String
+  submitterId         String
+  submitterName       String
+  submitterEmail      String
+  submitterDepartment String?
+  status              String   @default("submitted")
+  version             Int      @default(1)
+  parentFormId        String?
+  /// 상태 변경 이력 — [{status, changedBy, changedAt, comment}, ...]
+  approvalHistory     Json?
+  /// 본문 수정 이력 — [{editedBy, editedAt, changes:[...]}, ...]
+  editHistory         Json?
+  /// 타입별 자유 필드
+  payload             Json     @default("{}")
+  submittedAt         DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  attachments GovernanceFormAttachment[]
+  comments    GovernanceFormComment[]
+  messages    GovernanceFormMessage[]
+
+  @@index([requestNo])
+  @@index([formType])
+  @@index([submitterId])
+  @@index([status])
+  @@index([parentFormId])
+  @@index([submittedAt])
+}
+
+model GovernanceFormAttachment {
+  id         String   @id @default(cuid())
+  formId     String
+  filename   String
+  storedPath String
+  sizeBytes  Int      @default(0)
+
+  form GovernanceForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+}
+
+/// 신청 1건에 대한 단일 댓글 스레드 — HuggingFace Discussion 형태.
+/// 진행 이력 채팅(GovernanceFormMessage)과 별개. 향후 통합 검토.
+model GovernanceFormComment {
+  id         String   @id @default(cuid())
+  formId     String
+  authorId   String
+  authorName String
+  authorRole String
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  form GovernanceForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([createdAt])
+}
+
+/// 진행 이력 타임라인 메시지 — 신청자 ↔ 담당자 양방향 채팅.
+/// 회신 대상(recipient)은 발신 시점에 결정되어 스냅샷 저장.
+model GovernanceFormMessage {
+  id            String   @id @default(cuid())
+  formId        String
+  senderId      String
+  senderName    String
+  senderEmail   String
+  /// "applicant" | "assignee" | "admin"
+  senderRole    String
+  recipientName String
+  /// "담당자" | "신청자"
+  recipientRole String
+  body          String   @db.Text
+  createdAt     DateTime @default(now())
+
+  form        GovernanceForm                    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  attachments GovernanceFormMessageAttachment[]
+
+  @@index([formId])
+  @@index([createdAt])
+}
+
+model GovernanceFormMessageAttachment {
+  id         String   @id @default(cuid())
+  messageId  String
+  filename   String
+  storedPath String
+  sizeBytes  Int      @default(0)
+
+  message GovernanceFormMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
 /// BFF / Web 자체 audit 로그.
 ///
 /// datahub-api 의 audit_logs 와는 별개 — BFF route 에서 datahub-api 호출
