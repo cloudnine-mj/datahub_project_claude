@@ -506,32 +506,15 @@ const productivityTool: FormSchema = {
   ],
 };
 
-// 담당자 지정 — 신청서를 함께 봐야 하는 사람들. 7종 신청 양식 공통으로
-// 마지막에 자동 부착되는 필수 섹션. 사용자가 이름을 한 명씩 Enter 로 추가.
-// 내부 payload key 는 호환을 위해 '참조자' 유지 (라벨만 사용자 노출용).
-const APPROVER_SECTION: SectionDef = {
-  title: "담당자 지정",
-  fields: [
-    {
-      key: "참조자",
-      label: "담당자 지정",
-      type: "approver_list",
-      placeholder: "담당자 이름 입력 후 Enter (예: 홍길동)",
-      required: true,
-    },
-  ],
-};
-
-function withApproverSection(schema: FormSchema): FormSchema {
-  return { ...schema, sections: [...schema.sections, APPROVER_SECTION] };
-}
+// '담당자 지정' 섹션(approver_list) 은 진행 이력 메시지의 회신 흐름으로 흡수되어
+// 모든 양식에서 제거. 기존 데이터의 '참조자' payload 키는 호환을 위해 유지(읽기 전용).
 
 export const FORM_SCHEMAS: Record<FormType, FormSchema> = {
-  data_production: withApproverSection(dataProduction),
-  data_purchase: withApproverSection(dataPurchase),
-  data_subscription: withApproverSection(dataSubscription),
-  product_log_usage: withApproverSection(productLogUsage),
-  data_production_plan: withApproverSection(dataProductionPlan),
-  api_usage_plan: withApproverSection(apiUsagePlan),
-  productivity_tool: withApproverSection(productivityTool),
+  data_production: dataProduction,
+  data_purchase: dataPurchase,
+  data_subscription: dataSubscription,
+  product_log_usage: productLogUsage,
+  data_production_plan: dataProductionPlan,
+  api_usage_plan: apiUsagePlan,
+  productivity_tool: productivityTool,
 };
