@@ -3,6 +3,7 @@
 import {
   Inbox,
   FileCheck2,
+  FileText,
   ScrollText,
   ShieldCheck,
   ClipboardList,
@@ -11,6 +12,7 @@ import { SectionNav, SectionNavItem } from "@/components/storyboard/section-nav"
 
 const items: SectionNavItem[] = [
   { title: "Requests", href: "/governance", icon: Inbox, badge: 42, group: "요청 관리" },
+  { title: "신청서 목록", href: "/governance/forms/list", icon: FileText, group: "요청 관리" },
   { title: "New Request", href: "/governance/new", icon: FileCheck2, group: "요청 관리" },
   { title: "Policy Templates", href: "/governance/templates", icon: ScrollText, group: "정책 & 감사" },
   { title: "Audit Trail", href: "/governance/audit", icon: ClipboardList, group: "정책 & 감사" },

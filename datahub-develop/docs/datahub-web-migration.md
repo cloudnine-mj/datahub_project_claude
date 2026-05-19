@@ -89,12 +89,25 @@ GOVERNANCE_ASSIGNEE_NAME=김은솔
 ## 작업 진행 상황
 
 - [x] **Phase 1** — Prisma schema 추가 + migration SQL + 본 문서
-- [ ] **Phase 2** — API routes (forms / posts / messages / attachments)
-- [ ] **Phase 3** — 페이지 포팅 (intake, list, detail)
-- [ ] **Phase 4** — 컴포넌트 + lib 이전 (FORM_SCHEMAS, ApplicationForm, FormBuilder, ProgressHistoryBlock 등)
-- [ ] **Phase 5** — 인증/audit 적용 + 환경변수
-- [ ] **Phase 6** — Seed + Playwright smoke test
-- [ ] **Phase 7** — 빌드/린트 통과 + storyboard `/governance/page.tsx` 교체
+- [x] **Phase 2** — 핵심 API routes (forms CRUD / posts CRUD / messages CRUD)
+  - 보류: 첨부 파일 endpoint, status PATCH, pin toggle, Excel export, comments
+  - 보류 사유: 첨부는 GCS bucket 통합 필요 (CLAUDE.md Phase 1 Type-B). 나머지는 단순 이전.
+- [x] **Phase 3 partial** — lib 이전 + BFF api client + `/governance/forms/list` 데모 페이지
+  - 이전 완료 lib: schemas, application-config, planning-config, determine-reply-target,
+    history-adapter, validation, application-types, application-type-meta, role-mapping,
+    phase1-substeps, preview, types
+  - api-client.ts (governanceApi) 추가
+  - .env.example 에 `GOVERNANCE_ASSIGNEE_EMAIL/_NAME` 추가
+  - layout.tsx 에 "신청서 목록" 메뉴 추가
+- [ ] **Phase 4** — 나머지 페이지 + 컴포넌트 이전
+  - 페이지: `/governance/forms/[id]`, `/governance/forms/intake/*`, `/governance/forms/[type]/new`,
+    `/governance/process`, `/governance/policy`
+  - 컴포넌트: ApplicationForm/*, FormBuilder, phase-build/*, api-planning/*, ProcessStepper,
+    ProgressHistoryBlock, BoardListView, PolicyBoardView, PostNewView, PostDetailView 등
+  - 각 컴포넌트의 fetch 호출은 governanceApi 로 치환
+- [ ] **Phase 5** — 첨부 파일 endpoint + GCS bucket 통합
+- [ ] **Phase 6** — Seed (sample form/post 데이터) + Playwright smoke test
+- [ ] **Phase 7** — 빌드/린트 통과 + storyboard `/governance/page.tsx` 를 forms list 로 리다이렉트
 
 ## 사내 GitLab 푸시 절차
 
