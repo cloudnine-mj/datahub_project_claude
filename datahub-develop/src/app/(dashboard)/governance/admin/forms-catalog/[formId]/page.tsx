@@ -17,6 +17,7 @@ import {
 } from "@/components/governance/api-form/ApiApplicationForm";
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import type { FormType } from "@/lib/governance/api-client-full";
+import { FormBuilder } from "@/components/governance/FormBuilder";
 import { getCatalogEntry, type CatalogEntry } from "../catalog-config";
 
 const PREVIEW_APPLICANT = {
@@ -73,7 +74,16 @@ function FormRenderer({ entry }: { entry: CatalogEntry }) {
   if (entry.id === "api_usage_plan") {
     return <ApiFormPreview />;
   }
-  // 그 외 양식은 FORM_SCHEMAS 기반.
+  // 복합 필드(service_blocks 등) 가 있는 양식은 FormBuilder 풀 렌더링.
+  // ApplicationFormSection 은 단순 타입만 처리하므로 textarea fallback 으로 양식이 짤려 보임.
+  if (entry.id === "productivity_tool") {
+    return (
+      <section className="rounded-xl border border-gray-200 bg-white px-6 py-5 dark:border-gray-800 dark:bg-gray-900">
+        <FormBuilder formType={entry.id as FormType} embedded />
+      </section>
+    );
+  }
+  // 그 외 양식은 FORM_SCHEMAS 기반 단순 미리보기.
   return <SchemaFormPreview formType={entry.id as FormType} />;
 }
 
