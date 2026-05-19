@@ -45,7 +45,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const [copyDone, setCopyDone] = useState(false);
 
   const refetch = useCallback(() => {
-    api.getForm(Number(params.id)).then(setForm).catch((e) => setError((e as Error).message));
+    api.getForm(params.id).then(setForm).catch((e) => setError((e as Error).message));
   }, [params.id]);
 
   async function submitDraft() {

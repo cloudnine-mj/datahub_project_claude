@@ -71,7 +71,7 @@ export function PostNewView({ board }: { board: BoardType }) {
   useEffect(() => {
     if (!editId) return;
     api
-      .getPost(board, Number(editId))
+      .getPost(board, editId)
       .then((p) => {
         setTitle(p.title);
         setDocNo(p.doc_no ?? "");
@@ -140,7 +140,7 @@ export function PostNewView({ board }: { board: BoardType }) {
         }),
       };
       const post = isEdit
-        ? await api.updatePost(board, Number(editId), body)
+        ? await api.updatePost(board, editId, body)
         : await api.createPost(board, body);
 
       // 신규 첨부 파일은 그대로 순차 업로드 — 수정 모드에서도 동일.

@@ -86,7 +86,7 @@ export function FormBuilder({
   useEffect(() => {
     if (!editId) return;
     api
-      .getForm(Number(editId))
+      .getForm(editId)
       .then((f) => {
         setValues(f.payload || {});
         setSubmitterName(f.submitter_name || "");
@@ -184,7 +184,7 @@ export function FormBuilder({
       };
 
       const result = isEdit
-        ? await api.updateForm(Number(editId), body)
+        ? await api.updateForm(editId, body)
         : await api.submitForm(body);
 
       // 파일은 신청 저장 후 순차 업로드 — 한 파일 실패해도 나머지 그대로 시도.
