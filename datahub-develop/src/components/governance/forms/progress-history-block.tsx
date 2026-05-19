@@ -100,8 +100,8 @@ function fmtSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function initials(name: string): string {
-  return name.trim().slice(0, 2) || "?";
+function initials(name: string | null | undefined): string {
+  return (name ?? "").trim().slice(0, 2) || "?";
 }
 
 function nowShort(): string {

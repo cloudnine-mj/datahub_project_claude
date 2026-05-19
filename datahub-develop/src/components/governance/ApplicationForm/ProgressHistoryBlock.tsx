@@ -71,15 +71,15 @@ function isoToShort(iso: string): string {
 function backendMessageToUI(m: FormMessageItem): UserMessage {
   return {
     id: `srv-${m.id}`,
-    senderName: m.sender_name,
-    senderRole: m.sender_role,
-    replyTarget: { name: m.recipient_name, role: m.recipient_role },
-    timestamp: isoToShort(m.created_at),
+    senderName: m.senderName,
+    senderRole: m.senderRole,
+    replyTarget: { name: m.recipientName, role: m.recipientRole },
+    timestamp: isoToShort(m.createdAt),
     text: m.body,
     attachments: m.attachments.map((a) => ({
       name: a.filename,
-      size: a.size_bytes,
-      href: api.formMessageAttachmentUrl(m.form_id, m.id, a.id),
+      size: a.sizeBytes,
+      href: api.formMessageAttachmentUrl(m.formId, m.id, a.id),
     })),
   };
 }
@@ -98,8 +98,8 @@ function fmtSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function initials(name: string): string {
-  return name.trim().slice(0, 2) || "?";
+function initials(name: string | null | undefined): string {
+  return (name ?? "").trim().slice(0, 2) || "?";
 }
 
 function nowShort(): string {
