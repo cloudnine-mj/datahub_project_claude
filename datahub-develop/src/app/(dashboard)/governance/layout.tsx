@@ -16,7 +16,6 @@ import { SectionNav, SectionNavItem } from "@/components/storyboard/section-nav"
 
 const items: SectionNavItem[] = [
   { title: "Home", href: "/governance/home", icon: Home, group: "거버넌스" },
-  { title: "Requests (storyboard)", href: "/governance", icon: Inbox, badge: 42, group: "거버넌스" },
   { title: "신청서 카탈로그", href: "/governance/forms", icon: FolderKanban, group: "신청서" },
   { title: "거버넌스 요청 목록", href: "/governance/forms/list", icon: FileText, group: "신청서" },
   { title: "내 문서 목록", href: "/governance/forms/my", icon: FileText, group: "신청서" },
