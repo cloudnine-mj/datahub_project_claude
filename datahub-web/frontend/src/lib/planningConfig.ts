@@ -55,7 +55,7 @@ export const PLANNING_REVIEW_CONFIG: Record<PlanningType, PlanningReview> = {
     exampleItems: [
       {
         label: "예산 검토 및 확인",
-        value: "건당 2,500원 × 20,000건 = 약 5,000만원",
+        value: "건당 2,500원 × 20,000건 = 5,000만원",
       },
       {
         label: "제작 목적",
