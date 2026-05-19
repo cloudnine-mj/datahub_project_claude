@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import {
   APPLICATION_TYPE_META,
   getPlanningTypeFromStorage,
-} from "@/lib/applicationTypeMeta";
+} from "./application-type-meta";
 import type { PlanningType } from "./planning-config";
 
 export interface TypeCrumb {

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import {
   getPlanningTypeFromStorage,
   isPlanningType,
-} from "@/lib/applicationTypeMeta";
+} from "./application-type-meta";
 import type { PlanningType } from "./planning-config";
 
 export function usePlanningType(): PlanningType {
