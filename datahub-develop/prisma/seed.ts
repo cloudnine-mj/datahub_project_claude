@@ -199,6 +199,45 @@ async function main() {
 
   // Budget seed skipped — polymorphic FK constraint issue
 
+  // ─── Governance — sample posts (policy + process) ────────────
+  const existingPost = await prisma.governancePost.findFirst();
+  if (!existingPost) {
+    await prisma.governancePost.createMany({
+      data: [
+        {
+          boardType: "process",
+          title: "용역 제작 요청 방법",
+          docType: "가이드",
+          category: "제작 프로세스",
+          content:
+            "외주 업체를 통한 데이터 용역 제작 요청 절차입니다.\n\n1. 신청서 작성\n2. 전자결재 상신\n3. 승인 후 외주 매칭 및 작업 착수",
+          authorId: admin.id,
+          authorName: admin.name ?? "관리자",
+        },
+        {
+          boardType: "process",
+          title: "구매 / 구독 요청 방법",
+          docType: "가이드",
+          category: "제작 프로세스",
+          content:
+            "외부 데이터셋 구매 또는 구독 신청 절차입니다.\n\n- 일회성 구매 → 데이터 구매 신청\n- 정기 구독 → 데이터 구독 신청",
+          authorId: admin.id,
+          authorName: admin.name ?? "관리자",
+        },
+        {
+          boardType: "process",
+          title: "Product 서비스 로그 데이터 활용 방법",
+          docType: "가이드",
+          category: "활용 요청 프로세스",
+          content:
+            "Product 로그 데이터(클릭/세션/이벤트)는 별도 활용 신청을 통해서만 접근 가능합니다.",
+          authorId: admin.id,
+          authorName: admin.name ?? "관리자",
+        },
+      ],
+    });
+  }
+
   // ─── Governance — sample assignee + form + chat ───────────────
   // Phase 1 고정 담당자(김은솔). .env 의 GOVERNANCE_ASSIGNEE_EMAIL 와 동일해야
   // 양방향 채팅이 정상 동작.
