@@ -1,15 +1,18 @@
 // 1. 기획 / substep 5: 담당자 논의·확정.
 //   신청 유형에 따라 자동 지정된 담당자와 논의 후 신청서 확정.
-//   가이드라인 명세대로 협의 항목·메시지 입력 등은 추가하지 않음.
+//   - 담당자와의 논의 카드: 첨부 지원 코멘트 스레드 (담당자 회신 대상 자동).
+//   - 확정 게이트: 담당자 코멘트가 최소 1건 이상일 때만 체크박스 활성화,
+//     체크해야 '2단계로 진행' 버튼 활성.
 
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, UserCheck } from "lucide-react";
+import { CheckCircle2, Lock, Check, UserCheck } from "lucide-react";
 import { PhaseLayout } from "@/components/governance/PhaseLayout";
 import { PhaseBlock } from "@/components/governance/PhaseBlock";
 import { PhaseChecklistRow } from "@/components/governance/PhaseChecklistRow";
 import { HelpBanner } from "@/components/governance/HelpBanner";
+import { DiscussionThread } from "@/components/governance/DiscussionThread";
 import {
   buildPhase1SubSteps,
   getPhase1Phases,
@@ -32,10 +35,17 @@ const ASSIGNEES: { typeLabel: string; description: string }[] = [
 
 export default function Page() {
   const [confirmed, setConfirmed] = useState(false);
+  // DiscussionThread 가 통보 — 담당자(assignee) 코멘트가 1건 이상이면 true.
+  const [hasAssigneeReply, setHasAssigneeReply] = useState(false);
   const type = usePlanningType();
   const prev = prevPhase1Substep("discussion", type);
   const next = nextPhase1Substep("discussion", type);
   const typeCrumb = useApplicationTypeBreadcrumb();
+
+  // 확정 게이트: 담당자 회신이 있어야 체크박스 활성.
+  const canCheckConfirm = hasAssigneeReply;
+  // 다음 단계: 체크박스가 체크된 후에만 활성.
+  const canProceed = canCheckConfirm && confirmed;
 
   return (
     <PhaseLayout
@@ -50,6 +60,7 @@ export default function Page() {
       prevLabel={prev ? `${prev.label} 다시 보기` : undefined}
       nextPath={next.path}
       nextLabel={next.label}
+      canProceed={canProceed}
     >
       <HelpBanner message="지정된 담당자와 데이터 구축/구매/구독을 논의한 후 신청서를 확정합니다." />
 
@@ -74,16 +85,40 @@ export default function Page() {
         </ul>
       </PhaseBlock>
 
+      <DiscussionThread
+        planningType={type}
+        onAssigneeReplyChange={setHasAssigneeReply}
+      />
+
       <PhaseBlock icon={CheckCircle2} title="신청서 확정">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
           담당자와 논의를 마친 후 신청서를 최종 확정합니다.
         </p>
-        <PhaseChecklistRow
-          id="discussion-confirmed"
-          label="담당자 논의 및 신청서 확정"
-          checked={confirmed}
-          onToggle={() => setConfirmed((v) => !v)}
-        />
+        <div className={canCheckConfirm ? "" : "pointer-events-none opacity-45"}>
+          <PhaseChecklistRow
+            id="discussion-confirmed"
+            label="담당자 논의 및 신청서 확정"
+            checked={confirmed}
+            onToggle={() => setConfirmed((v) => !v)}
+          />
+        </div>
+        <p className="mt-2 inline-flex items-center gap-1 text-[11px]">
+          {canCheckConfirm ? (
+            <>
+              <Check size={11} className="text-emerald-600" aria-hidden="true" />
+              <span className="text-emerald-700">
+                담당자 논의가 완료되었습니다. 확정할 수 있습니다.
+              </span>
+            </>
+          ) : (
+            <>
+              <Lock size={11} className="text-gray-400" aria-hidden="true" />
+              <span className="text-gray-500">
+                담당자와 논의를 먼저 진행해주세요.
+              </span>
+            </>
+          )}
+        </p>
       </PhaseBlock>
     </PhaseLayout>
   );
