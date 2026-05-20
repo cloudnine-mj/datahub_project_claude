@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckSquare, ChevronDown, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckSquare, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { DeleteFormButton } from "@/components/governance/DeleteFormButton";
@@ -126,13 +126,6 @@ export default function Page({ params }: { params: { id: string } }) {
               className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               <ChevronUp size={12} /> 이전
-            </button>
-            <button
-              type="button"
-              onClick={() => router.forward()}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              다음 <ChevronDown size={12} />
             </button>
             <Link
               href={from === "admin" ? "/governance/admin/forms" : "/governance/forms/list"}
