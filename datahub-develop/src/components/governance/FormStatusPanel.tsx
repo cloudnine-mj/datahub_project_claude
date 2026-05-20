@@ -47,9 +47,10 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
     setError(null);
     setPending(true);
     try {
-      // '보완 요청' 은 상태 전환 없이 현재 status 그대로 + [보완 요청] 코멘트만 기록.
+      // '보완 요청' 은 status 를 '검토 중'(reviewing) 으로 되돌리고 [보완 요청] 코멘트 기록.
+      // 승인 완료된 신청도 보완 요청 시 다시 검토 단계로 내려가야 신청자가 후속 조치 가능.
       const isSupplement = (target as string) === "__supplement__";
-      const finalStatus = isSupplement ? status : target;
+      const finalStatus = isSupplement ? "reviewing" : target;
       const finalComment = isSupplement
         ? `[보완 요청] ${comment || ""}`.trim()
         : comment || undefined;
