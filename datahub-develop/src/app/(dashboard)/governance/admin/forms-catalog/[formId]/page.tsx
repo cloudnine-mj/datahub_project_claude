@@ -77,8 +77,19 @@ function FormRenderer({ entry }: { entry: CatalogEntry }) {
   // 복합 필드(service_blocks 등) 가 있는 양식은 FormBuilder 풀 렌더링.
   // ApplicationFormSection 은 단순 타입만 처리하므로 textarea fallback 으로 양식이 짤려 보임.
   if (entry.id === "productivity_tool") {
+    const schema = FORM_SCHEMAS["productivity_tool"];
     return (
       <section className="rounded-xl border border-gray-200 bg-white px-6 py-5 dark:border-gray-800 dark:bg-gray-900">
+        <header className="mb-4 border-b border-gray-200 pb-3.5 dark:border-gray-800">
+          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+            {schema.label}
+          </h2>
+          {schema.description && (
+            <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
+              {schema.description}
+            </p>
+          )}
+        </header>
         <FormBuilder formType={entry.id as FormType} embedded />
       </section>
     );
