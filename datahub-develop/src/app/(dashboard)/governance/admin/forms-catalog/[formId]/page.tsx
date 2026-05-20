@@ -81,7 +81,7 @@ function FormRenderer({ entry }: { entry: CatalogEntry }) {
     return (
       <section className="rounded-xl border border-gray-200 bg-white px-6 py-5 dark:border-gray-800 dark:bg-gray-900">
         <header className="mb-4 border-b border-gray-200 pb-3.5 dark:border-gray-800">
-          <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+          <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
             {schema.label}
           </h2>
           {schema.description && (

@@ -345,9 +345,9 @@ export function FormBuilder({
 
           return (
             <section key={section.title || `s-${sectionIdx}`}>
-              <div className="mb-3 flex items-center gap-2">
-                <span className="block h-5 w-1 rounded-sm bg-brand" />
-                <h2 className="text-base font-bold">
+              <div className="mb-3 flex items-center gap-1.5">
+                <span className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+                <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
                   {section.title}
                   {!section.optional && <span className="ml-1 text-brand">*</span>}
                 </h2>
@@ -405,9 +405,11 @@ export function FormBuilder({
         })}
 
         <section>
-          <div className="mb-3 flex items-center gap-3">
-            <span className="block h-5 w-1 rounded-sm bg-brand" />
-            <h2 className="text-base font-bold">파일 첨부</h2>
+          <div className="mb-3 flex items-center gap-1.5">
+            <span className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+            <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+              파일 첨부
+            </h2>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -1044,7 +1046,9 @@ function ServiceBlockCard({
       <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/40 px-5 py-3">
         <div className="flex items-center gap-2">
           <span className="block h-5 w-1 rounded-sm bg-brand" />
-          <h3 className="text-sm font-bold">서비스 {index + 1}</h3>
+          <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+            서비스 {index + 1}
+          </h3>
         </div>
         <button
           type="button"
@@ -1140,7 +1144,7 @@ function ServiceBlockCard({
 function BlockRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <tr className="border-b border-gray-100 last:border-b-0">
-      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-[13px] text-gray-700">
+      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-[13px] text-gray-500 dark:text-gray-400">
         {label}
       </td>
       <td className="px-5 py-3 text-[13px]">{children}</td>
