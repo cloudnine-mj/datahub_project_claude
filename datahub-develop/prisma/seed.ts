@@ -318,9 +318,8 @@ async function main() {
     ),
   );
 
-  // 빈 DB 일 때만 (또는 샘플이 1건뿐일 때만) 추가 — 재시드 시 중복 방지.
-  const formCount = await prisma.governanceForm.count();
-  if (formCount <= 1) {
+  // 8건 샘플 — requestNo 별 idempotent. 이미 같은 번호가 있으면 skip.
+  {
     const now = Date.now();
     const day = (d: number) => new Date(now - d * 24 * 60 * 60 * 1000);
 
@@ -470,6 +469,13 @@ async function main() {
     ];
 
     for (const s of samples) {
+      // 같은 requestNo 이미 있으면 skip — 여러 번 seed 돌려도 중복 생성 안 함.
+      const exists = await prisma.governanceForm.findUnique({
+        where: { requestNo: s.requestNo },
+        select: { id: true },
+      });
+      if (exists) continue;
+
       const submittedAt = day(s.submittedDaysAgo);
       const history: { status: string; changedBy: string; changedAt: string; comment: string | null }[] = [
         {
