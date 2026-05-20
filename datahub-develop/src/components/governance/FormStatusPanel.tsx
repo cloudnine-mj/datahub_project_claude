@@ -10,6 +10,7 @@
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, ChevronDown, MessageSquare, Play } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/governance/api-client-full";
 import { parseUtc } from "@/lib/governance/forms/utils-bridge";
@@ -32,6 +33,7 @@ const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Pl
 ];
 
 export function FormStatusPanel({ formId, status, history, me, submitterEmail, onChanged }: Props) {
+  const router = useRouter();
   const isAdmin = me?.user.role === "admin";
   const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
   const canActAsAdmin = isAdmin && !isOwnSubmission;
@@ -61,6 +63,9 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       setTarget(null);
       setComment("");
       onChanged();
+      // 거버넌스 요청 목록 / 관리 페이지 등 다른 라우트의 Next.js Router Cache 무효화 —
+      // 사용자가 목록으로 돌아가면 변경된 status 가 즉시 반영됨.
+      router.refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {

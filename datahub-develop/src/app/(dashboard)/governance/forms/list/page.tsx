@@ -77,6 +77,10 @@ export default function GovernanceFormsListPage() {
   useEffect(() => {
     refetch();
     api.me().then(setMe).catch(() => setMe(null));
+    // 다른 페이지에서 admin 액션 후 돌아오면 자동 갱신.
+    const onFocus = () => refetch();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [refetch]);
 
   // 로그인 사용자 식별자 (이름 / 이메일 / 이메일 로컬파트) 소문자 정규화

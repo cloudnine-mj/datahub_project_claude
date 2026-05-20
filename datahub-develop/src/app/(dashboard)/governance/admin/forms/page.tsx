@@ -147,16 +147,22 @@ export default function Page() {
   }, [query]);
 
   useEffect(() => {
-    api
-      .listForms({ mine: false })
-      .then(setItems)
-      .catch(() => setItems([]));
+    const refetch = () =>
+      api
+        .listForms({ mine: false })
+        .then(setItems)
+        .catch(() => setItems([]));
+    refetch();
     api
       .me()
       .then((m: Me) => {
         if (m.user.role !== "admin") setAuthError(true);
       })
       .catch(() => setAuthError(true));
+    // 상세 페이지에서 status 변경 후 목록 되돌아오면 자동 새로고침.
+    const onFocus = () => refetch();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
   const kpi = useMemo(() => (items ? computeKpi(items) : null), [items]);
