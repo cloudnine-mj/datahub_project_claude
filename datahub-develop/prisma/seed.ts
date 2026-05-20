@@ -299,6 +299,221 @@ async function main() {
     });
   }
 
+  // ─── 일반 사용자 다수 + 다양한 상태/유형 신청서 샘플 ────────────────
+  // 거버넌스 요청 목록 / 관리 페이지 검토용. 모든 신청은 admin 이 아닌 일반 사용자가 제출.
+  const sampleUsers = await Promise.all(
+    [
+      { email: "yujin.park@lgresearch.ai", name: "박유진", department: "AI Platform" },
+      { email: "minsu.lee@lgresearch.ai", name: "이민수", department: "Data Science" },
+      { email: "soyeon.choi@lgresearch.ai", name: "최소연", department: "Speech AI" },
+      { email: "doyun.kim@lgresearch.ai", name: "김도윤", department: "Vision AI" },
+      { email: "jaehyun.han@lgresearch.ai", name: "한재현", department: "NLP Team" },
+      { email: "hyewon.jung@lgresearch.ai", name: "정혜원", department: "QA Engineering" },
+    ].map((u) =>
+      prisma.user.upsert({
+        where: { email: u.email },
+        update: { name: u.name },
+        create: { email: u.email, name: u.name },
+      }),
+    ),
+  );
+
+  // 빈 DB 일 때만 (또는 샘플이 1건뿐일 때만) 추가 — 재시드 시 중복 방지.
+  const formCount = await prisma.governanceForm.count();
+  if (formCount <= 1) {
+    const now = Date.now();
+    const day = (d: number) => new Date(now - d * 24 * 60 * 60 * 1000);
+
+    const samples: Array<{
+      requestNo: string;
+      formType: string;
+      projectName: string;
+      submitter: (typeof sampleUsers)[number];
+      department: string;
+      status: string;
+      submittedDaysAgo: number;
+      approvedDaysAgo?: number;
+      payload: Record<string, unknown>;
+    }> = [
+      {
+        requestNo: "REQ-2026-00002",
+        formType: "data_purchase",
+        projectName: "고객 행동 분석 데이터셋 구매",
+        submitter: sampleUsers[0],
+        department: "AI Platform",
+        status: "approved",
+        submittedDaysAgo: 12,
+        approvedDaysAgo: 8,
+        payload: {
+          구매_희망_데이터셋: "국내 e-commerce 클릭 로그 v2",
+          판매_업체: "데이터코리아",
+          사용_예상_금액: "5,500,000원",
+          사용_목적_및_기대_효과: "추천 시스템 개인화 모델 학습",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00003",
+        formType: "data_subscription",
+        projectName: "뉴스 코퍼스 구독",
+        submitter: sampleUsers[1],
+        department: "Data Science",
+        status: "reviewing",
+        submittedDaysAgo: 5,
+        payload: {
+          구독_희망_데이터셋: "한국어 뉴스 기사 월간 피드",
+          구독_업체: "프레스데이터",
+          구독_기간: "12개월",
+          월_사용_예상_금액: "2,200,000원",
+          사용_목적: "뉴스 분류 모델 정기 학습 데이터",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00004",
+        formType: "data_production",
+        projectName: "한국어 음성 라벨링 용역",
+        submitter: sampleUsers[2],
+        department: "Speech AI",
+        status: "submitted",
+        submittedDaysAgo: 2,
+        payload: {
+          관련_프로젝트_PMS: "PMS-2026-SPEECH-014",
+          데이터셋_활용_목적: "도메인 특화 ASR 모델 학습용 음성 코퍼스",
+          데이터셋_이름: "ko-asr-domain-v1",
+          희망_작업_착수일: "2026-06-15",
+          희망_수령일: "2026-08-31",
+          작업_형태: "음성 수집·전사·라벨링",
+          목표_데이터_수량: "50,000",
+          단위: "발화",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00005",
+        formType: "data_purchase",
+        projectName: "의료 영상 데이터셋 라이선스",
+        submitter: sampleUsers[3],
+        department: "Vision AI",
+        status: "approved",
+        submittedDaysAgo: 20,
+        approvedDaysAgo: 15,
+        payload: {
+          구매_희망_데이터셋: "흉부 X-ray 익명화 코퍼스 v3",
+          판매_업체: "MedAI Lab",
+          사용_예상_금액: "12,000,000원",
+          사용_목적_및_기대_효과: "흉부 진단 보조 모델 사전학습",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00006",
+        formType: "product_log_usage",
+        projectName: "Product 로그 활용 — 검색 품질 개선",
+        submitter: sampleUsers[4],
+        department: "NLP Team",
+        status: "submitted",
+        submittedDaysAgo: 1,
+        payload: {
+          서비스명: "Datahub Search",
+          활용_목적: "검색 결과 클릭률 기반 랭킹 개선",
+          요청_기간: "2026-06 ~ 2026-09",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00007",
+        formType: "data_subscription",
+        projectName: "재무 시계열 데이터 구독",
+        submitter: sampleUsers[5],
+        department: "QA Engineering",
+        status: "reviewing",
+        submittedDaysAgo: 3,
+        payload: {
+          구독_희망_데이터셋: "글로벌 주식 일별 OHLCV",
+          구독_업체: "FinDataHub",
+          구독_기간: "24개월",
+          월_사용_예상_금액: "1,800,000원",
+          사용_목적: "이상 거래 패턴 탐지 모델 학습·평가",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00008",
+        formType: "data_purchase",
+        projectName: "지도 POI 데이터셋",
+        submitter: sampleUsers[0],
+        department: "AI Platform",
+        status: "approved",
+        submittedDaysAgo: 30,
+        approvedDaysAgo: 25,
+        payload: {
+          구매_희망_데이터셋: "국내 상권 POI 카테고리 데이터",
+          판매_업체: "MapKorea",
+          사용_예상_금액: "3,400,000원",
+          사용_목적_및_기대_효과: "위치 추천 모델 features",
+        },
+      },
+      {
+        requestNo: "REQ-2026-00009",
+        formType: "data_production",
+        projectName: "이미지 캡션 라벨링 용역",
+        submitter: sampleUsers[3],
+        department: "Vision AI",
+        status: "submitted",
+        submittedDaysAgo: 4,
+        payload: {
+          관련_프로젝트_PMS: "PMS-2026-VISION-007",
+          데이터셋_활용_목적: "한국어 멀티모달 캡션 학습",
+          데이터셋_이름: "ko-image-caption-v2",
+          희망_작업_착수일: "2026-07-01",
+          희망_수령일: "2026-09-30",
+          작업_형태: "한국어 캡션 작성",
+          목표_데이터_수량: "100,000",
+          단위: "이미지",
+        },
+      },
+    ];
+
+    for (const s of samples) {
+      const submittedAt = day(s.submittedDaysAgo);
+      const history: { status: string; changedBy: string; changedAt: string; comment: string | null }[] = [
+        {
+          status: "submitted",
+          changedBy: s.submitter.name ?? s.submitter.email,
+          changedAt: submittedAt.toISOString(),
+          comment: "최초 제출",
+        },
+      ];
+      if (s.status === "reviewing" || s.status === "approved") {
+        history.push({
+          status: "reviewing",
+          changedBy: assigneeName,
+          changedAt: day(s.submittedDaysAgo - 1).toISOString(),
+          comment: "검토 시작",
+        });
+      }
+      if (s.status === "approved" && s.approvedDaysAgo !== undefined) {
+        history.push({
+          status: "approved",
+          changedBy: assigneeName,
+          changedAt: day(s.approvedDaysAgo).toISOString(),
+          comment: "승인 완료",
+        });
+      }
+
+      await prisma.governanceForm.create({
+        data: {
+          requestNo: s.requestNo,
+          formType: s.formType,
+          projectName: s.projectName,
+          submitterId: s.submitter.id,
+          submitterName: s.submitter.name ?? s.submitter.email,
+          submitterEmail: s.submitter.email,
+          submitterDepartment: s.department,
+          status: s.status,
+          submittedAt,
+          approvalHistory: history,
+          payload: s.payload,
+        },
+      });
+    }
+  }
+
   console.log("Seed completed!");
   console.log("  Admin:    admin@lgai.com");
   console.log("  PM:       pm@lgai.com");
