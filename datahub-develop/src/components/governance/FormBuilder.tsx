@@ -116,9 +116,6 @@ export function FormBuilder({
       .catch((e) => setError((e as Error).message));
   }, [editId]);
 
-  // 작성 예시 모달
-  const [exampleOpen, setExampleOpen] = useState(false);
-
   // 미리보기 모달 — 작성 중인 값으로 EAS 붙여넣기용 HTML 미리보기 (제출 전 확인).
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
@@ -264,15 +261,6 @@ export function FormBuilder({
               {isEdit && <span className="ml-2 text-base font-semibold text-gray-400">(수정)</span>}
             </h1>
           )}
-          <button
-            type="button"
-            onClick={() => setExampleOpen(true)}
-            className={`inline-flex shrink-0 items-center rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-50 ${
-              embedded ? "ml-auto" : ""
-            }`}
-          >
-            신청서 작성 예시
-          </button>
         </div>
 
         {!embedded && (
@@ -600,46 +588,6 @@ export function FormBuilder({
         );
       })()}
 
-      {/* 작성 예시 모달 — 현재 placeholder, 향후 신청별 예시 데이터 연결 */}
-      {exampleOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
-          onClick={() => setExampleOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-                신청서 작성 예시
-              </div>
-              <button
-                type="button"
-                onClick={() => setExampleOpen(false)}
-                aria-label="닫기"
-                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <h3 className="mt-2 text-base font-bold">{schema.label}</h3>
-            <p className="mt-3 text-sm text-gray-600">
-              이 신청의 작성 예시는 곧 추가될 예정입니다. 작성 시 도움이 필요하면
-              관리자에게 문의해 주세요.
-            </p>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setExampleOpen(false)}
-                className="rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
