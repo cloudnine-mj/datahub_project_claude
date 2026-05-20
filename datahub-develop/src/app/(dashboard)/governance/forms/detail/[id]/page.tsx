@@ -98,8 +98,10 @@ export default function Page({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      {/* admin 이 다른 사람의 신청을 검토할 때 표시되는 컨텍스트 배너. */}
-      {me?.user.role === "admin" &&
+      {/* admin 이 '거버넌스 요청 관리' 큐에서 진입했을 때만 표시되는 컨텍스트 배너.
+          일반 요청 목록(from=list) 진입은 read-only 뷰라 배너 노출 X. */}
+      {from === "admin" &&
+        me?.user.role === "admin" &&
         me.user.email.toLowerCase() !== form.submitter_email.toLowerCase() && (
           <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
             <ShieldCheck size={12} aria-hidden="true" />
@@ -122,8 +124,8 @@ export default function Page({ params }: { params: { id: string } }) {
           ]}
         />
 
-        {/* 우상단 네비 — admin / from=admin / from=list 어디든 노출. */}
-        {(me?.user.role === "admin" || from === "admin" || from === "list") && (
+        {/* 우상단 네비 — from=admin / from=list 진입 시 노출. */}
+        {(from === "admin" || from === "list") && (
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
@@ -140,11 +142,7 @@ export default function Page({ params }: { params: { id: string } }) {
               다음 <ChevronDown size={12} />
             </button>
             <Link
-              href={
-                from === "admin" || me?.user.role === "admin"
-                  ? "/governance/admin/forms"
-                  : "/governance/forms/list"
-              }
+              href={from === "admin" ? "/governance/admin/forms" : "/governance/forms/list"}
               className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
               <ArrowLeft size={12} /> 목록
@@ -189,10 +187,9 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {/* 진행 상태 카드 — admin 이면 어느 진입(from=admin/list/my/기본) 에서도 노출하여
-          상태 stepper + 검토/승인 액션을 바로 사용 가능. admin 이 아니면 from!=list 일 때만.
-          chevron 의 sub-step 이 선택된 상태(step 0/1/3) 면 그 영역에 집중하기 위해 숨김. */}
-      {(me?.user.role === "admin" || from !== "list") && selectedStep === null && (
+      {/* 진행 상태 카드 — 일반 요청 목록(from=list) 진입은 read-only 라 미노출.
+          관리 큐(from=admin) / 내 문서(from=my) / 기본 진입에서만 노출. */}
+      {from !== "list" && selectedStep === null && (
         <div id="form-status" className="scroll-mt-4">
           <FormStatusPanel
             formId={form.id}
