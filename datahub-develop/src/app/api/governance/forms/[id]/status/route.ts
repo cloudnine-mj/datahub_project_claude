@@ -6,7 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { requireGovernanceAuth } from "@/lib/governance/auth";
+import {
+  requireGovernanceAuth,
+  resolveChatRole,
+  resolveRecipient,
+} from "@/lib/governance/auth";
 
 const STATUS_VALUES = new Set(["draft", "submitted", "reviewing", "approved", "rejected"]);
 
@@ -48,9 +52,35 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     comment: body.comment ?? null,
   });
 
-  const updated = await prisma.governanceForm.update({
-    where: { id: form.id },
-    data: { status: body.status, approvalHistory: history as unknown as object },
-  });
+  // 상태 변경 + (코멘트가 있으면) 메시지 생성을 transaction 으로 atomic 하게 처리.
+  // 코멘트 카드는 form messages 만 표시하므로, 진행 이력에 적은 사용자 코멘트가
+  // 코멘트 카드에도 보이도록 동일 본문을 메시지로 한 건 더 기록한다.
+  const commentText = (body.comment ?? "").trim();
+  const senderRole = resolveChatRole(form, auth);
+  const recipient = resolveRecipient(form, senderRole);
+
+  const [updated] = await prisma.$transaction([
+    prisma.governanceForm.update({
+      where: { id: form.id },
+      data: { status: body.status, approvalHistory: history as unknown as object },
+    }),
+    ...(commentText.length > 0
+      ? [
+          prisma.governanceFormMessage.create({
+            data: {
+              formId: form.id,
+              senderId: auth.dbUser.id,
+              senderName: auth.dbUser.name ?? auth.session.user.email,
+              senderEmail: auth.session.user.email,
+              senderRole,
+              recipientName: recipient.name,
+              recipientRole: recipient.role,
+              body: commentText,
+            },
+          }),
+        ]
+      : []),
+  ]);
+
   return audit.ok(200, NextResponse.json(updated), { resourceId: updated.id });
 }
