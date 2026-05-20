@@ -430,7 +430,6 @@ model GovernanceForm {
   attachments GovernanceFormAttachment[]
   comments    GovernanceFormComment[]
   messages    GovernanceFormMessage[]
-  adminMemos  GovernanceAdminMemo[]
 
   @@index([requestNo])
   @@index([formType])
@@ -502,46 +501,6 @@ model GovernanceFormMessageAttachment {
   message GovernanceFormMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@index([messageId])
-}
-
-/// 관리자 전용 메모 — 신청 1건에 대해 날짜별로 1개 엔트리.
-/// 신청자에게 절대 노출되지 않으며, 모든 변경 (create/update/delete) 은
-/// GovernanceAdminMemoAudit 에 기록되어 추적 가능.
-model GovernanceAdminMemo {
-  id              String   @id @default(cuid())
-  formId          String
-  /// YYYY-MM-DD — 사용자 로컬 날짜 (server timezone 무관 문자열 저장)
-  date            String
-  content         String   @db.Text
-  createdById     String
-  createdByName   String
-  createdAt       DateTime @default(now())
-  lastUpdatedById String
-  lastUpdatedByName String
-  lastUpdatedAt   DateTime @updatedAt
-  revisionCount   Int      @default(1)
-
-  form GovernanceForm @relation(fields: [formId], references: [id], onDelete: Cascade)
-
-  @@unique([formId, date])
-  @@index([formId])
-}
-
-/// 관리자 메모 변경 이력. UI 노출 X, 감사 추적용.
-model GovernanceAdminMemoAudit {
-  id            String   @id @default(cuid())
-  formId        String
-  date          String
-  /// "create" | "update" | "delete"
-  action        String
-  actorId       String
-  actorName     String
-  timestamp     DateTime @default(now())
-  contentBefore String?  @db.Text
-  contentAfter  String?  @db.Text
-
-  @@index([formId, date])
-  @@index([timestamp])
 }
 
 /// BFF / Web 자체 audit 로그.
