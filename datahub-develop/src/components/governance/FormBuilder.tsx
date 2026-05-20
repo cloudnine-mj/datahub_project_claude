@@ -1005,8 +1005,22 @@ function ServiceBlocksField({
     onChange(list.filter((_, i) => i !== idx));
   }
 
+  // 통화별 합산 — API 활용 계획서와 동일한 형식.
+  const totals = list.reduce<Record<string, number>>((acc, b) => {
+    const code =
+      b.currency?.kind === "기타"
+        ? (b.currency.custom?.trim() || "OTHER")
+        : (b.currency?.kind ?? "");
+    if (!code) return acc;
+    const m = b.cost ? b.cost.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/) : null;
+    const amount = m ? Number(m[0]) : 0;
+    if (!Number.isFinite(amount) || amount <= 0) return acc;
+    acc[code] = (acc[code] ?? 0) + amount * b.members.length;
+    return acc;
+  }, {});
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {list.map((block, idx) => (
         <ServiceBlockCard
           key={idx}
@@ -1016,15 +1030,45 @@ function ServiceBlocksField({
           onRemove={() => remove(idx)}
         />
       ))}
+
+      {/* 서비스 추가 버튼 — API 활용 계획서와 동일한 outline 스타일. */}
       <button
         type="button"
         onClick={add}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 px-5 py-4 text-sm font-semibold text-blue-700 hover:border-blue-400 hover:bg-blue-50"
+        className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-5 py-2.5 text-[13px] font-medium text-blue-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-blue-300"
       >
         + 서비스 추가
       </button>
+
+      {/* 총 예상 비용 — 모든 서비스의 (예상 비용 × 인원 수) 합산, 통화별 분리. */}
+      <div className="flex items-center justify-between rounded-md bg-blue-50 px-4 py-3.5 dark:bg-blue-950/40">
+        <div>
+          <div className="text-[13px] font-medium text-blue-700 dark:text-blue-300">
+            총 예상 비용
+          </div>
+          <div className="mt-0.5 text-[11px] text-blue-700/70 dark:text-blue-300/70">
+            서비스별 (예상 비용 × 인원 수) 자동 합계
+          </div>
+        </div>
+        <span className="text-[18px] font-semibold text-blue-700 dark:text-blue-300">
+          {formatTotals(totals)}
+        </span>
+      </div>
     </div>
   );
+}
+
+function formatTotals(totals: Record<string, number>): string {
+  const entries = Object.entries(totals).filter(([, n]) => n > 0);
+  if (entries.length === 0) return "—";
+  return entries
+    .map(([code, n]) => {
+      const formatted = n.toLocaleString("ko-KR");
+      const prefix =
+        code === "USD" ? "$" : code === "KRW" ? "₩" : code === "EUR" ? "€" : code === "JPY" ? "¥" : "";
+      return prefix ? `${prefix}${formatted}` : `${formatted} ${code}`;
+    })
+    .join(" · ");
 }
 
 function ServiceBlockCard({
