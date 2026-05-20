@@ -126,6 +126,7 @@ export function ProgressHistoryBlock({
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const [draftText, setDraftText] = useState("");
   const [draftFiles, setDraftFiles] = useState<File[]>([]);
+  const [draftTag, setDraftTag] = useState<"검토 메모" | "보완 요청" | null>(null);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,7 +177,8 @@ export function ProgressHistoryBlock({
   const canSend = !sending && (draftText.trim().length > 0 || draftFiles.length > 0);
   const onSend = async () => {
     if (!canSend) return;
-    const text = draftText.trim();
+    const raw = draftText.trim();
+    const text = draftTag ? `[${draftTag}] ${raw}`.trim() : raw;
     const files = draftFiles;
 
     // formId 없으면 로컬 state 만 — 데모/미저장 신청용 fallback.
@@ -195,19 +197,20 @@ export function ProgressHistoryBlock({
       ]);
       setDraftText("");
       setDraftFiles([]);
+      setDraftTag(null);
       return;
     }
 
     setSending(true);
     try {
       await governanceApi.createFormMessage(formId, text);
-      // 첨부 파일 — Phase 5 (GCS bucket 통합) 후 활성화. 현재는 파일이 있어도 무시.
       if (files.length > 0) {
         setToast("첨부 업로드는 곧 지원됩니다 (GCS bucket 통합 후).");
         setTimeout(() => setToast(null), 3000);
       }
       setDraftText("");
       setDraftFiles([]);
+      setDraftTag(null);
       await refetchMessages();
     } catch (e) {
       console.error("[ProgressHistoryBlock] createFormMessage failed", e);
@@ -241,7 +244,7 @@ export function ProgressHistoryBlock({
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            진행 이력
+            활동
           </h2>
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {items.length}건
@@ -300,13 +303,35 @@ export function ProgressHistoryBlock({
           {canPostMessage && (
             <div className="mt-4 border-t border-gray-200 pt-3.5 dark:border-gray-800">
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/40">
-                {/* 답할 대상 — 자동 지정, 클릭 불가 div */}
-                <ReplyTargetChip target={replyTarget} />
+                {/* 태그 칩 — 관리자 시점에서만 노출 (검토 메모 / 보완 요청 분류) */}
+                {(currentUserRole === "assignee" || currentUserRole === "admin") && (
+                  <div className="mb-2 flex items-center gap-1.5">
+                    <span className="text-[10px] text-gray-400">태그</span>
+                    {(["검토 메모", "보완 요청"] as const).map((t) => {
+                      const active = draftTag === t;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setDraftTag(active ? null : t)}
+                          className={
+                            "rounded-md border px-2 py-1 text-[11px] transition " +
+                            (active
+                              ? "border-blue-600 bg-blue-50 font-medium text-blue-700"
+                              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50")
+                          }
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <textarea
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
-                  placeholder="메시지를 입력하세요"
+                  placeholder="메시지를 입력하세요 (첨부파일만 보내도 됩니다)"
                   className="block min-h-[46px] w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
                 />
 

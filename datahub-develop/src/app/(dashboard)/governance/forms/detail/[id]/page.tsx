@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckSquare, ChevronDown, ChevronUp, Database, Eye, Pencil, Send, ShieldCheck, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { DeleteFormButton } from "@/components/governance/DeleteFormButton";
@@ -98,22 +98,61 @@ export default function Page({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <Breadcrumb
-        items={[
-          { label: "Governance", href: "/governance" },
-          from === "my"
-            ? { label: "내 문서 목록", href: "/governance/forms/my" }
-            : from === "admin"
-            ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
-            : from === "list"
-            ? { label: "거버넌스 요청 목록", href: "/governance/forms/list" }
-            : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
-          { label },
-        ]}
-      />
+      {/* admin 이 다른 사람의 신청을 검토할 때 표시되는 컨텍스트 배너. */}
+      {from === "admin" && (
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+          <ShieldCheck size={12} aria-hidden="true" />
+          관리자 페이지 — 타인의 신청 검토
+        </div>
+      )}
+
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <Breadcrumb
+          items={[
+            { label: "Governance", href: "/governance" },
+            from === "my"
+              ? { label: "내 문서 목록", href: "/governance/forms/my" }
+              : from === "admin"
+              ? { label: "거버넌스 요청 관리", href: "/governance/admin/forms" }
+              : from === "list"
+              ? { label: "거버넌스 요청 목록", href: "/governance/forms/list" }
+              : { label: "데이터 거버넌스 문서 서식 모음", href: "/governance/forms" },
+            { label },
+          ]}
+        />
+
+        {/* 우상단 네비 — admin/list 진입 시 이전/다음/목록 노출. */}
+        {(from === "admin" || from === "list") && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <ChevronUp size={12} /> 이전
+            </button>
+            <button
+              type="button"
+              onClick={() => router.forward()}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              다음 <ChevronDown size={12} />
+            </button>
+            <Link
+              href={
+                from === "admin" ? "/governance/admin/forms" : "/governance/forms/list"
+              }
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <ArrowLeft size={12} /> 목록
+            </Link>
+          </div>
+        )}
+      </div>
 
       <div className="mb-6 flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">{label}</h1>
+        <span className="font-mono text-sm text-gray-400">{form.request_no}</span>
         <button
           type="button"
           onClick={() => { setCopyDone(false); setPreviewOpen(true); }}

@@ -1,14 +1,12 @@
 "use client";
 
-// 풀 사이즈 워크플로우 스텝퍼 — '임시 저장 → 제출됨 → 검토 중 → 승인 완료'
-// (반려 시 종착 분기). FormStatusPanel 과 FormProcessBar 의 '승인 완료'
-// 단계 패널에서 공통으로 사용.
+// 워크플로우 스텝퍼 — '제출됨 → 검토 중 → 승인 완료' (반려 시 종착 분기).
+// 임시 저장은 stepper 에서 제외 — 제출 후 진행 흐름만 강조.
 
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import type { FormStatus } from "@/lib/governance/api-client-full";
 
 export function WorkflowStepper({ status }: { status: FormStatus | string }) {
-  const isDraft = status === "draft";
   const reachedSubmitted = ["submitted", "reviewing", "approved", "rejected"].includes(status as string);
   const reachedReviewing = ["reviewing", "approved", "rejected"].includes(status as string);
   const isApproved = status === "approved";
@@ -17,19 +15,12 @@ export function WorkflowStepper({ status }: { status: FormStatus | string }) {
 
   return (
     <div className="mt-4 inline-flex items-center gap-3">
-      {/* 0) 임시 저장 — 프리 스테이지 (점선) */}
-      <DraftNode current={isDraft} passed={reachedSubmitted} />
-      <span className={"h-0.5 w-14 " + (reachedSubmitted ? "bg-blue-500" : "bg-gray-200")} />
-
-      {/* 1) 제출됨 */}
       <StepNode label="제출됨" reached={reachedSubmitted} current={status === "submitted"} index={1} />
       <span className={"h-0.5 w-14 " + (reachedReviewing ? "bg-blue-500" : "bg-gray-200")} />
 
-      {/* 2) 검토 중 */}
       <StepNode label="검토 중" reached={reachedReviewing} current={status === "reviewing"} index={2} />
       <span className={"h-0.5 w-14 " + (reachedTerminal ? "bg-blue-500" : "bg-gray-200")} />
 
-      {/* 3) 종착 — 기본은 '승인 완료' 단독. 반려된 신청일 때만 '반려' 노드를 함께 노출. */}
       <div className="flex flex-col gap-1.5">
         <TerminalNode label="승인 완료" tone="approved" active={isApproved} muted={isRejected} />
         {isRejected && (

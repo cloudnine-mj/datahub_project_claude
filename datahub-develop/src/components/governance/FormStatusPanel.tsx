@@ -47,7 +47,16 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
     setError(null);
     setPending(true);
     try {
-      await api.changeFormStatus(formId, { status: target, comment: comment || undefined });
+      // '보완 요청' 은 상태 전환 없이 현재 status 그대로 + [보완 요청] 코멘트만 기록.
+      const isSupplement = (target as string) === "__supplement__";
+      const finalStatus = isSupplement ? status : target;
+      const finalComment = isSupplement
+        ? `[보완 요청] ${comment || ""}`.trim()
+        : comment || undefined;
+      await api.changeFormStatus(formId, {
+        status: finalStatus as FormStatus,
+        comment: finalComment || undefined,
+      });
       setTarget(null);
       setComment("");
       onChanged();
@@ -89,10 +98,23 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
                     (active ? t.cls + " ring-2 ring-offset-1" : t.cls + " opacity-90")
                   }
                 >
-                  <Icon size={12} /> {t.label}으로 변경
+                  <Icon size={12} /> {t.label === "검토 시작" ? "검토 시작으로 변경" : t.label === "승인" ? "승인으로 변경" : t.label}
                 </button>
               );
             })}
+            {/* 보완 요청 — 상태 전환 없이 코멘트만 기록. status 그대로 유지. */}
+            <button
+              type="button"
+              onClick={() => setTarget(target === "__supplement__" ? null : ("__supplement__" as FormStatus))}
+              className={
+                "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition " +
+                (target === "__supplement__"
+                  ? "border-gray-300 bg-gray-100 text-gray-900"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50")
+              }
+            >
+              <MessageSquare size={12} /> 보완 요청
+            </button>
           </div>
 
           {target && (
