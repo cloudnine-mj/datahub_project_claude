@@ -157,7 +157,7 @@ export function DiscussionThread({
         </h2>
       </header>
       <p className="mb-3 text-[12px] text-gray-500 dark:text-gray-400">
-        지정된 담당자와 데이터 구축/구매/구독 사항을 논의하세요. 이 대화는 담당자에게도 전달됩니다.
+        지정된 담당자와 데이터 구축/구매/구독 사항을 논의하세요.
       </p>
 
       <div className="space-y-3.5">
