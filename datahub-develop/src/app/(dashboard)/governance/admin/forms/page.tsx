@@ -18,7 +18,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, Download, Inbox } from "lucide-react";
+import { Check, ChevronRight, Download, Filter, Inbox } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { FORM_TYPE_LABELS } from "@/lib/governance/forms/utils-bridge";
@@ -122,6 +122,7 @@ export default function Page() {
   const statusParam = (searchParams?.get("status") as StatusFilter | null) ?? "all";
   const typeParam = searchParams?.get("type") ?? "all";
   const queryParam = searchParams?.get("q") ?? "";
+  const rangeParam = searchParams?.get("range") ?? ""; // "this-week" 등
 
   const [items, setItems] = useState<FormListItem[] | null>(null);
   const [authError, setAuthError] = useState(false);
@@ -174,10 +175,18 @@ export default function Page() {
 
   const filtered = useMemo(() => {
     if (!items) return [];
+    const week = thisWeekRange();
     return items.filter((it) => {
       if (it.status === "draft" || it.status === "rejected") return false;
       if (statusParam !== "all" && it.status !== statusParam) return false;
       if (typeParam !== "all" && it.formType !== typeParam) return false;
+      if (rangeParam === "this-week") {
+        // 이번 주 처리 = 승인 완료된 신청 중 approvedAt 이 이번 주 범위 안.
+        const item = it as FormListItem & { approvedAt?: string | null };
+        if (!item.approvedAt) return false;
+        const at = new Date(item.approvedAt);
+        if (Number.isNaN(at.getTime()) || at < week.start || at > week.end) return false;
+      }
       const q = queryParam.trim().toLowerCase();
       if (!q) return true;
       return (
@@ -186,7 +195,18 @@ export default function Page() {
         it.requestNo.toLowerCase().includes(q)
       );
     });
-  }, [items, statusParam, typeParam, queryParam]);
+  }, [items, statusParam, typeParam, queryParam, rangeParam]);
+
+  // KPI ↔ 상태 칩 활성 상태 매핑.
+  // 이번 주 처리 KPI = status=approved + range=this-week 둘 다 일치할 때만 활성.
+  const activeKpi: "pending" | "inProgress" | "thisWeek" | null =
+    rangeParam === "this-week" && statusParam === "approved"
+      ? "thisWeek"
+      : statusParam === "submitted" && !rangeParam
+        ? "pending"
+        : statusParam === "reviewing" && !rangeParam
+          ? "inProgress"
+          : null;
 
   if (authError) {
     return (
@@ -210,16 +230,53 @@ export default function Page() {
         전체 사용자의 신청을 검토 / 승인할 수 있습니다. 신청서명을 클릭해 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
-      {/* KPI 카드 4개 */}
+      {/* KPI 카드 4개 — 클릭하면 매칭되는 상태/range 필터가 적용. */}
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="승인 대기" value={kpi?.pending} unit="건" loading={!kpi} />
-        <KpiCard label="진행 중" value={kpi?.inProgress} unit="건" loading={!kpi} />
-        <KpiCard label="이번 주 처리" value={kpi?.thisWeek} unit="건" loading={!kpi} />
+        <KpiCard
+          label="승인 대기"
+          value={kpi?.pending}
+          unit="건"
+          loading={!kpi}
+          active={activeKpi === "pending"}
+          onClick={() =>
+            updateUrl({
+              status: activeKpi === "pending" ? "all" : "submitted",
+              range: null,
+            })
+          }
+        />
+        <KpiCard
+          label="진행 중"
+          value={kpi?.inProgress}
+          unit="건"
+          loading={!kpi}
+          active={activeKpi === "inProgress"}
+          onClick={() =>
+            updateUrl({
+              status: activeKpi === "inProgress" ? "all" : "reviewing",
+              range: null,
+            })
+          }
+        />
+        <KpiCard
+          label="이번 주 처리"
+          value={kpi?.thisWeek}
+          unit="건"
+          loading={!kpi}
+          active={activeKpi === "thisWeek"}
+          onClick={() =>
+            updateUrl({
+              status: activeKpi === "thisWeek" ? "all" : "approved",
+              range: activeKpi === "thisWeek" ? null : "this-week",
+            })
+          }
+        />
         <KpiCard
           label="평균 처리 시간"
           value={kpi ? kpi.avgDays.toFixed(1) : undefined}
           unit="일"
           loading={!kpi}
+          static
         />
       </div>
 
@@ -233,17 +290,23 @@ export default function Page() {
             <button
               key={c.value}
               type="button"
-              onClick={() => updateUrl({ status: c.value })}
+              onClick={() =>
+                updateUrl({
+                  status: active ? "all" : c.value,
+                  // 칩 클릭은 range=this-week 를 초기화 (KPI 만 그 조합 활성).
+                  range: null,
+                })
+              }
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition ${
                 active
-                  ? "border-gray-300 bg-white font-medium text-gray-900"
-                  : "border-gray-200 bg-transparent text-gray-600 hover:bg-gray-50"
+                  ? "border-blue-600 bg-blue-50 font-medium text-blue-700"
+                  : "border-gray-200 bg-transparent text-gray-600 hover:border-gray-300"
               }`}
             >
               {c.label}
               <span
                 className={`inline-flex items-center rounded-full px-1.5 text-[11px] ${
-                  active ? "bg-rose-100 text-rose-700" : "bg-gray-100 text-gray-600"
+                  active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
                 }`}
               >
                 {count}
@@ -367,7 +430,11 @@ export default function Page() {
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.bg} ${badge.text}`}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                        {it.status === "approved" ? (
+                          <Check size={12} className={badge.text} aria-hidden="true" />
+                        ) : (
+                          <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                        )}
                         {badge.label}
                       </span>
                     </td>
@@ -412,23 +479,60 @@ function KpiCard({
   value,
   unit,
   loading,
+  active = false,
+  onClick,
+  static: isStatic = false,
 }: {
   label: string;
   value: number | string | undefined;
   unit: string;
   loading: boolean;
+  active?: boolean;
+  onClick?: () => void;
+  /** true 면 클릭/호버 비활성 (정적 지표 — 평균 처리 시간). */
+  static?: boolean;
 }) {
+  const baseCls =
+    "group relative rounded-md border p-4 text-left transition " +
+    (isStatic ? "cursor-default" : "cursor-pointer");
+  const stateCls = active
+    ? "border-blue-600 bg-blue-50"
+    : isStatic
+      ? "border-gray-200 bg-white"
+      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50";
+
+  const Tag: "button" | "div" = isStatic ? "div" : "button";
+
   return (
-    <div className="rounded-md bg-gray-50 p-4">
-      <p className="text-[13px] text-gray-500">{label}</p>
+    <Tag
+      type={isStatic ? undefined : ("button" as "button")}
+      onClick={isStatic ? undefined : onClick}
+      className={`${baseCls} ${stateCls}`}
+    >
+      <div className="flex items-center justify-between">
+        <p className={`text-[13px] ${active ? "text-blue-700" : "text-gray-500"}`}>{label}</p>
+        {!isStatic && (
+          <Filter
+            size={12}
+            aria-hidden="true"
+            className={`transition-opacity ${
+              active ? "text-blue-600 opacity-100" : "text-gray-400 opacity-0 group-hover:opacity-100"
+            }`}
+          />
+        )}
+      </div>
       {loading ? (
         <div className="mt-1.5 h-6 w-1/2 animate-pulse rounded bg-gray-200" />
       ) : (
-        <p className="mt-0.5 text-[24px] font-medium text-gray-900">
+        <p className={`mt-0.5 text-[24px] font-medium ${active ? "text-blue-700" : "text-gray-900"}`}>
           {value ?? "-"}
-          <span className="ml-1 text-[13px] font-normal text-gray-500">{unit}</span>
+          <span
+            className={`ml-1 text-[13px] font-normal ${active ? "text-blue-600" : "text-gray-500"}`}
+          >
+            {unit}
+          </span>
         </p>
       )}
-    </div>
+    </Tag>
   );
 }
