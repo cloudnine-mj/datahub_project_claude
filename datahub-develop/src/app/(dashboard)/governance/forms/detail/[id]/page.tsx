@@ -316,15 +316,15 @@ export default function Page({ params }: { params: { id: string } }) {
             <ArrowLeft size={12} /> 요청 목록으로 돌아가기
           </Link>
         )}
-        {/* 수정 버튼 — 본인 신청인 경우(작성자 본인) 진입 컨텍스트와 무관하게 노출.
-            거버넌스 요청 목록(from=list) 에서도 본인 신청은 수정 가능.
-            타인 신청 상세(any from + not owner) 는 read-only 라 버튼 미노출.
-            관리자가 admin 큐(from=admin) 에서 진입한 경우도 검토용이라 수정 X. */}
+        {/* 수정 버튼 — 작성자 본인이거나 admin 이면 노출.
+            본인: 진입 컨텍스트(my / list / 기본 / admin) 무관.
+            admin: 타인 신청도 수정 가능 (검토 중 데이터 보정 등). */}
         {(() => {
           const isOwner =
             !!me &&
             me.user.email.toLowerCase() === form.submitter_email.toLowerCase();
-          if (!isOwner) return null;
+          const isAdmin = me?.user.role === "admin";
+          if (!isOwner && !isAdmin) return null;
           return (
             <button
               onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
