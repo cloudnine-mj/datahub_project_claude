@@ -438,7 +438,7 @@ function SubmitterReadOnlySection({
     <section>
       <div className="mb-3 flex items-center gap-1.5">
         <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
-        <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
           신청자 정보
         </h3>
       </div>
