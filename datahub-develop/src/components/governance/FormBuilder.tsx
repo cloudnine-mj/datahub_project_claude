@@ -1086,125 +1086,110 @@ function ServiceBlockCard({
   const totalCost = computeTotal(block.cost, memberCount, block.currency);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/40 px-5 py-3">
-        <div className="flex items-center gap-2">
-          <span className="block h-5 w-1 rounded-sm bg-brand" />
-          <h3 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
+    <div className="rounded-lg bg-gray-50 px-4 py-3.5 dark:bg-gray-800/40">
+      {/* 서비스 카드 헤더 — API 활용 신청서와 동일한 빨간 막대 + 라벨 + X 버튼 */}
+      <header className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+          <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
             서비스 {index + 1}
-          </h3>
+          </span>
         </div>
         <button
           type="button"
           onClick={onRemove}
-          aria-label="서비스 제거"
-          className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+          aria-label="서비스 삭제"
+          className="rounded p-0.5 text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-200"
         >
-          <X size={14} />
+          <X size={14} aria-hidden="true" />
         </button>
+      </header>
+
+      {/* grid 레이아웃 — API 활용 신청서와 동일 (100px 라벨 + 입력) */}
+      <div
+        className="grid items-start gap-x-3.5 gap-y-2.5 text-[12px]"
+        style={{ gridTemplateColumns: "100px 1fr" }}
+      >
+        <label className="pt-2 text-gray-500 dark:text-gray-400">서비스명</label>
+        <input
+          type="text"
+          value={block.service_name}
+          onChange={(e) => onChange({ service_name: e.target.value })}
+          placeholder="예: Claude API"
+          className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+        />
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">활용 방안</label>
+        <textarea
+          rows={2}
+          value={block.usage}
+          onChange={(e) => onChange({ usage: e.target.value })}
+          placeholder="예: 내부 데이터 분석 자동화 및 AI 리포트 생성"
+          className="resize-y rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+        />
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">결제 통화</label>
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 pt-1.5">
+          <CurrencyField
+            value={block.currency}
+            onChange={(c) => onChange({ currency: c })}
+          />
+        </div>
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">예상 비용</label>
+        <AmountWithCurrencyInput
+          value={block.cost}
+          onChange={(v) => onChange({ cost: v })}
+          placeholder="예: 5,000"
+          currency={block.currency}
+        />
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">결제 방식</label>
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 pt-1.5">
+          {["월 구독", "연 구독", "구매"].map((opt) => (
+            <label key={opt} className="inline-flex cursor-pointer items-center gap-1.5 text-[12px]">
+              <input
+                type="radio"
+                name={`payment-${index}`}
+                value={opt}
+                checked={block.payment_method === opt}
+                onChange={() => onChange({ payment_method: opt })}
+                className="h-3.5 w-3.5 text-brand focus:ring-brand"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">사용자</label>
+        <MemberChipsField
+          members={block.members}
+          onChange={(members) => onChange({ members })}
+        />
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">인원 수</label>
+        <div className="flex items-center gap-2 pt-2 text-[12px]">
+          <span className="font-medium text-gray-900 dark:text-gray-100">{memberCount}</span>
+          <span className="text-gray-500">명</span>
+          <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+            사용자 수 자동 계산
+          </span>
+        </div>
+
+        <label className="pt-2 text-gray-500 dark:text-gray-400">총 비용</label>
+        <div className="flex items-center gap-2 pt-2 text-[12px]">
+          <span className="font-medium text-gray-900 dark:text-gray-100">
+            {totalCost ?? <span className="text-gray-300">—</span>}
+          </span>
+          <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+            예상 비용 × 인원 수
+          </span>
+        </div>
       </div>
-      <table className="w-full text-sm">
-        <tbody>
-          <BlockRow label="서비스명">
-            <input
-              type="text"
-              value={block.service_name}
-              onChange={(e) => onChange({ service_name: e.target.value })}
-              placeholder="예: Claude API"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-            />
-          </BlockRow>
-          <BlockRow label="활용 방안">
-            <textarea
-              rows={2}
-              value={block.usage}
-              onChange={(e) => onChange({ usage: e.target.value })}
-              placeholder="예: 내부 데이터 분석 자동화 및 AI 리포트 생성"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-            />
-          </BlockRow>
-          <BlockRow label="결제 통화">
-            <CurrencyField
-              value={block.currency}
-              onChange={(c) => onChange({ currency: c })}
-            />
-          </BlockRow>
-          <BlockRow label="예상 비용">
-            <AmountWithCurrencyInput
-              value={block.cost}
-              onChange={(v) => onChange({ cost: v })}
-              placeholder="예: 5,000"
-              currency={block.currency}
-            />
-          </BlockRow>
-          <BlockRow label="결제 방식">
-            <div className="flex flex-wrap items-center gap-5">
-              {["월 구독", "연 구독", "구매"].map((opt) => (
-                <label key={opt} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name={`payment-${index}`}
-                    value={opt}
-                    checked={block.payment_method === opt}
-                    onChange={() => onChange({ payment_method: opt })}
-                    className="text-brand focus:ring-brand"
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </BlockRow>
-          <BlockRow label="사용자">
-            <MemberChipsField
-              members={block.members}
-              onChange={(members) => onChange({ members })}
-            />
-          </BlockRow>
-          <BlockRow label="인원 수">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-gray-900">{memberCount}</span>
-              <span className="text-gray-500">명</span>
-              <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-                사용자 수 자동 계산
-              </span>
-            </div>
-          </BlockRow>
-          <BlockRow label="총 비용">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-gray-900">
-                {totalCost ?? <span className="text-gray-300">—</span>}
-              </span>
-              <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-                예상 비용 × 인원 수
-              </span>
-            </div>
-          </BlockRow>
-        </tbody>
-      </table>
     </div>
   );
 }
 
-function BlockRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <tr className="border-b border-gray-100 last:border-b-0">
-      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-[13px] text-gray-500 dark:text-gray-400">
-        {label}
-      </td>
-      <td className="px-5 py-3 text-[13px]">{children}</td>
-    </tr>
-  );
-}
-
-/** 사용 인원 — 이름 칩 + 추가 input. Enter 로 추가, 칩 클릭으로 제거. */
-/**
- * 통화 단위에 맞는 prefix/suffix 가 붙는 금액 입력.
- *
- *  - USD : 좌측에 '$' prefix
- *  - KRW : 우측에 '원' suffix
- *  - 기타 + custom 입력값 : 우측에 그 값 suffix (예: 'EUR')
- *  - 미선택 : 일반 input
- */
 /**
  * 통화 코드 → 표시 prefix 매핑.
  * 매핑이 없으면 코드 자체 (e.g., "AUD ").
