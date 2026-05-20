@@ -320,7 +320,7 @@ function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
           {/* 전체 항목을 가로지르는 세로 레일 — 절대 위치, 날짜 그룹 헤더 구간에서도 끊기지 않게 연속. */}
           <span
             aria-hidden="true"
-            className="absolute left-[76px] top-[14px] bottom-[14px] w-px bg-gray-200"
+            className="absolute left-[72px] top-[14px] bottom-[14px] w-px bg-gray-200"
           />
           {groups.map((g, gi) => (
             <section
@@ -461,7 +461,7 @@ function InlineHistoryRow({ item }: { item: StatusHistoryItem }) {
   return (
     <li
       className="grid items-center py-0.5"
-      style={{ gridTemplateColumns: "48px 32px 1fr" }}
+      style={{ gridTemplateColumns: "48px 40px 1fr" }}
     >
       <span className="pr-3 text-right text-[11px] text-gray-400">
         {timeOf(item)}
@@ -476,7 +476,7 @@ function InlineHistoryRow({ item }: { item: StatusHistoryItem }) {
           <Icon size={12} aria-hidden="true" />
         </span>
       </span>
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-2 pl-2">
         <span className="text-[13px] font-medium text-gray-900">
           {style.label || item.action}
         </span>
