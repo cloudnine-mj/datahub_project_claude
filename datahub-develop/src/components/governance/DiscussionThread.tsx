@@ -150,15 +150,12 @@ export function DiscussionThread({
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
-      <header className="mb-1 flex items-center gap-2">
+      <header className="mb-3 flex items-center gap-2">
         <MessageCircle size={14} className="text-blue-600" aria-hidden="true" />
         <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
           담당자와의 논의
         </h2>
       </header>
-      <p className="mb-3 text-[12px] text-gray-500 dark:text-gray-400">
-        지정된 담당자와 데이터 구축/구매/구독 사항을 논의하세요.
-      </p>
 
       <div className="space-y-3.5">
         {messages.map((m) => (
