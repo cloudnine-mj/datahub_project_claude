@@ -99,12 +99,13 @@ export default function Page({ params }: { params: { id: string } }) {
   return (
     <div>
       {/* admin 이 다른 사람의 신청을 검토할 때 표시되는 컨텍스트 배너. */}
-      {from === "admin" && (
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
-          <ShieldCheck size={12} aria-hidden="true" />
-          관리자 페이지 — 타인의 신청 검토
-        </div>
-      )}
+      {me?.user.role === "admin" &&
+        me.user.email.toLowerCase() !== form.submitter_email.toLowerCase() && (
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+            <ShieldCheck size={12} aria-hidden="true" />
+            관리자 페이지 — 타인의 신청 검토
+          </div>
+        )}
 
       <div className="mb-4 flex items-start justify-between gap-3">
         <Breadcrumb
@@ -121,8 +122,8 @@ export default function Page({ params }: { params: { id: string } }) {
           ]}
         />
 
-        {/* 우상단 네비 — admin/list 진입 시 이전/다음/목록 노출. */}
-        {(from === "admin" || from === "list") && (
+        {/* 우상단 네비 — admin / from=admin / from=list 어디든 노출. */}
+        {(me?.user.role === "admin" || from === "admin" || from === "list") && (
           <div className="flex shrink-0 items-center gap-1.5">
             <button
               type="button"
@@ -140,7 +141,9 @@ export default function Page({ params }: { params: { id: string } }) {
             </button>
             <Link
               href={
-                from === "admin" ? "/governance/admin/forms" : "/governance/forms/list"
+                from === "admin" || me?.user.role === "admin"
+                  ? "/governance/admin/forms"
+                  : "/governance/forms/list"
               }
               className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
@@ -186,13 +189,10 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {/* standalone 진행 상태 카드는 chevron 미선택(default) 상태에서만 노출.
-          chevron 의 어떤 탭이든 누르는 순간 해당 탭 영역에 집중되도록:
-            - step 0 / step 3: 단계 설명 패널만
-            - step 1: 양식 데이터만
-            - step 2: chevron ProgressPanel (진행 상태 + 이력)
-          기본 보기에서만 standalone 카드가 한눈에 보이는 형태. */}
-      {from !== "list" && selectedStep === null && (
+      {/* 진행 상태 카드 — admin 이면 어느 진입(from=admin/list/my/기본) 에서도 노출하여
+          상태 stepper + 검토/승인 액션을 바로 사용 가능. admin 이 아니면 from!=list 일 때만.
+          chevron 의 sub-step 이 선택된 상태(step 0/1/3) 면 그 영역에 집중하기 위해 숨김. */}
+      {(me?.user.role === "admin" || from !== "list") && selectedStep === null && (
         <div id="form-status" className="scroll-mt-4">
           <FormStatusPanel
             formId={form.id}
