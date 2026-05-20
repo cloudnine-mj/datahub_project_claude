@@ -12,13 +12,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Check,
+  ArrowUpFromLine,
+  CheckCircle2,
   ChevronDown,
   Eye,
   History,
+  MessageCircleWarning,
   MessageSquare,
   Play,
+  Reply,
   Send,
+  Check,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/governance/api-client-full";
@@ -82,11 +86,21 @@ export function FormStatusPanel({
       const finalComment = isSupplement
         ? `[보완 요청] ${comment || ""}`.trim()
         : comment || undefined;
+      // 명시적 action 코드 — 백엔드가 진행 이력을 정확히 기록하도록 전달.
+      // 보완 요청은 status='reviewing' 이지만 액션은 'info_requested' 로 구분되어야 함.
+      const finalAction = isSupplement
+        ? "info_requested"
+        : finalStatus === "approved"
+        ? "approved"
+        : finalStatus === "reviewing"
+        ? "review_started"
+        : undefined;
       // PATCH /status 가 코멘트 본문이 있으면 GovernanceFormMessage 도 함께 생성.
       // 백엔드 transaction 으로 atomic 하게 처리하므로 frontend 에서는 한 번만 호출.
       await api.changeFormStatus(formId, {
         status: finalStatus as FormStatus,
         comment: finalComment || undefined,
+        action: finalAction,
       });
       setTarget(null);
       setComment("");
@@ -229,48 +243,148 @@ function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
       </button>
 
       {open && (
-        <ul className="mt-3 space-y-2 rounded-md bg-gray-50 p-3">
-          {items.map((it, i) => {
-            const Icon = INLINE_HISTORY_ICON[it.action] ?? Send;
-            return (
-              <li
-                key={it.id ?? `inline-${i}`}
-                className="flex items-start gap-2.5 border-b border-gray-200 pb-2 last:border-b-0 last:pb-0"
-              >
-                <span className="mt-0.5 inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-white text-gray-500">
-                  <Icon size={11} aria-hidden="true" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] text-gray-800">
-                    {it.actor ? `${it.actor}이 ` : ""}
-                    {INLINE_HISTORY_TEXT[it.action] ?? it.action}
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    {it.timestamp} · 시스템
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <ol className="relative mt-3 rounded-md p-2">
+          {items.map((it, i) => (
+            <InlineHistoryRow
+              key={it.id ?? `inline-${i}`}
+              item={it}
+              isLast={i === items.length - 1}
+            />
+          ))}
+        </ol>
       )}
     </div>
   );
 }
 
-const INLINE_HISTORY_ICON: Record<string, LucideIcon> = {
-  "임시 저장": Send,
-  제출됨: Send,
-  "검토 시작": Eye,
-  "승인 완료": Check,
+interface ActionStyle {
+  icon: LucideIcon;
+  text: string;
+  /** 아이콘 배경 + 텍스트 색 */
+  iconCls: string;
+  /** 행 전체 강조 배경 (옅은) */
+  rowBg?: string;
+  /** pill 라벨 — 강조 액션만 */
+  pillLabel?: string;
+  /** pill 배경 + 텍스트 */
+  pillCls?: string;
+}
+
+const ACTION_STYLE: Record<string, ActionStyle> = {
+  제출됨: {
+    icon: Send,
+    text: "신청서를 제출했습니다",
+    iconCls: "bg-blue-50 text-blue-600",
+  },
+  "검토 시작": {
+    icon: Eye,
+    text: "검토를 시작했습니다",
+    iconCls: "bg-gray-100 text-gray-500",
+  },
+  "보완 요청": {
+    icon: MessageCircleWarning,
+    text: "보완을 요청했습니다",
+    iconCls: "bg-amber-50 text-amber-600",
+    rowBg: "bg-amber-50/60",
+    pillLabel: "보완 요청",
+    pillCls: "bg-amber-100 text-amber-700",
+  },
+  "보완 자료 제출": {
+    icon: ArrowUpFromLine,
+    text: "보완 자료를 제출했습니다",
+    iconCls: "bg-blue-50 text-blue-600",
+  },
+  "검토 재개": {
+    icon: Reply,
+    text: "검토를 재개했습니다",
+    iconCls: "bg-gray-100 text-gray-500",
+  },
+  "승인 완료": {
+    icon: CheckCircle2,
+    text: "신청을 승인했습니다",
+    iconCls: "bg-emerald-50 text-emerald-600",
+    rowBg: "bg-emerald-50/70",
+    pillLabel: "승인",
+    pillCls: "bg-emerald-100 text-emerald-700",
+  },
+  "임시 저장": {
+    icon: Send,
+    text: "임시 저장했습니다",
+    iconCls: "bg-gray-100 text-gray-400",
+  },
 };
 
-const INLINE_HISTORY_TEXT: Record<string, string> = {
-  "임시 저장": "신청서를 임시 저장했습니다",
-  제출됨: "신청서를 제출했습니다",
-  "검토 시작": "검토를 시작했습니다",
-  "승인 완료": "신청을 승인했습니다",
+const DEFAULT_STYLE: ActionStyle = {
+  icon: Send,
+  text: "",
+  iconCls: "bg-gray-100 text-gray-500",
 };
+
+function InlineHistoryRow({
+  item,
+  isLast,
+}: {
+  item: StatusHistoryItem;
+  isLast: boolean;
+}) {
+  const style = ACTION_STYLE[item.action] ?? DEFAULT_STYLE;
+  const Icon = style.icon;
+  // 보완 요청 detail — [보완 요청] prefix 제거 후 첫 줄만 표시.
+  const detail =
+    item.action === "보완 요청" && item.comment
+      ? item.comment.replace(/^\s*\[보완\s*요청\]\s*/, "").split("\n")[0]
+      : null;
+  return (
+    <li
+      className={
+        "relative flex items-start gap-2.5 rounded-md px-2 py-2 " +
+        (style.rowBg ?? "")
+      }
+    >
+      {/* 타임라인 연결선 — 마지막 항목엔 없음 */}
+      {!isLast && (
+        <span
+          aria-hidden="true"
+          className="absolute left-[19px] top-[34px] bottom-[-4px] w-px bg-gray-200"
+        />
+      )}
+      <span
+        className={
+          "z-[1] inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full " +
+          style.iconCls
+        }
+      >
+        <Icon size={11} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-center gap-1.5 text-[12px] text-gray-800">
+          <span>
+            {item.actor && (
+              <span className="font-medium text-gray-900">{item.actor}</span>
+            )}
+            {item.actor ? "님이 " : ""}
+            {style.text || item.action}
+          </span>
+          {style.pillLabel && (
+            <span
+              className={
+                "rounded-md px-1.5 py-0.5 text-[10px] font-medium " + (style.pillCls ?? "")
+              }
+            >
+              {style.pillLabel}
+            </span>
+          )}
+        </p>
+        <p className="text-[11px] text-gray-400">
+          {item.timestamp}
+          {detail && (
+            <span className="text-gray-500"> · {detail}</span>
+          )}
+        </p>
+      </div>
+    </li>
+  );
+}
 
 function dotColor(s: string): string {
   return s === "approved"

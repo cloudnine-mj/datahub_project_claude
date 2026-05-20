@@ -380,7 +380,7 @@ export const api = {
     request<void>(`/governance/forms/${id}`, { method: "DELETE" }),
   changeFormStatus: async (
     id: string | number,
-    body: { status: FormStatus; comment?: string },
+    body: { status: FormStatus; comment?: string; action?: string },
   ) =>
     adaptForm(
       (await request(`/governance/forms/${id}/status`, {

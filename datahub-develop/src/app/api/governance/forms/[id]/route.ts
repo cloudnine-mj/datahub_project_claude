@@ -57,6 +57,7 @@ interface ApprovalEntry {
   changedBy: string;
   changedAt: string;
   comment?: string | null;
+  action?: string;
 }
 
 interface FieldChange {
@@ -133,25 +134,32 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const history: ApprovalEntry[] = Array.isArray(form.approvalHistory)
     ? (form.approvalHistory as unknown as ApprovalEntry[])
     : [];
-  const append = (status: string, comment: string) => {
+  const append = (status: string, comment: string, action: string) => {
     history.push({
       status,
       changedBy: auth.dbUser.name ?? auth.session.user.email,
       changedAt: new Date().toISOString(),
       comment,
+      action,
     });
   };
+  const hadPriorInfoRequest = history.some((h) => h.action === "info_requested");
 
   if (prevStatus !== nextStatus) {
     if (nextStatus === "submitted") {
-      const already = history.some((h) => h.status === "submitted");
-      append("submitted", already ? "재제출" : "최초 제출");
+      // 재제출 — 이전에 보완 요청이 있었다면 info_resubmitted, 아니면 첫 제출(submitted).
+      if (hadPriorInfoRequest) {
+        append("submitted", "보완 자료 재제출", "info_resubmitted");
+      } else {
+        append("submitted", "최초 제출", "submitted");
+      }
     } else if (nextStatus === "draft") {
-      append("draft", "임시 저장");
+      append("draft", "임시 저장", "draft");
     }
   } else if (changes.length > 0) {
-    if (nextStatus === "draft") append("draft", "임시 저장 갱신");
-    else if (nextStatus === "submitted") append("submitted", "내용 수정");
+    if (nextStatus === "draft") append("draft", "임시 저장 갱신", "draft");
+    // 같은 'submitted' status 에서의 내용 수정은 진행 이력에 별도 이벤트로 남기지 않는다
+    // (편집 이력은 editHistory 에 별도로 기록). 진행 이력은 상태 전이만 표시.
   }
 
   const editHistory: { editedBy: string; editedAt: string; changes: FieldChange[] }[] = Array.isArray(form.editHistory)

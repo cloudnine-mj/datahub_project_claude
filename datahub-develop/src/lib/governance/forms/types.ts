@@ -22,6 +22,15 @@ export interface ApprovalEntry {
   changedAt?: string;
   changed_at?: string;
   comment: string | null;
+  /** 명시적 액션 타입 — 신규 추가. 없는 옛 엔트리는 status/comment 로 휴리스틱 매핑. */
+  action?:
+    | "submitted"
+    | "review_started"
+    | "info_requested"
+    | "info_resubmitted"
+    | "review_resumed"
+    | "approved"
+    | "draft";
 }
 
 export interface FormAttachment {

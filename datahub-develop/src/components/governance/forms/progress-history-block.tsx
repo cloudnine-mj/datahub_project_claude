@@ -97,6 +97,9 @@ const SYSTEM_EVENT_ICON: Record<HistoryAction, LucideIcon> = {
   "임시 저장": Pencil,
   제출됨: Send,
   "검토 시작": UserCheck,
+  "보완 요청": Pencil,
+  "보완 자료 제출": Send,
+  "검토 재개": UserCheck,
   "승인 완료": Check,
   "신청 취소": X,
 };
