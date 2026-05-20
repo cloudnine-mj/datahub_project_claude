@@ -187,15 +187,18 @@ export default function Page({ params }: { params: { id: string } }) {
         />
       )}
 
-      {/* 진행 상태 카드 — 일반 요청 목록(from=list) 진입은 read-only 라 미노출.
-          관리 큐(from=admin) / 내 문서(from=my) / 기본 진입에서만 노출.
-          from=admin + 관리자 + 타인 신청일 때만 진행 이력 토글(inlineHistory)도 카드 안에 포함. */}
-      {from !== "list" && selectedStep === null && (() => {
+      {/* 진행 상태 카드.
+          - from=admin + 관리자 + 타인 신청 → 관리자 액션 + 진행 이력 토글 노출.
+          - from=list → 관리자 액션 숨김, 진행 이력 토글만 노출 (read-only).
+          - from=my / 기본 진입 → 기존 동작 (액션 + 통합 활동 카드 하단). */}
+      {selectedStep === null && (() => {
         const isAdminDetail =
           from === "admin" &&
           me?.user.role === "admin" &&
           me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
-        const inlineHistory = isAdminDetail
+        const isListView = from === "list";
+        const showInlineHistory = isAdminDetail || isListView;
+        const inlineHistory = showInlineHistory
           ? approvalHistoryToStatusItems(form.approval_history, form.submitter_name)
           : undefined;
         return (
@@ -208,6 +211,7 @@ export default function Page({ params }: { params: { id: string } }) {
               submitterEmail={form.submitter_email}
               onChanged={refetch}
               inlineHistory={inlineHistory}
+              hideAdminActions={isListView}
             />
           </div>
         );
@@ -236,9 +240,10 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
 
       {/* 활동/코멘트 영역.
-          - from=admin + 관리자 + 타인 신청 → 코멘트 카드 (사람 코멘트만, 시스템 이벤트 제외)
+          - from=admin + 관리자 + 타인 신청 → 코멘트 카드 (사람 코멘트만, 시스템 이벤트 제외).
             진행 이력은 위 진행 상태 카드 안의 토글로 노출.
-          - 그 외 진입 → 기존 활동 카드 (시스템 + 사람 통합 타임라인). */}
+          - from=list → 동일 분리 레이아웃 (코멘트 카드). chatRole=observer 면 카드 자체 숨김.
+          - 그 외 진입(my / 기본) → 기존 활동 카드 (시스템 + 사람 통합 타임라인). */}
       {(() => {
         const chatRole = getChatRole(form, me);
         if (chatRole === "observer") return null;
@@ -246,6 +251,8 @@ export default function Page({ params }: { params: { id: string } }) {
           from === "admin" &&
           me?.user.role === "admin" &&
           me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
+        const isListView = from === "list";
+        const useCommentsOnly = isAdminDetail || isListView;
         return (
           <div className="mt-4">
             <ProgressHistoryBlock
@@ -258,7 +265,7 @@ export default function Page({ params }: { params: { id: string } }) {
               currentUserName={me?.user.name ?? "나"}
               currentUserRole={chatRole}
               applicantName={form.submitter_name}
-              commentsOnly={isAdminDetail}
+              commentsOnly={useCommentsOnly}
             />
           </div>
         );

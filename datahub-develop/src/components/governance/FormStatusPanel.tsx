@@ -36,8 +36,12 @@ interface Props {
   submitterEmail?: string | null;
   onChanged: () => void;
   /** 관리자 액션 아래에 진행 이력(시스템 이벤트) 토글 섹션을 표시. 거버넌스 요청 관리(관리자 상세)
-   *  에서만 true 로 사용. 시스템 이벤트만 노출, '시스템 이벤트 포함' 체크박스 없음. */
+   *  + 거버넌스 요청 목록(read-only) 에서 true 로 사용. 시스템 이벤트만 노출,
+   *  '시스템 이벤트 포함' 체크박스 없음. */
   inlineHistory?: StatusHistoryItem[];
+  /** 관리자 액션 영역을 강제로 숨김 — read-only 컨텍스트(요청 목록 진입) 에서 true.
+   *  내부적으로 canActAsAdmin 이 true 라도 버튼을 노출하지 않음. */
+  hideAdminActions?: boolean;
 }
 
 const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Play }[] = [
@@ -53,11 +57,12 @@ export function FormStatusPanel({
   submitterEmail,
   onChanged,
   inlineHistory,
+  hideAdminActions = false,
 }: Props) {
   const router = useRouter();
   const isAdmin = me?.user.role === "admin";
   const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
-  const canActAsAdmin = isAdmin && !isOwnSubmission;
+  const canActAsAdmin = isAdmin && !isOwnSubmission && !hideAdminActions;
   const [target, setTarget] = useState<FormStatus | null>(null);
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
