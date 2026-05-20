@@ -426,7 +426,7 @@ export function ApplicationFormContainer({
 }
 
 // --- 신청자 정보 (읽기 전용) ---
-// 빨간 막대 + '신청자 정보' 헤더 + 회색 라운드 박스 (이름/소속/이메일 dl).
+// 빨간 막대 + '신청자 정보' 헤더 + 흰 라운드 박스 + 0.5px 테두리 (이름/소속/이메일 dl).
 // 카탈로그 미리보기와 동일 디자인. 토글 X — 항상 노출.
 
 function SubmitterReadOnlySection({
@@ -442,7 +442,7 @@ function SubmitterReadOnlySection({
           신청자 정보
         </h3>
       </div>
-      <div className="rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
+      <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
         <dl
           className="grid gap-y-2 gap-x-3.5 text-[12px]"
           style={{ gridTemplateColumns: "120px 1fr" }}

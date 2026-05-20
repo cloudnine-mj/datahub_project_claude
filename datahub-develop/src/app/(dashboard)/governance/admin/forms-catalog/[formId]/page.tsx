@@ -143,7 +143,7 @@ function SchemaFormPreview({ formType }: { formType: FormType }) {
             신청자 정보
           </span>
         </div>
-        <div className="rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
+        <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
           <dl
             className="grid gap-y-2 gap-x-3.5 text-[12px]"
             style={{ gridTemplateColumns: "120px 1fr" }}

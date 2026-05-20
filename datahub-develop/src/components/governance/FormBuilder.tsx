@@ -278,7 +278,7 @@ export function FormBuilder({
         onSubmit={onSubmit}
         className={`space-y-8 ${hideForm ? "hidden" : ""}`}
       >
-        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력. 항상 노출, 회색 박스 + dl 레이아웃. */}
+        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력. 항상 노출, 흰 박스 + 0.5px 테두리 + dl 레이아웃. */}
         <section>
           <div className="mb-3 flex items-center gap-1.5">
             <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
@@ -286,7 +286,7 @@ export function FormBuilder({
               신청자 정보
             </h2>
           </div>
-          <div className="rounded-lg bg-gray-50 px-3.5 py-3 dark:bg-gray-800/40">
+          <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
             <dl
               className="grid gap-y-2 gap-x-3.5 text-[12px]"
               style={{ gridTemplateColumns: "120px 1fr" }}
