@@ -2,24 +2,17 @@
  * 관리자 메모 카드 — 거버넌스 요청 관리(관리자 상세) 화면 우측에 표시.
  *
  * - 신청자에게 절대 노출되지 않음 (호출 라우트가 admin 권한 가드).
- * - 평소 읽기 전용, "수정" 버튼 클릭 시에만 편집 모드 진입 (자동 저장 X).
- * - 편집 모드에서 "저장하기" 클릭 또는 Cmd/Ctrl+Enter → PUT.
- * - 휴지통은 두 모드 모두 노출, confirm 후 DELETE.
- * - 편집 중인 블록이 있으면 페이지 이탈 시 beforeunload confirm.
+ * - 모든 블록은 항상 편집 가능 (textarea). 별도 '수정' 버튼 없음.
+ * - 변경 사항은 '저장하기' 버튼 클릭 시에만 PUT — 자동 저장 X.
+ * - 저장 안 된 변경이 있는 블록은 '미저장' 배지 + 저장 버튼만 활성.
+ * - 휴지통은 entry 가 있을 때 항상 노출, confirm 후 DELETE.
+ * - 미저장 변경이 1개라도 있는 상태로 페이지 이탈 시 beforeunload 경고.
  */
 
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Calendar,
-  Check,
-  Edit3,
-  Lock,
-  NotebookPen,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Calendar, Check, Edit3, Lock, NotebookPen, Trash2 } from "lucide-react";
 import {
   api,
   type AdminMemoEntry,
@@ -57,9 +50,7 @@ function formatHHMM(iso: string): string {
 export function AdminMemoCard({ formId, me }: Props) {
   const [entries, setEntries] = useState<AdminMemoEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  // 편집 중인 날짜 집합. 진입 시 빈 Set.
-  const [editing, setEditing] = useState<Set<string>>(new Set());
-  // 편집 중 텍스트 buffer — 날짜별. 편집 진입 시 entry.content 로 초기화.
+  // 날짜별 현재 입력 텍스트. entries 와 다르면 미저장 상태.
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Set<string>>(new Set());
 
@@ -69,6 +60,14 @@ export function AdminMemoCard({ formId, me }: Props) {
     try {
       const list = await api.listAdminMemo(formId);
       setEntries(list);
+      // refetch 후 drafts 를 서버 값으로 재동기화 (저장된 날짜만).
+      setDrafts((prev) => {
+        const next = { ...prev };
+        list.forEach((e) => {
+          next[e.date] = e.content;
+        });
+        return next;
+      });
     } catch (e) {
       console.error("[AdminMemoCard] listAdminMemo failed", e);
     } finally {
@@ -80,22 +79,32 @@ export function AdminMemoCard({ formId, me }: Props) {
     void refetch();
   }, [refetch]);
 
-  // 편집 중인 블록이 있는 채로 페이지 이탈 시 confirm.
+  const entryByDate = useMemo(() => {
+    const m = new Map<string, AdminMemoEntry>();
+    entries.forEach((e) => m.set(e.date, e));
+    return m;
+  }, [entries]);
+
+  // 날짜별 dirty 여부 계산 — draft 가 서버 content 와 다르면 dirty.
+  const dirtyDates = useMemo(() => {
+    const s = new Set<string>();
+    Object.entries(drafts).forEach(([date, content]) => {
+      const server = entryByDate.get(date)?.content ?? "";
+      if (content !== server) s.add(date);
+    });
+    return s;
+  }, [drafts, entryByDate]);
+
+  // 미저장 변경 있는 상태로 페이지 이탈 시 confirm.
   useEffect(() => {
-    if (editing.size === 0) return;
+    if (dirtyDates.size === 0) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [editing.size]);
-
-  const entryByDate = useMemo(() => {
-    const m = new Map<string, AdminMemoEntry>();
-    entries.forEach((e) => m.set(e.date, e));
-    return m;
-  }, [entries]);
+  }, [dirtyDates.size]);
 
   const renderedDates = useMemo(() => {
     const dates = new Set(entries.map((e) => e.date));
@@ -103,43 +112,17 @@ export function AdminMemoCard({ formId, me }: Props) {
     return Array.from(dates).sort();
   }, [entries, today]);
 
-  const startEdit = (date: string) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [date]: entryByDate.get(date)?.content ?? "",
-    }));
-    setEditing((prev) => {
-      const next = new Set(prev);
-      next.add(date);
-      return next;
-    });
-  };
-
-  const cancelEdit = (date: string) => {
-    setEditing((prev) => {
-      const next = new Set(prev);
-      next.delete(date);
-      return next;
-    });
-    setDrafts((prev) => {
-      const next = { ...prev };
-      delete next[date];
-      return next;
-    });
-  };
-
   const save = async (date: string) => {
     const content = drafts[date] ?? "";
     setSaving((prev) => new Set(prev).add(date));
     try {
       if (content.trim().length === 0) {
-        // 내용이 비어있는데 저장 누르면 해당 엔트리 제거.
+        // 빈 내용이면 해당 날짜 엔트리 제거.
         await api.deleteAdminMemo(formId, date);
       } else {
         await api.upsertAdminMemo(formId, date, content);
       }
       await refetch();
-      cancelEdit(date);
     } catch (e) {
       console.error("[AdminMemoCard] save failed", e);
       alert("저장에 실패했습니다.");
@@ -156,7 +139,11 @@ export function AdminMemoCard({ formId, me }: Props) {
     if (!window.confirm(`${formatDateKR(date)} 메모를 삭제하시겠습니까?`)) return;
     try {
       await api.deleteAdminMemo(formId, date);
-      cancelEdit(date);
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[date];
+        return next;
+      });
       await refetch();
     } catch (e) {
       console.error("[AdminMemoCard] delete failed", e);
@@ -165,8 +152,8 @@ export function AdminMemoCard({ formId, me }: Props) {
   };
 
   return (
-    <aside className="flex flex-col rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-5 py-4 min-h-[540px]">
-      {/* 헤더 */}
+    <aside className="flex min-h-[540px] flex-col rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-5 py-4">
+      {/* 카드 헤더 */}
       <header className="mb-3 flex items-center gap-2">
         <NotebookPen size={14} className="text-[#92400e]" aria-hidden="true" />
         <h2 className="text-[15px] font-medium text-[#92400e]">관리자 메모</h2>
@@ -183,8 +170,8 @@ export function AdminMemoCard({ formId, me }: Props) {
           renderedDates.map((date) => {
             const entry = entryByDate.get(date);
             const isToday = date === today;
-            const isEditing = editing.has(date);
             const isSaving = saving.has(date);
+            const isDirty = dirtyDates.has(date);
             const isMine = entry && entry.lastUpdatedById === me?.user.id;
             return (
               <MemoDaySection
@@ -192,14 +179,13 @@ export function AdminMemoCard({ formId, me }: Props) {
                 date={date}
                 isToday={isToday}
                 entry={entry}
-                isEditing={isEditing}
                 isSaving={isSaving}
+                isDirty={isDirty}
                 isMine={!!isMine}
-                draft={drafts[date]}
-                onDraftChange={(v) =>
+                value={drafts[date] ?? entry?.content ?? ""}
+                onChange={(v) =>
                   setDrafts((prev) => ({ ...prev, [date]: v }))
                 }
-                onEdit={() => startEdit(date)}
                 onSave={() => void save(date)}
                 onDelete={() => void remove(date)}
               />
@@ -211,9 +197,10 @@ export function AdminMemoCard({ formId, me }: Props) {
       {/* 카드 푸터 */}
       <footer className="-mx-5 -mb-4 mt-3 flex items-center justify-between border-t border-[#fde68a] bg-[#fef3c7] px-5 py-2 text-[11px] text-[#b45309]">
         <span className="inline-flex items-center gap-1">
-          {editing.size > 0 ? (
+          {dirtyDates.size > 0 ? (
             <>
-              <Edit3 size={11} aria-hidden="true" /> 편집 중
+              <Edit3 size={11} aria-hidden="true" />
+              저장 안 된 변경 {dirtyDates.size}건
             </>
           ) : (
             <>
@@ -234,12 +221,11 @@ interface DayProps {
   date: string;
   isToday: boolean;
   entry: AdminMemoEntry | undefined;
-  isEditing: boolean;
   isSaving: boolean;
+  isDirty: boolean;
   isMine: boolean;
-  draft: string | undefined;
-  onDraftChange: (v: string) => void;
-  onEdit: () => void;
+  value: string;
+  onChange: (v: string) => void;
   onSave: () => void;
   onDelete: () => void;
 }
@@ -248,47 +234,31 @@ function MemoDaySection({
   date,
   isToday,
   entry,
-  isEditing,
   isSaving,
+  isDirty,
   isMine,
-  draft,
-  onDraftChange,
-  onEdit,
+  value,
+  onChange,
   onSave,
   onDelete,
 }: DayProps) {
-  const blockRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
-  // 편집 모드 진입 시 자동 포커스 + 커서를 텍스트 끝으로.
+  // 내용 변경 시 textarea 높이 자동 조정.
   useEffect(() => {
-    if (!isEditing) return;
-    const el = blockRef.current;
+    const el = taRef.current;
     if (!el) return;
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    if (sel) {
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-  }, [isEditing]);
-
-  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
-    onDraftChange(e.currentTarget.innerText);
-  };
+    el.style.height = "auto";
+    el.style.height = `${Math.max(50, el.scrollHeight)}px`;
+  }, [value]);
 
   // Cmd/Ctrl + Enter → 저장. 일반 Enter 는 줄바꿈 유지.
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      onSave();
+      if (isDirty && !isSaving) onSave();
     }
   };
-
-  const content = isEditing ? draft ?? "" : entry?.content ?? "";
-  const isEmpty = content.length === 0;
 
   return (
     <section className="space-y-1.5">
@@ -311,33 +281,28 @@ function MemoDaySection({
             오늘
           </span>
         )}
+        {isDirty && (
+          <span className="rounded-md bg-[#fef3c7] px-1.5 py-[1px] text-[9px] font-medium text-[#b45309] ring-1 ring-[#fcd34d]">
+            미저장
+          </span>
+        )}
         <div className="h-px flex-1 bg-[#fde68a]" aria-hidden="true" />
       </div>
 
-      {/* 메모 블록 */}
-      <div
-        ref={blockRef}
-        contentEditable={isEditing}
-        suppressContentEditableWarning
-        data-placeholder={
-          isEditing ? "오늘의 메모를 입력하세요..." : "메모 없음"
-        }
-        onInput={onInput}
+      {/* 메모 입력 — 항상 편집 가능 */}
+      <textarea
+        ref={taRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        placeholder={isToday ? "오늘의 메모를 입력하세요..." : "메모 내용을 입력하세요..."}
+        rows={2}
         className={
-          "admin-memo-block mx-1 min-h-[50px] whitespace-pre-wrap break-words rounded-md px-3 py-2.5 text-[13px] leading-7 text-[#78350f] transition " +
-          (isEditing
-            ? "border border-[#d97706] bg-white outline-none focus:bg-[#fffef7]"
-            : "border border-transparent bg-white/50 cursor-default")
+          "mx-1 block w-[calc(100%-0.5rem)] resize-none whitespace-pre-wrap break-words rounded-md px-3 py-2.5 text-[13px] leading-7 text-[#78350f] placeholder:text-[#b45309]/50 outline-none transition " +
+          (isDirty
+            ? "border border-[#d97706] bg-white focus:bg-[#fffef7]"
+            : "border border-[#fde68a]/60 bg-white/60 focus:border-[#d97706] focus:bg-white")
         }
-        // entry.content 가 바뀔 때 (refetch 후) DOM 을 갱신.
-        // 편집 중에는 React 가 DOM 을 덮어쓰지 않도록 key 로 강제 remount.
-        key={
-          isEditing ? `edit-${date}` : `view-${date}-${entry?.revisionCount ?? 0}`
-        }
-        dangerouslySetInnerHTML={{
-          __html: isEmpty && !isEditing ? "" : escapeHtml(content),
-        }}
       />
 
       {/* 블록 푸터 */}
@@ -355,26 +320,20 @@ function MemoDaySection({
           )}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          {isEditing ? (
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={isSaving}
-              className="inline-flex items-center gap-1 rounded-md bg-[#d97706] px-3 py-1 text-[11px] font-medium text-white transition hover:bg-[#b45309] disabled:opacity-60"
-            >
-              <Check size={11} aria-hidden="true" />
-              {isSaving ? "저장 중…" : "저장하기"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex items-center gap-1 rounded-md border border-[#fcd34d] bg-transparent px-3 py-1 text-[11px] font-medium text-[#b45309] transition hover:bg-[#fef3c7]"
-            >
-              <Pencil size={11} aria-hidden="true" />
-              수정
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={!isDirty || isSaving}
+            className={
+              "inline-flex items-center gap-1 rounded-md px-3 py-1 text-[11px] font-medium transition " +
+              (isDirty
+                ? "bg-[#d97706] text-white hover:bg-[#b45309] disabled:opacity-60"
+                : "cursor-not-allowed border border-[#fde68a] bg-[#fef3c7]/50 text-[#b45309]/50")
+            }
+          >
+            <Check size={11} aria-hidden="true" />
+            {isSaving ? "저장 중…" : "저장하기"}
+          </button>
           {entry && (
             <button
               type="button"
@@ -389,11 +348,4 @@ function MemoDaySection({
       </div>
     </section>
   );
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
