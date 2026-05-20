@@ -319,7 +319,7 @@ export function ProgressHistoryBlock({
                   onChange={(e) => setDraftText(e.target.value)}
                   placeholder={
                     commentsOnly
-                      ? "신청자에게 보낼 코멘트를 입력하세요"
+                      ? `${replyTarget.role}에게 보낼 코멘트를 입력하세요`
                       : "메시지를 입력하세요 (첨부파일만 보내도 됩니다)"
                   }
                   className="block min-h-[46px] w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
