@@ -70,6 +70,7 @@ export function approvalHistoryToStatusItems(
       actor,
       actorRole: isApplicant ? "신청자" : "Data Governance Team",
       timestamp: isoToShort(at),
+      at,
       comment: e.comment ?? undefined,
     });
     if (action === "보완 요청") hadPriorInfoRequest = true;

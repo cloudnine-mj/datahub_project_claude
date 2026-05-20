@@ -70,7 +70,10 @@ export interface StatusHistoryItem {
   action: HistoryAction;
   actor: string;
   actorRole: "신청자" | "Data Governance Team";
+  /** 'M/d HH:mm' 짧은 표기 (호환). */
   timestamp: string;
+  /** ISO 8601 원본 — 날짜 그룹핑 용. 옛 mock 은 미설정일 수 있음. */
+  at?: string;
   comment?: string;
 }
 

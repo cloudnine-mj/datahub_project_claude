@@ -9,10 +9,11 @@
  * 상태 변경 후 부모(`onChanged`)가 신청 데이터를 재조회.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpFromLine,
+  Calendar as CalendarIcon,
   Clock,
   CheckCircle2,
   ChevronDown,
@@ -288,6 +289,10 @@ export function FormStatusPanel({
  */
 function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
   const [open, setOpen] = useState(false);
+
+  // 날짜별 그룹핑 — 'YYYY-MM-DD' 키. at(ISO) 가 있으면 그것을 우선, 없으면 timestamp 의 'M/d HH:mm' 에서 분리.
+  const groups = useMemo(() => groupByDate(items), [items]);
+
   return (
     <div className="mt-5 border-t border-gray-100 pt-4">
       <button
@@ -311,134 +316,174 @@ function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
       </button>
 
       {open && (
-        <ol className="relative mt-3 rounded-md p-2">
-          {items.map((it, i) => (
-            <InlineHistoryRow
-              key={it.id ?? `inline-${i}`}
-              item={it}
-              isLast={i === items.length - 1}
-            />
+        <div className="relative mt-3 pl-1">
+          {/* 전체 항목을 가로지르는 세로 레일 — 절대 위치, 날짜 그룹 헤더 구간에서도 끊기지 않게 연속. */}
+          <span
+            aria-hidden="true"
+            className="absolute left-[76px] top-[14px] bottom-[14px] w-px bg-gray-200"
+          />
+          {groups.map((g, gi) => (
+            <section
+              key={g.date}
+              className={gi === 0 ? "" : "mt-3.5"}
+            >
+              {/* 날짜 헤더 pill */}
+              <div className="mb-1.5 ml-12 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
+                <CalendarIcon size={11} aria-hidden="true" />
+                {formatDateKR(g.date)}
+              </div>
+              <ol className="space-y-0.5">
+                {g.items.map((it) => (
+                  <InlineHistoryRow key={it.id} item={it} />
+                ))}
+              </ol>
+            </section>
           ))}
-        </ol>
+        </div>
       )}
     </div>
   );
 }
 
+/** ISO 또는 'M/d HH:mm' 단축 표기에서 'YYYY-MM-DD' 키 추출. */
+function dateKeyOf(it: StatusHistoryItem): string {
+  if (it.at) {
+    const d = new Date(it.at);
+    if (!Number.isNaN(d.getTime())) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+  // fallback — 'M/d HH:mm' 에서 'M/d' 사용 (연도 모를 때 현재 연도 가정).
+  const m = /^(\d{1,2})\/(\d{1,2})/.exec(it.timestamp);
+  if (m) {
+    const y = new Date().getFullYear();
+    return `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+  }
+  return it.timestamp;
+}
+
+/** 'HH:mm' 만 추출. */
+function timeOf(it: StatusHistoryItem): string {
+  if (it.at) {
+    const d = new Date(it.at);
+    if (!Number.isNaN(d.getTime())) {
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    }
+  }
+  const m = /(\d{2}:\d{2})$/.exec(it.timestamp);
+  return m ? m[1] : it.timestamp;
+}
+
+interface DateGroup {
+  date: string; // YYYY-MM-DD
+  items: StatusHistoryItem[];
+}
+
+function groupByDate(items: StatusHistoryItem[]): DateGroup[] {
+  const map = new Map<string, StatusHistoryItem[]>();
+  items.forEach((it) => {
+    const key = dateKeyOf(it);
+    const arr = map.get(key) ?? [];
+    arr.push(it);
+    map.set(key, arr);
+  });
+  return Array.from(map.entries())
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([date, items]) => ({ date, items }));
+}
+
+function formatDateKR(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  if (!y || !m || !d) return dateKey;
+  const dt = new Date(y, m - 1, d);
+  const weekday = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()];
+  return `${m}월 ${d}일 (${weekday})`;
+}
+
 interface ActionStyle {
   icon: LucideIcon;
-  text: string;
-  /** 아이콘 배경 + 텍스트 색 */
-  iconCls: string;
-  /** 행 전체 강조 배경 (옅은) */
-  rowBg?: string;
-  /** pill 라벨 — 강조 액션만 */
-  pillLabel?: string;
-  /** pill 배경 + 텍스트 */
-  pillCls?: string;
+  /** 짧은 액션명 — "보완 요청", "검토 시작" 등 한 단어 형태. */
+  label: string;
+  /** 점(레일) 배경 + 아이콘 색 */
+  dotCls: string;
 }
 
 const ACTION_STYLE: Record<string, ActionStyle> = {
   제출됨: {
     icon: Send,
-    text: "신청서를 제출했습니다",
-    iconCls: "bg-blue-50 text-blue-600",
+    label: "신청서 제출",
+    dotCls: "bg-blue-50 text-blue-600",
   },
   "검토 시작": {
     icon: Eye,
-    text: "검토를 시작했습니다",
-    iconCls: "bg-gray-100 text-gray-500",
+    label: "검토 시작",
+    dotCls: "bg-gray-100 text-gray-500",
   },
   "보완 요청": {
     icon: MessageCircleWarning,
-    text: "보완을 요청했습니다",
-    iconCls: "bg-amber-50 text-amber-600",
-    rowBg: "bg-amber-50/60",
-    pillLabel: "보완 요청",
-    pillCls: "bg-amber-100 text-amber-700",
+    label: "보완 요청",
+    dotCls: "bg-amber-50 text-amber-600",
   },
   "보완 자료 제출": {
     icon: ArrowUpFromLine,
-    text: "보완 자료를 제출했습니다",
-    iconCls: "bg-blue-50 text-blue-600",
+    label: "보완 자료 제출",
+    dotCls: "bg-blue-50 text-blue-600",
   },
   "검토 재개": {
     icon: Reply,
-    text: "검토를 재개했습니다",
-    iconCls: "bg-gray-100 text-gray-500",
+    label: "검토 재개",
+    dotCls: "bg-gray-100 text-gray-500",
   },
   "승인 완료": {
     icon: CheckCircle2,
-    text: "신청을 승인했습니다",
-    iconCls: "bg-emerald-50 text-emerald-600",
-    rowBg: "bg-emerald-50/70",
-    pillLabel: "승인",
-    pillCls: "bg-emerald-100 text-emerald-700",
+    label: "승인",
+    dotCls: "bg-emerald-50 text-emerald-600",
   },
   "임시 저장": {
     icon: Send,
-    text: "임시 저장했습니다",
-    iconCls: "bg-gray-100 text-gray-400",
+    label: "임시 저장",
+    dotCls: "bg-gray-100 text-gray-400",
   },
 };
 
 const DEFAULT_STYLE: ActionStyle = {
   icon: Send,
-  text: "",
-  iconCls: "bg-gray-100 text-gray-500",
+  label: "",
+  dotCls: "bg-gray-100 text-gray-500",
 };
 
-function InlineHistoryRow({
-  item,
-  isLast,
-}: {
-  item: StatusHistoryItem;
-  isLast: boolean;
-}) {
+function InlineHistoryRow({ item }: { item: StatusHistoryItem }) {
   const style = ACTION_STYLE[item.action] ?? DEFAULT_STYLE;
   const Icon = style.icon;
-  // 진행 이력은 시스템 액션 로그만 표시 — 메시지/코멘트 본문은 코멘트 카드에서 다룸.
   return (
     <li
-      className={
-        "relative flex items-center gap-2.5 rounded-md px-3 py-2 " +
-        (style.rowBg ?? "")
-      }
+      className="grid items-center py-0.5"
+      style={{ gridTemplateColumns: "48px 32px 1fr" }}
     >
-      {/* 타임라인 연결선 — 마지막 항목엔 없음 */}
-      {!isLast && (
-        <span
-          aria-hidden="true"
-          className="absolute left-[24px] top-[34px] bottom-[-4px] w-px bg-gray-200"
-        />
-      )}
-      <span
-        className={
-          "z-[1] inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full " +
-          style.iconCls
-        }
-      >
-        <Icon size={11} aria-hidden="true" />
+      <span className="pr-3 text-right text-[11px] text-gray-400">
+        {timeOf(item)}
       </span>
-      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px] text-gray-800">
-        <span className="whitespace-nowrap">
-          {item.actor && (
-            <span className="font-medium text-gray-900">{item.actor}</span>
-          )}
-          {item.actor ? "님이 " : ""}
-          {style.text || item.action}
+      <span className="flex justify-center">
+        <span
+          className={
+            "relative z-[1] inline-flex h-7 w-7 items-center justify-center rounded-full ring-4 ring-white " +
+            style.dotCls
+          }
+        >
+          <Icon size={12} aria-hidden="true" />
         </span>
-        {style.pillLabel && (
-          <span
-            className={
-              "rounded-md px-1.5 py-0.5 text-[10px] font-medium " + (style.pillCls ?? "")
-            }
-          >
-            {style.pillLabel}
-          </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="text-[13px] font-medium text-gray-900">
+          {style.label || item.action}
+        </span>
+        {item.actor && (
+          <span className="text-[12px] text-gray-400">{item.actor}</span>
         )}
-        <span className="text-[11px] text-gray-400">{item.timestamp}</span>
-      </div>
+      </span>
     </li>
   );
 }
