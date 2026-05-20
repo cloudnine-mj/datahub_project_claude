@@ -316,16 +316,24 @@ export default function Page({ params }: { params: { id: string } }) {
             <ArrowLeft size={12} /> 요청 목록으로 돌아가기
           </Link>
         )}
-        {/* '거버넌스 요청 목록' (from=list) 진입은 read-only 조회 컨텍스트라
-            수정 버튼 노출하지 않음. 다른 진입(내 문서 / 관리 / 기본) 은 그대로. */}
-        {from !== "list" && (
-          <button
-            onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-          >
-            <Pencil size={12} /> 수정
-          </button>
-        )}
+        {/* 수정 버튼 — 본인 신청인 경우(작성자 본인) 진입 컨텍스트와 무관하게 노출.
+            거버넌스 요청 목록(from=list) 에서도 본인 신청은 수정 가능.
+            타인 신청 상세(any from + not owner) 는 read-only 라 버튼 미노출.
+            관리자가 admin 큐(from=admin) 에서 진입한 경우도 검토용이라 수정 X. */}
+        {(() => {
+          const isOwner =
+            !!me &&
+            me.user.email.toLowerCase() === form.submitter_email.toLowerCase();
+          if (!isOwner) return null;
+          return (
+            <button
+              onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
+              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
+            >
+              <Pencil size={12} /> 수정
+            </button>
+          );
+        })()}
         {/* 상세 페이지의 삭제 버튼은 admin 의 '거버넌스 요청 관리' 진입 시에만 노출.
             '내 문서 목록' 에서는 행 단위 휴지통 아이콘으로, 그 외 컨텍스트(요청 목록 등)
             에서는 파괴적 액션을 띄우지 않음. */}

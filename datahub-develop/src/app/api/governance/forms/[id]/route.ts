@@ -110,8 +110,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const form = await prisma.governanceForm.findUnique({ where: { id: params.id } });
   if (!form) return audit.fail(404, "form not found", { resourceId: params.id });
 
-  if (form.submitterId !== auth.dbUser.id && !auth.isAdmin) {
-    return audit.fail(403, "수정 권한이 없습니다.");
+  // 수정은 작성자 본인만 — admin 이라도 타인 신청 본문을 직접 편집할 수 없음.
+  // (상태 전이 / 보완 요청 등 admin 액션은 별도 /status 라우트에서 처리)
+  if (form.submitterId !== auth.dbUser.id) {
+    return audit.fail(403, "본인이 작성한 신청만 수정할 수 있습니다.");
   }
 
   if (body.form_type && !FORM_TYPES.has(body.form_type)) {
