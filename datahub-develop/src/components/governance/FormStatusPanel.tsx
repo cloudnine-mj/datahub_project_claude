@@ -320,7 +320,7 @@ function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
           {/* 전체 항목을 가로지르는 세로 레일 — 절대 위치, 날짜 그룹 헤더 구간에서도 끊기지 않게 연속. */}
           <span
             aria-hidden="true"
-            className="absolute left-[72px] top-[14px] bottom-[14px] w-px bg-gray-200"
+            className="absolute left-[24px] top-[14px] bottom-[14px] w-px bg-gray-200"
           />
           {groups.map((g, gi) => (
             <section
@@ -328,7 +328,7 @@ function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
               className={gi === 0 ? "" : "mt-3.5"}
             >
               {/* 날짜 헤더 pill */}
-              <div className="mb-1.5 ml-12 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
+              <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
                 <CalendarIcon size={11} aria-hidden="true" />
                 {formatDateKR(g.date)}
               </div>
@@ -461,11 +461,8 @@ function InlineHistoryRow({ item }: { item: StatusHistoryItem }) {
   return (
     <li
       className="grid items-center py-0.5"
-      style={{ gridTemplateColumns: "48px 40px 1fr" }}
+      style={{ gridTemplateColumns: "40px 1fr" }}
     >
-      <span className="pr-3 text-right text-[11px] text-gray-400">
-        {timeOf(item)}
-      </span>
       <span className="flex justify-center">
         <span
           className={
@@ -477,6 +474,9 @@ function InlineHistoryRow({ item }: { item: StatusHistoryItem }) {
         </span>
       </span>
       <span className="flex items-center gap-2 pl-2">
+        <span className="text-[11px] tabular-nums text-gray-400">
+          {timeOf(item)}
+        </span>
         <span className="text-[13px] font-medium text-gray-900">
           {style.label || item.action}
         </span>
