@@ -13,6 +13,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  MessageCircle,
   Pencil,
   Paperclip,
   Send,
@@ -61,6 +62,9 @@ interface Props {
   applicantName?: string;
   /** 백엔드 신청 id (cuid). 주어지면 메시지를 API 로 조회·전송. 없으면 로컬 state 만 사용 (데모). */
   formId?: string;
+  /** 코멘트 전용 모드 — 시스템 이벤트는 표시 안 함, 헤더 라벨을 '코멘트' 로,
+   *  '시스템 이벤트 포함' 체크박스 숨김. 거버넌스 요청 관리(관리자 상세) 에서만 사용. */
+  commentsOnly?: boolean;
 }
 
 function isoToShort(iso: string): string {
@@ -120,6 +124,7 @@ export function ProgressHistoryBlock({
   currentUserRole = "applicant",
   applicantName = "신청자",
   formId,
+  commentsOnly = false,
 }: Props) {
   const [open, setOpen] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(true);
@@ -152,9 +157,9 @@ export function ProgressHistoryBlock({
     void refetchMessages();
   }, [refetchMessages]);
 
-  // 시스템 이벤트 + 메시지 합쳐 시간순(과거→현재) 정렬.
+  // commentsOnly 모드면 시스템 이벤트 완전 제외, 그 외에는 includeSystem 토글에 따름.
   const items = useMemo(() => {
-    const sys = includeSystem
+    const sys = !commentsOnly && includeSystem
       ? history.map((h, i) => ({
           kind: "system" as const,
           id: h.id ?? `sys-${i}`,
@@ -169,9 +174,10 @@ export function ProgressHistoryBlock({
       msg: m,
     }));
     return [...sys, ...msgs];
-  }, [history, includeSystem, messages]);
+  }, [history, includeSystem, messages, commentsOnly]);
 
-  if (history.length === 0 && messages.length === 0) return null;
+  // commentsOnly 모드는 history 가 비어있어도 코멘트 입력기를 위해 렌더 유지.
+  if (!commentsOnly && history.length === 0 && messages.length === 0) return null;
 
   // 본문 또는 첨부 중 하나만 있어도 전송 가능. 둘 다 비어있을 때만 disabled.
   const canSend = !sending && (draftText.trim().length > 0 || draftFiles.length > 0);
@@ -243,23 +249,32 @@ export function ProgressHistoryBlock({
     <section className="rounded-xl border border-gray-200 bg-white px-5 py-4 dark:border-gray-800 dark:bg-gray-900">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
+          {commentsOnly && (
+            <MessageCircle
+              size={14}
+              className="text-blue-600 dark:text-blue-400"
+              aria-hidden="true"
+            />
+          )}
           <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            활동
+            {commentsOnly ? "코멘트" : "활동"}
           </h2>
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {items.length}건
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-            <input
-              type="checkbox"
-              checked={includeSystem}
-              onChange={(e) => setIncludeSystem(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            시스템 이벤트 포함
-          </label>
+          {!commentsOnly && (
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+              <input
+                type="checkbox"
+                checked={includeSystem}
+                onChange={(e) => setIncludeSystem(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              시스템 이벤트 포함
+            </label>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -331,7 +346,11 @@ export function ProgressHistoryBlock({
                 <textarea
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
-                  placeholder="메시지를 입력하세요 (첨부파일만 보내도 됩니다)"
+                  placeholder={
+                    commentsOnly
+                      ? "신청자에게 보낼 코멘트를 입력하세요"
+                      : "메시지를 입력하세요 (첨부파일만 보내도 됩니다)"
+                  }
                   className="block min-h-[46px] w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
                 />
 

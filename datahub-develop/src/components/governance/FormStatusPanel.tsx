@@ -11,9 +11,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, MessageSquare, Play } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Eye,
+  History,
+  MessageSquare,
+  Play,
+  Send,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/governance/api-client-full";
 import { parseUtc } from "@/lib/governance/forms/utils-bridge";
+import type { StatusHistoryItem } from "@/lib/governance/forms/application-config";
 import { StatusBadge } from "./StatusBadge";
 import { WorkflowStepper } from "./WorkflowStepper";
 
@@ -25,6 +35,9 @@ interface Props {
   /** 신청 제출자 이메일 — admin 이라도 본인 신청에는 액션 숨김 (자기 결재 방지) */
   submitterEmail?: string | null;
   onChanged: () => void;
+  /** 관리자 액션 아래에 진행 이력(시스템 이벤트) 토글 섹션을 표시. 거버넌스 요청 관리(관리자 상세)
+   *  에서만 true 로 사용. 시스템 이벤트만 노출, '시스템 이벤트 포함' 체크박스 없음. */
+  inlineHistory?: StatusHistoryItem[];
 }
 
 const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Play }[] = [
@@ -32,7 +45,15 @@ const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Pl
   { to: "approved", label: "승인", cls: "bg-emerald-500 hover:bg-emerald-600", icon: Check },
 ];
 
-export function FormStatusPanel({ formId, status, history, me, submitterEmail, onChanged }: Props) {
+export function FormStatusPanel({
+  formId,
+  status,
+  history,
+  me,
+  submitterEmail,
+  onChanged,
+  inlineHistory,
+}: Props) {
   const router = useRouter();
   const isAdmin = me?.user.role === "admin";
   const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
@@ -160,12 +181,89 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
           )}
         </div>
       )}
+      {/* 진행 이력 토글 — inlineHistory 를 받은 경우(관리자 상세 진입)만 노출.
+          시스템 이벤트만 표시, '시스템 이벤트 포함' 체크박스 없음. */}
+      {inlineHistory && inlineHistory.length > 0 && (
+        <InlineHistorySection items={inlineHistory} />
+      )}
     </section>
-
-    {/* 진행 이력 섹션은 페이지 하단 ProgressHistoryBlock 으로 통합 — 여기선 진행 상태 카드만. */}
     </>
   );
 }
+
+/**
+ * 진행 이력 토글 섹션 — 진행 상태 카드 내 관리자 액션 아래에 배치.
+ *   - 시스템 이벤트만 표시 (사람 코멘트는 별도 코멘트 카드에서 처리)
+ *   - '시스템 이벤트 포함' 체크박스 없음
+ *   - 기본 접힘. 헤더 클릭으로 펼침/접힘.
+ */
+function InlineHistorySection({ items }: { items: StatusHistoryItem[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-5 border-t border-gray-100 pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 text-left"
+      >
+        <span className="inline-flex items-center gap-1.5 text-[13px] text-gray-500">
+          <History size={13} aria-hidden="true" />
+          진행 이력
+          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+            {items.length}건
+          </span>
+        </span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className={"text-gray-400 transition-transform " + (open ? "" : "-rotate-90")}
+        />
+      </button>
+
+      {open && (
+        <ul className="mt-3 space-y-2 rounded-md bg-gray-50 p-3">
+          {items.map((it, i) => {
+            const Icon = INLINE_HISTORY_ICON[it.action] ?? Send;
+            return (
+              <li
+                key={it.id ?? `inline-${i}`}
+                className="flex items-start gap-2.5 border-b border-gray-200 pb-2 last:border-b-0 last:pb-0"
+              >
+                <span className="mt-0.5 inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-white text-gray-500">
+                  <Icon size={11} aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] text-gray-800">
+                    {it.actor ? `${it.actor}이 ` : ""}
+                    {INLINE_HISTORY_TEXT[it.action] ?? it.action}
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    {it.timestamp} · 시스템
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const INLINE_HISTORY_ICON: Record<string, LucideIcon> = {
+  "임시 저장": Send,
+  제출됨: Send,
+  "검토 시작": Eye,
+  "승인 완료": Check,
+};
+
+const INLINE_HISTORY_TEXT: Record<string, string> = {
+  "임시 저장": "신청서를 임시 저장했습니다",
+  제출됨: "신청서를 제출했습니다",
+  "검토 시작": "검토를 시작했습니다",
+  "승인 완료": "신청을 승인했습니다",
+};
 
 function dotColor(s: string): string {
   return s === "approved"
