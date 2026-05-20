@@ -43,6 +43,7 @@ const STATUS_BADGE: Record<FormStatus, { bg: string; text: string; dot: string; 
   draft: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400", label: "임시 저장" },
   submitted: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", label: "제출됨" },
   reviewing: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", label: "검토 중" },
+  info_requested: { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500", label: "보완 요청됨" },
   approved: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", label: "승인 완료" },
   rejected: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", label: "반려" },
 };

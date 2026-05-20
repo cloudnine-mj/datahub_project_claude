@@ -119,7 +119,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   const prevStatus = form.status;
-  const nextStatus = body.status ?? form.status;
+  // 보완 요청됨 상태에서 신청자가 재제출하면 자동으로 검토 중으로 복귀.
+  // 신청자가 명시적으로 status='submitted' 를 보내더라도 reviewing 으로 override.
+  let nextStatus = body.status ?? form.status;
+  if (prevStatus === "info_requested" && nextStatus === "submitted") {
+    nextStatus = "reviewing";
+  }
   const changes = computeDiff(
     {
       projectName: form.projectName,
@@ -153,6 +158,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       } else {
         append("submitted", "최초 제출", "submitted");
       }
+    } else if (nextStatus === "reviewing" && prevStatus === "info_requested") {
+      // 보완 요청됨 → reviewing 자동 전이 (신청자 재제출). info_resubmitted 로 기록.
+      append("reviewing", "보완 자료 재제출", "info_resubmitted");
     } else if (nextStatus === "draft") {
       append("draft", "임시 저장", "draft");
     }

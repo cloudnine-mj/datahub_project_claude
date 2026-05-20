@@ -36,6 +36,7 @@ function heuristicAction(
 ): HistoryAction | null {
   if (status === "draft") return "임시 저장";
   if (status === "approved") return "승인 완료";
+  if (status === "info_requested") return "보완 요청";
   if (commentLooksLikeInfoRequest(comment)) return "보완 요청";
   if (status === "submitted") return hadPriorInfoRequest ? "보완 자료 제출" : "제출됨";
   if (status === "reviewing") return hadPriorInfoRequest ? "검토 재개" : "검토 시작";

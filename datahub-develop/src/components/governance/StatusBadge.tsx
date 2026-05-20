@@ -17,6 +17,11 @@ const STYLES: Record<FormStatus, { label: string; cls: string; dot: string }> = 
     cls: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
   },
+  info_requested: {
+    label: "보완 요청됨",
+    cls: "bg-orange-50 text-orange-700 border-orange-200",
+    dot: "bg-orange-500",
+  },
   approved: {
     label: "승인 완료",
     cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -45,6 +50,7 @@ export const STATUSES: { value: FormStatus; label: string }[] = [
   { value: "draft", label: "임시 저장" },
   { value: "submitted", label: "제출됨" },
   { value: "reviewing", label: "검토 중" },
+  { value: "info_requested", label: "보완 요청됨" },
   { value: "approved", label: "승인 완료" },
   { value: "rejected", label: "반려" },
 ];

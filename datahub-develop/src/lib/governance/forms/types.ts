@@ -12,7 +12,7 @@ export type FormType =
   | "api_usage_plan"
   | "productivity_tool";
 
-export type FormStatus = "draft" | "submitted" | "reviewing" | "approved" | "rejected";
+export type FormStatus = "draft" | "submitted" | "reviewing" | "info_requested" | "approved" | "rejected";
 
 export interface ApprovalEntry {
   status: FormStatus;

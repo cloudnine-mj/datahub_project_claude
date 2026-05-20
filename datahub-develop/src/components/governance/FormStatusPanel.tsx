@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowUpFromLine,
+  Clock,
   CheckCircle2,
   ChevronDown,
   Eye,
@@ -23,6 +24,7 @@ import {
   Reply,
   Send,
   Check,
+  Undo2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus, type Me } from "@/lib/governance/api-client-full";
@@ -48,10 +50,76 @@ interface Props {
   hideAdminActions?: boolean;
 }
 
-const TRANSITIONS: { to: FormStatus; label: string; cls: string; icon: typeof Play }[] = [
-  { to: "reviewing", label: "검토 시작", cls: "bg-amber-500 hover:bg-amber-600", icon: Play },
-  { to: "approved", label: "승인", cls: "bg-emerald-500 hover:bg-emerald-600", icon: Check },
-];
+type ActionCode =
+  | "start_review"
+  | "approve"
+  | "request_info"
+  | "resume_review";
+
+interface AdminAction {
+  code: ActionCode;
+  to: FormStatus;
+  label: string;
+  cls: string;
+  icon: LucideIcon;
+  /** 액션 적용 시 진행 이력에 기록할 action 코드. */
+  historyAction: "review_started" | "approved" | "info_requested" | "review_resumed";
+  /** 코멘트 prefix — 보완 요청만 [보완 요청] 자동 부착. */
+  commentPrefix?: string;
+}
+
+/** 현재 status 에 따라 표시할 관리자 액션 목록. */
+function actionsForStatus(status: FormStatus | string): AdminAction[] {
+  switch (status) {
+    case "submitted":
+      return [
+        {
+          code: "start_review",
+          to: "reviewing",
+          label: "검토 시작",
+          cls: "bg-blue-500 hover:bg-blue-600",
+          icon: Play,
+          historyAction: "review_started",
+        },
+      ];
+    case "reviewing":
+      return [
+        {
+          code: "approve",
+          to: "approved",
+          label: "승인으로 변경",
+          cls: "bg-emerald-500 hover:bg-emerald-600",
+          icon: Check,
+          historyAction: "approved",
+        },
+        {
+          code: "request_info",
+          to: "info_requested",
+          label: "보완 요청",
+          cls: "bg-amber-500 hover:bg-amber-600",
+          icon: MessageSquare,
+          historyAction: "info_requested",
+          commentPrefix: "[보완 요청] ",
+        },
+      ];
+    case "approved":
+      return [
+        {
+          code: "resume_review",
+          to: "reviewing",
+          label: "검토로 되돌리기",
+          cls: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+          icon: Undo2,
+          historyAction: "review_resumed",
+        },
+      ];
+    case "info_requested":
+      // 버튼 없음 — 신청자 재제출 대기.
+      return [];
+    default:
+      return [];
+  }
+}
 
 export function FormStatusPanel({
   formId,
@@ -67,42 +135,29 @@ export function FormStatusPanel({
   const isAdmin = me?.user.role === "admin";
   const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
   const canActAsAdmin = isAdmin && !isOwnSubmission && !hideAdminActions;
-  const [target, setTarget] = useState<FormStatus | null>(null);
+  // 현재 상태에서 가능한 관리자 액션 목록 — 상태 전이 그래프대로 분기.
+  const availableActions = actionsForStatus(status);
+  // 사용자가 선택한 액션 — null 이면 아무 액션도 선택되지 않은 초기 상태.
+  const [targetAction, setTargetAction] = useState<AdminAction | null>(null);
   const [comment, setComment] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // 진행 이력 펼침/접힘 — 기본 접힘. 사용자가 필요할 때만 펼쳐서 봄.
-  const [historyOpen, setHistoryOpen] = useState(false);
 
   async function onApply() {
-    if (!target) return;
+    if (!targetAction) return;
     setError(null);
     setPending(true);
     try {
-      // '보완 요청' 은 status 를 '검토 중'(reviewing) 으로 되돌리고 [보완 요청] 코멘트 기록.
-      // 승인 완료된 신청도 보완 요청 시 다시 검토 단계로 내려가야 신청자가 후속 조치 가능.
-      const isSupplement = (target as string) === "__supplement__";
-      const finalStatus = isSupplement ? "reviewing" : target;
-      const finalComment = isSupplement
-        ? `[보완 요청] ${comment || ""}`.trim()
-        : comment || undefined;
-      // 명시적 action 코드 — 백엔드가 진행 이력을 정확히 기록하도록 전달.
-      // 보완 요청은 status='reviewing' 이지만 액션은 'info_requested' 로 구분되어야 함.
-      const finalAction = isSupplement
-        ? "info_requested"
-        : finalStatus === "approved"
-        ? "approved"
-        : finalStatus === "reviewing"
-        ? "review_started"
+      const trimmed = comment.trim();
+      const finalComment = trimmed.length > 0
+        ? `${targetAction.commentPrefix ?? ""}${trimmed}`
         : undefined;
-      // PATCH /status 가 코멘트 본문이 있으면 GovernanceFormMessage 도 함께 생성.
-      // 백엔드 transaction 으로 atomic 하게 처리하므로 frontend 에서는 한 번만 호출.
       await api.changeFormStatus(formId, {
-        status: finalStatus as FormStatus,
-        comment: finalComment || undefined,
-        action: finalAction,
+        status: targetAction.to,
+        comment: finalComment,
+        action: targetAction.historyAction,
       });
-      setTarget(null);
+      setTargetAction(null);
       setComment("");
       onChanged();
       // 거버넌스 요청 목록 / 관리 페이지 등 다른 라우트의 Next.js Router Cache 무효화 —
@@ -123,58 +178,71 @@ export function FormStatusPanel({
         <StatusBadge status={status} />
       </div>
 
-      {/* 워크플로우 stepper — 임시저장 → 제출됨 → 검토 중 → 승인 완료 (반려 시 별도 분기) */}
-      <WorkflowStepper status={status} />
+      {/* 워크플로우 stepper — 제출됨 → 검토 중 → 보완 요청(조건부) → 승인 완료 */}
+      <WorkflowStepper
+        status={status}
+        hadRevision={
+          history?.some(
+            (h) => h.action === "info_requested" || /^\s*\[보완\s*요청\]/.test(h.comment ?? ""),
+          ) ?? false
+        }
+      />
 
-      {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청에는 숨김 */}
+      {/* admin 상태 변경 액션 — 단, 본인이 제출한 신청에는 숨김.
+          info_requested 상태에서는 버튼 없이 대기 안내만 노출. */}
       {canActAsAdmin && (
         <div className="mt-5 border-t border-gray-100 pt-4">
           <div className="text-xs font-bold uppercase tracking-wider text-gray-500">
             관리자 액션
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {TRANSITIONS.filter((t) => t.to !== status).map((t) => {
-              const Icon = t.icon;
-              const active = target === t.to;
-              return (
-                <button
-                  key={t.to}
-                  type="button"
-                  onClick={() => setTarget(active ? null : t.to)}
-                  className={
-                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white transition " +
-                    (active ? t.cls + " ring-2 ring-offset-1" : t.cls + " opacity-90")
-                  }
-                >
-                  <Icon size={12} /> {t.label === "검토 시작" ? "검토 시작으로 변경" : t.label === "승인" ? "승인으로 변경" : t.label}
-                </button>
-              );
-            })}
-            {/* 보완 요청 — 상태 전환 없이 코멘트만 기록. status 그대로 유지. */}
-            <button
-              type="button"
-              onClick={() => setTarget(target === "__supplement__" ? null : ("__supplement__" as FormStatus))}
-              className={
-                "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition " +
-                (target === "__supplement__"
-                  ? "border-gray-300 bg-gray-100 text-gray-900"
-                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50")
-              }
-            >
-              <MessageSquare size={12} /> 보완 요청
-            </button>
-          </div>
+          {availableActions.length === 0 ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-amber-700">
+              <Clock size={12} aria-hidden="true" />
+              {status === "info_requested"
+                ? "신청자가 보완 자료를 재제출할 때까지 대기 중입니다."
+                : "이 상태에서 가능한 액션이 없습니다."}
+            </p>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {availableActions.map((a) => {
+                const Icon = a.icon;
+                const active = targetAction?.code === a.code;
+                const isOutline = a.cls.startsWith("border");
+                return (
+                  <button
+                    key={a.code}
+                    type="button"
+                    onClick={() => setTargetAction(active ? null : a)}
+                    className={
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition " +
+                      (isOutline ? a.cls : "text-white " + a.cls) +
+                      (active ? " ring-2 ring-offset-1" : "")
+                    }
+                  >
+                    <Icon size={12} /> {a.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          {target && (
+          {targetAction && (
             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50/40 p-3">
               <label className="block text-xs font-semibold text-gray-700">
-                코멘트 <span className="font-normal text-gray-400">(선택)</span>
+                코멘트{" "}
+                <span className="font-normal text-gray-400">
+                  {targetAction.code === "request_info" ? "(보완 요청 내용)" : "(선택)"}
+                </span>
               </label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                placeholder="변경 사유나 후속 안내를 입력하세요"
+                placeholder={
+                  targetAction.code === "request_info"
+                    ? "예) 사용 예산 산정 근거를 첨부해 주세요"
+                    : "변경 사유나 후속 안내를 입력하세요"
+                }
                 className="mt-1.5 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs focus:border-brand focus:outline-none"
               />
               {error && (
@@ -184,7 +252,7 @@ export function FormStatusPanel({
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => setTarget(null)}
+                  onClick={() => setTargetAction(null)}
                   className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-gray-50 disabled:opacity-50"
                 >
                   취소

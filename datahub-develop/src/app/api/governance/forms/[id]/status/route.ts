@@ -20,7 +20,14 @@ import {
   resolveRecipient,
 } from "@/lib/governance/auth";
 
-const STATUS_VALUES = new Set(["draft", "submitted", "reviewing", "approved", "rejected"]);
+const STATUS_VALUES = new Set([
+  "draft",
+  "submitted",
+  "reviewing",
+  "info_requested",
+  "approved",
+  "rejected",
+]);
 const ACTION_VALUES = new Set([
   "submitted",
   "review_started",
@@ -30,6 +37,17 @@ const ACTION_VALUES = new Set([
   "approved",
   "draft",
 ]);
+
+/** 허용된 상태 전이 매트릭스 (현재 → 가능한 다음 상태들). */
+const ALLOWED_TRANSITIONS: Record<string, Set<string>> = {
+  submitted: new Set(["reviewing"]),
+  reviewing: new Set(["approved", "info_requested"]),
+  info_requested: new Set(["reviewing"]),
+  approved: new Set(["reviewing"]),
+  // draft / rejected 는 admin status route 흐름의 대상이 아님 (form PATCH 에서 처리).
+  draft: new Set([]),
+  rejected: new Set([]),
+};
 
 interface RouteContext {
   params: { id: string };
@@ -58,6 +76,7 @@ function determineAction(
 ): string | null {
   if (explicitAction && ACTION_VALUES.has(explicitAction)) return explicitAction;
   const hadPriorInfoRequest = history.some((h) => h.action === "info_requested");
+  if (nextStatus === "info_requested") return "info_requested";
   if (infoRequestCommentPrefix(comment)) return "info_requested";
   if (nextStatus === "approved") return "approved";
   if (nextStatus === "draft") return "draft";
@@ -65,6 +84,8 @@ function determineAction(
     return hadPriorInfoRequest ? "info_resubmitted" : "submitted";
   }
   if (nextStatus === "reviewing") {
+    // info_requested 에서 돌아오는 검토 재개 / approved 에서 돌아오는 검토 되돌리기
+    if (prevStatus === "info_requested" || prevStatus === "approved") return "review_resumed";
     return hadPriorInfoRequest ? "review_resumed" : "review_started";
   }
   return null;
@@ -92,6 +113,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   // 자기 결재 방지 — admin 이라도 본인 신청은 본인이 처리 X
   if (form.submitterId === auth.dbUser.id) {
     return audit.fail(403, "본인이 제출한 신청의 상태는 변경할 수 없습니다.");
+  }
+
+  // 허용된 전이만 허용. 같은 status 로의 self-loop 는 멱등성 가드(아래) 에서 별도 처리.
+  if (form.status !== body.status) {
+    const allowed = ALLOWED_TRANSITIONS[form.status] ?? new Set<string>();
+    if (!allowed.has(body.status)) {
+      return audit.fail(
+        409,
+        `허용되지 않은 상태 전이: ${form.status} → ${body.status}`,
+      );
+    }
   }
 
   const history: HistoryEntry[] = Array.isArray(form.approvalHistory)
