@@ -1,17 +1,30 @@
 /**
- * 관리자 메모 카드 — 거버넌스 요청 관리(관리자 상세) 화면에서 활동 카드 옆에 표시.
+ * 관리자 메모 카드 — 거버넌스 요청 관리(관리자 상세) 화면 우측에 표시.
  *
  * - 신청자에게 절대 노출되지 않음 (호출 라우트가 admin 권한 가드).
- * - 날짜별 1 entry. 오늘 / 과거 모두 contenteditable.
- * - 800ms debounce 자동 저장. content 가 비면 DELETE.
- * - 작성자/수정자 스냅샷은 백엔드가 PUT 마다 갱신.
+ * - 평소 읽기 전용, "수정" 버튼 클릭 시에만 편집 모드 진입 (자동 저장 X).
+ * - 편집 모드에서 "저장하기" 클릭 또는 Cmd/Ctrl+Enter → PUT.
+ * - 휴지통은 두 모드 모두 노출, confirm 후 DELETE.
+ * - 편집 중인 블록이 있으면 페이지 이탈 시 beforeunload confirm.
  */
 
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, Edit3, Lock, NotebookPen, Check } from "lucide-react";
-import { api, type AdminMemoEntry, type Me } from "@/lib/governance/api-client-full";
+import {
+  Calendar,
+  Check,
+  Edit3,
+  Lock,
+  NotebookPen,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import {
+  api,
+  type AdminMemoEntry,
+  type Me,
+} from "@/lib/governance/api-client-full";
 
 interface Props {
   formId: string;
@@ -41,19 +54,16 @@ function formatHHMM(iso: string): string {
   return `${hh}:${mm}`;
 }
 
-type SaveState = "idle" | "saving" | "saved";
-
 export function AdminMemoCard({ formId, me }: Props) {
   const [entries, setEntries] = useState<AdminMemoEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
-  // date → 입력 중인 content (편집 중 텍스트). 미사용 날짜는 키 없음.
+  // 편집 중인 날짜 집합. 진입 시 빈 Set.
+  const [editing, setEditing] = useState<Set<string>>(new Set());
+  // 편집 중 텍스트 buffer — 날짜별. 편집 진입 시 entry.content 로 초기화.
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [saving, setSaving] = useState<Set<string>>(new Set());
 
   const today = useMemo(todayKey, []);
-  const myEmail = me?.user.email.toLowerCase();
 
   const refetch = useCallback(async () => {
     try {
@@ -70,20 +80,16 @@ export function AdminMemoCard({ formId, me }: Props) {
     void refetch();
   }, [refetch]);
 
-  // 컴포넌트 unmount 시 타이머 정리.
+  // 편집 중인 블록이 있는 채로 페이지 이탈 시 confirm.
   useEffect(() => {
-    const timers = timersRef.current;
-    return () => {
-      Object.values(timers).forEach(clearTimeout);
+    if (editing.size === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
     };
-  }, []);
-
-  // 백엔드 entries + 오늘 빈 슬롯을 합쳐 렌더용 목록 생성.
-  const renderedDates = useMemo(() => {
-    const dates = new Set(entries.map((e) => e.date));
-    dates.add(today);
-    return Array.from(dates).sort();
-  }, [entries, today]);
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [editing.size]);
 
   const entryByDate = useMemo(() => {
     const m = new Map<string, AdminMemoEntry>();
@@ -91,39 +97,75 @@ export function AdminMemoCard({ formId, me }: Props) {
     return m;
   }, [entries]);
 
-  const scheduleSave = useCallback(
-    (date: string, content: string) => {
-      const existingTimer = timersRef.current[date];
-      if (existingTimer) clearTimeout(existingTimer);
+  const renderedDates = useMemo(() => {
+    const dates = new Set(entries.map((e) => e.date));
+    dates.add(today);
+    return Array.from(dates).sort();
+  }, [entries, today]);
 
-      setSaveState("saving");
-      timersRef.current[date] = setTimeout(async () => {
-        try {
-          if (content.trim().length === 0) {
-            await api.deleteAdminMemo(formId, date);
-          } else {
-            await api.upsertAdminMemo(formId, date, content);
-          }
-          setLastSavedAt(new Date().toISOString());
-          setSaveState("saved");
-          await refetch();
-        } catch (e) {
-          console.error("[AdminMemoCard] save failed", e);
-          setSaveState("idle");
-        }
-      }, 800);
-    },
-    [formId, refetch],
-  );
+  const startEdit = (date: string) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [date]: entryByDate.get(date)?.content ?? "",
+    }));
+    setEditing((prev) => {
+      const next = new Set(prev);
+      next.add(date);
+      return next;
+    });
+  };
 
-  const onInput = (date: string, e: React.FormEvent<HTMLDivElement>) => {
-    const text = e.currentTarget.innerText;
-    setDrafts((prev) => ({ ...prev, [date]: text }));
-    scheduleSave(date, text);
+  const cancelEdit = (date: string) => {
+    setEditing((prev) => {
+      const next = new Set(prev);
+      next.delete(date);
+      return next;
+    });
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[date];
+      return next;
+    });
+  };
+
+  const save = async (date: string) => {
+    const content = drafts[date] ?? "";
+    setSaving((prev) => new Set(prev).add(date));
+    try {
+      if (content.trim().length === 0) {
+        // 내용이 비어있는데 저장 누르면 해당 엔트리 제거.
+        await api.deleteAdminMemo(formId, date);
+      } else {
+        await api.upsertAdminMemo(formId, date, content);
+      }
+      await refetch();
+      cancelEdit(date);
+    } catch (e) {
+      console.error("[AdminMemoCard] save failed", e);
+      alert("저장에 실패했습니다.");
+    } finally {
+      setSaving((prev) => {
+        const next = new Set(prev);
+        next.delete(date);
+        return next;
+      });
+    }
+  };
+
+  const remove = async (date: string) => {
+    if (!window.confirm(`${formatDateKR(date)} 메모를 삭제하시겠습니까?`)) return;
+    try {
+      await api.deleteAdminMemo(formId, date);
+      cancelEdit(date);
+      await refetch();
+    } catch (e) {
+      console.error("[AdminMemoCard] delete failed", e);
+      alert("삭제에 실패했습니다.");
+    }
   };
 
   return (
-    <aside className="flex flex-col rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-5 py-4">
+    <aside className="flex flex-col rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-5 py-4 min-h-[540px]">
       {/* 헤더 */}
       <header className="mb-3 flex items-center gap-2">
         <NotebookPen size={14} className="text-[#92400e]" aria-hidden="true" />
@@ -133,101 +175,51 @@ export function AdminMemoCard({ formId, me }: Props) {
         </span>
       </header>
 
-      {/* 본문 — 날짜별 섹션 */}
-      <div className="flex-1 space-y-3.5 overflow-y-auto">
+      {/* 본문 */}
+      <div className="flex-1 space-y-4 overflow-y-auto">
         {loading ? (
           <p className="py-6 text-center text-[11px] text-[#b45309]">불러오는 중…</p>
         ) : (
           renderedDates.map((date) => {
             const entry = entryByDate.get(date);
             const isToday = date === today;
-            const draft = drafts[date];
-            const initial = entry?.content ?? "";
-            const isMine = entry
-              ? entry.lastUpdatedById === me?.user.id ||
-                (myEmail &&
-                  entry.lastUpdatedByName &&
-                  // 이메일 일치 못 잡을 경우의 보조 — 이름 표기만 사용.
-                  false)
-              : true;
+            const isEditing = editing.has(date);
+            const isSaving = saving.has(date);
+            const isMine = entry && entry.lastUpdatedById === me?.user.id;
             return (
-              <section key={date} className="space-y-1.5">
-                {/* 날짜 헤더 */}
-                <div className="flex items-center gap-2">
-                  <div className="h-px flex-1 bg-[#fde68a]" aria-hidden="true" />
-                  <span
-                    className={
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium " +
-                      (isToday
-                        ? "bg-[#fed7aa] text-[#9a3412]"
-                        : "bg-[#fef3c7] text-[#b45309]")
-                    }
-                  >
-                    <Calendar size={10} aria-hidden="true" />
-                    {formatDateKR(date)}
-                  </span>
-                  {isToday && (
-                    <span className="rounded-md bg-[#d97706] px-1.5 py-[1px] text-[9px] font-medium text-white">
-                      오늘
-                    </span>
-                  )}
-                  <div className="h-px flex-1 bg-[#fde68a]" aria-hidden="true" />
-                </div>
-
-                {/* 메모 블록 (contenteditable) */}
-                <div
-                  contentEditable
-                  suppressContentEditableWarning
-                  data-placeholder={
-                    isToday ? "오늘의 메모를 입력하세요..." : "메모 내용을 입력하세요..."
-                  }
-                  onInput={(e) => onInput(date, e)}
-                  className={
-                    "mx-1 min-h-[40px] whitespace-pre-wrap rounded-md px-3 py-2 text-[13px] leading-7 text-[#78350f] outline-none transition " +
-                    (isToday
-                      ? "border border-[#fcd34d] bg-white focus:border-[#d97706] focus:bg-[#fffef7]"
-                      : "border-l-2 border-[#fde68a] bg-[#fef3c799] focus:border-[#d97706] focus:bg-[#fffef7]") +
-                    " admin-memo-block"
-                  }
-                  // SSR/CSR mismatch 회피 — initial content 만 1회 주입.
-                  dangerouslySetInnerHTML={
-                    draft === undefined ? { __html: escapeHtml(initial) } : undefined
-                  }
-                />
-
-                {/* 작성자 도장 */}
-                {entry && (
-                  <div className="mx-1 flex items-center gap-1 text-[10px] text-[#b45309]">
-                    <Edit3 size={10} aria-hidden="true" />
-                    <span>
-                      {entry.lastUpdatedByName}
-                      {isMine ? " (나)" : ""} · {formatHHMM(entry.lastUpdatedAt)}
-                    </span>
-                  </div>
-                )}
-              </section>
+              <MemoDaySection
+                key={date}
+                date={date}
+                isToday={isToday}
+                entry={entry}
+                isEditing={isEditing}
+                isSaving={isSaving}
+                isMine={!!isMine}
+                draft={drafts[date]}
+                onDraftChange={(v) =>
+                  setDrafts((prev) => ({ ...prev, [date]: v }))
+                }
+                onEdit={() => startEdit(date)}
+                onSave={() => void save(date)}
+                onDelete={() => void remove(date)}
+              />
             );
           })
         )}
       </div>
 
-      {/* 푸터 */}
+      {/* 카드 푸터 */}
       <footer className="-mx-5 -mb-4 mt-3 flex items-center justify-between border-t border-[#fde68a] bg-[#fef3c7] px-5 py-2 text-[11px] text-[#b45309]">
         <span className="inline-flex items-center gap-1">
-          {saveState === "saving" ? (
+          {editing.size > 0 ? (
             <>
-              <span className="inline-block h-2 w-2 animate-spin rounded-full border border-[#b45309] border-t-transparent" />
-              저장 중...
-            </>
-          ) : saveState === "saved" ? (
-            <>
-              <Check size={11} className="text-emerald-700" aria-hidden="true" />
-              <span className="text-emerald-700">
-                저장됨 · {lastSavedAt ? formatHHMM(lastSavedAt) : "방금"}
-              </span>
+              <Edit3 size={11} aria-hidden="true" /> 편집 중
             </>
           ) : (
-            <span className="text-[#b45309]/70">자동 저장됩니다</span>
+            <>
+              <Check size={11} className="text-emerald-700" aria-hidden="true" />
+              <span className="text-emerald-700">저장됨</span>
+            </>
           )}
         </span>
         <span className="inline-flex items-center gap-1">
@@ -235,6 +227,167 @@ export function AdminMemoCard({ formId, me }: Props) {
         </span>
       </footer>
     </aside>
+  );
+}
+
+interface DayProps {
+  date: string;
+  isToday: boolean;
+  entry: AdminMemoEntry | undefined;
+  isEditing: boolean;
+  isSaving: boolean;
+  isMine: boolean;
+  draft: string | undefined;
+  onDraftChange: (v: string) => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+}
+
+function MemoDaySection({
+  date,
+  isToday,
+  entry,
+  isEditing,
+  isSaving,
+  isMine,
+  draft,
+  onDraftChange,
+  onEdit,
+  onSave,
+  onDelete,
+}: DayProps) {
+  const blockRef = useRef<HTMLDivElement>(null);
+
+  // 편집 모드 진입 시 자동 포커스 + 커서를 텍스트 끝으로.
+  useEffect(() => {
+    if (!isEditing) return;
+    const el = blockRef.current;
+    if (!el) return;
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    if (sel) {
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, [isEditing]);
+
+  const onInput = (e: React.FormEvent<HTMLDivElement>) => {
+    onDraftChange(e.currentTarget.innerText);
+  };
+
+  // Cmd/Ctrl + Enter → 저장. 일반 Enter 는 줄바꿈 유지.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      onSave();
+    }
+  };
+
+  const content = isEditing ? draft ?? "" : entry?.content ?? "";
+  const isEmpty = content.length === 0;
+
+  return (
+    <section className="space-y-1.5">
+      {/* 날짜 헤더 */}
+      <div className="flex items-center gap-2">
+        <div className="h-px flex-1 bg-[#fde68a]" aria-hidden="true" />
+        <span
+          className={
+            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium " +
+            (isToday
+              ? "bg-[#fed7aa] text-[#9a3412]"
+              : "bg-[#fef3c7] text-[#b45309]")
+          }
+        >
+          <Calendar size={10} aria-hidden="true" />
+          {formatDateKR(date)}
+        </span>
+        {isToday && (
+          <span className="rounded-md bg-[#d97706] px-1.5 py-[1px] text-[9px] font-medium text-white">
+            오늘
+          </span>
+        )}
+        <div className="h-px flex-1 bg-[#fde68a]" aria-hidden="true" />
+      </div>
+
+      {/* 메모 블록 */}
+      <div
+        ref={blockRef}
+        contentEditable={isEditing}
+        suppressContentEditableWarning
+        data-placeholder={
+          isEditing ? "오늘의 메모를 입력하세요..." : "메모 없음"
+        }
+        onInput={onInput}
+        onKeyDown={onKeyDown}
+        className={
+          "admin-memo-block mx-1 min-h-[50px] whitespace-pre-wrap break-words rounded-md px-3 py-2.5 text-[13px] leading-7 text-[#78350f] transition " +
+          (isEditing
+            ? "border border-[#d97706] bg-white outline-none focus:bg-[#fffef7]"
+            : "border border-transparent bg-white/50 cursor-default")
+        }
+        // entry.content 가 바뀔 때 (refetch 후) DOM 을 갱신.
+        // 편집 중에는 React 가 DOM 을 덮어쓰지 않도록 key 로 강제 remount.
+        key={
+          isEditing ? `edit-${date}` : `view-${date}-${entry?.revisionCount ?? 0}`
+        }
+        dangerouslySetInnerHTML={{
+          __html: isEmpty && !isEditing ? "" : escapeHtml(content),
+        }}
+      />
+
+      {/* 블록 푸터 */}
+      <div className="mx-1 mt-1.5 flex min-h-[26px] items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-[10px] text-[#b45309]">
+          {entry && (
+            <>
+              <Edit3 size={10} aria-hidden="true" />
+              <span>
+                {entry.lastUpdatedByName}
+                {isMine ? " (나)" : ""}
+                {entry.lastUpdatedAt ? ` · ${formatHHMM(entry.lastUpdatedAt)}` : ""}
+              </span>
+            </>
+          )}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          {isEditing ? (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1 rounded-md bg-[#d97706] px-3 py-1 text-[11px] font-medium text-white transition hover:bg-[#b45309] disabled:opacity-60"
+            >
+              <Check size={11} aria-hidden="true" />
+              {isSaving ? "저장 중…" : "저장하기"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-1 rounded-md border border-[#fcd34d] bg-transparent px-3 py-1 text-[11px] font-medium text-[#b45309] transition hover:bg-[#fef3c7]"
+            >
+              <Pencil size={11} aria-hidden="true" />
+              수정
+            </button>
+          )}
+          {entry && (
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={`${formatDateKR(date)} 메모 삭제`}
+              className="inline-flex items-center rounded-md border border-[#fecaca] bg-transparent px-2 py-1 text-[#dc2626] transition hover:bg-[#fef2f2]"
+            >
+              <Trash2 size={12} aria-hidden="true" />
+            </button>
+          )}
+        </span>
+      </div>
+    </section>
   );
 }
 
