@@ -461,30 +461,33 @@ export function FormBuilder({
         {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
         {progress && <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-700">{progress}</div>}
 
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            <Eye size={14} /> 미리보기
-          </button>
-          <button
-            type="button"
-            onClick={() => save(true)}
-            disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            임시 저장
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
-          >
-            <Save size={14} /> {submitting ? "제출 중..." : "제출"}
-          </button>
-        </div>
+        {/* 하단 액션 — embedded(카탈로그 미리보기) 일 때는 숨김. */}
+        {!embedded && (
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              <Eye size={14} /> 미리보기
+            </button>
+            <button
+              type="button"
+              onClick={() => save(true)}
+              disabled={submitting}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              임시 저장
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+            >
+              <Save size={14} /> {submitting ? "제출 중..." : "제출"}
+            </button>
+          </div>
+        )}
       </form>
 
       {/* 필수 항목 누락 알림 모달
@@ -1137,8 +1140,10 @@ function ServiceBlockCard({
 function BlockRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <tr className="border-b border-gray-100 last:border-b-0">
-      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-gray-700">{label}</td>
-      <td className="px-5 py-3">{children}</td>
+      <td className="w-32 bg-gray-50/40 px-5 py-3 align-top text-[13px] text-gray-700">
+        {label}
+      </td>
+      <td className="px-5 py-3 text-[13px]">{children}</td>
     </tr>
   );
 }
