@@ -12,7 +12,7 @@ import { Trash2 } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 
 interface Props {
-  formId: number;
+  formId: string | number;
   /** 삭제 성공 후 호출 — 목록 재조회용 */
   onDeleted: () => void;
   /** 다이얼로그에 표시할 식별자 (예: 프로젝트명 또는 REQ 번호) */

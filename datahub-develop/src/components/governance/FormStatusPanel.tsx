@@ -17,7 +17,7 @@ import { StatusBadge } from "./StatusBadge";
 import { WorkflowStepper } from "./WorkflowStepper";
 
 interface Props {
-  formId: number;
+  formId: string | number;
   status: FormStatus | string;
   history: ApprovalEntry[] | null;
   me: Me | null;

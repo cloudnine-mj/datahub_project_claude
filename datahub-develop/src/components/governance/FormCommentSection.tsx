@@ -17,7 +17,7 @@ import { api, type FormCommentItem, type Me } from "@/lib/governance/api-client-
 import { parseUtc } from "@/lib/governance/forms/utils-bridge";
 
 interface Props {
-  formId: number;
+  formId: string | number;
   me: Me | null;
 }
 

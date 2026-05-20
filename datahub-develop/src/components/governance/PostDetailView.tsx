@@ -11,7 +11,7 @@ import { MarkdownView } from "./MarkdownEditor";
 import { BOARD_LABELS, DOC_TYPE_STYLES, formatDate } from "@/lib/governance/forms/utils-bridge";
 import { boardSegment } from "./BoardListView";
 
-export function PostDetailView({ board, postId }: { board: BoardType; postId: number }) {
+export function PostDetailView({ board, postId }: { board: BoardType; postId: string | number }) {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -25,7 +25,7 @@ import { MarkdownView } from "./MarkdownEditor";
 import { DeletePostButton } from "./DeletePostButton";
 import { DOC_TYPE_STYLES, formatDate } from "@/lib/governance/forms/utils-bridge";
 
-export function PolicyDetailView({ postId }: { postId: number }) {
+export function PolicyDetailView({ postId }: { postId: string | number }) {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);

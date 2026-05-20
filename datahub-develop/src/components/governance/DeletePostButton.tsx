@@ -14,7 +14,7 @@ import { api, type BoardType } from "@/lib/governance/api-client-full";
 
 interface Props {
   board: BoardType;
-  postId: number;
+  postId: string | number;
   /** 삭제 후 이동할 경로 (예: "/governance/policy"). onDeleted 와 둘 중 하나는 지정. */
   redirectTo?: string;
   /** 삭제 후 부모가 목록 재조회 등 후속 처리. redirectTo 와 함께 쓰일 수도 있음. */
