@@ -86,6 +86,17 @@ export function FormStatusPanel({
         status: finalStatus as FormStatus,
         comment: finalComment || undefined,
       });
+      // 상태 변경에 코멘트를 함께 남기면 코멘트 카드(form messages) 에도 같은 본문을 기록.
+      // 진행 이력 토글(approval history) 와 코멘트 카드가 분리됐기 때문에, 사용자가 입력한
+      // 메시지가 두 곳에 모두 보이도록 메시지 한 건을 추가로 작성한다.
+      if (finalComment) {
+        try {
+          await api.createFormMessage(formId, finalComment);
+        } catch (msgErr) {
+          // 메시지 작성 실패는 status 변경 자체를 막지 않음 — 콘솔 로그만.
+          console.error("[FormStatusPanel] createFormMessage failed", msgErr);
+        }
+      }
       setTarget(null);
       setComment("");
       onChanged();

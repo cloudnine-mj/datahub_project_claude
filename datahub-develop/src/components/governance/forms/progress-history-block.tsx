@@ -65,6 +65,9 @@ interface Props {
   /** 코멘트 전용 모드 — 시스템 이벤트는 표시 안 함, 헤더 라벨을 '코멘트' 로,
    *  '시스템 이벤트 포함' 체크박스 숨김. 거버넌스 요청 관리(관리자 상세) 에서만 사용. */
   commentsOnly?: boolean;
+  /** 외부에서 강제 refetch 트리거 — 값이 바뀔 때마다 메시지 목록을 다시 조회.
+   *  FormStatusPanel 의 보완 요청 등 외부 액션이 메시지를 생성한 후 코멘트 카드 갱신용. */
+  refreshNonce?: number;
 }
 
 function isoToShort(iso: string): string {
@@ -125,6 +128,7 @@ export function ProgressHistoryBlock({
   applicantName = "신청자",
   formId,
   commentsOnly = false,
+  refreshNonce = 0,
 }: Props) {
   const [open, setOpen] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(true);
@@ -154,7 +158,7 @@ export function ProgressHistoryBlock({
 
   useEffect(() => {
     void refetchMessages();
-  }, [refetchMessages]);
+  }, [refetchMessages, refreshNonce]);
 
   // commentsOnly 모드면 시스템 이벤트 완전 제외, 그 외에는 includeSystem 토글에 따름.
   const items = useMemo(() => {

@@ -43,9 +43,13 @@ export default function Page({ params }: { params: { id: string } }) {
   // 미리보기 모달 — 전자결재 에디터에 붙여넣을 HTML 표를 생성해 보여줌
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
+  // 코멘트 카드(ProgressHistoryBlock) refetch 트리거 — 상태 변경 시 등 외부 액션이
+  // 메시지를 생성한 후 이 값을 bump 하면 코멘트 카드가 messages 를 다시 조회한다.
+  const [messageRefreshNonce, setMessageRefreshNonce] = useState(0);
 
   const refetch = useCallback(() => {
     api.getForm(params.id).then(setForm).catch((e) => setError((e as Error).message));
+    setMessageRefreshNonce((n) => n + 1);
   }, [params.id]);
 
   async function submitDraft() {
@@ -266,6 +270,7 @@ export default function Page({ params }: { params: { id: string } }) {
               currentUserRole={chatRole}
               applicantName={form.submitter_name}
               commentsOnly={useCommentsOnly}
+              refreshNonce={messageRefreshNonce}
             />
           </div>
         );
