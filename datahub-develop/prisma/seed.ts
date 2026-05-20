@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -507,8 +507,8 @@ async function main() {
           submitterDepartment: s.department,
           status: s.status,
           submittedAt,
-          approvalHistory: history,
-          payload: s.payload,
+          approvalHistory: history as unknown as Prisma.InputJsonValue,
+          payload: s.payload as unknown as Prisma.InputJsonValue,
         },
       });
     }
