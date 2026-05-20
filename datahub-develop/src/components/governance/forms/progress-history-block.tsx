@@ -125,7 +125,7 @@ export function ProgressHistoryBlock({
   formId,
   showSharedBadge = false,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(true);
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const [draftText, setDraftText] = useState("");
