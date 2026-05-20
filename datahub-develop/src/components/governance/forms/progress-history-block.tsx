@@ -131,7 +131,6 @@ export function ProgressHistoryBlock({
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const [draftText, setDraftText] = useState("");
   const [draftFiles, setDraftFiles] = useState<File[]>([]);
-  const [draftTag, setDraftTag] = useState<"검토 메모" | "보완 요청" | null>(null);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -183,8 +182,7 @@ export function ProgressHistoryBlock({
   const canSend = !sending && (draftText.trim().length > 0 || draftFiles.length > 0);
   const onSend = async () => {
     if (!canSend) return;
-    const raw = draftText.trim();
-    const text = draftTag ? `[${draftTag}] ${raw}`.trim() : raw;
+    const text = draftText.trim();
     const files = draftFiles;
 
     // formId 없으면 로컬 state 만 — 데모/미저장 신청용 fallback.
@@ -203,7 +201,6 @@ export function ProgressHistoryBlock({
       ]);
       setDraftText("");
       setDraftFiles([]);
-      setDraftTag(null);
       return;
     }
 
@@ -216,7 +213,6 @@ export function ProgressHistoryBlock({
       }
       setDraftText("");
       setDraftFiles([]);
-      setDraftTag(null);
       await refetchMessages();
     } catch (e) {
       console.error("[ProgressHistoryBlock] createFormMessage failed", e);
@@ -318,31 +314,6 @@ export function ProgressHistoryBlock({
           {canPostMessage && (
             <div className="mt-4 border-t border-gray-200 pt-3.5 dark:border-gray-800">
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/40">
-                {/* 태그 칩 — 관리자 시점에서만 노출 (검토 메모 / 보완 요청 분류) */}
-                {(currentUserRole === "assignee" || currentUserRole === "admin") && (
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <span className="text-[10px] text-gray-400">태그</span>
-                    {(["검토 메모", "보완 요청"] as const).map((t) => {
-                      const active = draftTag === t;
-                      return (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => setDraftTag(active ? null : t)}
-                          className={
-                            "rounded-md border px-2 py-1 text-[11px] transition " +
-                            (active
-                              ? "border-blue-600 bg-blue-50 font-medium text-blue-700"
-                              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50")
-                          }
-                        >
-                          {t}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
                 <textarea
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
