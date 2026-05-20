@@ -397,15 +397,11 @@ function InlineHistoryRow({
 }) {
   const style = ACTION_STYLE[item.action] ?? DEFAULT_STYLE;
   const Icon = style.icon;
-  // 보완 요청 detail — [보완 요청] prefix 제거 후 첫 줄만 표시.
-  const detail =
-    item.action === "보완 요청" && item.comment
-      ? item.comment.replace(/^\s*\[보완\s*요청\]\s*/, "").split("\n")[0]
-      : null;
+  // 진행 이력은 시스템 액션 로그만 표시 — 메시지/코멘트 본문은 코멘트 카드에서 다룸.
   return (
     <li
       className={
-        "relative flex items-start gap-2.5 rounded-md px-2 py-2 " +
+        "relative flex items-center gap-2.5 rounded-md px-3 py-2 " +
         (style.rowBg ?? "")
       }
     >
@@ -413,7 +409,7 @@ function InlineHistoryRow({
       {!isLast && (
         <span
           aria-hidden="true"
-          className="absolute left-[19px] top-[34px] bottom-[-4px] w-px bg-gray-200"
+          className="absolute left-[24px] top-[34px] bottom-[-4px] w-px bg-gray-200"
         />
       )}
       <span
@@ -424,31 +420,24 @@ function InlineHistoryRow({
       >
         <Icon size={11} aria-hidden="true" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-center gap-1.5 text-[12px] text-gray-800">
-          <span>
-            {item.actor && (
-              <span className="font-medium text-gray-900">{item.actor}</span>
-            )}
-            {item.actor ? "님이 " : ""}
-            {style.text || item.action}
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px] text-gray-800">
+        <span className="whitespace-nowrap">
+          {item.actor && (
+            <span className="font-medium text-gray-900">{item.actor}</span>
+          )}
+          {item.actor ? "님이 " : ""}
+          {style.text || item.action}
+        </span>
+        {style.pillLabel && (
+          <span
+            className={
+              "rounded-md px-1.5 py-0.5 text-[10px] font-medium " + (style.pillCls ?? "")
+            }
+          >
+            {style.pillLabel}
           </span>
-          {style.pillLabel && (
-            <span
-              className={
-                "rounded-md px-1.5 py-0.5 text-[10px] font-medium " + (style.pillCls ?? "")
-              }
-            >
-              {style.pillLabel}
-            </span>
-          )}
-        </p>
-        <p className="text-[11px] text-gray-400">
-          {item.timestamp}
-          {detail && (
-            <span className="text-gray-500"> · {detail}</span>
-          )}
-        </p>
+        )}
+        <span className="text-[11px] text-gray-400">{item.timestamp}</span>
       </div>
     </li>
   );
