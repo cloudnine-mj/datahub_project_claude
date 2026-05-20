@@ -312,9 +312,9 @@ export function FormBuilder({
             return (
               <section key={`bare-${sectionIdx}`}>
                 {section.title && (
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="block h-5 w-1 rounded-sm bg-brand" />
-                    <h2 className="text-base font-bold">
+                  <div className="mb-3 flex items-center gap-1.5">
+                    <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+                    <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
                       {section.title}
                       {!section.optional && <span className="ml-1 text-brand">*</span>}
                     </h2>
