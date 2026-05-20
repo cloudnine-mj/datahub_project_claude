@@ -77,4 +77,12 @@
   input[type="date"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
   }
+
+  /* 관리자 메모 블록 — contenteditable 빈 상태일 때 placeholder 노출. */
+  .admin-memo-block:empty::before {
+    content: attr(data-placeholder);
+    color: #b45309;
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }

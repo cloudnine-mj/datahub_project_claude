@@ -62,6 +62,20 @@ export interface Me {
   };
 }
 
+export interface AdminMemoEntry {
+  id: string;
+  formId: string;
+  date: string; // YYYY-MM-DD
+  content: string;
+  createdById: string;
+  createdByName: string;
+  createdAt: string;
+  lastUpdatedById: string;
+  lastUpdatedByName: string;
+  lastUpdatedAt: string;
+  revisionCount: number;
+}
+
 export interface ApprovalEntry {
   status: FormStatus;
   changed_by: string;
@@ -486,6 +500,26 @@ export const api = {
         unknown
       >,
     ),
+
+  // 관리자 메모 (admin-only) ─────────────────────────────────
+  listAdminMemo: async (formId: string) => {
+    const r = (await request<{ entries?: AdminMemoEntry[] }>(
+      `/governance/forms/${formId}/memo`,
+    )) ?? { entries: [] };
+    return r.entries ?? [];
+  },
+  upsertAdminMemo: async (formId: string, date: string, content: string) => {
+    return await request<AdminMemoEntry>(
+      `/governance/forms/${formId}/memo/${date}`,
+      { method: "PUT", body: JSON.stringify({ content }) },
+    );
+  },
+  deleteAdminMemo: async (formId: string, date: string) => {
+    await request<void>(
+      `/governance/forms/${formId}/memo/${date}`,
+      { method: "DELETE" },
+    );
+  },
 
   // Image upload (markdown 본문 삽입용) — placeholder
   uploadImage: (_file: File) => {

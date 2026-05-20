@@ -17,6 +17,7 @@ import { FormPreviewModal } from "@/components/governance/FormPreviewModal";
 import { copyPreviewToClipboard, type PreviewData } from "@/lib/governance/forms/preview";
 import { findFirstEmptyRequired } from "@/lib/governance/forms/validation";
 import { ProgressHistoryBlock } from "@/components/governance/forms/progress-history-block";
+import { AdminMemoCard } from "@/components/governance/AdminMemoCard";
 import { getChatRole } from "@/lib/governance/forms/get-chat-role";
 import { approvalHistoryToStatusItems } from "@/lib/governance/forms/history-adapter";
 
@@ -226,23 +227,38 @@ export default function Page({ params }: { params: { id: string } }) {
 
       {/* 진행 이력 + 사용자 메시지 — 시스템 이벤트 토글 / composer 포함.
           chatRole 자동 판정: 신청자 본인 / 담당자(김은솔) / 어드민 → composer 노출.
-          observer 는 composer 미노출 (목록 진입 + 본인 신청 아닌 일반 사용자). */}
+          observer 는 composer 미노출 (목록 진입 + 본인 신청 아닌 일반 사용자).
+
+          from=admin 으로 진입한 관리자에게는 우측에 관리자 메모 카드를 함께 2열 그리드로 렌더.
+          그 외 진입 경로(my / list / 기본 / 신청자 본인) 는 기존과 동일하게 활동 카드만 1열. */}
       {(() => {
         const chatRole = getChatRole(form, me);
         if (chatRole === "observer") return null;
+        const showAdminMemo =
+          from === "admin" &&
+          me?.user.role === "admin" &&
+          me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
+        const activity = (
+          <ProgressHistoryBlock
+            formId={form.id}
+            history={approvalHistoryToStatusItems(
+              form.approval_history,
+              form.submitter_name,
+            )}
+            canPostMessage
+            currentUserName={me?.user.name ?? "나"}
+            currentUserRole={chatRole}
+            applicantName={form.submitter_name}
+            showSharedBadge={showAdminMemo}
+          />
+        );
+        if (!showAdminMemo) {
+          return <div className="mt-4">{activity}</div>;
+        }
         return (
-          <div className="mt-4">
-            <ProgressHistoryBlock
-              formId={form.id}
-              history={approvalHistoryToStatusItems(
-                form.approval_history,
-                form.submitter_name,
-              )}
-              canPostMessage
-              currentUserName={me?.user.name ?? "나"}
-              currentUserRole={chatRole}
-              applicantName={form.submitter_name}
-            />
+          <div className="mt-4 grid items-stretch gap-4 lg:grid-cols-2">
+            {activity}
+            <AdminMemoCard formId={form.id} me={me} />
           </div>
         );
       })()}

@@ -61,6 +61,9 @@ interface Props {
   applicantName?: string;
   /** 백엔드 신청 id (cuid). 주어지면 메시지를 API 로 조회·전송. 없으면 로컬 state 만 사용 (데모). */
   formId?: string;
+  /** 활동 헤더에 "신청자와 공유" 배지 노출 — 관리자 메모 카드와의 시각적 대비를 위해
+   *  관리자 상세 화면에서만 true. 기본 false. */
+  showSharedBadge?: boolean;
 }
 
 function isoToShort(iso: string): string {
@@ -120,6 +123,7 @@ export function ProgressHistoryBlock({
   currentUserRole = "applicant",
   applicantName = "신청자",
   formId,
+  showSharedBadge = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [includeSystem, setIncludeSystem] = useState(true);
@@ -249,6 +253,14 @@ export function ProgressHistoryBlock({
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {items.length}건
           </span>
+          {showSharedBadge && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700"
+              title="이 영역의 메시지는 신청자에게도 보입니다."
+            >
+              👥 신청자와 공유
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
