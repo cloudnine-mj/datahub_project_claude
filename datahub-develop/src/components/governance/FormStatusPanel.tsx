@@ -134,53 +134,7 @@ export function FormStatusPanel({ formId, status, history, me, submitterEmail, o
       )}
     </section>
 
-    {/* 진행 이력 — 별도 카드. 진행 상태 카드와 분리되어 nesting/border 충돌 없이 깔끔. */}
-    {history && history.length > 0 && (
-      <section className="mt-4 rounded-lg border border-gray-200 bg-white">
-        <button
-          type="button"
-          onClick={() => setHistoryOpen((v) => !v)}
-          aria-expanded={historyOpen}
-          className={
-            "flex w-full items-center gap-2 px-5 py-3 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 " +
-            (historyOpen ? "border-b border-gray-100" : "")
-          }
-        >
-          <ChevronDown
-            size={16}
-            className={"shrink-0 text-gray-500 transition " + (historyOpen ? "" : "-rotate-90")}
-          />
-          <span>진행 이력</span>
-          <span className="text-xs font-semibold text-gray-400">{history.length}건</span>
-        </button>
-
-        {historyOpen && (
-          <ol className="space-y-3 border-l-2 border-gray-100 px-6 py-4 ml-5 pl-5">
-            {history.map((h, i) => (
-              <li key={i} className="relative">
-                <span
-                  className={
-                    "absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white " +
-                    dotColor(h.status)
-                  }
-                />
-                <div className="flex flex-wrap items-baseline gap-2 text-sm">
-                  <StatusBadge status={h.status} />
-                  <span className="font-medium text-gray-700">{h.changed_by}</span>
-                  <span className="text-xs text-gray-400">{formatTimeline(h.changed_at)}</span>
-                </div>
-                {h.comment && (
-                  <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-600">
-                    <MessageSquare size={12} className="mt-0.5 shrink-0 text-gray-400" />
-                    <span>{h.comment}</span>
-                  </p>
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-    )}
+    {/* 진행 이력 섹션은 페이지 하단 ProgressHistoryBlock 으로 통합 — 여기선 진행 상태 카드만. */}
     </>
   );
 }
