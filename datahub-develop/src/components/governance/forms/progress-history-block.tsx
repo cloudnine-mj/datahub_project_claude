@@ -36,11 +36,17 @@ import type { FormMessageItem } from "@/lib/governance/forms/types";
 
 interface UserMessage {
   id: string;
+  /** 백엔드 message row id — 수정/삭제 API 호출에 사용. 로컬-only 메시지는 undefined. */
+  serverId?: string;
   senderName: string;
+  /** 작성자 이메일 — 본인 메시지 여부 판정에 사용. */
+  senderEmail?: string;
   senderRole: SenderRoleForChat;
   replyTarget: ReplyTargetUser;
   /** 'M/d HH:mm' short form 또는 ISO. */
   timestamp: string;
+  /** 마지막 수정 시각 — 표시: '(수정됨)'. null/undefined 면 미수정. */
+  editedAt?: string | null;
   text: string;
   attachments: {
     name: string;
@@ -68,6 +74,8 @@ interface Props {
   /** 외부에서 강제 refetch 트리거 — 값이 바뀔 때마다 메시지 목록을 다시 조회.
    *  FormStatusPanel 의 보완 요청 등 외부 액션이 메시지를 생성한 후 코멘트 카드 갱신용. */
   refreshNonce?: number;
+  /** 현재 사용자 이메일 — 본인 코멘트 여부 판정 (수정/삭제 권한). */
+  currentUserEmail?: string;
 }
 
 function isoToShort(iso: string): string {
@@ -79,10 +87,13 @@ function isoToShort(iso: string): string {
 function backendMessageToUI(m: FormMessageItem): UserMessage {
   return {
     id: `srv-${m.id}`,
+    serverId: m.id,
     senderName: m.senderName,
+    senderEmail: m.senderEmail,
     senderRole: m.senderRole,
     replyTarget: { name: m.recipientName, role: m.recipientRole },
     timestamp: isoToShort(m.createdAt),
+    editedAt: m.editedAt ?? null,
     text: m.body,
     attachments: m.attachments.map((a) => ({
       name: a.filename,
@@ -132,6 +143,7 @@ export function ProgressHistoryBlock({
   formId,
   commentsOnly = false,
   refreshNonce = 0,
+  currentUserEmail,
 }: Props) {
   const [open, setOpen] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(true);
@@ -230,6 +242,54 @@ export function ProgressHistoryBlock({
     }
   };
 
+  // 본인 코멘트 수정 — 백엔드 PATCH 호출 후 messages 재조회.
+  // formId 가 없으면 로컬 state 만 갱신 (데모).
+  const onEditMessage = async (uiId: string, newText: string) => {
+    const target = messages.find((m) => m.id === uiId);
+    if (!target) return;
+    const trimmed = newText.trim();
+    if (trimmed.length === 0) {
+      setToast("본문이 비어 있습니다.");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    if (!formId || !target.serverId) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === uiId ? { ...m, text: trimmed, editedAt: new Date().toISOString() } : m,
+        ),
+      );
+      return;
+    }
+    try {
+      await governanceApi.updateFormMessage(formId, target.serverId, trimmed);
+      await refetchMessages();
+    } catch (e) {
+      console.error("[ProgressHistoryBlock] updateFormMessage failed", e);
+      setToast("코멘트 수정에 실패했습니다.");
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  // 본인 코멘트 삭제 — confirm 후 백엔드 DELETE.
+  const onDeleteMessage = async (uiId: string) => {
+    if (!window.confirm("이 코멘트를 삭제하시겠습니까?")) return;
+    const target = messages.find((m) => m.id === uiId);
+    if (!target) return;
+    if (!formId || !target.serverId) {
+      setMessages((prev) => prev.filter((m) => m.id !== uiId));
+      return;
+    }
+    try {
+      await governanceApi.deleteFormMessage(formId, target.serverId);
+      await refetchMessages();
+    } catch (e) {
+      console.error("[ProgressHistoryBlock] deleteFormMessage failed", e);
+      setToast("코멘트 삭제에 실패했습니다.");
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const list = Array.from(e.target.files ?? []);
     const oversize = list.find((f) => f.size > 50 * 1024 * 1024);
@@ -312,7 +372,18 @@ export function ProgressHistoryBlock({
                 it.kind === "system" ? (
                   <SystemEventRow key={it.id} item={it.item} />
                 ) : (
-                  <UserMessageRow key={it.id} msg={it.msg} />
+                  <UserMessageRow
+                    key={it.id}
+                    msg={it.msg}
+                    canEdit={
+                      // 본인 코멘트만 수정/삭제 가능 — senderEmail 우선, 없으면 senderName 폴백.
+                      currentUserEmail
+                        ? it.msg.senderEmail?.toLowerCase() === currentUserEmail.toLowerCase()
+                        : it.msg.senderName === currentUserName
+                    }
+                    onEdit={(text) => void onEditMessage(it.id, text)}
+                    onDelete={() => void onDeleteMessage(it.id)}
+                  />
                 ),
               )
             )}
@@ -455,7 +526,34 @@ function SystemEventRow({ item }: { item: StatusHistoryItem }) {
   );
 }
 
-function UserMessageRow({ msg }: { msg: UserMessage }) {
+interface UserMessageRowProps {
+  msg: UserMessage;
+  canEdit?: boolean;
+  onEdit?: (text: string) => void;
+  onDelete?: () => void;
+}
+
+function UserMessageRow({ msg, canEdit = false, onEdit, onDelete }: UserMessageRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(msg.text);
+
+  const startEdit = () => {
+    setDraft(msg.text);
+    setEditing(true);
+  };
+  const cancelEdit = () => {
+    setDraft(msg.text);
+    setEditing(false);
+  };
+  const submitEdit = () => {
+    if (draft.trim() === msg.text.trim()) {
+      setEditing(false);
+      return;
+    }
+    onEdit?.(draft);
+    setEditing(false);
+  };
+
   const tone =
     msg.senderRole === "applicant"
       ? {
@@ -480,7 +578,7 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
         };
 
   return (
-    <div className="relative z-[1] flex gap-3">
+    <div className="group relative z-[1] flex gap-3">
       <div
         className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-medium ring-2 ring-white dark:ring-gray-900 ${tone.avatar}`}
       >
@@ -506,7 +604,73 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
           </span>
           <span className="text-[10px] text-gray-400">·</span>
           <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
+          {msg.editedAt && (
+            <span
+              className="text-[10px] text-gray-400 italic"
+              title={`수정: ${new Date(msg.editedAt).toLocaleString("ko-KR")}`}
+            >
+              (수정됨)
+            </span>
+          )}
+          {/* 본인 코멘트 — 수정/삭제 액션. 편집 중에는 숨김. */}
+          {canEdit && !editing && (
+            <span className="ml-auto inline-flex items-center gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+              <button
+                type="button"
+                onClick={startEdit}
+                aria-label="코멘트 수정"
+                className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              >
+                <Pencil size={10} aria-hidden="true" /> 수정
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label="코멘트 삭제"
+                className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <X size={10} aria-hidden="true" /> 삭제
+              </button>
+            </span>
+          )}
         </div>
+        {editing ? (
+          <div className="rounded-lg border border-blue-300 bg-white px-3 py-2 dark:bg-gray-900">
+            <textarea
+              value={draft}
+              autoFocus
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  submitEdit();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelEdit();
+                }
+              }}
+              rows={2}
+              className="block w-full resize-y border-0 bg-transparent text-[12px] text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-gray-100"
+            />
+            <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-gray-100 pt-2 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={submitEdit}
+                disabled={draft.trim().length === 0}
+                className="rounded-md bg-blue-500 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="rounded-lg bg-gray-50 px-3 py-2 text-[12px] leading-relaxed text-gray-800 dark:bg-gray-800/40 dark:text-gray-100">
           {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
           {msg.attachments.length > 0 && (
@@ -538,6 +702,7 @@ function UserMessageRow({ msg }: { msg: UserMessage }) {
             </ul>
           )}
         </div>
+        )}
       </div>
     </div>
   );

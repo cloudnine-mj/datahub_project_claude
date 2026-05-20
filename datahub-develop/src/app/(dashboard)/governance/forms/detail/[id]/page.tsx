@@ -267,6 +267,7 @@ export default function Page({ params }: { params: { id: string } }) {
               )}
               canPostMessage
               currentUserName={me?.user.name ?? "나"}
+              currentUserEmail={me?.user.email}
               currentUserRole={chatRole}
               applicantName={form.submitter_name}
               commentsOnly={useCommentsOnly}

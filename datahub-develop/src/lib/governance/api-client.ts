@@ -82,6 +82,16 @@ export const governanceApi = {
       method: "POST",
       body: JSON.stringify({ body }),
     }),
+  updateFormMessage: (formId: string, messageId: string, body: string) =>
+    request<FormMessageItem>(
+      `/api/governance/forms/${formId}/messages/${messageId}`,
+      { method: "PATCH", body: JSON.stringify({ body }) },
+    ),
+  deleteFormMessage: (formId: string, messageId: string) =>
+    request<void>(
+      `/api/governance/forms/${formId}/messages/${messageId}`,
+      { method: "DELETE" },
+    ),
 
   // Posts
   listPosts: (board: "policy" | "process", params: { mine?: boolean } = {}) => {

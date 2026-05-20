@@ -80,5 +80,7 @@ export interface FormMessageItem {
   recipientRole: "담당자" | "신청자";
   body: string;
   createdAt: string;
+  /** 마지막 수정 시각 — 미수정이면 null. */
+  editedAt?: string | null;
   attachments: FormMessageAttachmentItem[];
 }

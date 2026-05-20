@@ -135,6 +135,7 @@ function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<stri
     recipientRole: m.recipientRole as FormMessageItem["recipientRole"],
     body: m.body as string,
     createdAt: m.createdAt as string,
+    editedAt: (m.editedAt as string | null | undefined) ?? null,
     attachments: attachments as unknown as FormMessageItem["attachments"],
     // snake_case
     form_id: m.formId,
@@ -145,6 +146,7 @@ function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<stri
     recipient_name: m.recipientName,
     recipient_role: m.recipientRole,
     created_at: m.createdAt,
+    edited_at: m.editedAt ?? null,
   };
 }
 
@@ -412,6 +414,26 @@ export const api = {
       { method: "POST", body: JSON.stringify({ body }) },
     )) as Record<string, unknown>;
     return adaptMessage(r) as unknown as FormMessageItem;
+  },
+  updateFormMessage: async (
+    formId: string | number,
+    messageId: string | number,
+    body: string,
+  ) => {
+    const r = (await request<Record<string, unknown>>(
+      `/governance/forms/${formId}/messages/${messageId}`,
+      { method: "PATCH", body: JSON.stringify({ body }) },
+    )) as Record<string, unknown>;
+    return adaptMessage(r) as unknown as FormMessageItem;
+  },
+  deleteFormMessage: async (
+    formId: string | number,
+    messageId: string | number,
+  ) => {
+    await request<void>(
+      `/governance/forms/${formId}/messages/${messageId}`,
+      { method: "DELETE" },
+    );
   },
   uploadFormMessageAttachment: (_formId: string | number, _mid: string | number, _file: File) => {
     console.warn("[governance] uploadFormMessageAttachment Phase 5 미구현");
