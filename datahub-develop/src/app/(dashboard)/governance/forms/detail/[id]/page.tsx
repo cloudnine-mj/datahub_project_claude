@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckSquare, ChevronDown, ChevronUp, Database, Eye, Pencil, Send, ShieldCheck, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckSquare, ChevronDown, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { DeleteFormButton } from "@/components/governance/DeleteFormButton";
@@ -102,17 +102,6 @@ export default function Page({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      {/* admin 이 '거버넌스 요청 관리' 큐에서 진입했을 때만 표시되는 컨텍스트 배너.
-          일반 요청 목록(from=list) 진입은 read-only 뷰라 배너 노출 X. */}
-      {from === "admin" &&
-        me?.user.role === "admin" &&
-        me.user.email.toLowerCase() !== form.submitter_email.toLowerCase() && (
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
-            <ShieldCheck size={12} aria-hidden="true" />
-            관리자 페이지 — 타인의 신청 검토
-          </div>
-        )}
-
       <div className="mb-4 flex items-start justify-between gap-3">
         <Breadcrumb
           items={[
