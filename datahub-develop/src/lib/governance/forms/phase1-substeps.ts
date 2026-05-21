@@ -3,9 +3,10 @@
 //
 // service:    1 phase (1.기획 only). 1단계 substep 2 개 — 계획 수립 / 신청서 작성.
 //             사내 정책상 용역 제작 신청자 화면은 계획·작성까지만 노출.
-// purchase:   2 phase (1.기획 · 2.적재). 1단계 substep 6 개 —
+// purchase:   1 phase (1.기획 only). 1단계 substep 2 개 (service 와 동일) —
+//             사내 정책상 데이터 구매 신청자 화면도 계획·작성까지만 노출.
+// subscribe:  1 phase (1.기획 only). 1단계 substep 6 개 —
 //             계획 수립 / 신청서 작성 / 전자결재 품의 / 결재 승인 확인 / 담당자 논의·확정 / 계약 체결.
-// subscribe:  1 phase (1.기획 only). 1단계 substep 6 개 (purchase 와 동일) —
 //             외부 업체 피드 수신이라 '적재' 별도 단계 없음.
 //
 // path 값은 모두 기존과 동일 — '계약 체결' 은 기존 /intake/build, 적재 substep 들은
@@ -45,12 +46,14 @@ interface SubstepDef {
   path: string;
 }
 
-const SUBSTEP_DEFS_SERVICE: SubstepDef[] = [
+// service / purchase 공용 — 계획 수립 → 신청서 작성 2 substep.
+const SUBSTEP_DEFS_SHORT: SubstepDef[] = [
   { id: "planning", label: "계획 수립", path: "/governance/forms/planning" },
   { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
 ];
 
-const SUBSTEP_DEFS_PURCHASE_SUBSCRIBE: SubstepDef[] = [
+// subscribe 전용 — 외부 업체 계약까지 가는 6 substep 흐름.
+const SUBSTEP_DEFS_SUBSCRIBE: SubstepDef[] = [
   { id: "planning", label: "계획 수립", path: "/governance/forms/planning" },
   { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
   { id: "approval", label: "전자결재 품의", path: "/governance/forms/approval" },
@@ -64,36 +67,17 @@ const SUBSTEP_DEFS_PURCHASE_SUBSCRIBE: SubstepDef[] = [
     label: "담당자 논의·확정",
     path: "/governance/forms/discussion",
   },
-  // 계약 체결 — 구매·구독 한정으로 1단계 마지막에 위치. 본문은 기존 build 페이지 재사용.
+  // 계약 체결 — 구독 한정으로 1단계 마지막에 위치. 본문은 기존 build 페이지 재사용.
   { id: "contract", label: "계약 체결", path: "/governance/forms/intake/build" },
 ];
 
-function hasContractSubstep(type: PlanningType | undefined): boolean {
-  // 계약 체결 substep 은 외부 업체와 계약하는 구매·구독 유형에만.
-  return type === "purchase" || type === "subscribe";
-}
-
 function defsFor(type: PlanningType | undefined): SubstepDef[] {
-  return hasContractSubstep(type) ? SUBSTEP_DEFS_PURCHASE_SUBSCRIBE : SUBSTEP_DEFS_SERVICE;
+  return type === "subscribe" ? SUBSTEP_DEFS_SUBSCRIBE : SUBSTEP_DEFS_SHORT;
 }
 
-/** 유형별 phase pill 배열.
- *  - service:   1.기획 only (사내 정책상 구축·적재 단계 미사용)
- *  - purchase:  1.기획 / 2.적재 (2 phase, 구축 단계 없음)
- *  - subscribe: 1.기획 only (외부 피드 수신이라 적재 단계 없음) */
-export function getPhase1Phases(type?: PlanningType): Phase[] {
-  if (type === "purchase") {
-    return [
-      { id: "plan", label: "1. 기획", status: "current" },
-      {
-        id: "load",
-        label: "2. 적재",
-        status: "pending",
-        path: "/governance/forms/intake/load",
-      },
-    ];
-  }
-  // service / subscribe — 단일 phase.
+/** 유형별 phase pill 배열 — 세 유형 모두 1.기획 단일 phase.
+ *  ProcessStepper 가 phases.length<=1 일 때 상단 행 자체를 숨김. */
+export function getPhase1Phases(_type?: PlanningType): Phase[] {
   return [{ id: "plan", label: "1. 기획", status: "current" }];
 }
 
@@ -126,10 +110,8 @@ export function prevPhase1Substep(
   return defs[idx - 1];
 }
 
-/** 다음 substep 정보 — 마지막 substep 이면 phase 2 진입 정보 반환.
- *  - service:   마지막(신청서 작성) 다음은 신청 완료 안내(/forms/my) 로 종료.
- *  - purchase:  마지막은 contract(계약 체결) 다음 곧장 /intake/load (2단계 적재).
- *  - subscribe: 마지막은 contract — 적재 단계가 없으므로 신청 완료 안내(/forms/my) 로 종료. */
+/** 다음 substep 정보 — 마지막 substep 이면 신청 완료 안내(/forms/my) 로 종료.
+ *  세 유형 모두 후속 phase 가 없으므로 동일 종료 패턴. */
 export function nextPhase1Substep(
   currentId: Phase1SubstepId,
   type?: PlanningType,
@@ -137,10 +119,6 @@ export function nextPhase1Substep(
   const defs = defsFor(type);
   const idx = defs.findIndex((s) => s.id === currentId);
   if (idx < 0 || idx >= defs.length - 1) {
-    if (type === "purchase") {
-      return { label: "2단계로 진행", path: "/governance/forms/intake/load" };
-    }
-    // service / subscribe — 후속 phase 없으므로 신청 완료로 마무리.
     return { label: "신청 완료", path: "/governance/forms/my" };
   }
   const next = defs[idx + 1];
