@@ -1,10 +1,9 @@
 // 신청서 상태별 안내 배너.
-//   draft: HelpBanner 재사용 (brand red)
+//   draft: 안내 미노출 (draft 단계 가이드 문구는 사용자 요청으로 제거)
 //   submitted / reviewing: warning (amber) — 수정 불가 안내
 //   approved: 표시 안 함
 
 import { Lock } from "lucide-react";
-import { HelpBanner } from "@/components/governance/HelpBanner";
 import type { ApplicationStatus } from "@/lib/governance/forms/application-config";
 
 interface Props {
@@ -12,13 +11,7 @@ interface Props {
 }
 
 export function StatusBanner({ status }: Props) {
-  if (status === "approved") return null;
-
-  if (status === "draft") {
-    return (
-      <HelpBanner message="신청서는 전자결재 및 업무 소통용으로 사용됩니다. Datahub에서 작성합니다." />
-    );
-  }
+  if (status === "approved" || status === "draft") return null;
 
   return (
     <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
