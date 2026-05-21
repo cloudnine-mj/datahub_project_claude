@@ -1,9 +1,8 @@
 // 작성 모드의 '제출 전 검토' 모달 — draft 사용자가 신청서 제출 직전 입력 내용을 표로 최종 확인.
 //   복사 기능 없음 (양식이 화면에 그대로 있어 복사가 의미 없음).
 //
-// 유형별 행 구성:
-//   - service:           스키마의 모든 데이터 필드 자동 노출 (checkbox 액션성 항목 제외)
-//   - purchase/subscribe: 기존 4–5 개 핵심 필드 (요청 범위 외)
+// 모든 신청 유형(service / purchase / subscribe) 에서 스키마의 데이터 필드 전체 노출.
+// checkbox 액션성 항목(조직장 승인, 첨부 체크리스트 등) 만 제외.
 //
 // 레이아웃: 모달 max-h 85vh + flex column. 헤더·푸터 sticky, 본문 영역만 세로 스크롤.
 // 푸터에 info 안내 박스 노출 — 제출 후 거버넌스 요청 목록으로 이동한다는 안내.
@@ -23,22 +22,6 @@ interface RowDef {
   key: string;
   label: string;
 }
-
-/** purchase / subscribe 의 핵심 4–5 필드 (요청 범위 외 — 기존 동작 유지). */
-const PRESUBMIT_ROWS_SHORT: Record<Exclude<ApplicationType, "service">, RowDef[]> = {
-  subscribe: [
-    { key: "프로젝트명", label: "프로젝트명" },
-    { key: "구독_희망_데이터셋", label: "구독 희망 데이터셋" },
-    { key: "구독_기간", label: "구독 기간" },
-    { key: "월_사용_예상_금액", label: "월 사용 예상 금액" },
-  ],
-  purchase: [
-    { key: "프로젝트명", label: "프로젝트명" },
-    { key: "구매_희망_데이터셋", label: "구매 대상 데이터" },
-    { key: "판매_업체", label: "구매 업체" },
-    { key: "사용_예상_금액", label: "예상 비용" },
-  ],
-};
 
 const PROJECT_KEY: Record<ApplicationType, string> = {
   subscribe: "프로젝트명",
@@ -88,21 +71,17 @@ export function PreSubmitPreviewModal({
 
   const schema = FORM_SCHEMAS[APPLICATION_TO_FORM_TYPE[type]];
 
-  // service 는 스키마의 모든 데이터 필드 자동 노출. purchase/subscribe 는 기존 핵심 행.
+  // 세 유형 모두 스키마의 모든 데이터 필드를 자동 노출. checkbox 액션성 항목만 제외.
   const rows: RowDef[] = useMemo(() => {
-    if (type === "service") {
-      const all: RowDef[] = [];
-      schema.sections.forEach((sec) => {
-        sec.fields.forEach((f: FieldDef) => {
-          // checkbox 는 액션·동의 항목이라 검토 표에서 제외.
-          if (f.type === "checkbox") return;
-          all.push({ key: f.key, label: f.label });
-        });
+    const all: RowDef[] = [];
+    schema.sections.forEach((sec) => {
+      sec.fields.forEach((f: FieldDef) => {
+        if (f.type === "checkbox") return;
+        all.push({ key: f.key, label: f.label });
       });
-      return all;
-    }
-    return PRESUBMIT_ROWS_SHORT[type];
-  }, [type, schema]);
+    });
+    return all;
+  }, [schema]);
 
   const projectName = String(payload[PROJECT_KEY[type]] ?? "").trim();
 
