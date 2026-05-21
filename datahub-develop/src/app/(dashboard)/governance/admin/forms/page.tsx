@@ -18,19 +18,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronRight, Download, Filter, Inbox } from "lucide-react";
+import { Check, ChevronRight, Download, Inbox } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { FORM_TYPE_LABELS } from "@/lib/governance/forms/utils-bridge";
 
 type StatusFilter = "all" | "submitted" | "reviewing" | "approved";
-
-interface KpiStat {
-  pending: number;
-  inProgress: number;
-  thisWeek: number;
-  avgDays: number;
-}
 
 const STATUS_CHIPS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "전체" },
@@ -65,39 +58,6 @@ function fmtTime(iso: string): string {
   return `${hh}:${mi}`;
 }
 
-function thisWeekRange(): { start: Date; end: Date } {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-  return { start: monday, end };
-}
-
-function computeKpi(forms: FormListItem[]): KpiStat {
-  const pending = forms.filter((f) => f.status === "submitted").length;
-  const inProgress = forms.filter((f) => f.status === "reviewing").length;
-
-  const week = thisWeekRange();
-  let thisWeek = 0;
-  let totalDays = 0;
-  let approvedCount = 0;
-  for (const f of forms) {
-    const item = f as FormListItem & { approvedAt?: string | null };
-    if (!item.approvedAt) continue;
-    const at = new Date(item.approvedAt);
-    if (at >= week.start && at <= week.end) thisWeek += 1;
-    const submitted = new Date(f.submittedAt);
-    if (!Number.isNaN(submitted.getTime()) && !Number.isNaN(at.getTime())) {
-      totalDays += (at.getTime() - submitted.getTime()) / (1000 * 60 * 60 * 24);
-      approvedCount += 1;
-    }
-  }
-  const avgDays = approvedCount > 0 ? totalDays / approvedCount : 0;
-  return { pending, inProgress, thisWeek, avgDays };
-}
 
 function toCsv(rows: FormListItem[]): string {
   const header = ["신청번호", "신청 종류", "신청서명", "신청자", "상태", "제출일", "승인 완료일"];
@@ -123,7 +83,6 @@ export default function Page() {
   const statusParam = (searchParams?.get("status") as StatusFilter | null) ?? "all";
   const typeParam = searchParams?.get("type") ?? "all";
   const queryParam = searchParams?.get("q") ?? "";
-  const rangeParam = searchParams?.get("range") ?? ""; // "this-week" 등
 
   const [items, setItems] = useState<FormListItem[] | null>(null);
   const [authError, setAuthError] = useState(false);
@@ -166,8 +125,6 @@ export default function Page() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  const kpi = useMemo(() => (items ? computeKpi(items) : null), [items]);
-
   const counts = useMemo(() => {
     const c: Record<StatusFilter, number> = { all: 0, submitted: 0, reviewing: 0, approved: 0 };
     (items ?? []).forEach((it) => {
@@ -182,18 +139,10 @@ export default function Page() {
 
   const filtered = useMemo(() => {
     if (!items) return [];
-    const week = thisWeekRange();
     return items.filter((it) => {
       if (it.status === "draft" || it.status === "rejected") return false;
       if (statusParam !== "all" && it.status !== statusParam) return false;
       if (typeParam !== "all" && it.formType !== typeParam) return false;
-      if (rangeParam === "this-week") {
-        // 이번 주 처리 = 승인 완료된 신청 중 approvedAt 이 이번 주 범위 안.
-        const item = it as FormListItem & { approvedAt?: string | null };
-        if (!item.approvedAt) return false;
-        const at = new Date(item.approvedAt);
-        if (Number.isNaN(at.getTime()) || at < week.start || at > week.end) return false;
-      }
       const q = queryParam.trim().toLowerCase();
       if (!q) return true;
       return (
@@ -202,18 +151,7 @@ export default function Page() {
         it.requestNo.toLowerCase().includes(q)
       );
     });
-  }, [items, statusParam, typeParam, queryParam, rangeParam]);
-
-  // KPI ↔ 상태 칩 활성 상태 매핑.
-  // 이번 주 처리 KPI = status=approved + range=this-week 둘 다 일치할 때만 활성.
-  const activeKpi: "pending" | "inProgress" | "thisWeek" | null =
-    rangeParam === "this-week" && statusParam === "approved"
-      ? "thisWeek"
-      : statusParam === "submitted" && !rangeParam
-        ? "pending"
-        : statusParam === "reviewing" && !rangeParam
-          ? "inProgress"
-          : null;
+  }, [items, statusParam, typeParam, queryParam]);
 
   if (authError) {
     return (
@@ -237,56 +175,6 @@ export default function Page() {
         전체 사용자의 신청을 검토 / 승인할 수 있습니다. 신청서명을 클릭해 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
-      {/* KPI 카드 4개 — 클릭하면 매칭되는 상태/range 필터가 적용. */}
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard
-          label="승인 대기"
-          value={kpi?.pending}
-          unit="건"
-          loading={!kpi}
-          active={activeKpi === "pending"}
-          onClick={() =>
-            updateUrl({
-              status: activeKpi === "pending" ? "all" : "submitted",
-              range: null,
-            })
-          }
-        />
-        <KpiCard
-          label="진행 중"
-          value={kpi?.inProgress}
-          unit="건"
-          loading={!kpi}
-          active={activeKpi === "inProgress"}
-          onClick={() =>
-            updateUrl({
-              status: activeKpi === "inProgress" ? "all" : "reviewing",
-              range: null,
-            })
-          }
-        />
-        <KpiCard
-          label="이번 주 처리"
-          value={kpi?.thisWeek}
-          unit="건"
-          loading={!kpi}
-          active={activeKpi === "thisWeek"}
-          onClick={() =>
-            updateUrl({
-              status: activeKpi === "thisWeek" ? "all" : "approved",
-              range: activeKpi === "thisWeek" ? null : "this-week",
-            })
-          }
-        />
-        <KpiCard
-          label="평균 처리 시간"
-          value={kpi ? kpi.avgDays.toFixed(1) : undefined}
-          unit="일"
-          loading={!kpi}
-          static
-        />
-      </div>
-
       {/* 상태 필터 칩 */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <span className="text-xs text-gray-400">상태</span>
@@ -297,13 +185,7 @@ export default function Page() {
             <button
               key={c.value}
               type="button"
-              onClick={() =>
-                updateUrl({
-                  status: active ? "all" : c.value,
-                  // 칩 클릭은 range=this-week 를 초기화 (KPI 만 그 조합 활성).
-                  range: null,
-                })
-              }
+              onClick={() => updateUrl({ status: active ? "all" : c.value })}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition ${
                 active
                   ? "border-blue-600 bg-blue-50 font-medium text-blue-700"
@@ -481,65 +363,3 @@ export default function Page() {
   );
 }
 
-function KpiCard({
-  label,
-  value,
-  unit,
-  loading,
-  active = false,
-  onClick,
-  static: isStatic = false,
-}: {
-  label: string;
-  value: number | string | undefined;
-  unit: string;
-  loading: boolean;
-  active?: boolean;
-  onClick?: () => void;
-  /** true 면 클릭/호버 비활성 (정적 지표 — 평균 처리 시간). */
-  static?: boolean;
-}) {
-  const baseCls =
-    "group relative rounded-md border p-4 text-left transition " +
-    (isStatic ? "cursor-default" : "cursor-pointer");
-  const stateCls = active
-    ? "border-blue-600 bg-blue-50"
-    : isStatic
-      ? "border-gray-200 bg-white"
-      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50";
-
-  const Tag: "button" | "div" = isStatic ? "div" : "button";
-
-  return (
-    <Tag
-      type={isStatic ? undefined : ("button" as "button")}
-      onClick={isStatic ? undefined : onClick}
-      className={`${baseCls} ${stateCls}`}
-    >
-      <div className="flex items-center justify-between">
-        <p className={`text-[13px] ${active ? "text-blue-700" : "text-gray-500"}`}>{label}</p>
-        {!isStatic && (
-          <Filter
-            size={12}
-            aria-hidden="true"
-            className={`transition-opacity ${
-              active ? "text-blue-600 opacity-100" : "text-gray-400 opacity-0 group-hover:opacity-100"
-            }`}
-          />
-        )}
-      </div>
-      {loading ? (
-        <div className="mt-1.5 h-6 w-1/2 animate-pulse rounded bg-gray-200" />
-      ) : (
-        <p className={`mt-0.5 text-[24px] font-medium ${active ? "text-blue-700" : "text-gray-900"}`}>
-          {value ?? "-"}
-          <span
-            className={`ml-1 text-[13px] font-normal ${active ? "text-blue-600" : "text-gray-500"}`}
-          >
-            {unit}
-          </span>
-        </p>
-      )}
-    </Tag>
-  );
-}
