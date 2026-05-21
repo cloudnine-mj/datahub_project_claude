@@ -34,27 +34,31 @@ interface Props {
 }
 
 export function ProcessStepper({ phases, subSteps }: Props) {
+  // phase 가 1개 뿐인 유형(service / subscribe) 은 '전체 / 1.기획' 상단 행이
+  // 정보 가치가 없어 숨김. 2개 이상일 때만 노출.
+  const showPhaseRow = phases.length > 1;
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-      {/* 상단 — phase */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="cursor-default text-gray-500 dark:text-gray-400">전체</span>
-        {phases.map((p, i) => (
-          <span key={p.id} className="flex items-center gap-2">
-            <PhasePill phase={p} />
-            {i < phases.length - 1 && (
-              <span aria-hidden="true" className="text-gray-300 dark:text-gray-600">
-                ›
-              </span>
-            )}
-          </span>
-        ))}
-      </div>
+      {showPhaseRow && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span className="cursor-default text-gray-500 dark:text-gray-400">전체</span>
+          {phases.map((p, i) => (
+            <span key={p.id} className="flex items-center gap-2">
+              <PhasePill phase={p} />
+              {i < phases.length - 1 && (
+                <span aria-hidden="true" className="text-gray-300 dark:text-gray-600">
+                  ›
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* 하단 — 현재 phase 의 substep bar + label */}
       {subSteps.length > 0 && (
         <div
-          className="mt-4 grid gap-2"
+          className={(showPhaseRow ? "mt-4 " : "") + "grid gap-2"}
           style={{ gridTemplateColumns: `repeat(${subSteps.length}, minmax(0, 1fr))` }}
         >
           {subSteps.map((s) => (
