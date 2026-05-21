@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { startAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { requireGovernanceAuth } from "@/lib/governance/auth";
@@ -78,14 +79,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       isDraft: body.is_draft ?? post.isDraft,
       visibility: body.visibility ?? post.visibility,
       summary: body.summary ?? post.summary,
-      tags: body.tags === null ? null : (body.tags ?? (post.tags as object | null) ?? undefined),
+      tags:
+        body.tags === null
+          ? Prisma.JsonNull
+          : ((body.tags ?? post.tags ?? undefined) as Prisma.InputJsonValue | undefined),
       severity: body.severity ?? post.severity,
       appliesTo: body.applies_to ?? post.appliesTo,
       tldr: body.tldr ?? post.tldr,
       actionItems:
         body.action_items === null
-          ? null
-          : (body.action_items ?? (post.actionItems as object | null) ?? undefined),
+          ? Prisma.JsonNull
+          : ((body.action_items ?? post.actionItems ?? undefined) as Prisma.InputJsonValue | undefined),
       examples: body.examples ?? post.examples,
     },
   });

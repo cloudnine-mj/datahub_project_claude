@@ -1,6 +1,10 @@
 /**
  * Governance form 도메인 타입 — frontend·backend 공용.
  * datahub-web 의 lib/api.ts FormType/FormStatus/ApprovalEntry 와 동일 의미.
+ *
+ * 모든 List/Detail 타입은 camelCase 가 canonical 이고, snake_case 별칭을 함께
+ * 가집니다. api-client-full 의 adapter 가 두 표기를 모두 채워 주므로 옛 컴포넌트와
+ * 신규 컴포넌트가 같이 살아 있을 수 있습니다.
  */
 
 export type FormType =
@@ -37,6 +41,8 @@ export interface FormAttachment {
   id: string;
   filename: string;
   sizeBytes: number;
+  /** snake_case 호환 — adapter 가 함께 채워줌. */
+  size_bytes: number;
 }
 
 export interface FormListItem {
@@ -51,6 +57,14 @@ export interface FormListItem {
   version: number;
   parentFormId: string | null;
   participants: string[];
+  /** snake_case 호환 — adapter 가 함께 채워줌. */
+  request_no: string;
+  form_type: FormType;
+  project_name: string;
+  submitter_name: string;
+  submitted_at: string;
+  approved_at?: string | null;
+  parent_form_id: string | null;
 }
 
 export interface FormDetail extends FormListItem {
@@ -61,6 +75,12 @@ export interface FormDetail extends FormListItem {
   attachments: FormAttachment[];
   approvalHistory: ApprovalEntry[] | null;
   editHistory: { editedBy: string; editedAt: string; changes: unknown[] }[] | null;
+  /** snake_case 호환 — adapter 가 함께 채워줌. */
+  submitter_email: string;
+  submitter_department: string | null;
+  updated_at: string;
+  approval_history: ApprovalEntry[] | null;
+  edit_history: { editedBy: string; editedAt: string; changes: unknown[] }[] | null;
 }
 
 export interface FormMessageAttachmentItem {

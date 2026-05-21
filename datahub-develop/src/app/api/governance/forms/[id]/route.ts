@@ -87,11 +87,11 @@ function computeDiff(
   const beforePayload = before.payload ?? {};
   const afterPayload = (after.payload ?? {}) as Record<string, unknown>;
   const keys = new Set([...Object.keys(beforePayload), ...Object.keys(afterPayload)]);
-  for (const k of keys) {
+  keys.forEach((k) => {
     if (JSON.stringify(beforePayload[k]) !== JSON.stringify(afterPayload[k])) {
       out.push({ field: k, before: beforePayload[k], after: afterPayload[k] });
     }
-  }
+  });
   return out;
 }
 

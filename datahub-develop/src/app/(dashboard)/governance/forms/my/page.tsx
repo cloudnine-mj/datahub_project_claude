@@ -438,14 +438,14 @@ function UserFormsView() {
       byBase.set(base, arr);
     }
     const latest: FormListItem[] = [];
-    for (const [, group] of byBase) {
-      group.sort((a, b) => {
+    byBase.forEach((group) => {
+      group.sort((a: FormListItem, b: FormListItem) => {
         const dp = statusPriority(b.status) - statusPriority(a.status);
         if (dp !== 0) return dp;
         return parseUtc(b.submitted_at).getTime() - parseUtc(a.submitted_at).getTime();
       });
       latest.push(group[0]);
-    }
+    });
     latest.sort(
       (a, b) => parseUtc(b.submitted_at).getTime() - parseUtc(a.submitted_at).getTime(),
     );

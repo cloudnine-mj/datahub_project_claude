@@ -11,6 +11,7 @@ import type {
   FormMessageItem,
   FormType,
   FormStatus,
+  ApprovalEntry,
 } from "./forms/types";
 
 const BASE = "/api";
@@ -46,7 +47,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 // ── 도메인 타입 (옛 api 의 shape 와 호환) ────────────────────
 
-export type { FormType, FormStatus, FormListItem, FormDetail, FormMessageItem };
+export type { FormType, FormStatus, FormListItem, FormDetail, FormMessageItem, ApprovalEntry };
+
+/** 게시글 공개 범위 — public(전사) / admin(관리자 전용). */
+export type PostVisibility = "public" | "admin";
+
+/** 정책 게시글 심각도. */
+export type Severity = "low" | "medium" | "high" | "critical";
 
 export interface Me {
   user: {
@@ -60,13 +67,6 @@ export interface Me {
     can_write_policy: boolean;
     can_write_process: boolean;
   };
-}
-
-export interface ApprovalEntry {
-  status: FormStatus;
-  changed_by: string;
-  changed_at: string;
-  comment: string | null;
 }
 
 export interface PostListItem {

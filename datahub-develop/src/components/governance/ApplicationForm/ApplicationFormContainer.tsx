@@ -110,7 +110,8 @@ export function ApplicationFormContainer({
   // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
   const [showFormView, setShowFormView] = useState(false);
   // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
-  const [formId, setFormId] = useState<number | null>(null);
+  // cuid 문자열 id — 백엔드 GovernanceForm.id 와 매칭.
+  const [formId, setFormId] = useState<string | null>(null);
   const [applicant, setApplicant] = useState(FALLBACK_APPLICANT_INFO);
   const [submitting, setSubmitting] = useState(false);
   // 임시 저장 등 단발성 알림 — 일정 시간 후 자동 사라짐.

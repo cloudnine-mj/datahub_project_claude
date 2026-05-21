@@ -54,7 +54,7 @@ export function FormCommentSection({ formId, me }: Props) {
     }
   }
 
-  async function onDelete(commentId: number) {
+  async function onDelete(commentId: string | number) {
     if (!confirm("이 댓글을 삭제할까요?")) return;
     try {
       await api.deleteFormComment(formId, commentId);
