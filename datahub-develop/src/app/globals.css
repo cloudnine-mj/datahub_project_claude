@@ -62,36 +62,33 @@
   }
 
   /* 모든 type="date" 입력에서 달력 picker icon 을 텍스트 왼쪽으로 이동 +
-     placeholder 격인 '연도. 월. 일.' 텍스트를 옅은 회색으로. */
+     빈 상태 '연도. 월. 일.' 안내 텍스트와 달력 아이콘을 옅은 회색으로. */
   input[type="date"] {
     position: relative;
     padding-left: 2rem !important;
   }
+  /* 달력 picker 아이콘 — 좌측 + 옅은 회색 (호버 시 진해짐). */
   input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
     left: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.45;
+    /* gray-400 톤으로 보이도록 hue-rotate 없는 grayscale filter */
+    filter: grayscale(100%);
   }
   input[type="date"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
+    filter: none;
   }
-  /* 빈 상태(:invalid for required, 또는 일반적으로 사용자가 입력 전) — 연한 회색.
-     focus / 값이 채워진 상태에서는 기본 텍스트 색 복귀. */
+  /* 빈 상태(required + value 없음 → :invalid) 의 텍스트를 모두 회색으로.
+     DateField 가 required 를 기본 true 로 주므로 미입력 시 :invalid 매치. */
   input[type="date"]:not(:focus):invalid::-webkit-datetime-edit,
   input[type="date"]:not(:focus):invalid::-webkit-datetime-edit-text,
   input[type="date"]:not(:focus):invalid::-webkit-datetime-edit-year-field,
   input[type="date"]:not(:focus):invalid::-webkit-datetime-edit-month-field,
   input[type="date"]:not(:focus):invalid::-webkit-datetime-edit-day-field {
-    color: #9ca3af; /* gray-400 — 'placeholder' 톤 */
-  }
-  /* required 가 아니어서 :invalid 가 안 잡히는 케이스 — 값 비어 있을 때도 회색. */
-  input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit-text,
-  input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit-year-field,
-  input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit-month-field,
-  input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit-day-field {
-    color: #9ca3af;
+    color: #9ca3af; /* gray-400 */
   }
 }
