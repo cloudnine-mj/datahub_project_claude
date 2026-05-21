@@ -214,8 +214,15 @@ export default function Page() {
         >
           <option value="all">신청 종류 전체</option>
           {Object.entries(FORM_TYPE_LABELS)
-            // 데이터 제작 계획서 / 업무생산성 도구는 필터 옵션에서 제외 — 거버넌스 요청 관리 흐름과 무관.
-            .filter(([k]) => k !== "data_production_plan" && k !== "productivity_tool")
+            // 데이터 제작 계획서 / 업무생산성 도구 / Product 로그 활용 / API 활용 계획서 는
+            // 필터 옵션에서 제외 — 거버넌스 요청 관리 흐름과 무관.
+            .filter(
+              ([k]) =>
+                k !== "data_production_plan" &&
+                k !== "productivity_tool" &&
+                k !== "product_log_usage" &&
+                k !== "api_usage_plan",
+            )
             .map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
