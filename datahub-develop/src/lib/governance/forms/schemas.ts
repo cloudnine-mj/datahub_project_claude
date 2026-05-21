@@ -334,7 +334,7 @@ const dataSubscription: FormSchema = {
       ],
     },
     {
-      title: "데이터 정보",
+      title: "구독 데이터 정보",
       fields: [
         {
           key: "구독_희망_데이터셋",
