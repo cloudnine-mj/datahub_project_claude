@@ -137,11 +137,11 @@ export function ApplicationFormContainer({
   }, []);
 
   // 신청자 화면은 draft(작성 중) 만 노출. 이미 제출된 상태(submitted / reviewing /
-  // approved) 로 직접 진입한 경우는 진행 상태 추적 화면을 보여주지 않고 내 문서 목록으로
-  // 보냄 — 사내 정책 변경.
+  // approved) 로 직접 진입한 경우는 진행 상태 추적 화면을 보여주지 않고
+  // 거버넌스 요청 목록으로 보냄 — 사내 정책 변경.
   useEffect(() => {
     if (status !== "draft") {
-      router.replace("/governance/forms/my");
+      router.replace("/governance/forms/list");
     }
   }, [status, router]);
 
@@ -264,14 +264,14 @@ export function ApplicationFormContainer({
   };
   // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
   const onOpenPreview = () => setPreviewOpen(true);
-  // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 백엔드 제출 + 내 문서 목록으로 이동.
+  // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 백엔드 제출 + 거버넌스 요청 목록으로 이동.
   // 사내 정책 변경으로 제출 후 진행 상태 추적 화면(ProgressStatusBlock + SubmittedSummaryBlock)
-  // 은 노출하지 않음 — 신청자는 my 목록에서 상태만 확인.
+  // 은 노출하지 않음 — 신청자는 거버넌스 요청 목록에서 상태만 확인.
   const onConfirmSubmit = async () => {
     const ok = await persist(false);
     if (!ok) return;
     setPreviewOpen(false);
-    router.push("/governance/forms/my");
+    router.push("/governance/forms/list");
   };
 
   // '전자결재 품의 →' 버튼 — substep 3 (전자결재 품의 페이지) 로 이동.

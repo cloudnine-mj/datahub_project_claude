@@ -87,7 +87,8 @@ export function prevPhase1Substep(
   return defs[idx - 1];
 }
 
-/** 다음 substep 정보 — 마지막 substep(신청서 작성) 이면 신청 완료로 종료. */
+/** 다음 substep 정보 — 마지막 substep(신청서 작성) 이면 신청 완료로 종료.
+ *  제출 후 거버넌스 요청 목록(/forms/list) 으로 이동 — 사내 정책. */
 export function nextPhase1Substep(
   currentId: Phase1SubstepId,
   type?: PlanningType,
@@ -95,7 +96,7 @@ export function nextPhase1Substep(
   const defs = defsFor(type);
   const idx = defs.findIndex((s) => s.id === currentId);
   if (idx < 0 || idx >= defs.length - 1) {
-    return { label: "신청 완료", path: "/governance/forms/my" };
+    return { label: "신청 완료", path: "/governance/forms/list" };
   }
   const next = defs[idx + 1];
   return { label: next.label, path: next.path };
