@@ -22,13 +22,13 @@ const items: SectionNavItem[] = [
   // 홈 — 그룹 밖 단독
   { title: "나의 현황", href: "/governance/home", icon: Home },
 
-  // 조회
-  { title: "거버넌스 요청 목록", href: "/governance/forms/list", icon: ClipboardList, group: "조회" },
-
   // 요청
   { title: "데이터 용역 제작", href: "/governance/forms/planning?type=service", icon: Hammer, group: "요청" },
   { title: "데이터 구매", href: "/governance/forms/planning?type=purchase", icon: ShoppingCart, group: "요청" },
   { title: "데이터 구독", href: "/governance/forms/planning?type=subscribe", icon: RefreshCw, group: "요청" },
+
+  // 조회
+  { title: "거버넌스 요청 목록", href: "/governance/forms/list", icon: ClipboardList, group: "조회" },
 
   // 가이드
   { title: "프로세스 안내", href: "/governance/process", icon: Route, group: "가이드" },
