@@ -4,7 +4,7 @@
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import { FORM_TYPE_LABELS } from "@/lib/governance/forms/utils-bridge";
 
-export type CatalogCategoryId = "data" | "tool";
+export type CatalogCategoryId = "data" | "api" | "tool";
 
 export interface CatalogEntry {
   /** URL 파라미터 + 라우팅 키. */
@@ -20,6 +20,7 @@ export interface CatalogEntry {
 
 export const CATALOG_CATEGORY_LABEL: Record<CatalogCategoryId, string> = {
   data: "데이터 도입",
+  api: "API",
   tool: "업무 도구",
 };
 
@@ -55,6 +56,14 @@ export const CATALOG: CatalogEntry[] = [
     description: FORM_SCHEMAS["data_production_plan"]?.description ?? "",
     usagePath: "/governance/forms/data_production_plan/new",
     componentPath: "lib/formSchemas.ts → dataProductionPlan",
+  },
+  {
+    id: "api_usage_plan",
+    category: "api",
+    label: FORM_TYPE_LABELS["api_usage_plan"],
+    description: FORM_SCHEMAS["api_usage_plan"]?.description ?? "",
+    usagePath: "/governance/api-applications/form",
+    componentPath: "components/api-form/ApiApplicationForm.tsx",
   },
   {
     id: "productivity_tool",
