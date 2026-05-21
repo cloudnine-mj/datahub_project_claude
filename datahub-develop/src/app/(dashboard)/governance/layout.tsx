@@ -34,7 +34,7 @@ const items: SectionNavItem[] = [
   { title: "프로세스 안내", href: "/governance/process", icon: Route, group: "가이드" },
   { title: "거버넌스 정책", href: "/governance/policy", icon: BookOpen, group: "가이드" },
 
-  // 관리 (admin only — 추후 me.role === 'admin' 일 때만 노출하도록 컨디션 추가 가능)
+  // 관리 — 현재는 모든 사용자 노출. 관리자 액션(승인 등) 은 백엔드에서 가드.
   { title: "거버넌스 요청 관리", href: "/governance/admin/forms", icon: Inbox, group: "관리" },
   { title: "프로세스 관리", href: "/governance/process?manage=1", icon: Route, group: "관리" },
   { title: "거버넌스 정책 관리", href: "/governance/policy?manage=1", icon: BookOpen, group: "관리" },

@@ -15,11 +15,10 @@
  * 상태/유형/검색 필터는 URL ?status=&type=&q= 로 동기화.
  */
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronRight, Download, Inbox } from "lucide-react";
-import { api, type FormListItem, type FormStatus, type Me } from "@/lib/governance/api-client-full";
+import { api, type FormListItem, type FormStatus } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import {
   RequestStatusTabs,
@@ -89,7 +88,6 @@ export default function Page() {
   const queryParam = searchParams?.get("q") ?? "";
 
   const [items, setItems] = useState<FormListItem[] | null>(null);
-  const [authError, setAuthError] = useState(false);
   const [query, setQuery] = useState(queryParam);
 
   const updateUrl = (patch: Record<string, string | null>) => {
@@ -119,10 +117,12 @@ export default function Page() {
     refetch();
     api
       .me()
-      .then((m: Me) => {
-        if (m.user.role !== "admin") setAuthError(true);
+      .then(() => {
+        // 모든 사용자 접근 허용 — 관리자 액션(승인/보완 요청 등) 은 백엔드에서 가드.
       })
-      .catch(() => setAuthError(true));
+      .catch(() => {
+        // 비로그인은 fallback — 일단 빈 목록.
+      });
     // 상세 페이지에서 status 변경 후 목록 되돌아오면 자동 새로고침.
     const onFocus = () => refetch();
     window.addEventListener("focus", onFocus);
@@ -163,17 +163,6 @@ export default function Page() {
       );
     });
   }, [items, statusParam, typeParam, queryParam]);
-
-  if (authError) {
-    return (
-      <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">
-        관리자만 접근 가능한 페이지입니다.{" "}
-        <Link href="/governance/forms/list" className="underline">
-          요청 목록으로 이동
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div>

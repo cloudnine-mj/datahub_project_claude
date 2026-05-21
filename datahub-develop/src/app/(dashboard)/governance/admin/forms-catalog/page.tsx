@@ -1,13 +1,12 @@
 // 관리 · 신청서 양식 카탈로그 — 시스템에 등록된 모든 신청서 양식을 카테고리별로 정리.
 //   각 카드 클릭 → /governance/admin/forms-catalog/[formId] 미리보기 페이지로 이동.
+//   접근 권한: 모든 로그인 사용자 (관리자 액션은 백엔드 가드).
 
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, FileText, Lock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronRight, FileText } from "lucide-react";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
-import { api, type Me } from "@/lib/governance/api-client-full";
 import {
   CATALOG,
   CATALOG_CATEGORY_LABEL,
@@ -15,30 +14,6 @@ import {
 } from "./catalog-config";
 
 export default function Page() {
-  const [me, setMe] = useState<Me | null>(null);
-
-  useEffect(() => {
-    api.me().then(setMe).catch(() => setMe(null));
-  }, []);
-
-  if (me && me.user.role !== "admin") {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <div className="grid h-20 w-20 place-items-center rounded-full bg-red-50 text-red-500">
-          <Lock size={36} />
-        </div>
-        <h1 className="mt-5 text-2xl font-bold tracking-tight">접근 권한 없음</h1>
-        <p className="mt-2 text-sm text-gray-500">관리자만 양식 카탈로그를 조회할 수 있습니다.</p>
-        <Link
-          href="/governance/home"
-          className="mt-5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
-        >
-          나의 현황으로 돌아가기
-        </Link>
-      </div>
-    );
-  }
-
   // 카테고리별로 그룹핑.
   const groups = (Object.keys(CATALOG_CATEGORY_LABEL) as CatalogCategoryId[]).map((c) => ({
     id: c,
