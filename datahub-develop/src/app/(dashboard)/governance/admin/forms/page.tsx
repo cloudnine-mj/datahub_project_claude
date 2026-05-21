@@ -21,16 +21,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ChevronRight, Download, Inbox } from "lucide-react";
 import { api, type FormListItem, type FormStatus, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
+import {
+  RequestStatusTabs,
+  type TabFilter,
+} from "@/components/governance/RequestStatusTabs";
 import { FORM_TYPE_LABELS } from "@/lib/governance/forms/utils-bridge";
 
-type StatusFilter = "all" | "submitted" | "reviewing" | "approved";
-
-const STATUS_CHIPS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "전체" },
-  { value: "submitted", label: "제출됨" },
-  { value: "reviewing", label: "검토 중" },
-  { value: "approved", label: "승인 완료" },
-];
+// 거버넌스 요청 목록과 동일한 상태 탭 — 전체 / 임시저장 / 진행 중 / 완료.
+// 진행 중 = submitted + reviewing + info_requested. rejected 는 노출 X.
+const TAB_TO_STATUSES: Record<TabFilter, FormStatus[]> = {
+  all: ["draft", "submitted", "reviewing", "info_requested", "approved"],
+  draft: ["draft"],
+  "in-progress": ["submitted", "reviewing", "info_requested"],
+  completed: ["approved"],
+};
 
 const STATUS_BADGE: Record<FormStatus, { bg: string; text: string; dot: string; label: string }> = {
   draft: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400", label: "임시 저장" },
@@ -80,7 +84,7 @@ export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const statusParam = (searchParams?.get("status") as StatusFilter | null) ?? "all";
+  const statusParam = (searchParams?.get("status") as TabFilter | null) ?? "all";
   const typeParam = searchParams?.get("type") ?? "all";
   const queryParam = searchParams?.get("q") ?? "";
 
@@ -125,23 +129,30 @@ export default function Page() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
+  // 탭별 카운트 — rejected 는 제외.
   const counts = useMemo(() => {
-    const c: Record<StatusFilter, number> = { all: 0, submitted: 0, reviewing: 0, approved: 0 };
+    const c: Record<TabFilter, number> = { all: 0, draft: 0, "in-progress": 0, completed: 0 };
     (items ?? []).forEach((it) => {
-      if (it.status === "rejected" || it.status === "draft") return;
+      if (it.status === "rejected") return;
       c.all += 1;
-      if (it.status === "submitted") c.submitted += 1;
-      else if (it.status === "reviewing") c.reviewing += 1;
-      else if (it.status === "approved") c.approved += 1;
+      if (it.status === "draft") c.draft += 1;
+      else if (
+        it.status === "submitted" ||
+        it.status === "reviewing" ||
+        it.status === "info_requested"
+      )
+        c["in-progress"] += 1;
+      else if (it.status === "approved") c.completed += 1;
     });
     return c;
   }, [items]);
 
   const filtered = useMemo(() => {
     if (!items) return [];
+    const allowedStatuses = new Set<string>(TAB_TO_STATUSES[statusParam] ?? []);
     return items.filter((it) => {
-      if (it.status === "draft" || it.status === "rejected") return false;
-      if (statusParam !== "all" && it.status !== statusParam) return false;
+      if (it.status === "rejected") return false;
+      if (!allowedStatuses.has(it.status)) return false;
       if (typeParam !== "all" && it.formType !== typeParam) return false;
       const q = queryParam.trim().toLowerCase();
       if (!q) return true;
@@ -175,34 +186,18 @@ export default function Page() {
         전체 사용자의 신청을 검토 / 승인할 수 있습니다. 신청서명을 클릭해 상세 페이지로 이동한 뒤 처리해 주세요.
       </p>
 
-      {/* 상태 필터 칩 */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-gray-400">상태</span>
-        {STATUS_CHIPS.map((c) => {
-          const active = statusParam === c.value;
-          const count = counts[c.value];
-          return (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => updateUrl({ status: active ? "all" : c.value })}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] transition ${
-                active
-                  ? "border-blue-600 bg-blue-50 font-medium text-blue-700"
-                  : "border-gray-200 bg-transparent text-gray-600 hover:border-gray-300"
-              }`}
-            >
-              {c.label}
-              <span
-                className={`inline-flex items-center rounded-full px-1.5 text-[11px] ${
-                  active ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+      {/* 상태 필터 탭 — 거버넌스 요청 목록과 동일한 RequestStatusTabs 사용. */}
+      <div className="mt-5">
+        <RequestStatusTabs
+          tabs={[
+            { value: "all", label: "전체", count: counts.all },
+            { value: "draft", label: "임시저장", count: counts.draft },
+            { value: "in-progress", label: "진행 중", count: counts["in-progress"] },
+            { value: "completed", label: "완료", count: counts.completed },
+          ]}
+          activeTab={statusParam}
+          onTabChange={(tab) => updateUrl({ status: tab === "all" ? null : tab })}
+        />
       </div>
 
       {/* 도구 모음 */}
