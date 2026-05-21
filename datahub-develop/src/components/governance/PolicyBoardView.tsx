@@ -144,8 +144,8 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
 
-        {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
-        {hasWritePerm && isManage && (
+        {/* 작성하기 — 관리 그룹 진입(?manage=1) 시 모든 사용자에게 노출. */}
+        {isManage && (
           <Link
             href="/governance/policy/new"
             className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"

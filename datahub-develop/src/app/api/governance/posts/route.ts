@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
   const auth = await requireGovernanceAuth();
   if (!auth) return audit.fail(401, "Unauthorized");
 
-  // 게시글 작성은 admin 만 (datahub-web 컨벤션과 동일)
-  if (!auth.isAdmin) return audit.fail(403, "관리자만 게시글을 작성할 수 있습니다.");
+  // 게시글 작성 — 사내 정책상 모든 로그인 사용자 허용. admin 전용 기능
+  // (visibility='admin' 게시글 작성 / pin / 타인 게시글 수정·삭제) 은 별도 라우트 가드.
 
   let body: PostCreateBody;
   try {

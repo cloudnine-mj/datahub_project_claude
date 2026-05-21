@@ -184,8 +184,8 @@ export function BoardListView({ board, compact = false }: Props) {
           <PostStatusFilterDropdown selected={statusFilter} onChange={setStatusFilter} />
         )}
 
-        {/* 작성하기 — admin 만 노출. 권한 없는 사용자는 버튼 자체가 안 보임. */}
-        {hasWritePerm && isManage && (
+        {/* 작성하기 — 관리 그룹 진입(?manage=1) 시 모든 사용자에게 노출. */}
+        {isManage && (
           <div className="ml-auto">
             <Link
               href={`/governance/${boardSegment(board)}/new`}
