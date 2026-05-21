@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Pin, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Pin, Search } from "lucide-react";
 import { api, type BoardType, type Me, type PostListItem } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { EmptyState } from "@/components/governance/EmptyState";
@@ -134,10 +134,23 @@ export function BoardListView({ board, compact = false }: Props) {
             ]}
           />
           <h1 className="text-3xl font-bold tracking-tight">{label}</h1>
+
+          {/* 프로세스 안내 페이지 가이드 배너 — 정책 페이지와 동일한 톤. */}
+          {isProcess && (
+            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 px-5 py-4">
+              <div className="flex items-start gap-3 text-sm">
+                <Info size={18} className="mt-0.5 shrink-0 text-blue-600" aria-hidden="true" />
+                <p className="text-blue-800/80">
+                  이 페이지는 <strong className="font-semibold">데이터 제작·활용 요청 프로세스</strong>를 안내합니다.
+                  신청 단계와 <strong className="font-semibold">진행 방법</strong>을 확인할 수 있습니다.
+                </p>
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      <div className={(compact ? "" : "mt-8 ") + "flex flex-wrap items-center gap-3"}>
+      <div className={(compact ? "" : (isProcess ? "mt-6 " : "mt-8 ")) + "flex flex-wrap items-center gap-3"}>
         {/* 페이지 크기 선택 */}
         <div className="relative">
           <select
