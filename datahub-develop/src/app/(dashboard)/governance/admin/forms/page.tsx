@@ -271,7 +271,9 @@ export default function Page() {
               <th className="px-3 py-2.5 font-medium">신청 종류</th>
               <th className="px-3 py-2.5 font-medium">신청서명</th>
               <th className="px-3 py-2.5 font-medium">신청자</th>
-              <th className="px-3 py-2.5 font-medium">상태</th>
+              <th className="whitespace-nowrap px-3 py-2.5 font-medium" style={{ width: 110 }}>
+                상태
+              </th>
               <th className="px-3 py-2.5 font-medium">제출일</th>
               <th className="px-3 py-2.5 font-medium">승인 완료일</th>
               <th />
@@ -322,14 +324,14 @@ export default function Page() {
                     <td className="px-3 py-3">
                       <div className="font-medium text-gray-900">{it.submitterName}</div>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="whitespace-nowrap px-3 py-3">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] ${badge.bg} ${badge.text}`}
+                        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] ${badge.bg} ${badge.text}`}
                       >
                         {it.status === "approved" ? (
                           <Check size={12} className={badge.text} aria-hidden="true" />
                         ) : (
-                          <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${badge.dot}`} />
                         )}
                         {badge.label}
                       </span>
