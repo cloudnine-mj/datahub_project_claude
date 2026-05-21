@@ -1,16 +1,10 @@
-// 1단계(기획) substep + phase 정의 — 신청 유형(service / purchase / subscribe) 별로
-//   다른 단계 구조를 반환하는 type-aware 헬퍼.
+// 1단계(기획) substep + phase 정의.
 //
-// service:    1 phase (1.기획 only). 1단계 substep 2 개 — 계획 수립 / 신청서 작성.
-//             사내 정책상 용역 제작 신청자 화면은 계획·작성까지만 노출.
-// purchase:   1 phase (1.기획 only). 1단계 substep 2 개 (service 와 동일) —
-//             사내 정책상 데이터 구매 신청자 화면도 계획·작성까지만 노출.
-// subscribe:  1 phase (1.기획 only). 1단계 substep 6 개 —
-//             계획 수립 / 신청서 작성 / 전자결재 품의 / 결재 승인 확인 / 담당자 논의·확정 / 계약 체결.
-//             외부 업체 피드 수신이라 '적재' 별도 단계 없음.
+// 사내 정책상 세 유형(service / purchase / subscribe) 모두 신청자 화면은
+// 계획 수립 → 신청서 작성 두 단계만 노출. 전자결재 / 결재 승인 확인 /
+// 담당자 논의·확정 / 계약 체결 substep 과 2.구축 · 적재 phase 는 모두 제거.
 //
-// path 값은 모두 기존과 동일 — '계약 체결' 은 기존 /intake/build, 적재 substep 들은
-// 기존 /intake/load 로 라우팅. UI/UX 와 라우트는 그대로 유지하고 데이터 정의만 변경.
+// path 값은 모두 기존과 동일 — UI/UX 와 라우트는 그대로 유지하고 데이터 정의만 변경.
 
 import type { PlanningType } from "./planning-config";
 
@@ -35,6 +29,8 @@ export interface SubStep {
 export type Phase1SubstepId =
   | "planning"
   | "form"
+  // 아래 substep id 들은 더 이상 노출되지 않지만, 기존 페이지의 URL 직접 진입 시
+  // type-check 위해 유니온은 유지. 새 흐름엔 사용되지 않음.
   | "approval"
   | "approval-check"
   | "discussion"
@@ -46,33 +42,14 @@ interface SubstepDef {
   path: string;
 }
 
-// service / purchase 공용 — 계획 수립 → 신청서 작성 2 substep.
-const SUBSTEP_DEFS_SHORT: SubstepDef[] = [
+// 모든 신청 유형 공용 — 계획 수립 → 신청서 작성 2 substep.
+const SUBSTEP_DEFS_COMMON: SubstepDef[] = [
   { id: "planning", label: "계획 수립", path: "/governance/forms/planning" },
   { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
 ];
 
-// subscribe 전용 — 외부 업체 계약까지 가는 6 substep 흐름.
-const SUBSTEP_DEFS_SUBSCRIBE: SubstepDef[] = [
-  { id: "planning", label: "계획 수립", path: "/governance/forms/planning" },
-  { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
-  { id: "approval", label: "전자결재 품의", path: "/governance/forms/approval" },
-  {
-    id: "approval-check",
-    label: "결재 승인 확인",
-    path: "/governance/forms/approval-check",
-  },
-  {
-    id: "discussion",
-    label: "담당자 논의·확정",
-    path: "/governance/forms/discussion",
-  },
-  // 계약 체결 — 구독 한정으로 1단계 마지막에 위치. 본문은 기존 build 페이지 재사용.
-  { id: "contract", label: "계약 체결", path: "/governance/forms/intake/build" },
-];
-
-function defsFor(type: PlanningType | undefined): SubstepDef[] {
-  return type === "subscribe" ? SUBSTEP_DEFS_SUBSCRIBE : SUBSTEP_DEFS_SHORT;
+function defsFor(_type: PlanningType | undefined): SubstepDef[] {
+  return SUBSTEP_DEFS_COMMON;
 }
 
 /** 유형별 phase pill 배열 — 세 유형 모두 1.기획 단일 phase.
@@ -110,8 +87,7 @@ export function prevPhase1Substep(
   return defs[idx - 1];
 }
 
-/** 다음 substep 정보 — 마지막 substep 이면 신청 완료 안내(/forms/my) 로 종료.
- *  세 유형 모두 후속 phase 가 없으므로 동일 종료 패턴. */
+/** 다음 substep 정보 — 마지막 substep(신청서 작성) 이면 신청 완료로 종료. */
 export function nextPhase1Substep(
   currentId: Phase1SubstepId,
   type?: PlanningType,
