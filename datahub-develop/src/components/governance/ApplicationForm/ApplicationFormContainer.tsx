@@ -267,11 +267,12 @@ export function ApplicationFormContainer({
   // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 백엔드 제출 + 거버넌스 요청 목록으로 이동.
   // 사내 정책 변경으로 제출 후 진행 상태 추적 화면(ProgressStatusBlock + SubmittedSummaryBlock)
   // 은 노출하지 않음 — 신청자는 거버넌스 요청 목록에서 상태만 확인.
+  // ?submitted=1 query 로 목록 페이지가 토스트를 한 번 더 띄울 수 있도록 신호 전달.
   const onConfirmSubmit = async () => {
     const ok = await persist(false);
     if (!ok) return;
     setPreviewOpen(false);
-    router.push("/governance/forms/list");
+    router.push("/governance/forms/list?submitted=1");
   };
 
   // '전자결재 품의 →' 버튼 — substep 3 (전자결재 품의 페이지) 로 이동.

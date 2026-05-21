@@ -83,6 +83,25 @@ export default function GovernanceFormsListPage() {
     return () => window.removeEventListener("focus", onFocus);
   }, [refetch]);
 
+  // 신청 제출 직후 안내 토스트 — ?submitted=1 query 가 있으면 1회 노출 후 URL 정리.
+  const [submitToast, setSubmitToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (searchParams?.get("submitted") !== "1") return;
+    setSubmitToast(
+      "제출되었습니다. 신청서는 거버넌스 요청 목록으로 이동했고 담당자 검토가 시작됩니다.",
+    );
+    // 5초 후 자동 사라짐.
+    const t = setTimeout(() => setSubmitToast(null), 5000);
+    // URL 에서 query 제거 — refresh / back 시 토스트 재노출 방지.
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("submitted");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?");
+    return () => clearTimeout(t);
+    // searchParams 는 mount 시 1회만 평가 — submitted=1 진입 직후의 이벤트만 처리.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 로그인 사용자 식별자 (이름 / 이메일 / 이메일 로컬파트) 소문자 정규화
   const myIdentifiers = useMemo(() => {
     if (!me) return null;
@@ -166,6 +185,15 @@ export default function GovernanceFormsListPage() {
 
   return (
     <div>
+      {submitToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-40 max-w-sm rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 shadow-lg dark:border-blue-700 dark:bg-blue-950/70 dark:text-blue-100"
+        >
+          {submitToast}
+        </div>
+      )}
       <Breadcrumb
         items={[{ label: "Governance", href: "/governance" }, { label: "거버넌스 요청 목록" }]}
       />
