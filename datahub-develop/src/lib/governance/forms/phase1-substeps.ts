@@ -2,8 +2,9 @@
 //   다른 단계 구조를 반환하는 type-aware 헬퍼.
 //
 // service:    3 phase (1.기획 · 2.구축 · 3.적재). 1단계 substep 5 개.
-// purchase / subscribe:
-//             2 phase (1.기획 · 2.적재). 1단계 substep 6 개 — 마지막에 '계약 체결' 추가.
+// purchase:   2 phase (1.기획 · 2.적재). 1단계 substep 6 개 — 마지막에 '계약 체결' 추가.
+// subscribe:  1 phase (1.기획 only). 1단계 substep 6 개 — 계약 체결까지가 종료점.
+//             구독은 외부 업체 피드를 받기만 하므로 '적재' 별도 단계 없음.
 //
 // path 값은 모두 기존과 동일 — '계약 체결' 은 기존 /intake/build, 적재 substep 들은
 // 기존 /intake/load 로 라우팅. UI/UX 와 라우트는 그대로 유지하고 데이터 정의만 변경.
@@ -64,19 +65,24 @@ const SUBSTEP_DEFS_PURCHASE_SUBSCRIBE: SubstepDef[] = [
   { id: "contract", label: "계약 체결", path: "/governance/forms/intake/build" },
 ];
 
-function isTwoPhase(type: PlanningType | undefined): boolean {
+function hasContractSubstep(type: PlanningType | undefined): boolean {
+  // 계약 체결 substep 은 외부 업체와 계약하는 구매·구독 유형에만.
   return type === "purchase" || type === "subscribe";
 }
 
 function defsFor(type: PlanningType | undefined): SubstepDef[] {
-  return isTwoPhase(type) ? SUBSTEP_DEFS_PURCHASE_SUBSCRIBE : SUBSTEP_DEFS_SERVICE;
+  return hasContractSubstep(type) ? SUBSTEP_DEFS_PURCHASE_SUBSCRIBE : SUBSTEP_DEFS_SERVICE;
 }
 
 /** 유형별 phase pill 배열.
- *  - service: 1.기획 / 2.구축 / 3.적재 (3 phase)
- *  - purchase / subscribe: 1.기획 / 2.적재 (2 phase, 구축 단계 없음) */
+ *  - service:   1.기획 / 2.구축 / 3.적재 (3 phase)
+ *  - purchase:  1.기획 / 2.적재 (2 phase, 구축 단계 없음)
+ *  - subscribe: 1.기획 only (외부 피드 수신이라 적재 단계 없음) */
 export function getPhase1Phases(type?: PlanningType): Phase[] {
-  if (isTwoPhase(type)) {
+  if (type === "subscribe") {
+    return [{ id: "plan", label: "1. 기획", status: "current" }];
+  }
+  if (type === "purchase") {
     return [
       { id: "plan", label: "1. 기획", status: "current" },
       {
@@ -136,7 +142,8 @@ export function prevPhase1Substep(
 
 /** 다음 substep 정보 — 마지막 substep 이면 phase 2 진입 정보 반환.
  *  - service: 마지막 다음은 /intake/build (2단계 구축)
- *  - purchase/subscribe: 마지막은 contract(계약 체결) 다음 곧장 /intake/load (2단계 적재) */
+ *  - purchase: 마지막은 contract(계약 체결) 다음 곧장 /intake/load (2단계 적재)
+ *  - subscribe: 마지막은 contract — 적재 단계가 없으므로 신청 완료 안내(/forms/my) 로 종료 */
 export function nextPhase1Substep(
   currentId: Phase1SubstepId,
   type?: PlanningType,
@@ -144,7 +151,10 @@ export function nextPhase1Substep(
   const defs = defsFor(type);
   const idx = defs.findIndex((s) => s.id === currentId);
   if (idx < 0 || idx >= defs.length - 1) {
-    if (isTwoPhase(type)) {
+    if (type === "subscribe") {
+      return { label: "신청 완료", path: "/governance/forms/my" };
+    }
+    if (type === "purchase") {
       return { label: "2단계로 진행", path: "/governance/forms/intake/load" };
     }
     return { label: "2단계로 진행", path: "/governance/forms/intake/build" };
