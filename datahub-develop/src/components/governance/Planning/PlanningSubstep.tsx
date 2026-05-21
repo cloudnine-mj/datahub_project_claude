@@ -76,7 +76,7 @@ export function PlanningSubstep() {
         items={[
           { label: "Governance", href: "/governance/home" },
           { label: meta.label, href: `/governance/forms/planning?type=${type}` },
-          { label: "1. 기획 · 계획 수립" },
+          { label: "계획 수립" },
         ]}
       />
 

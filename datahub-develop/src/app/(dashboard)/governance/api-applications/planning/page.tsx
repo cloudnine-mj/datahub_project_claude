@@ -12,7 +12,7 @@ export default function Page() {
         items={[
           { label: "Governance", href: "/governance/home" },
           { label: "API 활용 계획서", href: "/governance/api-applications/planning" },
-          { label: "1. 기획 · 계획 수립" },
+          { label: "계획 수립" },
         ]}
       />
 

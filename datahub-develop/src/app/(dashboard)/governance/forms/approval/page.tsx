@@ -99,7 +99,7 @@ export default function Page() {
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: "1. 기획 · 전자결재 품의" },
+        { label: "전자결재 품의" },
       ]}
       phases={getPhase1Phases(planningType)}
       subSteps={buildPhase1SubSteps("approval", planningType)}

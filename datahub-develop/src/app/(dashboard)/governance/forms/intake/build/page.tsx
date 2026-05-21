@@ -58,7 +58,7 @@ export default function Page() {
         items={[
           { label: "Governance", href: "/governance/home" },
           typeCrumb,
-          { label: isTwoPhase ? "1. 기획 · 계약 체결" : "2. 구축" },
+          { label: isTwoPhase ? "계약 체결" : "구축" },
         ]}
       />
 

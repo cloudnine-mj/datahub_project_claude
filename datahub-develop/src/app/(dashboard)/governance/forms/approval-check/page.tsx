@@ -29,7 +29,7 @@ export default function Page() {
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: "1. 기획 · 결재 승인 확인" },
+        { label: "결재 승인 확인" },
       ]}
       phases={getPhase1Phases(type)}
       subSteps={buildPhase1SubSteps("approval-check", type)}

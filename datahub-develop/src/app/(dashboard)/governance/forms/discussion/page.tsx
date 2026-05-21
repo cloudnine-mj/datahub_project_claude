@@ -52,7 +52,7 @@ export default function Page() {
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: "1. 기획 · 담당자 논의·확정" },
+        { label: "담당자 논의·확정" },
       ]}
       phases={getPhase1Phases(type)}
       subSteps={buildPhase1SubSteps("discussion", type)}
