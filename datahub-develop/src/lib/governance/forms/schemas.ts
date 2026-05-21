@@ -232,7 +232,7 @@ const dataPurchase: FormSchema = {
       ],
     },
     {
-      title: "데이터 정보",
+      title: "구매 데이터 정보",
       fields: [
         {
           key: "구매_희망_데이터셋",
