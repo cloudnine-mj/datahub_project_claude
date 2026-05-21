@@ -55,12 +55,14 @@ function buildHistoryFromBackend(entries: ApprovalEntry[]): StatusHistoryItem[] 
     .map((e, i): StatusHistoryItem | null => {
       const action = statusToAction(e.status);
       if (!action) return null;
+      const at = e.changedAt ?? e.changed_at ?? "";
+      const by = e.changedBy ?? e.changed_by ?? "";
       return {
-        id: `srv-${i}-${e.changed_at}`,
+        id: `srv-${i}-${at}`,
         action,
-        actor: e.changed_by,
+        actor: by,
         actorRole: "신청자",
-        timestamp: isoToShort(e.changed_at),
+        timestamp: isoToShort(at),
         comment: e.comment ?? undefined,
       };
     })

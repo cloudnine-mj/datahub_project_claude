@@ -301,8 +301,8 @@ function ProgressPanel({
                   />
                   <div className="flex flex-wrap items-baseline gap-2 text-sm">
                     <StatusBadge status={h.status} />
-                    <span className="font-medium text-gray-700">{h.changed_by}</span>
-                    <span className="text-xs text-gray-400">{formatTimeline(h.changed_at)}</span>
+                    <span className="font-medium text-gray-700">{h.changedBy ?? h.changed_by}</span>
+                    <span className="text-xs text-gray-400">{formatTimeline(h.changedAt ?? h.changed_at ?? "")}</span>
                   </div>
                   {h.comment && (
                     <p className="mt-1 flex items-start gap-1.5 text-xs text-gray-600">
