@@ -135,7 +135,6 @@ function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<stri
     recipientRole: m.recipientRole as FormMessageItem["recipientRole"],
     body: m.body as string,
     createdAt: m.createdAt as string,
-    editedAt: (m.editedAt as string | null | undefined) ?? null,
     attachments: attachments as unknown as FormMessageItem["attachments"],
     // snake_case
     form_id: m.formId,
@@ -146,7 +145,6 @@ function adaptMessage(m: Record<string, unknown>): FormMessageItem & Record<stri
     recipient_name: m.recipientName,
     recipient_role: m.recipientRole,
     created_at: m.createdAt,
-    edited_at: m.editedAt ?? null,
   };
 }
 

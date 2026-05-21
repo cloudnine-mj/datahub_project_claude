@@ -483,8 +483,6 @@ model GovernanceFormMessage {
   recipientRole String
   body          String   @db.Text
   createdAt     DateTime @default(now())
-  /// 마지막 수정 시각 — 미수정이면 null. 수정 시 UI 가 '(수정됨)' 으로 표시.
-  editedAt      DateTime?
 
   form        GovernanceForm                    @relation(fields: [formId], references: [id], onDelete: Cascade)
   attachments GovernanceFormMessageAttachment[]

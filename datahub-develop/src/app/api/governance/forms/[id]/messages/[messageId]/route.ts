@@ -3,7 +3,6 @@
  * DELETE /api/governance/forms/[id]/messages/[messageId] — 코멘트 삭제 (작성자 본인만)
  *
  * 권한: 발신자 본인만 수정 / 삭제 가능. admin 이라도 타인 메시지 직접 편집은 차단.
- * editedAt: PATCH 시 갱신 — UI 에서 '(수정됨)' 표시.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -44,7 +43,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const updated = await prisma.governanceFormMessage.update({
     where: { id: msg.id },
-    data: { body: text, editedAt: new Date() },
+    data: { body: text },
     include: {
       attachments: { select: { id: true, filename: true, sizeBytes: true } },
     },

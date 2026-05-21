@@ -45,8 +45,6 @@ interface UserMessage {
   replyTarget: ReplyTargetUser;
   /** 'M/d HH:mm' short form 또는 ISO. */
   timestamp: string;
-  /** 마지막 수정 시각 — 표시: '(수정됨)'. null/undefined 면 미수정. */
-  editedAt?: string | null;
   text: string;
   attachments: {
     name: string;
@@ -93,7 +91,6 @@ function backendMessageToUI(m: FormMessageItem): UserMessage {
     senderRole: m.senderRole,
     replyTarget: { name: m.recipientName, role: m.recipientRole },
     timestamp: isoToShort(m.createdAt),
-    editedAt: m.editedAt ?? null,
     text: m.body,
     attachments: m.attachments.map((a) => ({
       name: a.filename,
@@ -255,9 +252,7 @@ export function ProgressHistoryBlock({
     }
     if (!formId || !target.serverId) {
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === uiId ? { ...m, text: trimmed, editedAt: new Date().toISOString() } : m,
-        ),
+        prev.map((m) => (m.id === uiId ? { ...m, text: trimmed } : m)),
       );
       return;
     }
@@ -604,14 +599,6 @@ function UserMessageRow({ msg, canEdit = false, onEdit, onDelete }: UserMessageR
           </span>
           <span className="text-[10px] text-gray-400">·</span>
           <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
-          {msg.editedAt && (
-            <span
-              className="text-[10px] text-gray-400 italic"
-              title={`수정: ${new Date(msg.editedAt).toLocaleString("ko-KR")}`}
-            >
-              (수정됨)
-            </span>
-          )}
           {/* 본인 코멘트 — 수정/삭제 액션. 편집 중에는 숨김. */}
           {canEdit && !editing && (
             <span className="ml-auto inline-flex items-center gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
