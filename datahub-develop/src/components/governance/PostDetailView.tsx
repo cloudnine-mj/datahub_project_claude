@@ -3,6 +3,7 @@
 // 게시글 상세 — 화면 캡처에는 명시적 디자인 없으나 자연스러운 read-only 뷰.
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Pencil, Pin, PinOff } from "lucide-react";
 import { api, type BoardType, type Me, type PostDetail } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "./Breadcrumb";
@@ -16,6 +17,10 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pinning, setPinning] = useState(false);
+  const searchParams = useSearchParams();
+  // 관리 그룹(?from=manage) 진입 — platform role 무관 관리자 액션(상단고정/수정/삭제) 노출.
+  // 가이드 그룹(from 없음) 진입은 read-only.
+  const isManageView = searchParams?.get("from") === "manage";
 
   useEffect(() => {
     api.getPost(board, postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -23,10 +28,10 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
   }, [board, postId]);
 
   const label = BOARD_LABELS[board];
-  const canDelete = !!post && !!me && (me.user.role === "admin" || me.user.name === post.author_name);
   const isAdmin = me?.user.role === "admin";
-  // 수정 버튼은 admin 만 노출 — 권한 없는 사용자에게는 버튼 자체가 안 보임.
-  const showEditButton = !!post && isAdmin;
+  const canDelete = !!post && (isManageView || (!!me && (isAdmin || me.user.name === post.author_name)));
+  // 수정 / 상단고정: 관리 그룹 진입이거나 admin 일 때 노출.
+  const showAdminActions = !!post && (isManageView || isAdmin);
 
   async function togglePin() {
     if (!post || pinning) return;
@@ -56,8 +61,8 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-2xl font-bold tracking-tight">{post.title}</h1>
             <div className="flex items-center gap-1.5">
-              {/* 상단 고정 토글 — admin 만 노출. 고정 상태면 PinOff 아이콘 + 활성 톤. */}
-              {isAdmin && (
+              {/* 상단 고정 토글 — 관리 그룹 진입 또는 admin. 고정 상태면 PinOff 아이콘 + 활성 톤. */}
+              {showAdminActions && (
                 <button
                   type="button"
                   onClick={togglePin}
@@ -74,9 +79,9 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
                   {post.pinned ? "고정 해제" : "상단 고정"}
                 </button>
               )}
-              {showEditButton && (
+              {showAdminActions && (
                 <Link
-                  href={`/governance/${boardSegment(board)}/new?id=${post.id}`}
+                  href={`/governance/${boardSegment(board)}/new?id=${post.id}${isManageView ? "&from=manage" : ""}`}
                   className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
                 >
                   <Pencil size={12} /> 수정
@@ -86,7 +91,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
                 <DeletePostButton
                   board={board}
                   postId={post.id}
-                  redirectTo={`/governance/${boardSegment(board)}`}
+                  redirectTo={`/governance/${boardSegment(board)}${isManageView ? "?manage=1" : ""}`}
                 />
               )}
             </div>
@@ -163,7 +168,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
       {post && (
         <div className="mt-4 flex justify-end">
           <Link
-            href={`/governance/${board}`}
+            href={`/governance/${board}${isManageView ? "?manage=1" : ""}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
             <ArrowLeft size={14} /> {label}

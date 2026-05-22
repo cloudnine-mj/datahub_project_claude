@@ -41,6 +41,10 @@ export function PostNewView({ board }: { board: BoardType }) {
   const editId = searchParams?.get("id");
   const isEdit = !!editId;
   const isPolicy = board === "policy";
+  // 관리 그룹 진입 컨텍스트 유지 — 저장 후 detail 페이지로 가도 상단고정/수정/삭제 가 보이도록.
+  const fromManage = searchParams?.get("from") === "manage";
+  const manageQuery = fromManage ? "?from=manage" : "";
+  const manageListQuery = fromManage ? "?manage=1" : "";
 
   const [me, setMe] = useState<Me | null>(null);
   const [authorName, setAuthorName] = useState("");
@@ -150,10 +154,12 @@ export function PostNewView({ board }: { board: BoardType }) {
       }
 
       if (asDraft || isEdit) {
-        // 임시저장 / 수정 모두 상세 페이지로 이동해 결과 확인
-        router.push(`/governance/${boardSegment(board)}/${post.id}`);
+        // 임시저장 / 수정 모두 상세 페이지로 이동해 결과 확인.
+        // 관리 컨텍스트는 ?from=manage 로 유지해 detail 페이지가 admin UI 를 노출.
+        router.push(`/governance/${boardSegment(board)}/${post.id}${manageQuery}`);
       } else {
-        router.push(`/governance/${boardSegment(board)}`);
+        // 신규 등록 후 목록 — 관리 진입이면 ?manage=1 로 돌아가 작성하기 버튼 유지.
+        router.push(`/governance/${boardSegment(board)}${manageListQuery}`);
       }
     } catch (e) {
       setError((e as Error).message);

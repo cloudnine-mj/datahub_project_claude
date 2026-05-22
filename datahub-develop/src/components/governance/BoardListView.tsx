@@ -188,7 +188,7 @@ export function BoardListView({ board, compact = false }: Props) {
         {isManage && (
           <div className="ml-auto">
             <Link
-              href={`/governance/${boardSegment(board)}/new`}
+              href={`/governance/${boardSegment(board)}/new?from=manage`}
               className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
             >
               <Pencil size={14} /> 작성하기
@@ -237,7 +237,7 @@ export function BoardListView({ board, compact = false }: Props) {
                   <tr key={p.id} className="border-t border-gray-100 hover:bg-gray-50">
                     <td className="px-6 py-4 text-gray-400">{totalRows - indexInFiltered}</td>
                     <td className="px-6 py-4">
-                      <Link href={`/governance/${boardSegment(board)}/${p.id}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
+                      <Link href={`/governance/${boardSegment(board)}/${p.id}${isManage ? "?from=manage" : ""}`} className="inline-flex items-center gap-2 font-medium hover:text-brand">
                         {p.pinned && (
                           <Pin size={12} className="shrink-0 text-amber-600" aria-label="상단 고정" />
                         )}

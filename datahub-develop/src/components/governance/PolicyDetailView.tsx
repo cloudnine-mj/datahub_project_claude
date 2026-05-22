@@ -18,6 +18,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Lock, Pencil, Pin, PinOff, X } from "lucide-react";
 import { api, type Me, type PostDetail } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "./Breadcrumb";
@@ -31,6 +32,9 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
   const [error, setError] = useState<string | null>(null);
   const [forbiddenOpen, setForbiddenOpen] = useState(false);
   const [pinning, setPinning] = useState(false);
+  const searchParams = useSearchParams();
+  // 관리 그룹(?from=manage) 진입 — platform role 무관 상단고정/수정/삭제 노출.
+  const isManageView = searchParams?.get("from") === "manage";
 
   useEffect(() => {
     api.getPost("policy", postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -40,9 +44,10 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
   if (error) return <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>;
   if (!post) return <div className="text-sm text-gray-400">불러오는 중...</div>;
 
-  // 삭제 권한: admin 이거나 작성자 본인. 백엔드도 동일하게 검증함.
-  const canDelete = !!me && (me.user.role === "admin" || me.user.name === post.author_name);
   const isAdmin = me?.user.role === "admin";
+  // 삭제 권한: 관리 그룹 진입이거나 admin 이거나 작성자 본인. 백엔드도 동일하게 검증함.
+  const canDelete = isManageView || (!!me && (isAdmin || me.user.name === post.author_name));
+  const showAdminActions = isManageView || isAdmin;
 
   async function togglePin() {
     if (!post || pinning) return;
@@ -71,8 +76,8 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
         <div className="flex items-start justify-between gap-4">
           <h1 className="min-w-0 flex-1 text-2xl font-bold tracking-tight">{post.title}</h1>
           <div className="flex shrink-0 items-center gap-1.5">
-            {/* 상단 고정 토글 — admin 만. 고정 상태면 PinOff 아이콘 + amber 톤. */}
-            {isAdmin && (
+            {/* 상단 고정 토글 — 관리 그룹 진입 또는 admin. 고정 상태면 PinOff 아이콘 + amber 톤. */}
+            {showAdminActions && (
               <button
                 type="button"
                 onClick={togglePin}
@@ -89,9 +94,9 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
                 {post.pinned ? "고정 해제" : "상단 고정"}
               </button>
             )}
-            {isAdmin ? (
+            {showAdminActions ? (
               <Link
-                href={`/governance/policy/new?id=${post.id}`}
+                href={`/governance/policy/new?id=${post.id}${isManageView ? "&from=manage" : ""}`}
                 className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
               >
                 <Pencil size={12} /> 수정
@@ -106,7 +111,7 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
               </button>
             )}
             {canDelete && (
-              <DeletePostButton board="policy" postId={post.id} redirectTo="/governance/policy" />
+              <DeletePostButton board="policy" postId={post.id} redirectTo={`/governance/policy${isManageView ? "?manage=1" : ""}`} />
             )}
           </div>
         </div>
@@ -182,7 +187,7 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
       {post && (
         <div className="mt-4 flex justify-end">
           <Link
-            href="/governance/policy"
+            href={`/governance/policy${isManageView ? "?manage=1" : ""}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-gray-50"
           >
             <ArrowLeft size={14} /> 데이터 거버넌스 정책
