@@ -88,6 +88,7 @@ export default function Page() {
   const queryParam = searchParams?.get("q") ?? "";
 
   const [items, setItems] = useState<FormListItem[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [query, setQuery] = useState(queryParam);
 
   const updateUrl = (patch: Record<string, string | null>) => {
@@ -109,11 +110,19 @@ export default function Page() {
   }, [query]);
 
   useEffect(() => {
-    const refetch = () =>
+    const refetch = () => {
+      setFetchError(null);
       api
         .listForms({ mine: false })
-        .then(setItems)
-        .catch(() => setItems([]));
+        .then((rows) => {
+          setItems(rows);
+          setFetchError(null);
+        })
+        .catch((e: unknown) => {
+          setItems([]);
+          setFetchError((e as Error)?.message ?? "목록을 불러오지 못했습니다.");
+        });
+    };
     refetch();
     api
       .me()
@@ -237,6 +246,12 @@ export default function Page() {
           CSV
         </button>
       </div>
+
+      {fetchError && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          목록을 불러오지 못했습니다: {fetchError}
+        </div>
+      )}
 
       {/* 테이블 */}
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">

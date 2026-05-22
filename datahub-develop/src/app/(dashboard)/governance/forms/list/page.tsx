@@ -48,6 +48,7 @@ export default function GovernanceFormsListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [items, setItems] = useState<ListItem[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [query, setQuery] = useState("");
@@ -68,10 +69,17 @@ export default function GovernanceFormsListPage() {
   );
 
   const refetch = useCallback(() => {
+    setFetchError(null);
     api
       .listForms({ mine: false })
-      .then((rows) => setItems(rows.map((r) => r as ListItem)))
-      .catch(() => setItems([]));
+      .then((rows) => {
+        setItems(rows.map((r) => r as ListItem));
+        setFetchError(null);
+      })
+      .catch((e: unknown) => {
+        setItems([]);
+        setFetchError((e as Error)?.message ?? "목록을 불러오지 못했습니다.");
+      });
   }, []);
 
   useEffect(() => {
@@ -255,6 +263,12 @@ export default function GovernanceFormsListPage() {
       <div className="mt-4">
         <RequestStatusTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
+
+      {fetchError && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          목록을 불러오지 못했습니다: {fetchError}
+        </div>
+      )}
 
       {mineOnly && pageItems !== null && pageItems.length === 0 ? (
         <div className="rounded-lg bg-gray-50 px-5 py-10 text-center">

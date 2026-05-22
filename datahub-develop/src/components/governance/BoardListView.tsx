@@ -60,6 +60,7 @@ const CATEGORY_COLORS: Record<
 
 export function BoardListView({ board, compact = false }: Props) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   // 카테고리 다중 필터 — 기본은 전체 선택 (Policy 의 severity 필터와 동일 패턴)
   const [categoryFilter, setCategoryFilter] = useState<Set<CategoryKey>>(
@@ -74,7 +75,18 @@ export function BoardListView({ board, compact = false }: Props) {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    api.listPosts(board).then(setPosts).catch(() => setPosts([]));
+    setFetchError(null);
+    api
+      .listPosts(board)
+      .then((rows) => {
+        setPosts(rows);
+        setFetchError(null);
+      })
+      .catch((e: unknown) => {
+        // 빈 목록처럼 보이지 않도록 실제 에러 표면 — 401/네트워크 진단 가능.
+        setPosts([]);
+        setFetchError((e as Error)?.message ?? "목록을 불러오지 못했습니다.");
+      });
     api.me().then(setMe).catch(() => setMe(null));
   }, [board]);
 
@@ -196,6 +208,12 @@ export function BoardListView({ board, compact = false }: Props) {
           </div>
         )}
       </div>
+
+      {fetchError && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          목록을 불러오지 못했습니다: {fetchError}
+        </div>
+      )}
 
       <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-sm">

@@ -36,6 +36,7 @@ function postStatusKey(p: PostListItem): PostStatusKey {
 /** compact: 자체 Breadcrumb·페이지 제목·가이드 배너 생략 (상위 컨테이너가 헤더를 제공할 때). */
 export function PolicyBoardView({ compact = false }: { compact?: boolean } = {}) {
   const [posts, setPosts] = useState<PostListItem[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [query, setQuery] = useState("");
   const [pageSize, setPageSize] = useState(10);
@@ -46,7 +47,17 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
   );
 
   useEffect(() => {
-    api.listPosts("policy").then(setPosts).catch(() => setPosts([]));
+    setFetchError(null);
+    api
+      .listPosts("policy")
+      .then((rows) => {
+        setPosts(rows);
+        setFetchError(null);
+      })
+      .catch((e: unknown) => {
+        setPosts([]);
+        setFetchError((e as Error)?.message ?? "목록을 불러오지 못했습니다.");
+      });
     api.me().then(setMe).catch(() => setMe(null));
   }, []);
 
@@ -154,6 +165,12 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
           </Link>
         )}
       </div>
+
+      {fetchError && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          목록을 불러오지 못했습니다: {fetchError}
+        </div>
+      )}
 
       {/* 표 — 컬럼은 항상 전체 표시 */}
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white">
