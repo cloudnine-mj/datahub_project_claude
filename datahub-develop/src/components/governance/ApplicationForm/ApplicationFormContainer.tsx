@@ -16,6 +16,8 @@ import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { StatusBanner } from "./StatusBanner";
+import { ChatPanel } from "@/components/governance/chat/ChatPanel";
+import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   APPLICATION_TO_FORM_TYPE,
   mockHistoryFor,
@@ -324,16 +326,32 @@ export function ApplicationFormContainer({
   );
 
   if (status === "draft") {
+    const assignee = getChatAssignee();
     return (
       <>
         <StatusBanner status={status} />
-        {renderFormCard(false)}
 
-        <DraftActions
-          prevPath={prevPath}
-          onSaveDraft={onSaveDraft}
-          onSubmit={onOpenPreview}
-        />
+        {/* 작성 모드 — 좌측 신청서(1fr) + 우측 담당자 채팅(300px) 2단 레이아웃.
+            태블릿/모바일(< lg) 에서는 1단 세로 쌓기. */}
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_300px]">
+          <div className="min-w-0">
+            {renderFormCard(false)}
+
+            <DraftActions
+              prevPath={prevPath}
+              onSaveDraft={onSaveDraft}
+              onSubmit={onOpenPreview}
+            />
+          </div>
+          <div className="lg:sticky lg:top-4">
+            <ChatPanel
+              formId={formId}
+              currentUserEmail={applicant.email}
+              assigneeTeam={assignee.team}
+              status="writing"
+            />
+          </div>
+        </div>
 
         {toast && (
           <div
