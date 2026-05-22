@@ -340,9 +340,8 @@ async function main() {
         projectName: "고객 행동 분석 데이터셋 구매",
         submitter: sampleUsers[0],
         department: "AI Platform",
-        status: "approved",
-        submittedDaysAgo: 12,
-        approvedDaysAgo: 8,
+        status: "reviewing",
+        submittedDaysAgo: 13,
         payload: {
           구매_희망_데이터셋: "국내 e-commerce 클릭 로그 v2",
           판매_업체: "데이터코리아",
@@ -421,8 +420,8 @@ async function main() {
         projectName: "재무 시계열 데이터 구독",
         submitter: sampleUsers[5],
         department: "QA Engineering",
-        status: "reviewing",
-        submittedDaysAgo: 3,
+        status: "info_requested",
+        submittedDaysAgo: 4,
         payload: {
           구독_희망_데이터셋: "글로벌 주식 일별 OHLCV",
           구독_업체: "FinDataHub",
@@ -469,13 +468,9 @@ async function main() {
     ];
 
     for (const s of samples) {
-      // 같은 requestNo 이미 있으면 skip — 여러 번 seed 돌려도 중복 생성 안 함.
-      const exists = await prisma.governanceForm.findUnique({
-        where: { requestNo: s.requestNo },
-        select: { id: true },
-      });
-      if (exists) continue;
-
+      // 같은 requestNo 가 있어도 mock 상태(status/payload/history) 가 변경될 수 있으므로
+      // upsert 로 갱신. 사용자 직접 입력한 row 와 충돌 위험은 REQ-2026-0000X 시드 번호
+      // 고정 범위이므로 사실상 없음.
       const submittedAt = day(s.submittedDaysAgo);
       const history: { status: string; changedBy: string; changedAt: string; comment: string | null }[] = [
         {
@@ -485,12 +480,25 @@ async function main() {
           comment: "최초 제출",
         },
       ];
-      if (s.status === "reviewing" || s.status === "approved") {
+      if (
+        s.status === "reviewing" ||
+        s.status === "approved" ||
+        s.status === "info_requested"
+      ) {
         history.push({
           status: "reviewing",
           changedBy: assigneeName,
           changedAt: day(s.submittedDaysAgo - 1).toISOString(),
           comment: "검토 시작",
+        });
+      }
+      if (s.status === "info_requested") {
+        // 보완 요청 — FormProcessBar 가 [보완 요청] 접두로 감지하므로 prefix 포함.
+        history.push({
+          status: "info_requested",
+          changedBy: assigneeName,
+          changedAt: day(Math.max(s.submittedDaysAgo - 2, 0)).toISOString(),
+          comment: "[보완 요청] 사용 목적 상세 보완 부탁드립니다.",
         });
       }
       if (s.status === "approved" && s.approvedDaysAgo !== undefined) {
@@ -502,8 +510,21 @@ async function main() {
         });
       }
 
-      await prisma.governanceForm.create({
-        data: {
+      await prisma.governanceForm.upsert({
+        where: { requestNo: s.requestNo },
+        update: {
+          formType: s.formType,
+          projectName: s.projectName,
+          submitterId: s.submitter.id,
+          submitterName: s.submitter.name ?? s.submitter.email,
+          submitterEmail: s.submitter.email,
+          submitterDepartment: s.department,
+          status: s.status,
+          submittedAt,
+          approvalHistory: history as unknown as Prisma.InputJsonValue,
+          payload: s.payload as unknown as Prisma.InputJsonValue,
+        },
+        create: {
           requestNo: s.requestNo,
           formType: s.formType,
           projectName: s.projectName,
