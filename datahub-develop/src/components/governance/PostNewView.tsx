@@ -101,12 +101,8 @@ export function PostNewView({ board }: { board: BoardType }) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // 권한 없는 사용자가 직접 URL 로 진입한 경우 화면 12 로 강제 이동
-  useEffect(() => {
-    if (me && !me.permissions[`can_write_${board}` as const]) {
-      router.replace(`/governance/${boardSegment(board)}/forbidden`);
-    }
-  }, [me, board, router]);
+  // 사내 정책상 관리 그룹은 모든 로그인 사용자에게 개방. 별도 forbidden 리다이렉트 없음.
+  // (게시글 작성 권한은 백엔드 라우트(POST /api/governance/posts) 에서 가드.)
 
   async function save(asDraft: boolean) {
     setError(null);
