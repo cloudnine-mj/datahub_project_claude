@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export interface SectionNavItem {
@@ -19,11 +19,42 @@ interface SectionNavProps {
 
 export function SectionNav({ items, className }: SectionNavProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // 같은 pathname 을 query 로만 구분하는 메뉴(예: /governance/process vs
+  // /governance/process?manage=1) 가 있어 href 의 query 도 함께 비교해야 함.
   const isActive = (href: string) => {
-    if (pathname === href) return true;
-    if (href !== "/" && pathname.startsWith(href + "/")) return true;
-    return false;
+    const [hrefPath, hrefQuery = ""] = href.split("?");
+    const pathMatches =
+      pathname === hrefPath ||
+      (hrefPath !== "/" && pathname.startsWith(hrefPath + "/"));
+    if (!pathMatches) return false;
+
+    if (!hrefQuery) {
+      // href 에 query 가 없는 경우 — 현재 URL 에 동일 pathname 을 가진 query 메뉴
+      // (예: ?manage=1) 가 있으면 본 메뉴는 비활성. 같은 pathname 의 query 메뉴 중
+      // 어느 것도 매칭 안 될 때만 활성화.
+      const others = items.filter(
+        (it) => it.href !== href && it.href.split("?")[0] === hrefPath,
+      );
+      const anyOtherMatches = others.some((it) => {
+        const otherQs = it.href.split("?")[1] ?? "";
+        if (!otherQs) return false;
+        const params = new URLSearchParams(otherQs);
+        for (const [k, v] of params.entries()) {
+          if (searchParams?.get(k) !== v) return false;
+        }
+        return true;
+      });
+      return !anyOtherMatches;
+    }
+
+    // href 에 query 가 있으면 그 모든 key/value 가 현재 URL 의 query 와 일치해야 함.
+    const params = new URLSearchParams(hrefQuery);
+    for (const [k, v] of params.entries()) {
+      if (searchParams?.get(k) !== v) return false;
+    }
+    return true;
   };
 
   const groups = items.reduce<Record<string, SectionNavItem[]>>((acc, item) => {
