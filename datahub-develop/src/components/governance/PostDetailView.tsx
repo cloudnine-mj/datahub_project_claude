@@ -18,9 +18,9 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
   const [error, setError] = useState<string | null>(null);
   const [pinning, setPinning] = useState(false);
   const searchParams = useSearchParams();
-  // 관리 그룹(?from=manage) 진입 — platform role 무관 관리자 액션(상단고정/수정/삭제) 노출.
-  // 가이드 그룹(from 없음) 진입은 read-only.
-  const isManageView = searchParams?.get("from") === "manage";
+  // 관리 그룹(?manage=1) 진입 — platform role 무관 관리자 액션(상단고정/수정/삭제) 노출.
+  // 가이드 그룹(?manage 없음) 진입은 read-only.
+  const isManageView = searchParams?.get("manage") === "1";
 
   useEffect(() => {
     api.getPost(board, postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -81,7 +81,7 @@ export function PostDetailView({ board, postId }: { board: BoardType; postId: st
               )}
               {showAdminActions && (
                 <Link
-                  href={`/governance/${boardSegment(board)}/new?id=${post.id}${isManageView ? "&from=manage" : ""}`}
+                  href={`/governance/${boardSegment(board)}/new?id=${post.id}${isManageView ? "&manage=1" : ""}`}
                   className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
                 >
                   <Pencil size={12} /> 수정

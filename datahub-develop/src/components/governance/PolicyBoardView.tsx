@@ -158,7 +158,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
         {/* 작성하기 — 관리 그룹 진입(?manage=1) 시 모든 사용자에게 노출. */}
         {isManage && (
           <Link
-            href="/governance/policy/new?from=manage"
+            href="/governance/policy/new?manage=1"
             className="ml-auto inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark"
           >
             <Pencil size={14} /> 작성하기
@@ -216,7 +216,7 @@ export function PolicyBoardView({ compact = false }: { compact?: boolean } = {})
                   </td>
                   <td className="px-5 py-3">
                     <Link
-                      href={`/governance/policy/${p.id}${isManage ? "?from=manage" : ""}`}
+                      href={`/governance/policy/${p.id}${isManage ? "?manage=1" : ""}`}
                       className="inline-flex items-center gap-2 font-medium text-gray-900 hover:text-brand"
                     >
                       {p.pinned && (

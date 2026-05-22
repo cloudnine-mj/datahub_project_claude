@@ -33,8 +33,8 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
   const [forbiddenOpen, setForbiddenOpen] = useState(false);
   const [pinning, setPinning] = useState(false);
   const searchParams = useSearchParams();
-  // 관리 그룹(?from=manage) 진입 — platform role 무관 상단고정/수정/삭제 노출.
-  const isManageView = searchParams?.get("from") === "manage";
+  // 관리 그룹(?manage=1) 진입 — platform role 무관 상단고정/수정/삭제 노출.
+  const isManageView = searchParams?.get("manage") === "1";
 
   useEffect(() => {
     api.getPost("policy", postId).then(setPost).catch((e) => setError((e as Error).message));
@@ -96,7 +96,7 @@ export function PolicyDetailView({ postId }: { postId: string | number }) {
             )}
             {showAdminActions ? (
               <Link
-                href={`/governance/policy/new?id=${post.id}${isManageView ? "&from=manage" : ""}`}
+                href={`/governance/policy/new?id=${post.id}${isManageView ? "&manage=1" : ""}`}
                 className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
               >
                 <Pencil size={12} /> 수정
