@@ -315,7 +315,7 @@ export function ProgressHistoryBlock({
             />
           )}
           <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            {commentsOnly ? "코멘트" : "활동"}
+            {commentsOnly ? "담당자와의 소통" : "활동"}
           </h2>
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {items.length}건
