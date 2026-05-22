@@ -119,7 +119,7 @@ export function PlanningSubstep() {
         />
       )}
 
-      <PlanningFooter nextPath={`/governance/forms/intake?type=${type}`} type={type} />
+      <PlanningFooter nextPath="/governance/forms/intake" type={type} />
     </div>
   );
 }
