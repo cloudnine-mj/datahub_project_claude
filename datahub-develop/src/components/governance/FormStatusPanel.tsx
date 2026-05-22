@@ -49,6 +49,10 @@ interface Props {
   /** 관리자 액션 영역을 강제로 숨김 — read-only 컨텍스트(요청 목록 진입) 에서 true.
    *  내부적으로 canActAsAdmin 이 true 라도 버튼을 노출하지 않음. */
   hideAdminActions?: boolean;
+  /** 사내 정책상 관리 탭(거버넌스 요청 관리) 은 모든 사용자에게 열려 있음.
+   *  true 이면 platform role 이 admin 이 아니어도 관리자 액션을 노출.
+   *  본인 신청서 여부 / hideAdminActions 는 별도로 적용. */
+  viewAsAdmin?: boolean;
 }
 
 type ActionCode =
@@ -131,11 +135,12 @@ export function FormStatusPanel({
   onChanged,
   inlineHistory,
   hideAdminActions = false,
+  viewAsAdmin = false,
 }: Props) {
   const router = useRouter();
   const isAdmin = me?.user.role === "admin";
   const isOwnSubmission = !!me && !!submitterEmail && me.user.email === submitterEmail;
-  const canActAsAdmin = isAdmin && !isOwnSubmission && !hideAdminActions;
+  const canActAsAdmin = (isAdmin || viewAsAdmin) && !isOwnSubmission && !hideAdminActions;
   // 현재 상태에서 가능한 관리자 액션 목록 — 상태 전이 그래프대로 분기.
   const availableActions = actionsForStatus(status);
   // 사용자가 선택한 액션 — null 이면 아무 액션도 선택되지 않은 초기 상태.
