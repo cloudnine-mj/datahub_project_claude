@@ -40,21 +40,21 @@ export function SectionNav({ items, className }: SectionNavProps) {
       const anyOtherMatches = others.some((it) => {
         const otherQs = it.href.split("?")[1] ?? "";
         if (!otherQs) return false;
-        const params = new URLSearchParams(otherQs);
-        for (const [k, v] of params.entries()) {
-          if (searchParams?.get(k) !== v) return false;
-        }
-        return true;
+        let allMatch = true;
+        new URLSearchParams(otherQs).forEach((v, k) => {
+          if (searchParams?.get(k) !== v) allMatch = false;
+        });
+        return allMatch;
       });
       return !anyOtherMatches;
     }
 
     // href 에 query 가 있으면 그 모든 key/value 가 현재 URL 의 query 와 일치해야 함.
-    const params = new URLSearchParams(hrefQuery);
-    for (const [k, v] of params.entries()) {
-      if (searchParams?.get(k) !== v) return false;
-    }
-    return true;
+    let allMatch = true;
+    new URLSearchParams(hrefQuery).forEach((v, k) => {
+      if (searchParams?.get(k) !== v) allMatch = false;
+    });
+    return allMatch;
   };
 
   const groups = items.reduce<Record<string, SectionNavItem[]>>((acc, item) => {
