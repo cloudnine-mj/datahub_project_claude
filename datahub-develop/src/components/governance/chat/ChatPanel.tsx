@@ -21,7 +21,7 @@ import type { FormMessageItem } from "@/lib/governance/forms/types";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 
 interface Props {
-  /** 신청서 ID — 임시저장 전(null) 이면 메시지 전송 불가. */
+  /** 신청서 ID — null 이면 send 시점에 ensureFormId 로 자동 draft 생성. */
   formId: string | null;
   /** 현재 로그인 사용자 이메일 — 본인 메시지 우측 배치 결정. */
   currentUserEmail: string;
@@ -29,6 +29,9 @@ interface Props {
   assigneeTeam?: string;
   /** "작성 중" / "제출됨" — 상단 상태 배지. Phase 1 은 작성 중만 사용. */
   status?: "writing" | "submitted";
+  /** formId 가 없을 때 호출 — draft 자동 생성 후 새 formId 반환.
+   *  반환값 null 이면 생성 실패. ApplicationFormContainer 가 persist(true) 로 구현. */
+  ensureFormId?: () => Promise<string | null>;
 }
 
 export function ChatPanel({
@@ -36,6 +39,7 @@ export function ChatPanel({
   currentUserEmail,
   assigneeTeam,
   status = "writing",
+  ensureFormId,
 }: Props) {
   const [messages, setMessages] = useState<FormMessageItem[]>([]);
   const [text, setText] = useState("");
@@ -69,15 +73,26 @@ export function ChatPanel({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length]);
 
-  const canSend = !!formId && text.trim().length > 0 && !sending;
+  const canSend = text.trim().length > 0 && !sending;
 
   async function send() {
-    if (!canSend || !formId) return;
+    if (!canSend) return;
     const body = text.trim();
     setSending(true);
     setError(null);
     try {
-      const created = await api.createFormMessage(formId, body);
+      // formId 없으면 ensureFormId 로 draft 자동 생성 → 새 id 로 메시지 전송.
+      let targetId = formId;
+      if (!targetId) {
+        if (!ensureFormId) {
+          throw new Error("신청서 저장 후 다시 시도해 주세요.");
+        }
+        targetId = await ensureFormId();
+        if (!targetId) {
+          throw new Error("신청서 저장에 실패했습니다.");
+        }
+      }
+      const created = await api.createFormMessage(targetId, body);
       setMessages((prev) => [...prev, created]);
       setText("");
     } catch (e) {
@@ -127,11 +142,7 @@ export function ChatPanel({
         ref={listRef}
         className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-4"
       >
-        {!formId ? (
-          <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
-            임시저장 후 담당자와 소통할 수 있습니다.
-          </div>
-        ) : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
             아직 메시지가 없습니다. 작성 중 궁금한 점을 담당자에게 문의해 보세요.
           </div>
@@ -159,12 +170,8 @@ export function ChatPanel({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={
-              formId
-                ? "메시지를 입력하세요..."
-                : "임시저장 후 사용 가능"
-            }
-            disabled={!formId || sending}
+            placeholder="메시지를 입력하세요..."
+            disabled={sending}
             rows={1}
             className="flex-1 resize-none border-0 bg-transparent text-[12px] leading-snug text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed dark:text-gray-100"
           />

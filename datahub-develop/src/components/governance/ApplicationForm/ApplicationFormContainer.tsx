@@ -216,9 +216,11 @@ export function ApplicationFormContainer({
     return "(미입력)";
   }
 
-  /** 임시 저장 / 제출 공용 — 첫 호출은 POST(submitForm), 이후는 PATCH(updateForm). */
-  async function persist(asDraft: boolean): Promise<boolean> {
-    if (submitting) return false;
+  /** 임시 저장 / 제출 공용 — 첫 호출은 POST(submitForm), 이후는 PATCH(updateForm).
+   *  반환값: 성공 시 form id, 실패 시 null. (이전 boolean → id 로 확장 — 채팅 자동 draft
+   *  생성에서 새 id 가 필요해서 변경. 호출부는 `!!await persist(...)` 로 truthy 체크.) */
+  async function persist(asDraft: boolean): Promise<string | null> {
+    if (submitting) return null;
     setSubmitting(true);
     try {
       const body = {
@@ -242,12 +244,12 @@ export function ApplicationFormContainer({
       upsertHistory(asDraft ? "임시 저장" : "제출됨");
       // 다른 페이지(거버넌스 요청 목록 / 거버넌스 요청 관리) 가 다음 진입 시 새 데이터를 가져오도록 캐시 무효화.
       router.refresh();
-      return true;
+      return result.id;
     } catch (e) {
       const msg = (e as Error).message || "저장에 실패했습니다.";
       console.error("[form] persist failed", e);
       window.alert(`저장에 실패했습니다.\n${msg}`);
-      return false;
+      return null;
     } finally {
       setSubmitting(false);
     }
@@ -349,6 +351,11 @@ export function ApplicationFormContainer({
               currentUserEmail={applicant.email}
               assigneeTeam={assignee.team}
               status="writing"
+              ensureFormId={async () => {
+                // 메시지 전송 시점에 formId 가 없으면 draft 자동 생성.
+                if (formId) return formId;
+                return await persist(true);
+              }}
             />
           </div>
         </div>
