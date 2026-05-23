@@ -87,7 +87,9 @@ export function ApplicationFormSection({
   );
 }
 
-/** 표 레이아웃의 한 행 — 단일 필드 또는 inlineWithNext 로 묶인 두 필드. */
+/** 표 레이아웃의 한 행 — 단일 필드 또는 inlineWithNext 로 묶인 두 필드.
+ *  checkbox 는 체크박스 + label(긴 안내문) 을 값 칸 안에 인라인으로 렌더하고
+ *  라벨 칸은 tableLabel 로 짧게 표시. */
 function TableRow({
   fields,
   values,
@@ -103,7 +105,37 @@ function TableRow({
 }) {
   const primary = fields[0];
   const isTallTextarea = primary.type === "textarea";
+  const isCheckbox = primary.type === "checkbox";
   const borderCls = isLast ? "" : "border-b border-gray-200 dark:border-gray-700";
+  const rowLabel = primary.tableLabel ?? primary.label;
+
+  // checkbox 행 — 양쪽 padding 16px 로 라벨 칸과 동일한 시각 정렬.
+  if (isCheckbox) {
+    const checked = !!values[primary.key];
+    return (
+      <div className={`grid grid-cols-[240px_1fr] ${borderCls}`}>
+        <div className="flex items-center bg-gray-50 px-4 py-4 text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400">
+          {rowLabel}
+        </div>
+        <label
+          htmlFor={primary.key}
+          className="flex cursor-pointer items-center gap-2 px-4 py-4"
+        >
+          <input
+            id={primary.key}
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => onChange(primary.key, e.target.checked)}
+            disabled={disabled}
+            className="h-3.5 w-3.5 shrink-0 rounded border-gray-300 text-brand focus:ring-brand"
+          />
+          <span className="text-[12px] leading-relaxed text-gray-700 dark:text-gray-300">
+            {primary.label}
+          </span>
+        </label>
+      </div>
+    );
+  }
 
   return (
     <div className={`grid grid-cols-[240px_1fr] ${borderCls}`}>
@@ -112,7 +144,7 @@ function TableRow({
           isTallTextarea ? "items-start pt-4" : "items-center"
         } flex`}
       >
-        {primary.label}
+        {rowLabel}
       </div>
       <div className={`flex ${isTallTextarea ? "items-start" : "items-center"} gap-2.5 px-3.5 py-3`}>
         {fields.length === 1 ? (

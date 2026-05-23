@@ -68,10 +68,16 @@ export interface FieldDef {
   currencyKey?: string;
   /**
    * textarea 전용 — 표시 행 수.
-   *   2 → 중간 서술(min-h 56px), 3 → 긴 서술(min-h 90px). 미지정 시 기본 70px.
+   *   2 → 중간 서술(min-h 64px), 3 → 긴 서술(min-h 90px). 미지정 시 기본 70px.
    * 예상 답변 길이에 따라 입력칸 높이를 차등화해 사용자가 입력량을 가늠하도록 함.
    */
   rows?: number;
+  /**
+   * 표 레이아웃(section.layout === 'table') 에서 라벨 칸에 표시할 텍스트.
+   * 미지정 시 label 그대로 사용. checkbox 처럼 본 label 이 안내문이라 표 라벨로 부적합한
+   * 경우에 짧은 표 라벨을 별도 지정 (예: '조직장 승인').
+   */
+  tableLabel?: string;
 }
 
 /**
@@ -122,10 +128,12 @@ const dataProduction: FormSchema = {
   sections: [
     {
       title: "조직장 사전 승인",
+      layout: "table",
       fields: [
         {
           key: "조직장_승인_완료",
           label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
         },

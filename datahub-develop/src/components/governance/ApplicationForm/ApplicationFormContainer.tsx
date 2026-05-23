@@ -435,14 +435,19 @@ export function ApplicationFormContainer({
 }
 
 // --- 신청자 정보 (읽기 전용) ---
-// 빨간 막대 + '신청자 정보' 헤더 + 흰 라운드 박스 + 0.5px 테두리 (이름/소속/이메일 dl).
-// 카탈로그 미리보기와 동일 디자인. 토글 X — 항상 노출.
+// 빨간 막대 + '신청자 정보' 헤더 + 표 (라벨 240px 회색 / 값 1fr 흰색, 행 사이 구분선).
+// 양식의 다른 섹션(조직장 사전 승인 / 요청 정보) 의 표 레이아웃과 시각 통일.
 
 function SubmitterReadOnlySection({
   applicant,
 }: {
   applicant: { name: string; department: string; email: string };
 }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "이름", value: applicant.name },
+    { label: "소속", value: applicant.department },
+    { label: "이메일", value: applicant.email },
+  ];
   return (
     <section>
       <div className="mb-3 flex items-center gap-1.5">
@@ -451,18 +456,25 @@ function SubmitterReadOnlySection({
           신청자 정보
         </h3>
       </div>
-      <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
-        <dl
-          className="grid gap-y-2 gap-x-3.5 text-[12px]"
-          style={{ gridTemplateColumns: "120px 1fr" }}
-        >
-          <dt className="text-gray-500 dark:text-gray-400">이름</dt>
-          <dd className="text-gray-900 dark:text-gray-100">{applicant.name}</dd>
-          <dt className="text-gray-500 dark:text-gray-400">소속</dt>
-          <dd className="text-gray-900 dark:text-gray-100">{applicant.department}</dd>
-          <dt className="text-gray-500 dark:text-gray-400">이메일</dt>
-          <dd className="text-gray-900 dark:text-gray-100">{applicant.email}</dd>
-        </dl>
+      <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+        {rows.map((r, i) => {
+          const isLast = i === rows.length - 1;
+          return (
+            <div
+              key={r.label}
+              className={`grid grid-cols-[240px_1fr] ${
+                isLast ? "" : "border-b border-gray-200 dark:border-gray-700"
+              }`}
+            >
+              <div className="flex items-center bg-gray-50 px-4 py-4 text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400">
+                {r.label}
+              </div>
+              <div className="flex items-center px-4 py-4 text-[12px] text-gray-900 dark:text-gray-100">
+                {r.value}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
