@@ -136,6 +136,10 @@ function FieldInput({
   const id = field.key;
 
   if (field.type === "textarea") {
+    // rows 에 따라 min-height 차등 — 예상 답변 길이를 시각적으로 암시.
+    //   2 → 56px (중간 서술), 3 → 90px (긴 서술), 미지정 → 70px (기본).
+    const minH =
+      field.rows === 2 ? "min-h-[56px]" : field.rows === 3 ? "min-h-[90px]" : "min-h-[70px]";
     return (
       <textarea
         id={id}
@@ -143,7 +147,8 @@ function FieldInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder}
         disabled={disabled}
-        className={`${INPUT_BASE} min-h-[70px] resize-y`}
+        rows={field.rows}
+        className={`${INPUT_BASE} ${minH} resize-y`}
       />
     );
   }

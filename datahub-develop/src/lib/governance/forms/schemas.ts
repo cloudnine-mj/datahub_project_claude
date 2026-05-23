@@ -66,6 +66,12 @@ export interface FieldDef {
    * 해당 필드는 currency 타입이어야 함 ({kind?: 'USD'|'KRW'|'기타', custom?: string}).
    */
   currencyKey?: string;
+  /**
+   * textarea 전용 — 표시 행 수.
+   *   2 → 중간 서술(min-h 56px), 3 → 긴 서술(min-h 90px). 미지정 시 기본 70px.
+   * 예상 답변 길이에 따라 입력칸 높이를 차등화해 사용자가 입력량을 가늠하도록 함.
+   */
+  rows?: number;
 }
 
 /**
@@ -122,7 +128,7 @@ const dataProduction: FormSchema = {
       title: "요청 정보",
       fields: [
         { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능, PMS 기준)", required: true },
-        { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)" },
+        { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)", rows: 3 },
         { key: "데이터셋_이름", label: "데이터셋 이름", type: "text" },
         { key: "희망_작업_착수일", label: "희망 작업 착수일", type: "date" },
         { key: "희망_수령일", label: "희망 수령일", type: "date" },
@@ -154,7 +160,7 @@ const dataProduction: FormSchema = {
     {
       title: "데이터 검수 / 평가 계획",
       fields: [
-        { key: "품질_평가_방식", label: "품질 평가 방식", type: "textarea", placeholder: "e.g. 데이터 전수 확인, 랜덤 샘플링, 모델 학습 후 벤치마크 점수" },
+        { key: "품질_평가_방식", label: "품질 평가 방식", type: "textarea", placeholder: "e.g. 데이터 전수 확인, 랜덤 샘플링, 모델 학습 후 벤치마크 점수", rows: 2 },
         { key: "품질_평가_기준", label: "품질 평가 기준", type: "textarea", placeholder: "없을 경우, 데이터 제작 시 가장 중요하게 고려해야 할 요소를 적어 주세요." },
         { key: "평가_주기", label: "평가 주기", type: "text", placeholder: "e.g. 주 1회 정기 검수 진행, 데이터 납품 시마다 진행 (최소 중간 평가 1회 이상 필수 권장)" },
       ],
