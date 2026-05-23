@@ -93,6 +93,9 @@ export interface SectionDef {
   title: string;
   /** true 면 섹션 전체가 선택사항 — 헤더에 * 미표시, 빈 필드여도 제출 가능. 기본 false. */
   optional?: boolean;
+  /** 'table' 이면 라벨(240px 회색) + 입력(1fr 흰색) 의 표 형태로 렌더.
+   *  현재는 용역 제작(data_production) 요청 정보 섹션 전용. */
+  layout?: "default" | "table";
   fields: FieldDef[];
 }
 
@@ -107,6 +110,10 @@ export interface FormSchema {
 }
 
 // 화면 10 — 데이터 용역 제작 신청
+// 표 레이아웃(요청 정보 섹션, layout: "table") — 라벨 240px 회색 / 입력 1fr 흰색.
+// 사용자 요청(2026-05 UX 단순화) 으로 기존 다단 섹션을 [조직장 사전 승인] + [요청 정보]
+// 두 섹션으로 통합. 데이터셋 공유 동의 / 작업 요청 사항 / 데이터 검수 평가 계획 /
+// 기타 유의 사항 / 파일 첨부 체크리스트 섹션은 제거됨 — 필요 시 복원.
 const dataProduction: FormSchema = {
   type: "data_production",
   label: "데이터 용역 제작 신청",
@@ -126,65 +133,19 @@ const dataProduction: FormSchema = {
     },
     {
       title: "요청 정보",
+      layout: "table",
       fields: [
-        { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능, PMS 기준)", required: true },
-        { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)", rows: 3 },
-        { key: "데이터셋_이름", label: "데이터셋 이름", type: "text" },
+        { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능)", required: true },
+        { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)", rows: 2 },
+        { key: "데이터셋_이름", label: "데이터셋 이름", type: "text", placeholder: "K-Nowledge" },
         { key: "희망_작업_착수일", label: "희망 작업 착수일", type: "date" },
         { key: "희망_수령일", label: "희망 수령일", type: "date" },
-      ],
-    },
-    {
-      title: "데이터셋 공유 동의",
-      fields: [
-        {
-          key: "접근_권한",
-          label: "접근 권한",
-          type: "radio",
-          options: ["전사에 공유", "제한된 사용자"],
-        },
-      ],
-    },
-    {
-      title: "작업 요청 사항",
-      fields: [
-        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "e.g., 대화, 점수 매기기, AB 테스트, 다차원 레이블링, 한영 번역 검수, OCR, 문서 수집, 문서 QA" },
-        { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀 or 외주 업체 자체 툴 (별도로 원하는 도구가 있으시면 적어 주세요! e.g., Gradio)" },
+        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "문항 풀기 및 문항의 문화 적합성 평가" },
+        { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀" },
         { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력", inlineWithNext: true },
-        { key: "단위", label: "단위", type: "text", placeholder: "e.g., 문장, 문항" },
-        { key: "목표_데이터_수량_상세", label: "목표 데이터 수량 (상세)", type: "textarea", placeholder: "필요 시 수량에 대한 세부 사항 기재 (e.g., 대화 1턴당 문장 최소 10개 → 최소 50만 문장)" },
-        { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "**명 (동일 데이터에 여러 작업자의 의견이 필요하면 1명 이상 기재)" },
-        { key: "작업자_보유_기술", label: "작업자 보유 기술", type: "text", placeholder: "e.g. SQL 활용 가능, 원어민 수준 영어 독해 능력" },
-      ],
-    },
-    {
-      title: "데이터 검수 / 평가 계획",
-      fields: [
-        { key: "품질_평가_방식", label: "품질 평가 방식", type: "textarea", placeholder: "e.g. 데이터 전수 확인, 랜덤 샘플링, 모델 학습 후 벤치마크 점수", rows: 2 },
-        { key: "품질_평가_기준", label: "품질 평가 기준", type: "textarea", placeholder: "없을 경우, 데이터 제작 시 가장 중요하게 고려해야 할 요소를 적어 주세요." },
-        { key: "평가_주기", label: "평가 주기", type: "text", placeholder: "e.g. 주 1회 정기 검수 진행, 데이터 납품 시마다 진행 (최소 중간 평가 1회 이상 필수 권장)" },
-      ],
-    },
-    {
-      title: "기타 유의 사항",
-      optional: true,
-      fields: [
-        {
-          key: "기타_유의_사항",
-          label: "내용",
-          type: "textarea",
-          hint: "위에서 설명하지 못한 기타 유의 사항이 있으면 적어 주세요.",
-          placeholder: "예: 이런 주제로 대화하지 말아 주세요 (정치, 위험 행동 지시, 미래 예측)",
-        },
-      ],
-    },
-    {
-      title: "파일 첨부 체크리스트",
-      optional: true,
-      fields: [
-        { key: "체크_샘플_데이터", label: "다양성이 있는 샘플 데이터를 직접 제작하여 최소 5개 보내 주세요. (작업자 분들의 이해도가 올라가 데이터의 품질이 향상됩니다.)", type: "checkbox" },
-        { key: "체크_가이드라인", label: "작업자 분들에게 전달할 작업 가이드라인을 보내 주세요. 데이터 팀에 요청할 별도 사항이 있으시면 별도의 파일을 첨부해 주세요.", type: "checkbox" },
-        { key: "체크_PoC_입력", label: "입력 데이터 / 소스 데이터가 필요한 작업일 경우 PoC 작업용으로 소량 우선 제공해 주세요.", type: "checkbox" },
+        { key: "단위", label: "단위", type: "text", placeholder: "e.g., 문항" },
+        { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "3명 이상" },
+        { key: "품질_평가_방식", label: "품질평가방식", type: "text", placeholder: "품질 평가 방식을 기재해 주세요" },
       ],
     },
   ],

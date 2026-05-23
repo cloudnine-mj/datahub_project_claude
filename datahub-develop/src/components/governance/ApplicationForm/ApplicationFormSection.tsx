@@ -24,6 +24,21 @@ export function ApplicationFormSection({
   onChange,
   disabled = false,
 }: Props) {
+  // inlineWithNext 적용 — 같은 행에 묶을 두 필드를 사전 그룹핑.
+  // 결과 배열은 [field] | [field, nextField] 의 시퀀스.
+  const groups: FieldDef[][] = [];
+  for (let i = 0; i < section.fields.length; i++) {
+    const f = section.fields[i];
+    if (f.inlineWithNext && i + 1 < section.fields.length) {
+      groups.push([f, section.fields[i + 1]]);
+      i++;
+    } else {
+      groups.push([f]);
+    }
+  }
+
+  const isTable = section.layout === "table";
+
   return (
     <section className="border-t border-gray-100 pt-5 first:border-t-0 first:pt-0 dark:border-gray-800">
       <header className="mb-4 flex items-center gap-2">
@@ -38,21 +53,104 @@ export function ApplicationFormSection({
         )}
       </header>
 
-      <div className="space-y-3.5">
-        {section.fields.map((f) => (
-          <FieldRow
-            key={f.key}
-            field={f}
-            value={values[f.key]}
-            onChange={(v) => onChange(f.key, v)}
-            disabled={disabled}
-            // 섹션 헤더에 이미 * 가 있으면(필수 섹션) 필드 레벨 * 는 숨김.
-            // 선택 섹션에서 특정 필드만 required 인 경우에만 필드 * 노출.
-            hideRequiredMark={!section.optional}
-          />
-        ))}
-      </div>
+      {isTable ? (
+        // 표 레이아웃 — 라벨(240px 회색) + 입력(1fr 흰색), 행 사이 구분선.
+        <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+          {groups.map((group, idx) => (
+            <TableRow
+              key={group[0].key}
+              fields={group}
+              values={values}
+              onChange={onChange}
+              disabled={disabled}
+              isLast={idx === groups.length - 1}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {section.fields.map((f) => (
+            <FieldRow
+              key={f.key}
+              field={f}
+              value={values[f.key]}
+              onChange={(v) => onChange(f.key, v)}
+              disabled={disabled}
+              // 섹션 헤더에 이미 * 가 있으면(필수 섹션) 필드 레벨 * 는 숨김.
+              // 선택 섹션에서 특정 필드만 required 인 경우에만 필드 * 노출.
+              hideRequiredMark={!section.optional}
+            />
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+/** 표 레이아웃의 한 행 — 단일 필드 또는 inlineWithNext 로 묶인 두 필드. */
+function TableRow({
+  fields,
+  values,
+  onChange,
+  disabled,
+  isLast,
+}: {
+  fields: FieldDef[];
+  values: Record<string, unknown>;
+  onChange: (key: string, v: unknown) => void;
+  disabled: boolean;
+  isLast: boolean;
+}) {
+  const primary = fields[0];
+  const isTallTextarea = primary.type === "textarea";
+  const borderCls = isLast ? "" : "border-b border-gray-200 dark:border-gray-700";
+
+  return (
+    <div className={`grid grid-cols-[240px_1fr] ${borderCls}`}>
+      <div
+        className={`bg-gray-50 px-4 py-3.5 text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400 ${
+          isTallTextarea ? "items-start pt-4" : "items-center"
+        } flex`}
+      >
+        {primary.label}
+      </div>
+      <div className={`flex ${isTallTextarea ? "items-start" : "items-center"} gap-2.5 px-3.5 py-3`}>
+        {fields.length === 1 ? (
+          // date 만 폭 제한 — 그 외는 가로 전체.
+          <div className={primary.type === "date" ? "w-full max-w-[200px]" : "w-full"}>
+            <FieldInput
+              field={primary}
+              value={values[primary.key]}
+              onChange={(v) => onChange(primary.key, v)}
+              disabled={disabled}
+            />
+          </div>
+        ) : (
+          // inlineWithNext — 수량 + 단위 처럼 한 행에 두 필드.
+          <>
+            <div className="w-[160px] shrink-0">
+              <FieldInput
+                field={primary}
+                value={values[primary.key]}
+                onChange={(v) => onChange(primary.key, v)}
+                disabled={disabled}
+              />
+            </div>
+            <span className="text-[12px] text-gray-500 dark:text-gray-400">
+              {fields[1].label}
+            </span>
+            <div className="w-[160px] shrink-0">
+              <FieldInput
+                field={fields[1]}
+                value={values[fields[1].key]}
+                onChange={(v) => onChange(fields[1].key, v)}
+                disabled={disabled}
+              />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -137,9 +235,9 @@ function FieldInput({
 
   if (field.type === "textarea") {
     // rows 에 따라 min-height 차등 — 예상 답변 길이를 시각적으로 암시.
-    //   2 → 56px (중간 서술), 3 → 90px (긴 서술), 미지정 → 70px (기본).
+    //   2 → 64px (중간 서술), 3 → 90px (긴 서술), 미지정 → 70px (기본).
     const minH =
-      field.rows === 2 ? "min-h-[56px]" : field.rows === 3 ? "min-h-[90px]" : "min-h-[70px]";
+      field.rows === 2 ? "min-h-[64px]" : field.rows === 3 ? "min-h-[90px]" : "min-h-[70px]";
     return (
       <textarea
         id={id}
