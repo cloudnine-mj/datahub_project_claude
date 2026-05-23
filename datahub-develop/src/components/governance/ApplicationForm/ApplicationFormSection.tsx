@@ -148,14 +148,15 @@ function TableRow({
       </div>
       <div className={`flex ${isTallTextarea ? "items-start" : "items-center"} gap-2.5 px-3.5 py-3`}>
         {fields.length === 1 ? (
-          // date 만 폭 제한 — 그 외는 가로 전체.
-          <div className={primary.type === "date" ? "w-full max-w-[200px]" : "w-full"}>
+          // date 만 폭 제한 — 그 외는 가로 전체. hint 도 함께 표시 (compliance 의 amber 경고 등).
+          <div className={`flex-1 ${primary.type === "date" ? "max-w-[200px]" : ""}`}>
             <FieldInput
               field={primary}
               value={values[primary.key]}
               onChange={(v) => onChange(primary.key, v)}
               disabled={disabled}
             />
+            {primary.hint && <FieldHint field={primary} value={values[primary.key]} />}
           </div>
         ) : (
           // inlineWithNext — 수량 + 단위 처럼 한 행에 두 필드.
