@@ -297,6 +297,7 @@ const dataSubscription: FormSchema = {
   sections: [
     {
       title: "기본 정보",
+      layout: "table",
       fields: [
         {
           key: "프로젝트명",
@@ -309,10 +310,12 @@ const dataSubscription: FormSchema = {
     },
     {
       title: "조직장 사전 승인",
+      layout: "table",
       fields: [
         {
           key: "조직장_승인_완료",
           label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
         },
@@ -320,6 +323,7 @@ const dataSubscription: FormSchema = {
     },
     {
       title: "구독 데이터 정보",
+      layout: "table",
       fields: [
         {
           key: "구독_희망_데이터셋",
@@ -348,6 +352,7 @@ const dataSubscription: FormSchema = {
     },
     {
       title: "사용 목적 및 활용 계획",
+      layout: "table",
       fields: [
         {
           key: "사용_목적_및_기대_효과",
@@ -355,6 +360,7 @@ const dataSubscription: FormSchema = {
           type: "textarea",
           placeholder: "사용 모델 및 서비스명을 포함해 작성해 주세요",
           required: true,
+          rows: 2,
         },
         {
           key: "데이터_품질_검수_담당자",
@@ -369,22 +375,26 @@ const dataSubscription: FormSchema = {
           type: "textarea",
           placeholder: "예: 사내 분석 도구에 통합, API 호출 inference용",
           required: true,
+          rows: 2,
         },
       ],
     },
     {
       title: "데이터셋에 대한 compliance 확인 여부",
+      layout: "table",
       fields: [COMPLIANCE_FIELD],
     },
     {
       title: "기타",
       optional: true,
+      layout: "table",
       fields: [
         {
           key: "기타_추가_내용",
           label: "추가 내용",
           type: "textarea",
           placeholder: "담당자가 알아야 할 추가 내용이 있다면 작성해 주세요",
+          rows: 2,
         },
       ],
     },
