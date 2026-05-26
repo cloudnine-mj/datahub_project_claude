@@ -13,6 +13,8 @@ interface Props {
   currentUserEmail: string;
   /** 담당자 표시용 팀명 — assignee 메시지의 이름 옆에 회색 보조 텍스트로 노출. */
   assigneeTeam?: string;
+  /** 본인 말풍선 색 클래스 override — 미지정 시 파랑 톤. brand 톤은 ChatPanel 에서 전달. */
+  mineBubbleClass?: string;
 }
 
 function fmtTime(iso: string): string {
@@ -32,17 +34,19 @@ function initial(name: string): string {
   return trimmed.slice(0, 1);
 }
 
-export function ChatMessageBubble({ message, currentUserEmail, assigneeTeam }: Props) {
+export function ChatMessageBubble({ message, currentUserEmail, assigneeTeam, mineBubbleClass }: Props) {
   const isMine =
     !!currentUserEmail &&
     message.senderEmail.toLowerCase() === currentUserEmail.toLowerCase();
   const time = fmtTime(message.createdAt);
+  const mineCls =
+    mineBubbleClass ?? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200";
 
   if (isMine) {
     return (
       <div className="flex justify-end gap-2">
         <div className="flex max-w-[80%] flex-col items-end">
-          <div className="rounded-[12px_4px_12px_12px] bg-blue-50 px-3 py-2.5 text-[12px] leading-relaxed text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+          <div className={`rounded-[12px_4px_12px_12px] px-3 py-2.5 text-[12px] leading-relaxed ${mineCls}`}>
             <p className="whitespace-pre-wrap break-words">{message.body}</p>
           </div>
           {time && (

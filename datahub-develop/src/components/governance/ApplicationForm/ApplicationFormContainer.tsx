@@ -345,12 +345,33 @@ export function ApplicationFormContainer({
               onSubmit={onOpenPreview}
             />
           </div>
-          <div className="lg:sticky lg:top-4">
+          <div className="lg:sticky lg:top-5">
             <ChatPanel
               formId={formId}
               currentUserEmail={applicant.email}
               assigneeTeam={assignee.team}
-              status="writing"
+              // service 전용 — 담당자 온라인 배지 + 환영 메시지 + 추천 질문 + brand 강조.
+              // 다른 폼(구매/구독) 은 기본 톤 그대로.
+              headerVariant={type === "service" ? "online" : "writing"}
+              accent={type === "service" ? "brand" : "blue"}
+              welcome={
+                type === "service"
+                  ? {
+                      senderName: assignee.name,
+                      senderTeam: assignee.team,
+                      body: `안녕하세요 👋 용역 제작 신청서 작성을 도와드릴 ${assignee.name}입니다. 작성 중 궁금한 점이 있으면 편하게 물어봐 주세요.`,
+                    }
+                  : undefined
+              }
+              suggestedQuestions={
+                type === "service"
+                  ? [
+                      "제작 수량은 어떻게 정하나요?",
+                      "작업 기간은 보통 얼마나 걸리나요?",
+                      "예산은 어떤 기준으로 잡나요?",
+                    ]
+                  : undefined
+              }
               ensureFormId={async () => {
                 // 메시지 전송 시점에 formId 가 없으면 draft 자동 생성.
                 if (formId) return formId;
