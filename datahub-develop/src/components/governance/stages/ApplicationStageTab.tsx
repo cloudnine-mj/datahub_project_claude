@@ -1,13 +1,11 @@
 // 신청 단계 상세 탭 — 용역 제작(data_production) 폼의 상세 페이지에서 ProgressBar 아래에 노출.
 //
-// 역할 분기:
-//   applicant (신청자)     → 담당자 목록 읽기, 지정 UI 없음, 다음 단계 버튼 없음
-//   lead-assignee (총괄)   → 실무 담당자 지정 UI(추가/제거) + 다음 단계 버튼
-//   member-assignee (실무) → 담당자 목록 읽기 + 다음 단계 버튼 (지정 UI 없음, 본인 '나' 표시)
-//   그 외(observer)         → 본 탭 숨김
+// Phase 1 (현재): 역할 분기 미적용. 로그인 사용자 누구든 전체 UI(추가/제거/다음 단계 버튼)
+// 동일하게 노출. 백엔드 권한 가드 / 역할별 UI 분기는 Phase 2 에서 적용.
 //
-// Phase 1: UI 만. 실무 담당자 목록은 sessionStorage 로 영속하는 로컬 state — 백엔드 미연결.
-// 다음 단계 버튼은 alert 만. Phase 2 에서 Prisma 스키마 / API 연결 예정.
+// 실무 담당자 목록은 sessionStorage 영속 로컬 state — 백엔드 미연결.
+// '실무자 추가' 는 window.prompt 로 이름/이메일 입력 (사용자 검색 UI 없음).
+// '협의 단계로' 버튼은 alert — 실제 단계 전환은 Phase 2.
 
 "use client";
 
@@ -30,23 +28,6 @@ interface Props {
   me: Me | null;
 }
 
-type Role = "applicant" | "lead-assignee" | "member-assignee" | "none";
-
-function detectRole(args: {
-  meEmail: string | null;
-  submitterEmail: string;
-  leadEmail: string;
-  members: MemberMock[];
-}): Role {
-  const { meEmail, submitterEmail, leadEmail, members } = args;
-  if (!meEmail) return "none";
-  const me = meEmail.toLowerCase();
-  if (me === submitterEmail.toLowerCase()) return "applicant";
-  if (me === leadEmail.toLowerCase()) return "lead-assignee";
-  if (members.some((m) => m.email.toLowerCase() === me)) return "member-assignee";
-  return "none";
-}
-
 function initial(name: string): string {
   return name.trim().slice(0, 1) || "?";
 }
@@ -63,12 +44,6 @@ export function ApplicationStageTab({
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
   const meEmail = me?.user.email ?? null;
-  const role = detectRole({
-    meEmail,
-    submitterEmail,
-    leadEmail: lead.email,
-    members,
-  });
 
   // Phase 1 — 실무 담당자 목록 sessionStorage 영속.
   useEffect(() => {
@@ -116,25 +91,20 @@ export function ApplicationStageTab({
     );
   }
 
-  // 용역 제작이 아니거나 observer 면 본 탭 숨김.
-  if (formType !== "data_production" || role === "none") return null;
-
-  const isLead = role === "lead-assignee";
-  const showAdvance = role === "lead-assignee" || role === "member-assignee";
+  // 용역 제작이 아니면 본 탭 숨김. 역할 가드는 Phase 1 에선 미적용.
+  if (formType !== "data_production") return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
       <header className="mb-3 flex items-center gap-2">
         <Users size={16} className="text-[#993C1D]" aria-hidden="true" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-          {isLead ? "실무 담당자 지정" : "담당자"}
+          실무 담당자 지정
         </h3>
-        {isLead && (
-          <>
-            <span aria-hidden="true" className="text-[12px] text-[#D4533E]">*</span>
-            <span className="ml-auto text-[10px] text-gray-400">총괄 담당자만 지정 가능</span>
-          </>
-        )}
+        <span aria-hidden="true" className="text-[12px] text-[#D4533E]">*</span>
+        <span className="ml-auto text-[10px] text-gray-400">
+          Phase 1 — 모든 사용자에게 동일 UI 노출 (역할 가드 미적용)
+        </span>
       </header>
 
       {/* 담당자 칩 영역 */}
@@ -152,67 +122,50 @@ export function ApplicationStageTab({
             key={m.id}
             name={m.name}
             isMe={meEmail?.toLowerCase() === m.email.toLowerCase()}
-            removable={isLead}
+            removable
             onRemove={() => onRemoveMember(m.id)}
           />
         ))}
 
-        {/* 추가 버튼 — 총괄만 */}
-        {isLead && (
-          <button
-            type="button"
-            onClick={onAddMember}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-[11px] text-gray-500 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
-          >
-            <Plus size={11} aria-hidden="true" /> 실무자 추가
-          </button>
-        )}
+        {/* 추가 버튼 */}
+        <button
+          type="button"
+          onClick={onAddMember}
+          className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-[11px] text-gray-500 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+        >
+          <Plus size={11} aria-hidden="true" /> 실무자 추가
+        </button>
       </div>
 
-      {/* 실무자 미지정 안내 — 총괄에게만 */}
-      {isLead && members.length === 0 && (
+      {/* 실무자 미지정 안내 */}
+      {members.length === 0 && (
         <div className="mt-3 flex items-center gap-1.5 text-[11px] text-[#993C1D]">
           <UserPlus size={12} aria-hidden="true" />
           실무 담당자를 1명 이상 지정해 주세요 — 협의 단계로 진행하려면 필수입니다.
         </div>
       )}
 
-      {/* 신청자 화면 — 담당자 미지정 안내 */}
-      {role === "applicant" && members.length === 0 && (
-        <p className="mt-3 text-[11px] text-gray-500 dark:text-gray-400">
-          총괄 담당자({lead.name}) 가 실무 담당자를 지정 중입니다.
-        </p>
-      )}
+      {/* 다음 단계 버튼 */}
+      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={onAdvance}
+          disabled={members.length === 0}
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+        >
+          실무자 지정 완료 · 협의 단계로
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
+        {members.length === 0 && (
+          <p className="mt-1.5 text-center text-[10px] text-gray-400">
+            실무 담당자가 지정되면 활성화됩니다.
+          </p>
+        )}
+      </div>
 
-      {/* 다음 단계 버튼 — 담당자만 */}
-      {showAdvance && (
-        <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={onAdvance}
-            disabled={members.length === 0}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
-          >
-            실무자 지정 완료 · 협의 단계로
-            <ArrowRight size={14} aria-hidden="true" />
-          </button>
-          {members.length === 0 && (
-            <p className="mt-1.5 text-center text-[10px] text-gray-400">
-              실무 담당자가 지정되면 활성화됩니다.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* applicant 안내 — 본 탭이 신청자에겐 read-only 임을 시각적으로 명시 */}
-      {role === "applicant" && (
-        <p className="mt-4 border-t border-gray-100 pt-3 text-center text-[10px] text-gray-400 dark:border-gray-800">
-          🔒 읽기 전용 · 담당자 지정 화면은 총괄 담당자에게만 노출됩니다.
-        </p>
-      )}
-
-      {/* submitterName 은 향후 알림 라우팅에 사용 — 현재는 console reference 만. */}
+      {/* submitterEmail / submitterName 은 Phase 2 알림 라우팅에 사용 예정 — 현재는 미사용. */}
       <span className="hidden" aria-hidden="true">
+        {submitterEmail}
         {submitterName}
       </span>
     </section>
