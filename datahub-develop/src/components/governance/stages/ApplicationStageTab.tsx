@@ -302,7 +302,8 @@ function SubProgressBar({ subStep }: { subStep: SubStep }) {
     if (s === "done") return "bg-[#1D9E75]";
     if (s === "current") return "bg-[#D4533E]";
     if (s === "current-revision") return "bg-[#E08027]";
-    return "bg-gray-200 dark:bg-gray-700";
+    // pending: 흰 카드 배경 위에 잘 보이도록 gray-300 으로 강조 (top ProgressBar 와 동일 톤).
+    return "bg-gray-300 dark:bg-gray-700";
   }
 
   function labelClass(
@@ -316,10 +317,10 @@ function SubProgressBar({ subStep }: { subStep: SubStep }) {
 
   return (
     <div>
-      <div className="mb-1.5 flex gap-1">
-        <div className={`h-1.5 flex-1 rounded ${cellClass(memberState)}`} />
-        <div className={`h-1.5 flex-1 rounded ${cellClass(reviewState)}`} />
-        <div className={`h-1.5 flex-1 rounded ${cellClass(approvedState)}`} />
+      <div className="mb-2 flex gap-1">
+        <div className={`h-2 flex-1 rounded ${cellClass(memberState)}`} />
+        <div className={`h-2 flex-1 rounded ${cellClass(reviewState)}`} />
+        <div className={`h-2 flex-1 rounded ${cellClass(approvedState)}`} />
       </div>
       <div className="flex text-[11px]">
         <span className={`flex-1 text-center ${labelClass(memberState)}`}>
