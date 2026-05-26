@@ -26,6 +26,8 @@ import {
   writeServiceStage,
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
+import { ChatPanel } from "@/components/governance/chat/ChatPanel";
+import { getChatAssignee } from "@/lib/governance/chat-assignee";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -173,31 +175,23 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      {/* 용역 제작 전용 5단계 진행 막대 (신청→협의→계약→진행→종료).
-          Phase 1: sessionStorage 기반 진행. 신청 단계(0) 에서 시작 → ApplicationStageTab
-          의 [협의 단계로] 버튼으로 수동 전환. status === 'approved' 면 종료(4) 강제. */}
+      {/* 용역 제작 전용 5단계 진행 막대 (신청→협의→계약→진행→종료) — 그리드 위 풀 너비. */}
       {form.form_type === "data_production" && (
         <div className="mb-5">
           <ProgressBar stages={[...SERVICE_STAGES]} currentIndex={serviceStage} />
         </div>
       )}
 
-      {/* 신청 단계 상세 탭 — 용역 제작이면 단계 무관 항상 노출.
-          Phase 1: 실무 담당자 추가/제거는 sessionStorage 영속, [협의 단계로] 버튼은
-          serviceStage 를 1 증가 (또는 다음 단계). */}
-      {form.form_type === "data_production" && (
-        <div className="mb-5">
-          <ApplicationStageTab
-            formId={form.id}
-            formType={form.form_type}
-            submitterEmail={form.submitter_email}
-            submitterName={form.submitter_name}
-            me={me}
-            currentStage={serviceStage}
-            onAdvanceStage={advanceServiceStage}
-          />
-        </div>
-      )}
+      {/* 용역 제작 — 좌(1fr) 본문 + 우(300px sticky) 담당자 채팅 2단 레이아웃.
+          그 외(구매/구독 등) 는 본문만. 본문 끝(맨 하단) 에 실무자 지정 카드 추가. */}
+      <div
+        className={
+          form.form_type === "data_production"
+            ? "grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_300px]"
+            : ""
+        }
+      >
+        <div className="min-w-0">
 
       {/* chevron 진행 바 / 진행 상태·이력 패널 노출 정책
           - from=admin (거버넌스 요청 관리): 검토/승인 화면이라 chevron 미노출.
@@ -409,6 +403,37 @@ export default function Page({ params }: { params: { id: string } }) {
             <Send size={12} /> {submitting ? "제출 중..." : "제출"}
           </button>
         )}
+      </div>
+
+      {/* 실무자 지정 — 본문 맨 하단. 용역 제작에서만 노출. */}
+      {form.form_type === "data_production" && (
+        <div className="mt-5">
+          <ApplicationStageTab
+            formId={form.id}
+            formType={form.form_type}
+            submitterEmail={form.submitter_email}
+            submitterName={form.submitter_name}
+            me={me}
+            currentStage={serviceStage}
+            onAdvanceStage={advanceServiceStage}
+          />
+        </div>
+      )}
+      </div>
+
+      {/* 우측 sticky ChatPanel — 용역 제작 전용. 비-service 폼은 미노출. */}
+      {form.form_type === "data_production" && (
+        <div className="lg:sticky lg:top-20">
+          <ChatPanel
+            formId={form.id}
+            currentUserEmail={me?.user.email ?? ""}
+            assigneeTeam={getChatAssignee().team}
+            headerVariant="online"
+            accent="brand"
+            ensureFormId={async () => form.id}
+          />
+        </div>
+      )}
       </div>
 
       {missingField && (
