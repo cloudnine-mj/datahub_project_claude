@@ -21,7 +21,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Plus, RefreshCw, Users, X } from "lucide-react";
+import { ArrowRight, Check, Plus, RefreshCw, Users, X } from "lucide-react";
 import type { Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import type { SubStep } from "@/components/governance/ProgressBar";
