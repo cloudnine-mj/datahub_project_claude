@@ -19,6 +19,11 @@ import { findFirstEmptyRequired } from "@/lib/governance/forms/validation";
 import { ProgressHistoryBlock } from "@/components/governance/forms/progress-history-block";
 import { getChatRole } from "@/lib/governance/forms/get-chat-role";
 import { approvalHistoryToStatusItems } from "@/lib/governance/forms/history-adapter";
+import {
+  ProgressBar,
+  SERVICE_STAGES,
+  serviceStageIndexFromStatus,
+} from "@/components/governance/ProgressBar";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -148,6 +153,18 @@ export default function Page({ params }: { params: { id: string } }) {
           <Eye size={12} /> 미리보기
         </button>
       </div>
+
+      {/* 용역 제작 전용 5단계 진행 막대 (신청→협의→계약→진행→종료).
+          status 매핑: draft=0(신청) / submitted·reviewing·info_requested=1(협의) / approved=4(종료).
+          구매·구독은 자체 진행 모델이 다르므로 본 막대는 렌더하지 않음. */}
+      {form.form_type === "data_production" && (
+        <div className="mb-5">
+          <ProgressBar
+            stages={[...SERVICE_STAGES]}
+            currentIndex={serviceStageIndexFromStatus(form.status)}
+          />
+        </div>
+      )}
 
       {/* chevron 진행 바 / 진행 상태·이력 패널 노출 정책
           - from=admin (거버넌스 요청 관리): 검토/승인 화면이라 chevron 미노출.
