@@ -47,6 +47,9 @@ interface Props {
   suggestedQuestions?: string[];
   /** 본인 말풍선 / 추천 칩 / 전송 버튼의 강조 색. brand 는 #D4533E, blue 는 #2563EB 톤. */
   accent?: "blue" | "brand";
+  /** true 면 부모 컨테이너 높이를 100% 채움 (h-full) — 그리드 items-stretch 와 조합해
+   *  좌측 폼 박스와 동일한 높이로 정렬. false(기본) 면 뷰포트 기반 sticky 친화 높이. */
+  fillParent?: boolean;
 }
 
 export function ChatPanel({
@@ -58,6 +61,7 @@ export function ChatPanel({
   welcome,
   suggestedQuestions,
   accent = "blue",
+  fillParent = false,
 }: Props) {
   const [messages, setMessages] = useState<FormMessageItem[]>([]);
   const [text, setText] = useState("");
@@ -150,11 +154,14 @@ export function ChatPanel({
   const accentSendIconCls = accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
   const accentIconHeader = accent === "brand" ? "text-[#D4533E]" : "text-blue-500";
 
+  // fillParent: 부모 컨테이너 높이를 채움 (그리드 items-stretch 와 조합 — detail 페이지에서
+  // 좌측 폼 박스 높이에 맞춤). 기본은 뷰포트 기반 sticky 친화 높이.
+  const heightCls = fillParent
+    ? "h-full"
+    : "h-[calc(100vh-104px)] max-h-[560px]";
   return (
     <aside
-      // 높이 산식 — 상단 sticky 네비게이션 바 h-16(64px) + sticky top 여백 16px +
-      // 하단 여백 24px = 104px 를 뷰포트에서 뺀 값. 큰 화면에서는 max-h 560px 가 상한.
-      className="flex h-[calc(100vh-104px)] max-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+      className={`flex ${heightCls} flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900`}
       aria-label="담당자와 소통"
     >
       {/* 헤더 — 항상 보이도록 shrink 금지. */}

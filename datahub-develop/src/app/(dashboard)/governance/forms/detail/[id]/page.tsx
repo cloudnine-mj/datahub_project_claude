@@ -187,7 +187,7 @@ export default function Page({ params }: { params: { id: string } }) {
       <div
         className={
           form.form_type === "data_production"
-            ? "grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_300px]"
+            ? "grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]"
             : ""
         }
       >
@@ -422,9 +422,10 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
       </div>
 
-      {/* 우측 sticky ChatPanel — 용역 제작 전용. 비-service 폼은 미노출. */}
+      {/* 우측 ChatPanel — 용역 제작 전용. 좌측 폼 박스와 동일 높이로 stretch.
+          fillParent=true 로 컬럼 높이 채움 (sticky 대신 좌측과 같이 스크롤). */}
       {form.form_type === "data_production" && (
-        <div className="lg:sticky lg:top-20">
+        <div className="min-h-0">
           <ChatPanel
             formId={form.id}
             currentUserEmail={me?.user.email ?? ""}
@@ -432,6 +433,7 @@ export default function Page({ params }: { params: { id: string } }) {
             headerVariant="online"
             accent="brand"
             ensureFormId={async () => form.id}
+            fillParent
           />
         </div>
       )}
