@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckSquare, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, CheckSquare, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { DeleteFormButton } from "@/components/governance/DeleteFormButton";
@@ -306,8 +306,11 @@ export default function Page({ params }: { params: { id: string } }) {
               {allFields.map((f) => {
                 const v = form.payload[f.key];
                 if (v === undefined || v === null || v === "") return null;
+                // 확인 화면에서는 긴 안내 문구 라벨을 짧게 — 작성 화면 label 은 그대로.
+                const displayLabel =
+                  f.key === "조직장_승인_완료" ? "조직장 승인" : f.label;
                 return (
-                  <Row key={f.key} label={f.label}>
+                  <Row key={f.key} label={displayLabel}>
                     <FieldValue field={f} value={v} />
                   </Row>
                 );
@@ -580,8 +583,12 @@ export default function Page({ params }: { params: { id: string } }) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <tr className="border-b border-gray-100 last:border-b-0">
-      <td className="w-56 bg-gray-50/50 px-5 py-3 align-top text-gray-700">{label}</td>
-      <td className="px-5 py-3">{children}</td>
+      <td className="w-[170px] bg-gray-50/50 px-4 py-3 align-middle text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400">
+        {label}
+      </td>
+      <td className="px-4 py-3 align-middle text-[12px] text-gray-900 dark:text-gray-100">
+        {children}
+      </td>
     </tr>
   );
 }
@@ -629,7 +636,14 @@ function FieldValue({ field, value }: { field: FieldDef; value: unknown }) {
   }
 
   if (typeof value === "boolean") {
-    return <span>{value ? "✅ 확인 완료" : "확인 필요"}</span>;
+    if (value) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[#0F6E56]">
+          <CheckCircle2 size={14} aria-hidden="true" /> 확인 완료
+        </span>
+      );
+    }
+    return <span className="text-gray-500">확인 필요</span>;
   }
 
   if (field.type === "service_list" && Array.isArray(value)) {
