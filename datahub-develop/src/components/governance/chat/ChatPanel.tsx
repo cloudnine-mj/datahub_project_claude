@@ -209,39 +209,12 @@ export function ChatPanel({
       className={`flex ${heightCls} flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900`}
       aria-label="담당자와 소통"
     >
-      {/* 헤더 — 항상 보이도록 shrink 금지. */}
-      <header className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3.5 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <MessageCircle size={16} className={accentIconHeader} aria-hidden="true" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            담당자와 소통
-          </span>
-        </div>
-        {headerVariant === "online" ? (
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-            style={{ background: "#E1F5EE", color: "#0F6E56" }}
-          >
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: "#0F6E56" }}
-              aria-hidden="true"
-            />
-            담당자 온라인
-          </span>
-        ) : (
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-            style={{ background: "#FAEEDA", color: "#854F0B" }}
-          >
-            <span
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: "#854F0B" }}
-              aria-hidden="true"
-            />
-            작성 중
-          </span>
-        )}
+      {/* 헤더 — 항상 보이도록 shrink 금지. 상태 배지는 노출하지 않음 (사용자 요청). */}
+      <header className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-4 py-3.5 dark:border-gray-800">
+        <MessageCircle size={16} className={accentIconHeader} aria-hidden="true" />
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          담당자와 소통
+        </span>
       </header>
 
       {/* 메시지 영역 — min-h-0 필수 (flex 자식 스크롤 정상 동작). */}
