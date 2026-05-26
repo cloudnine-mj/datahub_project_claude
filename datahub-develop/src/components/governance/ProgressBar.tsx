@@ -1,72 +1,157 @@
-// 신청서 상세 상단 진행 막대 — 막대 채우기형 (스타일 B).
+// 신청서 상세 상단 진행 카드 — 5단계 chevron 탭 + (옵션) 4-cell sub-progress.
 //
-//   ┌─────────────────────────────────────────────────────┐
-//   │ 진행 상태                              계약 단계 · 3/5 │
-//   │ ███████ ███████ ███████ ░░░░░░░ ░░░░░░░               │
-//   │   신청     협의      계약     진행     종료              │
-//   └─────────────────────────────────────────────────────┘
+//   ┌─────────────────────────────────────────────────────────┐
+//   │ 전체  1. 신청  >  2. 협의  >  3. 계약  >  4. 진행  >  5. 종료 │
+//   │                                                          │
+//   │ ██████████  ██████████  ──────────  ──────────              │
+//   │ ✓ 담당자 지정   검토 중      보완 요청    승인 완료              │
+//   └─────────────────────────────────────────────────────────┘
 //
-// 세그먼트 색:
-//   - 완료(index < current): #1D9E75 녹색
-//   - 현재(index === current): #D4533E 빨강
-//   - 예정(index > current): 회색
+// 상위 5단계 chevron 탭:
+//   - 현재 단계만 #D4533E 빨강 + 굵게, 그 외는 회색
+//   - 단계 사이 ChevronRight 아이콘
 //
-// 라벨: 현재 단계 라벨만 #D4533E + 굵게 강조.
+// 4-cell sub-progress (currentStage === 0 + subStep prop 전달 시):
+//   - 담당자 지정 / 검토 중 / 보완 요청 / 승인 완료 4 cell
+//   - done #1D9E75, current #D4533E, current-revision #E08027(보완 요청 cell 활성 시), pending #d1d5db
+//
+// 5단계 진행 상태(sessionStorage 영속) 헬퍼는 그대로 유지.
 
 "use client";
+
+import { ChevronRight, Check } from "lucide-react";
+import { Fragment } from "react";
 
 interface Props {
   stages: string[];
   currentIndex: number;
+  /** 신청 단계 내부 sub-step — 'member_assignment' | 'under_review' | 'revision_requested' | 'approved'.
+   *  지정 시 4-cell sub-progress 바가 함께 렌더. 미지정 시 chevron 탭만. */
+  subStep?: SubStep;
 }
 
-function segmentClass(index: number, currentIndex: number): string {
-  if (index < currentIndex) return "bg-[#1D9E75]";
-  if (index === currentIndex) return "bg-[#D4533E]";
-  return "bg-gray-200 dark:bg-gray-700";
-}
+export type SubStep =
+  | "member_assignment"
+  | "under_review"
+  | "revision_requested"
+  | "approved";
 
-export function ProgressBar({ stages, currentIndex }: Props) {
+type CellState = "pending" | "current" | "current-revision" | "done";
+
+export function ProgressBar({ stages, currentIndex, subStep }: Props) {
   const safeIndex = Math.max(0, Math.min(currentIndex, stages.length - 1));
-  const currentName = stages[safeIndex] ?? "";
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      <header className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
-          진행 상태
-        </span>
-        <span className="text-[12px] font-medium text-[#D4533E]">
-          {currentName} 단계 · {safeIndex + 1}/{stages.length}
-        </span>
-      </header>
-
-      <div className="mb-2.5 flex gap-1">
-        {stages.map((s, i) => (
-          <div
-            key={s}
-            className={`h-2 flex-1 rounded ${segmentClass(i, safeIndex)}`}
-          />
-        ))}
-      </div>
-
-      <div className="flex">
+      {/* 상위 chevron 탭 */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+        <span className="text-gray-400 dark:text-gray-500">전체</span>
         {stages.map((s, i) => {
           const isCurrent = i === safeIndex;
           return (
-            <span
-              key={s}
-              className={`flex-1 text-center text-[11px] ${
-                isCurrent
-                  ? "font-medium text-[#D4533E]"
-                  : "text-gray-400 dark:text-gray-500"
-              }`}
-            >
-              {s}
-            </span>
+            <Fragment key={s}>
+              <span
+                className={
+                  isCurrent
+                    ? "font-medium text-[#D4533E]"
+                    : "text-gray-400 dark:text-gray-500"
+                }
+                aria-current={isCurrent ? "step" : undefined}
+              >
+                {i + 1}. {s}
+              </span>
+              {i < stages.length - 1 && (
+                <ChevronRight
+                  size={11}
+                  className="text-gray-300 dark:text-gray-600"
+                  aria-hidden="true"
+                />
+              )}
+            </Fragment>
           );
         })}
       </div>
+
+      {/* 4-cell sub-progress — 신청 단계(0) + subStep 지정 시. */}
+      {subStep && safeIndex === 0 && (
+        <div className="mt-4">
+          <SubProgress subStep={subStep} />
+        </div>
+      )}
     </section>
+  );
+}
+
+function SubProgress({ subStep }: { subStep: SubStep }) {
+  // 4 cell 의 상태 계산.
+  const memberState: CellState =
+    subStep === "member_assignment" ? "current" : "done";
+  const reviewState: CellState =
+    subStep === "member_assignment"
+      ? "pending"
+      : subStep === "under_review"
+        ? "current"
+        : "done";
+  const revisionState: CellState =
+    subStep === "revision_requested"
+      ? "current-revision"
+      : subStep === "approved"
+        ? "done"
+        : "pending";
+  const approvedState: CellState =
+    subStep === "approved" ? "done" : "pending";
+
+  return (
+    <div>
+      <div className="mb-2 flex gap-1">
+        <Cell state={memberState} />
+        <Cell state={reviewState} />
+        <Cell state={revisionState} />
+        <Cell state={approvedState} />
+      </div>
+      <div className="flex text-[11px]">
+        <Label state={memberState}>담당자 지정</Label>
+        <Label state={reviewState}>검토 중</Label>
+        <Label state={revisionState}>보완 요청</Label>
+        <Label state={approvedState}>승인 완료</Label>
+      </div>
+    </div>
+  );
+}
+
+function Cell({ state }: { state: CellState }) {
+  const cls =
+    state === "done"
+      ? "bg-[#1D9E75]"
+      : state === "current"
+        ? "bg-[#D4533E]"
+        : state === "current-revision"
+          ? "bg-[#E08027]"
+          : "bg-gray-300 dark:bg-gray-700";
+  return <div className={`h-2 flex-1 rounded ${cls}`} aria-hidden="true" />;
+}
+
+function Label({
+  state,
+  children,
+}: {
+  state: CellState;
+  children: React.ReactNode;
+}) {
+  const cls =
+    state === "done"
+      ? "text-[#1D9E75]"
+      : state === "current"
+        ? "font-medium text-[#D4533E]"
+        : state === "current-revision"
+          ? "font-medium text-[#B5610F]"
+          : "text-gray-400 dark:text-gray-500";
+  return (
+    <span className={`flex-1 text-center ${cls}`}>
+      {state === "done" && (
+        <Check size={10} className="mr-0.5 inline" aria-hidden="true" />
+      )}
+      {children}
+    </span>
   );
 }
 
@@ -107,8 +192,37 @@ export function writeServiceStage(formId: string, stage: number): void {
   }
 }
 
-/** @deprecated readServiceStage 로 대체. status 만으로는 단계를 결정하지 않음.
- *  하위 호환을 위해 남겨두지만 새 코드에서는 사용 금지. */
+/** sub-step 영속 헬퍼 — ApplicationStageTab / ProgressBar 공유. */
+const SUBSTEP_KEY = (formId: string) => `dh:gov:stage1:substep:${formId}`;
+const SUB_STEPS: readonly SubStep[] = [
+  "member_assignment",
+  "under_review",
+  "revision_requested",
+  "approved",
+];
+
+export function readSubStep(formId: string): SubStep {
+  if (typeof window === "undefined") return "member_assignment";
+  try {
+    const raw = sessionStorage.getItem(SUBSTEP_KEY(formId));
+    if (raw && (SUB_STEPS as readonly string[]).includes(raw))
+      return raw as SubStep;
+  } catch {
+    /* ignore */
+  }
+  return "member_assignment";
+}
+
+export function writeSubStep(formId: string, step: SubStep): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(SUBSTEP_KEY(formId), step);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @deprecated readServiceStage 로 대체. */
 export function serviceStageIndexFromStatus(status: string): number {
   return status === "approved" ? 4 : 0;
 }

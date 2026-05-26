@@ -24,6 +24,9 @@ import {
   SERVICE_STAGES,
   readServiceStage,
   writeServiceStage,
+  readSubStep,
+  writeSubStep,
+  type SubStep,
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
@@ -59,6 +62,8 @@ export default function Page({ params }: { params: { id: string } }) {
   // 신청 단계(0) 에서 시작 → 총괄이 실무자 지정 후 [협의 단계로] 버튼 클릭으로 1 로 전환.
   // approved 면 4(종료) 로 강제.
   const [serviceStage, setServiceStage] = useState<number>(0);
+  // 신청 단계 내부 sub-step (lift) — ProgressBar / ApplicationStageTab 둘 다 공유.
+  const [subStep, setSubStepState] = useState<SubStep>("member_assignment");
 
   const refetch = useCallback(() => {
     api.getForm(params.id).then(setForm).catch((e) => setError((e as Error).message));
@@ -106,10 +111,11 @@ export default function Page({ params }: { params: { id: string } }) {
     api.me().then(setMe).catch(() => setMe(null));
   }, [refetch]);
 
-  // 폼 로드 후 sessionStorage 의 5단계 진행 상태 동기화.
+  // 폼 로드 후 sessionStorage 의 5단계 / sub-step 동기화.
   useEffect(() => {
     if (!form) return;
     setServiceStage(readServiceStage(form.id, form.status));
+    setSubStepState(readSubStep(form.id));
   }, [form]);
 
   const advanceServiceStage = useCallback(() => {
@@ -118,6 +124,15 @@ export default function Page({ params }: { params: { id: string } }) {
     setServiceStage(next);
     writeServiceStage(form.id, next);
   }, [form, serviceStage]);
+
+  const setSubStep = useCallback(
+    (next: SubStep) => {
+      if (!form) return;
+      setSubStepState(next);
+      writeSubStep(form.id, next);
+    },
+    [form],
+  );
 
   if (error) return <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>;
   if (!form) return <div className="text-sm text-gray-400">불러오는 중...</div>;
@@ -175,10 +190,14 @@ export default function Page({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      {/* 용역 제작 전용 5단계 진행 막대 (신청→협의→계약→진행→종료) — 그리드 위 풀 너비. */}
+      {/* 용역 제작 전용 진행 카드 — 상단 chevron 5단계 탭 + 신청 단계(0) 일 때 4-cell sub-progress. */}
       {form.form_type === "data_production" && (
         <div className="mb-5">
-          <ProgressBar stages={[...SERVICE_STAGES]} currentIndex={serviceStage} />
+          <ProgressBar
+            stages={[...SERVICE_STAGES]}
+            currentIndex={serviceStage}
+            subStep={subStep}
+          />
         </div>
       )}
 
@@ -293,6 +312,8 @@ export default function Page({ params }: { params: { id: string } }) {
             submitterName={form.submitter_name}
             me={me}
             currentStage={serviceStage}
+            subStep={subStep}
+            onSubStepChange={setSubStep}
             onAdvanceStage={advanceServiceStage}
           />
         </div>
