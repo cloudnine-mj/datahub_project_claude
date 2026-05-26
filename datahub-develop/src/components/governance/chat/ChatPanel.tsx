@@ -152,7 +152,9 @@ export function ChatPanel({
 
   return (
     <aside
-      className="flex h-[calc(100vh-48px)] max-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+      // 높이 산식 — 상단 sticky 네비게이션 바 h-16(64px) + sticky top 여백 16px +
+      // 하단 여백 24px = 104px 를 뷰포트에서 뺀 값. 큰 화면에서는 max-h 560px 가 상한.
+      className="flex h-[calc(100vh-104px)] max-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
       aria-label="담당자와 소통"
     >
       {/* 헤더 — 항상 보이도록 shrink 금지. */}
