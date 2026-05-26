@@ -274,6 +274,21 @@ export default function Page({ params }: { params: { id: string } }) {
         </table>
       </div>
 
+      {/* 실무자 지정 — 신청서 확인 바로 아래, 본문 흐름 안. 용역 제작만. */}
+      {form.form_type === "data_production" && (
+        <div className="mt-5">
+          <ApplicationStageTab
+            formId={form.id}
+            formType={form.form_type}
+            submitterEmail={form.submitter_email}
+            submitterName={form.submitter_name}
+            me={me}
+            currentStage={serviceStage}
+            onAdvanceStage={advanceServiceStage}
+          />
+        </div>
+      )}
+
       {/* 활동/코멘트 영역.
           - from=admin + 관리자 + 타인 신청 → 코멘트 카드 (사람 코멘트만, 시스템 이벤트 제외).
             진행 이력은 위 진행 상태 카드 안의 토글로 노출.
@@ -404,21 +419,6 @@ export default function Page({ params }: { params: { id: string } }) {
           </button>
         )}
       </div>
-
-      {/* 실무자 지정 — 본문 맨 하단. 용역 제작에서만 노출. */}
-      {form.form_type === "data_production" && (
-        <div className="mt-5">
-          <ApplicationStageTab
-            formId={form.id}
-            formType={form.form_type}
-            submitterEmail={form.submitter_email}
-            submitterName={form.submitter_name}
-            me={me}
-            currentStage={serviceStage}
-            onAdvanceStage={advanceServiceStage}
-          />
-        </div>
-      )}
       </div>
 
       {/* 우측 sticky ChatPanel — 용역 제작 전용. 비-service 폼은 미노출. */}
