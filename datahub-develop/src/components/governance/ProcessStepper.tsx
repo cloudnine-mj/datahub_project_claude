@@ -37,6 +37,11 @@ export function ProcessStepper({ phases, subSteps }: Props) {
   // phase 가 1개 뿐인 유형(service / subscribe) 은 '전체 / 1.기획' 상단 행이
   // 정보 가치가 없어 숨김. 2개 이상일 때만 노출.
   const showPhaseRow = phases.length > 1;
+  // substep 도 1개 뿐이면 단일 칸이라 정보 가치가 없음 — 숨김 (계획 수립 제거
+  // 후 신청서 작성 단독). 2개 이상이거나 phase row 가 있을 때만 노출.
+  const showSubstepRow = subSteps.length > 1;
+  // 둘 다 안 보이면 컨테이너 자체 미렌더 — 빈 카드 사라짐.
+  if (!showPhaseRow && !showSubstepRow) return null;
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
       {showPhaseRow && (
@@ -56,7 +61,7 @@ export function ProcessStepper({ phases, subSteps }: Props) {
       )}
 
       {/* 하단 — 현재 phase 의 substep bar + label */}
-      {subSteps.length > 0 && (
+      {showSubstepRow && (
         <div
           className={(showPhaseRow ? "mt-4 " : "") + "grid gap-2"}
           style={{ gridTemplateColumns: `repeat(${subSteps.length}, minmax(0, 1fr))` }}
