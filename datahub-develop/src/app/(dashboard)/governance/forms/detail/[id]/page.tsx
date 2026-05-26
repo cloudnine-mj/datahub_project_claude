@@ -210,7 +210,6 @@ export default function Page({ params }: { params: { id: string } }) {
           <ProgressBar
             stages={[...SERVICE_STAGES]}
             currentIndex={serviceStage}
-            subStep={subStep}
             onStageClick={jumpServiceStage}
           />
         </div>

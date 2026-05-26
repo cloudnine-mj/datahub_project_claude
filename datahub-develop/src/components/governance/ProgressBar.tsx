@@ -19,15 +19,12 @@
 
 "use client";
 
-import { ChevronRight, Check } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 
 interface Props {
   stages: string[];
   currentIndex: number;
-  /** 신청 단계 내부 sub-step — 'member_assignment' | 'under_review' | 'revision_requested' | 'approved'.
-   *  지정 시 4-cell sub-progress 바가 함께 렌더. 미지정 시 chevron 탭만. */
-  subStep?: SubStep;
   /** 탭 클릭 시 부모에게 단계 인덱스 전달. 지정 시 chevron 탭이 버튼으로 변해 자유 이동 가능.
    *  Phase 1 개발 편의 — 단계 권한 가드 없이 모든 단계로 직접 이동. */
   onStageClick?: (index: number) => void;
@@ -39,9 +36,7 @@ export type SubStep =
   | "revision_requested"
   | "approved";
 
-type CellState = "pending" | "current" | "current-revision" | "done";
-
-export function ProgressBar({ stages, currentIndex, subStep, onStageClick }: Props) {
+export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
   const safeIndex = Math.max(0, Math.min(currentIndex, stages.length - 1));
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
@@ -87,88 +82,7 @@ export function ProgressBar({ stages, currentIndex, subStep, onStageClick }: Pro
           );
         })}
       </div>
-
-      {/* 4-cell sub-progress — 신청 단계(0) + subStep 지정 시. */}
-      {subStep && safeIndex === 0 && (
-        <div className="mt-4">
-          <SubProgress subStep={subStep} />
-        </div>
-      )}
     </section>
-  );
-}
-
-function SubProgress({ subStep }: { subStep: SubStep }) {
-  // 4 cell 의 상태 계산.
-  const memberState: CellState =
-    subStep === "member_assignment" ? "current" : "done";
-  const reviewState: CellState =
-    subStep === "member_assignment"
-      ? "pending"
-      : subStep === "under_review"
-        ? "current"
-        : "done";
-  const revisionState: CellState =
-    subStep === "revision_requested"
-      ? "current-revision"
-      : subStep === "approved"
-        ? "done"
-        : "pending";
-  const approvedState: CellState =
-    subStep === "approved" ? "done" : "pending";
-
-  return (
-    <div>
-      <div className="mb-2 flex gap-1">
-        <Cell state={memberState} />
-        <Cell state={reviewState} />
-        <Cell state={revisionState} />
-        <Cell state={approvedState} />
-      </div>
-      <div className="flex text-[11px]">
-        <Label state={memberState}>담당자 지정</Label>
-        <Label state={reviewState}>검토 중</Label>
-        <Label state={revisionState}>보완 요청</Label>
-        <Label state={approvedState}>승인 완료</Label>
-      </div>
-    </div>
-  );
-}
-
-function Cell({ state }: { state: CellState }) {
-  const cls =
-    state === "done"
-      ? "bg-[#1D9E75]"
-      : state === "current"
-        ? "bg-[#D4533E]"
-        : state === "current-revision"
-          ? "bg-[#E08027]"
-          : "bg-gray-300 dark:bg-gray-700";
-  return <div className={`h-2 flex-1 rounded ${cls}`} aria-hidden="true" />;
-}
-
-function Label({
-  state,
-  children,
-}: {
-  state: CellState;
-  children: React.ReactNode;
-}) {
-  const cls =
-    state === "done"
-      ? "text-[#1D9E75]"
-      : state === "current"
-        ? "font-medium text-[#D4533E]"
-        : state === "current-revision"
-          ? "font-medium text-[#B5610F]"
-          : "text-gray-400 dark:text-gray-500";
-  return (
-    <span className={`flex-1 text-center ${cls}`}>
-      {state === "done" && (
-        <Check size={10} className="mr-0.5 inline" aria-hidden="true" />
-      )}
-      {children}
-    </span>
   );
 }
 
