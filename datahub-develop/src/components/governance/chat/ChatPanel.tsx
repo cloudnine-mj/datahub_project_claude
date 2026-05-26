@@ -132,9 +132,9 @@ export function ChatPanel({
     }
   }
 
-  // 추천 질문 칩 노출 조건: welcome 있고 + 사용자가 아직 메시지 안 보냄.
+  // 추천 질문 칩 노출 조건: 추천 목록 있고 + 사용자가 아직 메시지 안 보냄.
+  // welcome 유무와 무관.
   const showSuggestions =
-    !!welcome &&
     !!suggestedQuestions &&
     suggestedQuestions.length > 0 &&
     messages.length === 0;
@@ -195,9 +195,7 @@ export function ChatPanel({
         ref={listRef}
         className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-4"
       >
-        {welcome && (messages.length === 0 || showSuggestions) && (
-          <WelcomeBlock welcome={welcome} />
-        )}
+        {welcome && messages.length === 0 && <WelcomeBlock welcome={welcome} />}
 
         {showSuggestions && (
           <SuggestionChips
@@ -212,7 +210,7 @@ export function ChatPanel({
           />
         )}
 
-        {messages.length === 0 && !welcome && (
+        {messages.length === 0 && !welcome && !showSuggestions && (
           <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
             아직 메시지가 없습니다. 작성 중 궁금한 점을 담당자에게 문의해 보세요.
           </div>

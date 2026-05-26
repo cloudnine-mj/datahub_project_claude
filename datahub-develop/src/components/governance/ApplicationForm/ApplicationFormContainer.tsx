@@ -350,19 +350,10 @@ export function ApplicationFormContainer({
               formId={formId}
               currentUserEmail={applicant.email}
               assigneeTeam={assignee.team}
-              // service 전용 — 담당자 온라인 배지 + 환영 메시지 + 추천 질문 + brand 강조.
-              // 다른 폼(구매/구독) 은 기본 톤 그대로.
+              // service 전용 — 담당자 온라인 배지 + 추천 질문 + brand 강조.
+              // 환영 메시지는 사용자 요청으로 제외.
               headerVariant={type === "service" ? "online" : "writing"}
               accent={type === "service" ? "brand" : "blue"}
-              welcome={
-                type === "service"
-                  ? {
-                      senderName: assignee.name,
-                      senderTeam: assignee.team,
-                      body: `안녕하세요 👋 용역 제작 신청서 작성을 도와드릴 ${assignee.name}입니다. 작성 중 궁금한 점이 있으면 편하게 물어봐 주세요.`,
-                    }
-                  : undefined
-              }
               suggestedQuestions={
                 type === "service"
                   ? [
