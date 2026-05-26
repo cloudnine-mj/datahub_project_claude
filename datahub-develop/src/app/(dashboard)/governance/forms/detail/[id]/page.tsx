@@ -31,6 +31,10 @@ import {
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
+import {
+  HistoryTimeline,
+  approvalHistoryToEvents,
+} from "@/components/governance/HistoryTimeline";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -204,14 +208,21 @@ export default function Page({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* 용역 제작 전용 진행 카드 — 상단 chevron 5단계 탭 + 신청 단계(0) 일 때 4-cell sub-progress. */}
+      {/* 용역 제작 전용 진행 카드 — 5단계 막대 채우기형. */}
       {form.form_type === "data_production" && (
-        <div className="mb-5">
+        <div className="mb-4">
           <ProgressBar
             stages={[...SERVICE_STAGES]}
             currentIndex={serviceStage}
             onStageClick={jumpServiceStage}
           />
+        </div>
+      )}
+
+      {/* 진행 이력 가로 타임라인 — approval_history 의 이벤트 매핑. 용역 제작 한정. */}
+      {form.form_type === "data_production" && (
+        <div className="mb-4">
+          <HistoryTimeline events={approvalHistoryToEvents(form.approval_history)} />
         </div>
       )}
 
