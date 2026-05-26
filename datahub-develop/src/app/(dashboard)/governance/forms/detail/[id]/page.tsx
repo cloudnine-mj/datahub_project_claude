@@ -192,13 +192,16 @@ export default function Page({ params }: { params: { id: string } }) {
       <div className="mb-6 flex items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">{label}</h1>
         <span className="font-mono text-sm text-gray-400">{form.request_no}</span>
-        <button
-          type="button"
-          onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
-          className="inline-flex items-center gap-1 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
-        >
-          <Eye size={12} /> 미리보기
-        </button>
+        {/* 미리보기 — 거버넌스 요청 목록(from=list) 진입에서는 미노출 (조회만). */}
+        {from !== "list" && (
+          <button
+            type="button"
+            onClick={() => { setCopyDone(false); setPreviewOpen(true); }}
+            className="inline-flex items-center gap-1 rounded border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
+          >
+            <Eye size={12} /> 미리보기
+          </button>
+        )}
       </div>
 
       {/* 용역 제작 전용 진행 카드 — 상단 chevron 5단계 탭 + 신청 단계(0) 일 때 4-cell sub-progress. */}
