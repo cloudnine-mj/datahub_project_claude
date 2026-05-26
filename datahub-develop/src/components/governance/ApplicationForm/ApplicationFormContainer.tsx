@@ -16,7 +16,6 @@ import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { StatusBanner } from "./StatusBanner";
-import { ServiceProcessBar } from "./ServiceProcessBar";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
@@ -332,13 +331,6 @@ export function ApplicationFormContainer({
     const assignee = getChatAssignee();
     return (
       <>
-        {/* 데이터 용역 제작 전용 5단계 프로세스바 — 신청→협의→계약→진행→종료.
-            현재는 UI 만 (status 로 단계 표시), 2~5 단계 실제 페이지·기능은 후속 작업. */}
-        {type === "service" && (
-          <div className="mb-5">
-            <ServiceProcessBar status={status} />
-          </div>
-        )}
         <StatusBanner status={status} />
 
         {/* 작성 모드 — 좌측 신청서(1fr) + 우측 담당자 채팅(300px) 2단 레이아웃.
