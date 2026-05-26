@@ -1,53 +1,76 @@
-// 신청서 상세 상단 진행 카드 — 5단계 chevron 탭 + (옵션) 4-cell sub-progress.
+// 신청서 상세 상단 진행 카드 — 막대 채우기형(스타일 B).
 //
-//   ┌─────────────────────────────────────────────────────────┐
-//   │ 전체  1. 신청  >  2. 협의  >  3. 계약  >  4. 진행  >  5. 종료 │
-//   │                                                          │
-//   │ ██████████  ██████████  ──────────  ──────────              │
-//   │ ✓ 담당자 지정   검토 중      보완 요청    승인 완료              │
-//   └─────────────────────────────────────────────────────────┘
+//   ┌────────────────────────────────────────────────────────┐
+//   │ 진행 상태                              신청 단계 · 1/5    │
+//   │                                                         │
+//   │ ████ ──── ──── ──── ────                                 │
+//   │ 신청    협의    계약    진행    종료                       │
+//   └────────────────────────────────────────────────────────┘
 //
-// 상위 5단계 chevron 탭:
-//   - 현재 단계만 #D4533E 빨강 + 굵게, 그 외는 회색
-//   - 단계 사이 ChevronRight 아이콘
+// 라벨 색:
+//   완료(index < current): #1D9E75 녹색
+//   현재(index === current): #D4533E 빨강 + weight 500
+//   예정(index > current): text-gray-500 (secondary)
 //
-// 4-cell sub-progress (currentStage === 0 + subStep prop 전달 시):
-//   - 담당자 지정 / 검토 중 / 보완 요청 / 승인 완료 4 cell
-//   - done #1D9E75, current #D4533E, current-revision #E08027(보완 요청 cell 활성 시), pending #d1d5db
+// 막대 색:
+//   완료 #1D9E75 / 현재 #D4533E / 예정 회색
 //
-// 5단계 진행 상태(sessionStorage 영속) 헬퍼는 그대로 유지.
+// onStageClick prop 전달 시 라벨이 버튼으로 변해 자유 이동.
 
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 
 interface Props {
   stages: string[];
   currentIndex: number;
-  /** 탭 클릭 시 부모에게 단계 인덱스 전달. 지정 시 chevron 탭이 버튼으로 변해 자유 이동 가능.
-   *  Phase 1 개발 편의 — 단계 권한 가드 없이 모든 단계로 직접 이동. */
+  /** 라벨 클릭 시 부모에게 단계 인덱스 전달. Phase 1 개발 편의 — 권한 가드 없이 자유 이동. */
   onStageClick?: (index: number) => void;
 }
 
-export type SubStep =
-  | "member_assignment"
-  | "under_review"
-  | "revision_requested"
-  | "approved";
+function segmentClass(index: number, current: number): string {
+  if (index < current) return "bg-[#1D9E75]";
+  if (index === current) return "bg-[#D4533E]";
+  return "bg-gray-200 dark:bg-gray-700";
+}
+
+function labelColorClass(index: number, current: number): string {
+  if (index < current) return "text-[#1D9E75]";
+  if (index === current) return "font-medium text-[#D4533E]";
+  return "text-gray-500 dark:text-gray-400";
+}
 
 export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
   const safeIndex = Math.max(0, Math.min(currentIndex, stages.length - 1));
+  const currentName = stages[safeIndex] ?? "";
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      {/* 상위 chevron 탭 — onStageClick 전달 시 버튼, 미전달 시 단순 텍스트. */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-        <span className="text-gray-400 dark:text-gray-500">전체</span>
+    <section className="rounded-xl border border-gray-200 bg-white px-6 py-5 dark:border-gray-700 dark:bg-gray-900">
+      {/* 헤더 — '진행 상태' 제목 + 우측 'n/5' 위치 표시 */}
+      <header className="mb-4 flex items-center justify-between">
+        <span className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
+          진행 상태
+        </span>
+        <span className="text-[13px] font-medium text-[#D4533E]">
+          {currentName} 단계 · {safeIndex + 1}/{stages.length}
+        </span>
+      </header>
+
+      {/* 막대 — 5 cell flex-1, gap 5px, height 9px */}
+      <div className="mb-3 flex gap-[5px]">
+        {stages.map((s, i) => (
+          <div
+            key={s}
+            className={`h-[9px] flex-1 rounded-[5px] ${segmentClass(i, safeIndex)}`}
+            aria-hidden="true"
+          />
+        ))}
+      </div>
+
+      {/* 라벨 — onStageClick 전달 시 버튼으로, 미전달 시 텍스트 */}
+      <div className="flex text-[14px]">
         {stages.map((s, i) => {
           const isCurrent = i === safeIndex;
-          const labelCls = isCurrent
-            ? "font-medium text-[#D4533E]"
-            : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300";
+          const colorCls = labelColorClass(i, safeIndex);
           return (
             <Fragment key={s}>
               {onStageClick ? (
@@ -55,28 +78,17 @@ export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
                   type="button"
                   onClick={() => onStageClick(i)}
                   aria-current={isCurrent ? "step" : undefined}
-                  className={`${labelCls} cursor-pointer transition`}
+                  className={`flex-1 text-center transition ${colorCls} hover:underline`}
                 >
-                  {i + 1}. {s}
+                  {s}
                 </button>
               ) : (
                 <span
-                  className={
-                    isCurrent
-                      ? "font-medium text-[#D4533E]"
-                      : "text-gray-400 dark:text-gray-500"
-                  }
+                  className={`flex-1 text-center ${colorCls}`}
                   aria-current={isCurrent ? "step" : undefined}
                 >
-                  {i + 1}. {s}
+                  {s}
                 </span>
-              )}
-              {i < stages.length - 1 && (
-                <ChevronRight
-                  size={11}
-                  className="text-gray-300 dark:text-gray-600"
-                  aria-hidden="true"
-                />
               )}
             </Fragment>
           );
@@ -123,7 +135,13 @@ export function writeServiceStage(formId: string, stage: number): void {
   }
 }
 
-/** sub-step 영속 헬퍼 — ApplicationStageTab / ProgressBar 공유. */
+/** sub-step 영속 헬퍼 — ApplicationStageTab 가 사용. */
+export type SubStep =
+  | "member_assignment"
+  | "under_review"
+  | "revision_requested"
+  | "approved";
+
 const SUBSTEP_KEY = (formId: string) => `dh:gov:stage1:substep:${formId}`;
 const SUB_STEPS: readonly SubStep[] = [
   "member_assignment",
