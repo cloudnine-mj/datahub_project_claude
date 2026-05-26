@@ -1,16 +1,28 @@
 // 신청 단계 상세 탭 — 용역 제작(data_production) 폼의 상세 페이지에서 ProgressBar 아래에 노출.
 //
-// Phase 1 (현재): 역할 분기 미적용. 로그인 사용자 누구든 전체 UI(추가/제거/다음 단계 버튼)
-// 동일하게 노출. 백엔드 권한 가드 / 역할별 UI 분기는 Phase 2 에서 적용.
+// 신청 단계 내부 세부 흐름 (currentStage === 0 일 때):
+//   member_assignment   — 담당자 지정 중 (총괄이 실무자 지정)
+//      ↓ [검토 요청]
+//   under_review        — 담당자 검토 중
+//      ├ [보완 요청]    → revision_requested
+//      └ [승인]          → approved + serviceStage 0→1 (협의로 advance)
 //
-// 실무 담당자 목록은 sessionStorage 영속 로컬 state — 백엔드 미연결.
-// '실무자 추가' 는 window.prompt 로 이름/이메일 입력 (사용자 검색 UI 없음).
-// '협의 단계로' 버튼은 alert — 실제 단계 전환은 Phase 2.
+//   revision_requested  — 보완 요청됨
+//      ↓ [검토 재시작]  (담당자) 또는 신청자 보완 후 재제출
+//   다시 under_review
+//
+//   approved            — 승인 완료 (이 시점에 serviceStage 가 이미 1+)
+//
+// Phase 1:
+//   - 실무 담당자 / sub-step 모두 sessionStorage 영속 (백엔드 컬럼 없음).
+//   - 사용자 검색 UI 없음 — 추가 모달에서 이름·이메일 입력.
+//   - 검토 버튼은 담당자(총괄/실무) 에게만 노출 — 신청자는 대기/보완 안내.
+//   - 역할 식별은 이메일 매칭 (FIXED_ASSIGNEE / submitterEmail / members 리스트).
 
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Plus, Users, X } from "lucide-react";
+import { ArrowRight, Check, Plus, RefreshCw, Users, X } from "lucide-react";
 import type { Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 
@@ -19,6 +31,14 @@ interface MemberMock {
   name: string;
   email: string;
 }
+
+const SUB_STEPS = [
+  "member_assignment",
+  "under_review",
+  "revision_requested",
+  "approved",
+] as const;
+type SubStep = (typeof SUB_STEPS)[number];
 
 interface Props {
   formId: string;
@@ -36,7 +56,29 @@ function initial(name: string): string {
   return name.trim().slice(0, 1) || "?";
 }
 
-const STORAGE_KEY = (formId: string) => `dh:gov:stage1:members:${formId}`;
+const MEMBERS_KEY = (formId: string) => `dh:gov:stage1:members:${formId}`;
+const SUBSTEP_KEY = (formId: string) => `dh:gov:stage1:substep:${formId}`;
+
+function readSubStep(formId: string): SubStep {
+  if (typeof window === "undefined") return "member_assignment";
+  try {
+    const raw = sessionStorage.getItem(SUBSTEP_KEY(formId));
+    if (raw && (SUB_STEPS as readonly string[]).includes(raw))
+      return raw as SubStep;
+  } catch {
+    /* ignore */
+  }
+  return "member_assignment";
+}
+
+function writeSubStep(formId: string, step: SubStep): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(SUBSTEP_KEY(formId), step);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function ApplicationStageTab({
   formId,
@@ -49,44 +91,44 @@ export function ApplicationStageTab({
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
+  const [subStep, setSubStepState] = useState<SubStep>("member_assignment");
+  const [modalOpen, setModalOpen] = useState(false);
   const meEmail = me?.user.email ?? null;
-  // 현재 사용자 식별 (Phase 1 — 라벨/배지 용도. UI 가드는 미적용).
+
+  // 역할 식별 — Phase 1 검토 버튼 가시성에만 사용.
   const isLead = !!meEmail && meEmail.toLowerCase() === lead.email.toLowerCase();
+  const isMember =
+    !!meEmail &&
+    members.some((m) => m.email.toLowerCase() === meEmail.toLowerCase());
   const isApplicant =
     !!meEmail && meEmail.toLowerCase() === submitterEmail.toLowerCase();
-  // 다음 단계 라벨.
-  const nextStageLabel =
-    currentStage === 0
-      ? "협의 단계로"
-      : currentStage === 1
-        ? "계약 단계로"
-        : currentStage === 2
-          ? "진행 단계로"
-          : currentStage === 3
-            ? "종료 단계로"
-            : "완료";
+  const isAssignee = isLead || isMember;
 
-  // Phase 1 — 실무 담당자 목록 sessionStorage 영속.
+  // Phase 1 — 실무 담당자 / sub-step sessionStorage 영속.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY(formId));
+      const raw = sessionStorage.getItem(MEMBERS_KEY(formId));
       if (raw) setMembers(JSON.parse(raw) as MemberMock[]);
     } catch {
       /* ignore */
     }
+    setSubStepState(readSubStep(formId));
   }, [formId]);
 
-  function persist(next: MemberMock[]) {
+  function persistMembers(next: MemberMock[]): void {
     setMembers(next);
     try {
-      sessionStorage.setItem(STORAGE_KEY(formId), JSON.stringify(next));
+      sessionStorage.setItem(MEMBERS_KEY(formId), JSON.stringify(next));
     } catch {
       /* ignore */
     }
   }
 
-  const [modalOpen, setModalOpen] = useState(false);
+  function setSubStep(next: SubStep): void {
+    setSubStepState(next);
+    writeSubStep(formId, next);
+  }
 
   function onAddMember(name: string, email: string): string | null {
     const n = name.trim();
@@ -96,51 +138,90 @@ export function ApplicationStageTab({
     if (members.some((m) => m.email.toLowerCase() === e.toLowerCase())) {
       return "이미 추가된 담당자입니다.";
     }
-    persist([...members, { id: `mock-${Date.now()}`, name: n, email: e }]);
+    persistMembers([
+      ...members,
+      { id: `mock-${Date.now()}`, name: n, email: e },
+    ]);
     return null;
   }
 
-  function onRemoveMember(id: string) {
-    persist(members.filter((m) => m.id !== id));
+  function onRemoveMember(id: string): void {
+    persistMembers(members.filter((m) => m.id !== id));
   }
 
-  function onAdvance() {
-    // 신청 단계에서는 실무자 1명 이상 지정 필수. 그 이후 단계는 제약 없음(Phase 1).
-    if (currentStage === 0 && members.length === 0) return;
+  // 신청 단계 액션.
+  function onRequestReview(): void {
+    if (members.length === 0) return;
+    setSubStep("under_review");
+  }
+
+  function onRequestRevision(): void {
+    setSubStep("revision_requested");
+  }
+
+  function onApproveAndAdvance(): void {
+    setSubStep("approved");
+    onAdvanceStage();
+  }
+
+  function onResumeReview(): void {
+    setSubStep("under_review");
+  }
+
+  // 협의 이후 단계용 advance.
+  function onAdvanceGeneric(): void {
     if (currentStage >= 4) return;
     onAdvanceStage();
   }
 
-  // 용역 제작이 아니면 본 탭 숨김. 역할 가드는 Phase 1 에선 미적용.
+  // 용역 제작이 아니면 본 탭 숨김.
   if (formType !== "data_production") return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+      {/* 신청 단계 내부 세부 진행 막대 — currentStage === 0 일 때만. */}
+      {currentStage === 0 && (
+        <div className="mb-5">
+          <SubProgressBar subStep={subStep} />
+        </div>
+      )}
+
+      {/* 담당자 헤더 */}
       <header className="mb-1 flex items-center gap-2">
         <Users size={16} className="text-[#993C1D]" aria-hidden="true" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
           담당자
         </h3>
-        {currentStage === 0 && (
+        {currentStage === 0 && subStep === "member_assignment" && (
           <span aria-hidden="true" className="text-[12px] text-[#D4533E]">*</span>
+        )}
+        {subStep === "revision_requested" && (
+          <span
+            className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: "#FBEBD6", color: "#B5610F" }}
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block h-1.5 w-1.5 rounded-full"
+              style={{ background: "#E08027" }}
+            />
+            보완 요청됨
+          </span>
         )}
       </header>
       <p className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
-        {currentStage === 0
-          ? "실무 담당자를 1명 이상 지정해 주세요 — 협의 단계로 진행하려면 필수입니다."
+        {currentStage === 0 && subStep === "member_assignment"
+          ? "실무 담당자를 1명 이상 지정해 주세요 — 검토 요청을 보내려면 필수입니다."
           : "현재 단계에서 담당자 변경은 자유롭게 가능합니다."}
       </p>
 
-      {/* 담당자 칩 영역 */}
+      {/* 담당자 칩 */}
       <div className="flex flex-wrap items-center gap-1.5">
-        {/* 총괄 (항상 표시, 제거 불가) */}
         <AssigneeChip
           name={lead.name}
           isMe={meEmail?.toLowerCase() === lead.email.toLowerCase()}
           badge="총괄"
         />
-
-        {/* 실무 담당자들 */}
         {members.map((m) => (
           <AssigneeChip
             key={m.id}
@@ -150,8 +231,6 @@ export function ApplicationStageTab({
             onRemove={() => onRemoveMember(m.id)}
           />
         ))}
-
-        {/* 추가 버튼 */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
@@ -168,33 +247,239 @@ export function ApplicationStageTab({
         />
       )}
 
-      {/* 다음 단계 버튼 */}
-      {currentStage < 4 && (
-        <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-          <button
-            type="button"
-            onClick={onAdvance}
-            disabled={currentStage === 0 && members.length === 0}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
-          >
-            {currentStage === 0 ? "실무자 지정 완료 · " : ""}
-            {nextStageLabel}
-            <ArrowRight size={14} aria-hidden="true" />
-          </button>
-          {currentStage === 0 && members.length === 0 && (
-            <p className="mt-1.5 text-center text-[10px] text-gray-400">
-              실무 담당자가 지정되면 활성화됩니다.
-            </p>
-          )}
-        </div>
-      )}
+      {/* 액션 영역 — 단계·sub-step·역할에 따라 분기. */}
+      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        {currentStage === 0 ? (
+          <Stage0Actions
+            subStep={subStep}
+            membersAssigned={members.length > 0}
+            isAssignee={isAssignee}
+            isApplicant={isApplicant}
+            onRequestReview={onRequestReview}
+            onRequestRevision={onRequestRevision}
+            onApprove={onApproveAndAdvance}
+            onResumeReview={onResumeReview}
+          />
+        ) : currentStage < 4 ? (
+          <GenericAdvanceButton
+            stageIndex={currentStage}
+            onAdvance={onAdvanceGeneric}
+          />
+        ) : (
+          <p className="text-center text-[11px] text-gray-400">
+            모든 단계가 완료되었습니다.
+          </p>
+        )}
+      </div>
 
-      {/* 현재 사용자 컨텍스트 (Phase 2 백엔드 권한 적용 시까지 UI 가드 미적용). */}
+      {/* 현재 사용자 컨텍스트 (Phase 2 백엔드 권한 적용 시까지 UI 가드 일부만 적용). */}
       <span className="hidden" aria-hidden="true">
-        {submitterEmail} {submitterName} {isLead ? "lead" : ""}{" "}
+        {submitterName} {isLead ? "lead" : ""} {isMember ? "member" : ""}{" "}
         {isApplicant ? "applicant" : ""}
       </span>
     </section>
+  );
+}
+
+/** 신청 단계 내부 세부 진행 막대 — 담당자 지정 → 검토 중 → 승인 완료.
+ *  revision_requested 상태에서는 '검토 중' 칸이 주황으로 변하고 라벨도 '보완 요청' 으로. */
+function SubProgressBar({ subStep }: { subStep: SubStep }) {
+  // cell state per step.
+  const memberState =
+    subStep === "member_assignment" ? "current" : ("done" as const);
+  const reviewState: "pending" | "current" | "current-revision" | "done" =
+    subStep === "member_assignment"
+      ? "pending"
+      : subStep === "under_review"
+        ? "current"
+        : subStep === "revision_requested"
+          ? "current-revision"
+          : "done";
+  const approvedState: "pending" | "current" | "done" =
+    subStep === "approved" ? "done" : "pending";
+
+  function cellClass(s: "pending" | "current" | "current-revision" | "done"): string {
+    if (s === "done") return "bg-[#1D9E75]";
+    if (s === "current") return "bg-[#D4533E]";
+    if (s === "current-revision") return "bg-[#E08027]";
+    return "bg-gray-200 dark:bg-gray-700";
+  }
+
+  function labelClass(
+    s: "pending" | "current" | "current-revision" | "done",
+  ): string {
+    if (s === "done") return "text-[#1D9E75]";
+    if (s === "current") return "font-medium text-[#D4533E]";
+    if (s === "current-revision") return "font-medium text-[#B5610F]";
+    return "text-gray-400 dark:text-gray-500";
+  }
+
+  return (
+    <div>
+      <div className="mb-1.5 flex gap-1">
+        <div className={`h-1.5 flex-1 rounded ${cellClass(memberState)}`} />
+        <div className={`h-1.5 flex-1 rounded ${cellClass(reviewState)}`} />
+        <div className={`h-1.5 flex-1 rounded ${cellClass(approvedState)}`} />
+      </div>
+      <div className="flex text-[11px]">
+        <span className={`flex-1 text-center ${labelClass(memberState)}`}>
+          {memberState === "done" && (
+            <Check size={10} className="mr-0.5 inline" aria-hidden="true" />
+          )}
+          담당자 지정
+        </span>
+        <span className={`flex-1 text-center ${labelClass(reviewState)}`}>
+          {reviewState === "current-revision" ? "보완 요청" : "검토 중"}
+        </span>
+        <span className={`flex-1 text-center ${labelClass(approvedState)}`}>
+          승인 완료
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** 신청 단계 내부 액션 — sub-step + 역할별 분기. */
+function Stage0Actions({
+  subStep,
+  membersAssigned,
+  isAssignee,
+  isApplicant,
+  onRequestReview,
+  onRequestRevision,
+  onApprove,
+  onResumeReview,
+}: {
+  subStep: SubStep;
+  membersAssigned: boolean;
+  isAssignee: boolean;
+  isApplicant: boolean;
+  onRequestReview: () => void;
+  onRequestRevision: () => void;
+  onApprove: () => void;
+  onResumeReview: () => void;
+}) {
+  if (subStep === "member_assignment") {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={onRequestReview}
+          disabled={!membersAssigned}
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+        >
+          실무자 지정 완료 · 검토 요청
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
+        {!membersAssigned && (
+          <p className="mt-1.5 text-center text-[10px] text-gray-400">
+            실무 담당자가 지정되면 활성화됩니다.
+          </p>
+        )}
+      </>
+    );
+  }
+
+  if (subStep === "under_review") {
+    // 담당자 시점 — 보완 요청 / 승인 버튼.
+    if (isAssignee) {
+      return (
+        <div>
+          <p className="mb-2 text-[12px] font-medium text-gray-900 dark:text-gray-100">
+            신청서 검토
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onRequestRevision}
+              className="flex-1 rounded-md border border-[#FBEBD6] bg-[#FEF8F0] px-3 py-2 text-[12px] font-medium text-[#B5610F] transition hover:brightness-95"
+            >
+              보완 요청
+            </button>
+            <button
+              type="button"
+              onClick={onApprove}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-3 py-2 text-[12px] font-medium text-white transition hover:brightness-110"
+            >
+              승인 · 협의 단계로
+              <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+    // 신청자/그 외 — 대기 안내.
+    return (
+      <p className="text-center text-[11px] text-gray-500 dark:text-gray-400">
+        {isApplicant
+          ? "담당자가 신청서를 검토 중입니다. 결과를 기다려 주세요."
+          : "담당자 검토 중입니다."}
+      </p>
+    );
+  }
+
+  if (subStep === "revision_requested") {
+    if (isAssignee) {
+      return (
+        <div>
+          <p className="mb-2 text-[12px] text-[#B5610F]">
+            신청자가 보완 자료 재제출을 진행 중입니다.
+          </p>
+          <button
+            type="button"
+            onClick={onResumeReview}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <RefreshCw size={12} aria-hidden="true" />
+            검토 재시작
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div
+        className="rounded-md px-3 py-2.5 text-[11px]"
+        style={{ background: "#FBEBD6", color: "#B5610F" }}
+      >
+        담당자가 보완을 요청했습니다. 신청서를 수정 후 재제출해 주세요.
+      </div>
+    );
+  }
+
+  // approved — 사실상 currentStage 가 이미 1+ 라 본 분기 진입은 드뭄.
+  return (
+    <p className="inline-flex items-center justify-center gap-1.5 text-center text-[11px] text-[#1D9E75]">
+      <Check size={12} aria-hidden="true" />
+      신청 단계 승인 완료
+    </p>
+  );
+}
+
+/** 협의 이후 단계용 — 단순 [다음 단계로] 버튼. */
+function GenericAdvanceButton({
+  stageIndex,
+  onAdvance,
+}: {
+  stageIndex: number;
+  onAdvance: () => void;
+}) {
+  const label =
+    stageIndex === 1
+      ? "계약 단계로"
+      : stageIndex === 2
+        ? "진행 단계로"
+        : stageIndex === 3
+          ? "종료 단계로"
+          : "완료";
+  return (
+    <button
+      type="button"
+      onClick={onAdvance}
+      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
+    >
+      {label}
+      <ArrowRight size={14} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -232,7 +517,6 @@ function AddMemberModal({
   }
 
   function onEnter(e: React.KeyboardEvent<HTMLInputElement>) {
-    // 한글(IME) 조합 중 Enter 는 글자 확정 — 추가하지 않음.
     if (e.nativeEvent.isComposing || e.key === "Process") return;
     if (e.key === "Enter") {
       e.preventDefault();
