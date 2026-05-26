@@ -252,26 +252,35 @@ export default function Page({ params }: { params: { id: string } }) {
         );
       })()}
 
-      <div
-        id="form-content"
-        className={`mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4 ${hideForm ? "hidden" : ""}`}
-      >
-        <table className="w-full text-sm">
-          <tbody>
-            <Row label="신청자 이름">{form.submitter_name}</Row>
-            <Row label="소속">{form.submitter_department || "-"}</Row>
-            <Row label="이메일">{form.submitter_email}</Row>
-            {allFields.map((f) => {
-              const v = form.payload[f.key];
-              if (v === undefined || v === null || v === "") return null;
-              return (
-                <Row key={f.key} label={f.label}>
-                  <FieldValue field={f} value={v} />
-                </Row>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* 신청 정보 — 빨간 막대 + 제목 위에, 표 본문 아래. */}
+      <div className={`mt-6 ${hideForm ? "hidden" : ""}`}>
+        <div className="mb-3 flex items-center gap-1.5">
+          <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+          <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+            신청 정보
+          </h3>
+        </div>
+        <div
+          id="form-content"
+          className="overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4"
+        >
+          <table className="w-full text-sm">
+            <tbody>
+              <Row label="신청자 이름">{form.submitter_name}</Row>
+              <Row label="소속">{form.submitter_department || "-"}</Row>
+              <Row label="이메일">{form.submitter_email}</Row>
+              {allFields.map((f) => {
+                const v = form.payload[f.key];
+                if (v === undefined || v === null || v === "") return null;
+                return (
+                  <Row key={f.key} label={f.label}>
+                    <FieldValue field={f} value={v} />
+                  </Row>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* 실무자 지정 — 신청서 확인 바로 아래, 본문 흐름 안. 용역 제작만. */}
