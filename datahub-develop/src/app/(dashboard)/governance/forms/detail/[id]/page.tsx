@@ -290,11 +290,12 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {/* 활동/코멘트 영역.
+          - 용역 제작(data_production): 우측 ChatPanel 이 담당자 소통을 대체 → 코멘트 카드 미노출.
           - from=admin + 관리자 + 타인 신청 → 코멘트 카드 (사람 코멘트만, 시스템 이벤트 제외).
             진행 이력은 위 진행 상태 카드 안의 토글로 노출.
           - from=list → 동일 분리 레이아웃 (코멘트 카드). chatRole=observer 면 카드 자체 숨김.
           - 그 외 진입(my / 기본) → 기존 활동 카드 (시스템 + 사람 통합 타임라인). */}
-      {(() => {
+      {form.form_type !== "data_production" && (() => {
         const chatRole = getChatRole(form, me);
         if (chatRole === "observer") return null;
         const isAdminDetail =
