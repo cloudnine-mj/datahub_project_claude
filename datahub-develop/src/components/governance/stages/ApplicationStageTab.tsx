@@ -119,8 +119,8 @@ export function ApplicationStageTab({
   }
 
   // 신청 단계 액션 — 모두 sub-step 콜백을 통해 부모에 전달.
+  // Phase 1 개발 편의: members 0 가드 제거 — 자유 이동 허용.
   function onRequestReview(): void {
-    if (members.length === 0) return;
     onSubStepChange("under_review");
   }
 
@@ -209,8 +209,9 @@ export function ApplicationStageTab({
         {currentStage === 0 ? (
           <Stage0Actions
             subStep={subStep}
-            membersAssigned={members.length > 0}
-            isAssignee={isAssignee}
+            // Phase 1 — 가드 모두 해제: members 0 허용, 역할별 분기 무시.
+            membersAssigned
+            isAssignee
             isApplicant={isApplicant}
             onRequestReview={onRequestReview}
             onRequestRevision={onRequestRevision}

@@ -125,6 +125,17 @@ export default function Page({ params }: { params: { id: string } }) {
     writeServiceStage(form.id, next);
   }, [form, serviceStage]);
 
+  // Phase 1 — 개발 편의를 위해 chevron 탭 클릭 시 자유 이동. 권한 가드 없음.
+  const jumpServiceStage = useCallback(
+    (idx: number) => {
+      if (!form) return;
+      const clamped = Math.max(0, Math.min(4, idx));
+      setServiceStage(clamped);
+      writeServiceStage(form.id, clamped);
+    },
+    [form],
+  );
+
   const setSubStep = useCallback(
     (next: SubStep) => {
       if (!form) return;
@@ -197,6 +208,7 @@ export default function Page({ params }: { params: { id: string } }) {
             stages={[...SERVICE_STAGES]}
             currentIndex={serviceStage}
             subStep={subStep}
+            onStageClick={jumpServiceStage}
           />
         </div>
       )}

@@ -28,6 +28,9 @@ interface Props {
   /** 신청 단계 내부 sub-step — 'member_assignment' | 'under_review' | 'revision_requested' | 'approved'.
    *  지정 시 4-cell sub-progress 바가 함께 렌더. 미지정 시 chevron 탭만. */
   subStep?: SubStep;
+  /** 탭 클릭 시 부모에게 단계 인덱스 전달. 지정 시 chevron 탭이 버튼으로 변해 자유 이동 가능.
+   *  Phase 1 개발 편의 — 단계 권한 가드 없이 모든 단계로 직접 이동. */
+  onStageClick?: (index: number) => void;
 }
 
 export type SubStep =
@@ -38,27 +41,41 @@ export type SubStep =
 
 type CellState = "pending" | "current" | "current-revision" | "done";
 
-export function ProgressBar({ stages, currentIndex, subStep }: Props) {
+export function ProgressBar({ stages, currentIndex, subStep, onStageClick }: Props) {
   const safeIndex = Math.max(0, Math.min(currentIndex, stages.length - 1));
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      {/* 상위 chevron 탭 */}
+      {/* 상위 chevron 탭 — onStageClick 전달 시 버튼, 미전달 시 단순 텍스트. */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
         <span className="text-gray-400 dark:text-gray-500">전체</span>
         {stages.map((s, i) => {
           const isCurrent = i === safeIndex;
+          const labelCls = isCurrent
+            ? "font-medium text-[#D4533E]"
+            : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300";
           return (
             <Fragment key={s}>
-              <span
-                className={
-                  isCurrent
-                    ? "font-medium text-[#D4533E]"
-                    : "text-gray-400 dark:text-gray-500"
-                }
-                aria-current={isCurrent ? "step" : undefined}
-              >
-                {i + 1}. {s}
-              </span>
+              {onStageClick ? (
+                <button
+                  type="button"
+                  onClick={() => onStageClick(i)}
+                  aria-current={isCurrent ? "step" : undefined}
+                  className={`${labelCls} cursor-pointer transition`}
+                >
+                  {i + 1}. {s}
+                </button>
+              ) : (
+                <span
+                  className={
+                    isCurrent
+                      ? "font-medium text-[#D4533E]"
+                      : "text-gray-400 dark:text-gray-500"
+                  }
+                  aria-current={isCurrent ? "step" : undefined}
+                >
+                  {i + 1}. {s}
+                </span>
+              )}
               {i < stages.length - 1 && (
                 <ChevronRight
                   size={11}
