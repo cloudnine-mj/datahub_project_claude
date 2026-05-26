@@ -191,10 +191,12 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {/* 진행 상태 카드.
+          - 용역 제작(data_production): 상단 5단계 ProgressBar 가 진행 상태를 표시하므로
+            본 카드는 노출하지 않음.
           - from=admin + 관리자 + 타인 신청 → 관리자 액션 + 진행 이력 토글 노출.
           - from=list → 관리자 액션 숨김, 진행 이력 토글만 노출 (read-only).
           - from=my / 기본 진입 → 기존 동작 (액션 + 통합 활동 카드 하단). */}
-      {selectedStep === null && (() => {
+      {selectedStep === null && form.form_type !== "data_production" && (() => {
         // 사내 정책상 관리 탭은 platform role 무관 모든 사용자에게 열려 있음.
         // 본인 신청서가 아닐 때만 관리자 레이아웃(진행 이력 inline + 코멘트 분리) 노출.
         const isAdminDetail =
