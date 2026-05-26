@@ -145,14 +145,27 @@ export function HistoryTimeline({ events }: { events: HistoryEvent[] }) {
  *    status="approved"         → approved
  *    comment "임시 저장" 포함  → edited (그 외 status 무시)
  *  중복 type 은 누적 (수정 회차마다 새 entry).
- *  changedBy 가 비어있으면 '시스템'. */
+ *  changedBy 가 비어있으면 '시스템'.
+ *
+ *  ApprovalEntry 는 camelCase(changedBy/changedAt) / snake_case(changed_by/changed_at)
+ *  둘 다 허용 — 두 표기 모두 fallback 처리. */
 export function approvalHistoryToEvents(
-  history: { status?: string; action?: string; changedAt?: string; changedBy?: string; comment?: string | null }[] | null,
+  history: {
+    status?: string;
+    action?: string;
+    changedAt?: string;
+    changed_at?: string;
+    changedBy?: string;
+    changed_by?: string;
+    comment?: string | null;
+  }[] | null,
 ): HistoryEvent[] {
   if (!history || history.length === 0) return [];
   const out: HistoryEvent[] = [];
   history.forEach((h, i) => {
-    if (!h.changedAt) return;
+    const changedAt = h.changedAt ?? h.changed_at;
+    if (!changedAt) return;
+    const changedBy = h.changedBy ?? h.changed_by ?? "시스템";
     let type: HistoryEventType | null = null;
     const status = h.status ?? "";
     const action = h.action ?? "";
@@ -170,10 +183,10 @@ export function approvalHistoryToEvents(
     }
     if (!type) return;
     out.push({
-      id: `${h.changedAt}-${i}`,
+      id: `${changedAt}-${i}`,
       type,
-      timestamp: h.changedAt,
-      actor: h.changedBy ?? "시스템",
+      timestamp: changedAt,
+      actor: changedBy,
     });
   });
   return out;
