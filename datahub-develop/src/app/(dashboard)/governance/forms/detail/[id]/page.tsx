@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, CheckSquare, ChevronUp, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, CheckSquare, Database, Eye, Pencil, Send, Square, X } from "lucide-react";
 import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
 import { Breadcrumb } from "@/components/governance/Breadcrumb";
 import { DeleteFormButton } from "@/components/governance/DeleteFormButton";
@@ -172,25 +172,6 @@ export default function Page({ params }: { params: { id: string } }) {
             { label },
           ]}
         />
-
-        {/* 우상단 네비 — from=admin / from=list 진입 시 노출. */}
-        {(from === "admin" || from === "list") && (
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <ChevronUp size={12} /> 이전
-            </button>
-            <Link
-              href={from === "admin" ? "/governance/admin/forms" : "/governance/forms/list"}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <ArrowLeft size={12} /> 목록
-            </Link>
-          </div>
-        )}
       </div>
 
       <div className="mb-6 flex items-center gap-3">
