@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Plus, Users, X } from "lucide-react";
 import type { Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
@@ -86,19 +86,18 @@ export function ApplicationStageTab({
     }
   }
 
-  function onAddMember() {
-    const name = window.prompt("실무 담당자 이름");
-    if (!name) return;
-    const email = window.prompt("실무 담당자 이메일");
-    if (!email) return;
-    if (members.some((m) => m.email.toLowerCase() === email.toLowerCase())) {
-      window.alert("이미 추가된 담당자입니다.");
-      return;
+  const [modalOpen, setModalOpen] = useState(false);
+
+  function onAddMember(name: string, email: string): string | null {
+    const n = name.trim();
+    const e = email.trim();
+    if (!n) return "이름을 입력해 주세요.";
+    if (!e) return "이메일을 입력해 주세요.";
+    if (members.some((m) => m.email.toLowerCase() === e.toLowerCase())) {
+      return "이미 추가된 담당자입니다.";
     }
-    persist([
-      ...members,
-      { id: `mock-${Date.now()}`, name: name.trim(), email: email.trim() },
-    ]);
+    persist([...members, { id: `mock-${Date.now()}`, name: n, email: e }]);
+    return null;
   }
 
   function onRemoveMember(id: string) {
@@ -155,12 +154,19 @@ export function ApplicationStageTab({
         {/* 추가 버튼 */}
         <button
           type="button"
-          onClick={onAddMember}
+          onClick={() => setModalOpen(true)}
           className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-[11px] text-gray-500 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
         >
           <Plus size={11} aria-hidden="true" /> 실무자 추가
         </button>
       </div>
+
+      {modalOpen && (
+        <AddMemberModal
+          onClose={() => setModalOpen(false)}
+          onAdd={onAddMember}
+        />
+      )}
 
       {/* 다음 단계 버튼 */}
       {currentStage < 4 && (
@@ -189,6 +195,139 @@ export function ApplicationStageTab({
         {isApplicant ? "applicant" : ""}
       </span>
     </section>
+  );
+}
+
+/** 실무자 추가 모달 — 이름·이메일 입력, Enter 로 즉시 추가, Esc 로 취소.
+ *  onAdd 가 에러 메시지(string) 를 반환하면 인라인 노출 후 닫지 않음.
+ *  null 반환 시 추가 성공 → 모달 닫힘. */
+function AddMemberModal({
+  onClose,
+  onAdd,
+}: {
+  onClose: () => void;
+  onAdd: (name: string, email: string) => string | null;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function submit() {
+    const error = onAdd(name, email);
+    if (error) {
+      setErr(error);
+      return;
+    }
+    onClose();
+  }
+
+  function onEnter(e: React.KeyboardEvent<HTMLInputElement>) {
+    // 한글(IME) 조합 중 Enter 는 글자 확정 — 추가하지 않음.
+    if (e.nativeEvent.isComposing || e.key === "Process") return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-member-title"
+    >
+      <div
+        className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3
+            id="add-member-title"
+            className="text-[14px] font-medium text-gray-900 dark:text-gray-100"
+          >
+            실무 담당자 추가
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="rounded p-0.5 text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
+              이름
+            </label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErr(null);
+              }}
+              onKeyDown={onEnter}
+              placeholder="실무 담당자 이름"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
+              이메일
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErr(null);
+              }}
+              onKeyDown={onEnter}
+              placeholder="example@company.com"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+          {err && (
+            <p className="text-[11px] text-[#993C1D]" role="alert">
+              {err}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-gray-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            className="rounded-md bg-[#D4533E] px-3.5 py-1.5 text-[12px] font-medium text-white transition hover:brightness-110"
+          >
+            추가
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
