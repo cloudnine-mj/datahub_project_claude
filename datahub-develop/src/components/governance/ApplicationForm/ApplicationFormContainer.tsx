@@ -350,19 +350,10 @@ export function ApplicationFormContainer({
               formId={formId}
               currentUserEmail={applicant.email}
               assigneeTeam={assignee.team}
-              // service 전용 — 담당자 온라인 배지 + 추천 질문 + brand 강조.
-              // 환영 메시지는 사용자 요청으로 제외.
+              // service 전용 — 담당자 온라인 배지 + brand 강조.
+              // 환영 메시지 / 추천 질문은 사용자 요청으로 제외.
               headerVariant={type === "service" ? "online" : "writing"}
               accent={type === "service" ? "brand" : "blue"}
-              suggestedQuestions={
-                type === "service"
-                  ? [
-                      "제작 수량은 어떻게 정하나요?",
-                      "작업 기간은 보통 얼마나 걸리나요?",
-                      "예산은 어떤 기준으로 잡나요?",
-                    ]
-                  : undefined
-              }
               ensureFormId={async () => {
                 // 메시지 전송 시점에 formId 가 없으면 draft 자동 생성.
                 if (formId) return formId;
