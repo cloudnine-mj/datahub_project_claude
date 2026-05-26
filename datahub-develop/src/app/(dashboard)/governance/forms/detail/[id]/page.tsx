@@ -434,6 +434,7 @@ export default function Page({ params }: { params: { id: string } }) {
             accent="brand"
             ensureFormId={async () => form.id}
             fillParent
+            currentStage={serviceStage}
           />
         </div>
       )}

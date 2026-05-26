@@ -17,7 +17,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 import type { FormMessageItem } from "@/lib/governance/forms/types";
@@ -50,6 +50,34 @@ interface Props {
   /** true 면 부모 컨테이너 높이를 100% 채움 (h-full) — 그리드 items-stretch 와 조합해
    *  좌측 폼 박스와 동일한 높이로 정렬. false(기본) 면 뷰포트 기반 sticky 친화 높이. */
   fillParent?: boolean;
+  /** 현재 진행 단계 인덱스 — 새 메시지에 stageAtSent 로 기록되고, 메시지 사이
+   *  단계 변경 지점에 구분선을 그려줌. 미지정 시 구분선 미노출 (단일 채널 모드). */
+  currentStage?: number;
+  /** 단계 인덱스를 라벨로 매핑 — 미지정 시 SERVICE_STAGES 기본값 사용. */
+  stageLabels?: readonly string[];
+}
+
+const DEFAULT_STAGE_LABELS = ["신청", "협의", "계약", "진행", "종료"] as const;
+
+const STAGE_MAP_KEY = (formId: string) => `dh:gov:chat-stages:${formId}`;
+
+function readStageMap(formId: string): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = sessionStorage.getItem(STAGE_MAP_KEY(formId));
+    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStageMap(formId: string, next: Record<string, number>): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(STAGE_MAP_KEY(formId), JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function ChatPanel({
@@ -62,12 +90,23 @@ export function ChatPanel({
   suggestedQuestions,
   accent = "blue",
   fillParent = false,
+  currentStage,
+  stageLabels = DEFAULT_STAGE_LABELS,
 }: Props) {
   const [messages, setMessages] = useState<FormMessageItem[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // messageId → stageAtSent. sessionStorage 영속 (Phase 1, 백엔드 컬럼 없음).
+  // 과거 메시지는 default 0(신청) 으로 폴백.
+  const [stageMap, setStageMap] = useState<Record<string, number>>({});
+  const showDividers = currentStage !== undefined;
+
+  useEffect(() => {
+    if (!formId) return;
+    setStageMap(readStageMap(formId));
+  }, [formId]);
 
   const fetchMessages = useCallback(async () => {
     if (!formId) return;
@@ -115,6 +154,12 @@ export function ChatPanel({
       }
       const created = await api.createFormMessage(targetId, body);
       setMessages((prev) => [...prev, created]);
+      // 새 메시지의 stageAtSent 영속 — Phase 1, 단계 구분선용.
+      if (currentStage !== undefined && targetId) {
+        const next = { ...stageMap, [created.id]: currentStage };
+        setStageMap(next);
+        writeStageMap(targetId, next);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -225,15 +270,40 @@ export function ChatPanel({
           </div>
         )}
 
-        {messages.map((m) => (
-          <ChatMessageBubble
-            key={m.id}
-            message={m}
-            currentUserEmail={currentUserEmail}
-            assigneeTeam={assigneeTeam}
-            mineBubbleClass={accentBubble}
-          />
-        ))}
+        {showDividers
+          ? (() => {
+              let lastStage = -1;
+              return messages.map((m) => {
+                const stage = stageMap[m.id] ?? 0;
+                const showDivider = stage !== lastStage;
+                lastStage = stage;
+                return (
+                  <Fragment key={m.id}>
+                    {showDivider && (
+                      <StageDivider
+                        label={stageLabels[stage] ?? `단계 ${stage + 1}`}
+                        isCurrent={stage === currentStage}
+                      />
+                    )}
+                    <ChatMessageBubble
+                      message={m}
+                      currentUserEmail={currentUserEmail}
+                      assigneeTeam={assigneeTeam}
+                      mineBubbleClass={accentBubble}
+                    />
+                  </Fragment>
+                );
+              });
+            })()
+          : messages.map((m) => (
+              <ChatMessageBubble
+                key={m.id}
+                message={m}
+                currentUserEmail={currentUserEmail}
+                assigneeTeam={assigneeTeam}
+                mineBubbleClass={accentBubble}
+              />
+            ))}
 
         {error && (
           <div className="rounded-md bg-red-50 px-2.5 py-1.5 text-[11px] text-red-700">
@@ -292,6 +362,34 @@ function WelcomeBlock({ welcome }: { welcome: WelcomeMessage }) {
           {welcome.body}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 단계 구분선 — 메시지 사이에서 단계가 바뀌는 지점에 노출.
+ *  현재 단계면 빨강 강조, 그 외는 회색. */
+function StageDivider({ label, isCurrent }: { label: string; isCurrent: boolean }) {
+  if (isCurrent) {
+    return (
+      <div className="my-1 flex items-center gap-2" aria-hidden="true">
+        <div className="h-px flex-1" style={{ background: "#D4533E", opacity: 0.4 }} />
+        <span
+          className="rounded-full px-2 py-0.5 text-[9px] font-medium"
+          style={{ background: "#FEF1ED", color: "#D4533E" }}
+        >
+          {label} 단계 · 현재
+        </span>
+        <div className="h-px flex-1" style={{ background: "#D4533E", opacity: 0.4 }} />
+      </div>
+    );
+  }
+  return (
+    <div className="my-1 flex items-center gap-2" aria-hidden="true">
+      <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[9px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        {label} 단계
+      </span>
+      <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
     </div>
   );
 }
