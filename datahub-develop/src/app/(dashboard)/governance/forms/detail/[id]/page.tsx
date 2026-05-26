@@ -24,6 +24,7 @@ import {
   SERVICE_STAGES,
   serviceStageIndexFromStatus,
 } from "@/components/governance/ProgressBar";
+import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -165,6 +166,21 @@ export default function Page({ params }: { params: { id: string } }) {
           />
         </div>
       )}
+
+      {/* 신청 단계 상세 탭 — 용역 제작 + 현재 단계가 '신청'(draft / submitted 직후) 일 때 노출.
+          Phase 1 UI 만 — 실무 담당자 추가/제거는 sessionStorage 영속, 다음 단계 버튼은 alert. */}
+      {form.form_type === "data_production" &&
+        serviceStageIndexFromStatus(form.status) === 0 && (
+          <div className="mb-5">
+            <ApplicationStageTab
+              formId={form.id}
+              formType={form.form_type}
+              submitterEmail={form.submitter_email}
+              submitterName={form.submitter_name}
+              me={me}
+            />
+          </div>
+        )}
 
       {/* chevron 진행 바 / 진행 상태·이력 패널 노출 정책
           - from=admin (거버넌스 요청 관리): 검토/승인 화면이라 chevron 미노출.
