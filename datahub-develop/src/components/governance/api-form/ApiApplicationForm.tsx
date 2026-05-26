@@ -136,9 +136,6 @@ export function ApiApplicationForm({ applicant, values, onChange }: Props) {
             API 활용 신청서
           </h2>
         </div>
-        <p className="text-[12px] text-gray-500 dark:text-gray-400">
-          계획 수립 단계에서 정리한 내용을 입력하세요.
-        </p>
       </header>
 
       {/* 신청자 정보 */}

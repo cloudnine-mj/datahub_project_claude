@@ -300,11 +300,11 @@ export function ApplicationFormContainer({
         </h2>
         <ApplicationTypeChip type={type} />
       </header>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {readOnly
-          ? "제출된 신청서 내용을 확인할 수 있습니다."
-          : "계획 수립 단계에서 정리한 내용을 입력하세요."}
-      </p>
+      {readOnly && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          제출된 신청서 내용을 확인할 수 있습니다.
+        </p>
+      )}
 
       <form
         className="mt-5 space-y-6"
