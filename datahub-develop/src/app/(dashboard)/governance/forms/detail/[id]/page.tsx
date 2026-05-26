@@ -314,8 +314,9 @@ export default function Page({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* 실무자 지정 — 신청서 확인 바로 아래, 본문 흐름 안. 용역 제작만. */}
-      {form.form_type === "data_production" && (
+      {/* 실무자 지정 — 신청서 확인 바로 아래, 본문 흐름 안. 거버넌스 요청 관리(from=admin) 에서만 노출.
+          요청 목록(from=list) / 내 문서 목록(from=my) / 기본 진입에서는 미노출 — 읽기 전용 컨텍스트. */}
+      {form.form_type === "data_production" && from === "admin" && (
         <div className="mt-5">
           <ApplicationStageTab
             formId={form.id}
