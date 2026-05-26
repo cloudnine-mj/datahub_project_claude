@@ -42,9 +42,9 @@ interface SubstepDef {
   path: string;
 }
 
-// 모든 신청 유형 공용 — 계획 수립 → 신청서 작성 2 substep.
+// 모든 신청 유형 공용 — 계획 수립 substep 제거. 신청서 작성 1 단계만 노출.
+// (계획 수립 페이지·라우트 자체는 남겨두지만 사이드바/탭 진입 동선에서 제외.)
 const SUBSTEP_DEFS_COMMON: SubstepDef[] = [
-  { id: "planning", label: "계획 수립", path: "/governance/forms/planning" },
   { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
 ];
 

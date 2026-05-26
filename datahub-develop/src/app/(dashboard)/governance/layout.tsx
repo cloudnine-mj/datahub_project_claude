@@ -22,10 +22,10 @@ const items: SectionNavItem[] = [
   // 홈 — 그룹 밖 단독
   { title: "나의 현황", href: "/governance/home", icon: Home },
 
-  // 요청
-  { title: "데이터 용역 제작", href: "/governance/forms/planning?type=service", icon: Hammer, group: "요청" },
-  { title: "데이터 구매", href: "/governance/forms/planning?type=purchase", icon: ShoppingCart, group: "요청" },
-  { title: "데이터 구독", href: "/governance/forms/planning?type=subscribe", icon: RefreshCw, group: "요청" },
+  // 요청 — 계획 수립 substep 제거에 따라 곧바로 신청서 작성(intake) 진입.
+  { title: "데이터 용역 제작", href: "/governance/forms/intake?type=service", icon: Hammer, group: "요청" },
+  { title: "데이터 구매", href: "/governance/forms/intake?type=purchase", icon: ShoppingCart, group: "요청" },
+  { title: "데이터 구독", href: "/governance/forms/intake?type=subscribe", icon: RefreshCw, group: "요청" },
 
   // 조회
   { title: "거버넌스 요청 목록", href: "/governance/forms/list", icon: ClipboardList, group: "조회" },
