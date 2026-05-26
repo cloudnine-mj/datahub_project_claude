@@ -10,7 +10,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Plus, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, Plus, Users, X } from "lucide-react";
 import type { Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 
@@ -26,6 +26,10 @@ interface Props {
   submitterEmail: string;
   submitterName: string;
   me: Me | null;
+  /** 현재 5단계 인덱스 (0=신청, 1=협의, …). 부모(detail page) 가 관리. */
+  currentStage: number;
+  /** [협의 단계로] 등 다음 단계로 진행. 부모가 sessionStorage 영속 처리. */
+  onAdvanceStage: () => void;
 }
 
 function initial(name: string): string {
@@ -40,10 +44,27 @@ export function ApplicationStageTab({
   submitterEmail,
   submitterName,
   me,
+  currentStage,
+  onAdvanceStage,
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
   const meEmail = me?.user.email ?? null;
+  // 현재 사용자 식별 (Phase 1 — 라벨/배지 용도. UI 가드는 미적용).
+  const isLead = !!meEmail && meEmail.toLowerCase() === lead.email.toLowerCase();
+  const isApplicant =
+    !!meEmail && meEmail.toLowerCase() === submitterEmail.toLowerCase();
+  // 다음 단계 라벨.
+  const nextStageLabel =
+    currentStage === 0
+      ? "협의 단계로"
+      : currentStage === 1
+        ? "계약 단계로"
+        : currentStage === 2
+          ? "진행 단계로"
+          : currentStage === 3
+            ? "종료 단계로"
+            : "완료";
 
   // Phase 1 — 실무 담당자 목록 sessionStorage 영속.
   useEffect(() => {
@@ -85,10 +106,10 @@ export function ApplicationStageTab({
   }
 
   function onAdvance() {
-    if (members.length === 0) return;
-    window.alert(
-      "Phase 1 — UI 만 구현된 상태입니다. 단계 전환 / 백엔드 연동은 Phase 2.",
-    );
+    // 신청 단계에서는 실무자 1명 이상 지정 필수. 그 이후 단계는 제약 없음(Phase 1).
+    if (currentStage === 0 && members.length === 0) return;
+    if (currentStage >= 4) return;
+    onAdvanceStage();
   }
 
   // 용역 제작이 아니면 본 탭 숨김. 역할 가드는 Phase 1 에선 미적용.
@@ -96,16 +117,20 @@ export function ApplicationStageTab({
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      <header className="mb-3 flex items-center gap-2">
+      <header className="mb-1 flex items-center gap-2">
         <Users size={16} className="text-[#993C1D]" aria-hidden="true" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-          실무 담당자 지정
+          담당자
         </h3>
-        <span aria-hidden="true" className="text-[12px] text-[#D4533E]">*</span>
-        <span className="ml-auto text-[10px] text-gray-400">
-          Phase 1 — 모든 사용자에게 동일 UI 노출 (역할 가드 미적용)
-        </span>
+        {currentStage === 0 && (
+          <span aria-hidden="true" className="text-[12px] text-[#D4533E]">*</span>
+        )}
       </header>
+      <p className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
+        {currentStage === 0
+          ? "실무 담당자를 1명 이상 지정해 주세요 — 협의 단계로 진행하려면 필수입니다."
+          : "현재 단계에서 담당자 변경은 자유롭게 가능합니다."}
+      </p>
 
       {/* 담당자 칩 영역 */}
       <div className="flex flex-wrap items-center gap-1.5">
@@ -137,36 +162,31 @@ export function ApplicationStageTab({
         </button>
       </div>
 
-      {/* 실무자 미지정 안내 */}
-      {members.length === 0 && (
-        <div className="mt-3 flex items-center gap-1.5 text-[11px] text-[#993C1D]">
-          <UserPlus size={12} aria-hidden="true" />
-          실무 담당자를 1명 이상 지정해 주세요 — 협의 단계로 진행하려면 필수입니다.
+      {/* 다음 단계 버튼 */}
+      {currentStage < 4 && (
+        <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+          <button
+            type="button"
+            onClick={onAdvance}
+            disabled={currentStage === 0 && members.length === 0}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+          >
+            {currentStage === 0 ? "실무자 지정 완료 · " : ""}
+            {nextStageLabel}
+            <ArrowRight size={14} aria-hidden="true" />
+          </button>
+          {currentStage === 0 && members.length === 0 && (
+            <p className="mt-1.5 text-center text-[10px] text-gray-400">
+              실무 담당자가 지정되면 활성화됩니다.
+            </p>
+          )}
         </div>
       )}
 
-      {/* 다음 단계 버튼 */}
-      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={onAdvance}
-          disabled={members.length === 0}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
-        >
-          실무자 지정 완료 · 협의 단계로
-          <ArrowRight size={14} aria-hidden="true" />
-        </button>
-        {members.length === 0 && (
-          <p className="mt-1.5 text-center text-[10px] text-gray-400">
-            실무 담당자가 지정되면 활성화됩니다.
-          </p>
-        )}
-      </div>
-
-      {/* submitterEmail / submitterName 은 Phase 2 알림 라우팅에 사용 예정 — 현재는 미사용. */}
+      {/* 현재 사용자 컨텍스트 (Phase 2 백엔드 권한 적용 시까지 UI 가드 미적용). */}
       <span className="hidden" aria-hidden="true">
-        {submitterEmail}
-        {submitterName}
+        {submitterEmail} {submitterName} {isLead ? "lead" : ""}{" "}
+        {isApplicant ? "applicant" : ""}
       </span>
     </section>
   );

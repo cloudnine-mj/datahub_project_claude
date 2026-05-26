@@ -22,7 +22,8 @@ import { approvalHistoryToStatusItems } from "@/lib/governance/forms/history-ada
 import {
   ProgressBar,
   SERVICE_STAGES,
-  serviceStageIndexFromStatus,
+  readServiceStage,
+  writeServiceStage,
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 
@@ -52,6 +53,10 @@ export default function Page({ params }: { params: { id: string } }) {
   // 코멘트 카드(ProgressHistoryBlock) refetch 트리거 — 상태 변경 시 등 외부 액션이
   // 메시지를 생성한 후 이 값을 bump 하면 코멘트 카드가 messages 를 다시 조회한다.
   const [messageRefreshNonce, setMessageRefreshNonce] = useState(0);
+  // Phase 1 — 용역 제작 5단계 진행 상태(sessionStorage 기반 mock).
+  // 신청 단계(0) 에서 시작 → 총괄이 실무자 지정 후 [협의 단계로] 버튼 클릭으로 1 로 전환.
+  // approved 면 4(종료) 로 강제.
+  const [serviceStage, setServiceStage] = useState<number>(0);
 
   const refetch = useCallback(() => {
     api.getForm(params.id).then(setForm).catch((e) => setError((e as Error).message));
@@ -98,6 +103,19 @@ export default function Page({ params }: { params: { id: string } }) {
     refetch();
     api.me().then(setMe).catch(() => setMe(null));
   }, [refetch]);
+
+  // 폼 로드 후 sessionStorage 의 5단계 진행 상태 동기화.
+  useEffect(() => {
+    if (!form) return;
+    setServiceStage(readServiceStage(form.id, form.status));
+  }, [form]);
+
+  const advanceServiceStage = useCallback(() => {
+    if (!form) return;
+    const next = Math.min(4, serviceStage + 1);
+    setServiceStage(next);
+    writeServiceStage(form.id, next);
+  }, [form, serviceStage]);
 
   if (error) return <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>;
   if (!form) return <div className="text-sm text-gray-400">불러오는 중...</div>;
@@ -156,19 +174,17 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
 
       {/* 용역 제작 전용 5단계 진행 막대 (신청→협의→계약→진행→종료).
-          status 매핑: draft=0(신청) / submitted·reviewing·info_requested=1(협의) / approved=4(종료).
-          구매·구독은 자체 진행 모델이 다르므로 본 막대는 렌더하지 않음. */}
+          Phase 1: sessionStorage 기반 진행. 신청 단계(0) 에서 시작 → ApplicationStageTab
+          의 [협의 단계로] 버튼으로 수동 전환. status === 'approved' 면 종료(4) 강제. */}
       {form.form_type === "data_production" && (
         <div className="mb-5">
-          <ProgressBar
-            stages={[...SERVICE_STAGES]}
-            currentIndex={serviceStageIndexFromStatus(form.status)}
-          />
+          <ProgressBar stages={[...SERVICE_STAGES]} currentIndex={serviceStage} />
         </div>
       )}
 
       {/* 신청 단계 상세 탭 — 용역 제작이면 단계 무관 항상 노출.
-          Phase 1 UI 만 — 실무 담당자 추가/제거는 sessionStorage 영속, 다음 단계 버튼은 alert. */}
+          Phase 1: 실무 담당자 추가/제거는 sessionStorage 영속, [협의 단계로] 버튼은
+          serviceStage 를 1 증가 (또는 다음 단계). */}
       {form.form_type === "data_production" && (
         <div className="mb-5">
           <ApplicationStageTab
@@ -177,6 +193,8 @@ export default function Page({ params }: { params: { id: string } }) {
             submitterEmail={form.submitter_email}
             submitterName={form.submitter_name}
             me={me}
+            currentStage={serviceStage}
+            onAdvanceStage={advanceServiceStage}
           />
         </div>
       )}

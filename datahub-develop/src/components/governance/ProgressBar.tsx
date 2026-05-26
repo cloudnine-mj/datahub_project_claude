@@ -73,24 +73,42 @@ export function ProgressBar({ stages, currentIndex }: Props) {
 /** 용역 제작(data_production) 의 5단계. */
 export const SERVICE_STAGES = ["신청", "협의", "계약", "진행", "종료"] as const;
 
-/** form status → 5단계 인덱스 매핑.
- *   draft                 → 0 (신청)
- *   submitted             → 1 (협의)
- *   reviewing             → 1 (협의)
- *   info_requested        → 1 (협의, 보완 요청 회차)
- *   approved              → 4 (종료)
- *   rejected              → 0 (반려는 본 진행 막대에 표시 안 함 — 안전한 디폴트) */
-export function serviceStageIndexFromStatus(status: string): number {
-  switch (status) {
-    case "draft":
-      return 0;
-    case "submitted":
-    case "reviewing":
-    case "info_requested":
-      return 1;
-    case "approved":
-      return 4;
-    default:
-      return 0;
+/** Phase 1 — 5단계 진행은 form status 와 무관한 별도 상태로 관리.
+ *  신청 단계(0) 에서 총괄 담당자가 실무자 지정 후 [협의 단계로] 버튼을 눌러야
+ *  1(협의) 로 넘어가는 흐름. 백엔드 컬럼이 없으므로 sessionStorage 에 영속.
+ *  status === 'approved' 면 종료(4) 로 고정.
+ *
+ *  Phase 2 에서 GovernanceForm 에 serviceStage 컬럼 추가 + API 로 교체 예정. */
+const STAGE_KEY = (formId: string) => `dh:gov:service-stage:${formId}`;
+
+export function readServiceStage(formId: string, status: string): number {
+  if (status === "approved") return 4;
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = sessionStorage.getItem(STAGE_KEY(formId));
+    if (raw == null) return 0;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(4, n));
+  } catch {
+    return 0;
   }
+}
+
+export function writeServiceStage(formId: string, stage: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      STAGE_KEY(formId),
+      String(Math.max(0, Math.min(4, stage))),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @deprecated readServiceStage 로 대체. status 만으로는 단계를 결정하지 않음.
+ *  하위 호환을 위해 남겨두지만 새 코드에서는 사용 금지. */
+export function serviceStageIndexFromStatus(status: string): number {
+  return status === "approved" ? 4 : 0;
 }
