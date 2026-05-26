@@ -345,7 +345,7 @@ export function ApplicationFormContainer({
               onSubmit={onOpenPreview}
             />
           </div>
-          <div className="lg:sticky lg:top-5">
+          <div className="lg:sticky lg:top-6">
             <ChatPanel
               formId={formId}
               currentUserEmail={applicant.email}

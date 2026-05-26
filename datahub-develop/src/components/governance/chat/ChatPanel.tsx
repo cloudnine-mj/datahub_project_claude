@@ -152,11 +152,11 @@ export function ChatPanel({
 
   return (
     <aside
-      className="flex h-[560px] flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+      className="flex h-[calc(100vh-48px)] max-h-[560px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
       aria-label="담당자와 소통"
     >
-      {/* 헤더 */}
-      <header className="flex items-center justify-between border-b border-gray-100 px-4 py-3.5 dark:border-gray-800">
+      {/* 헤더 — 항상 보이도록 shrink 금지. */}
+      <header className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3.5 dark:border-gray-800">
         <div className="flex items-center gap-2">
           <MessageCircle size={16} className={accentIconHeader} aria-hidden="true" />
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -190,10 +190,10 @@ export function ChatPanel({
         )}
       </header>
 
-      {/* 메시지 영역 */}
+      {/* 메시지 영역 — min-h-0 필수 (flex 자식 스크롤 정상 동작). */}
       <div
         ref={listRef}
-        className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-4"
+        className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 py-4"
       >
         {welcome && messages.length === 0 && <WelcomeBlock welcome={welcome} />}
 
@@ -233,8 +233,8 @@ export function ChatPanel({
         )}
       </div>
 
-      {/* 입력창 */}
-      <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+      {/* 입력창 — 항상 보이도록 shrink 금지. */}
+      <div className="shrink-0 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
         <div className="flex items-center gap-2 rounded-full bg-gray-50 py-1.5 pl-3.5 pr-1.5 dark:bg-gray-800">
           <textarea
             value={text}
