@@ -302,6 +302,16 @@ export function ApplicationFormContainer({
           신청서 작성
         </h2>
         <ApplicationTypeChip type={type} />
+        {/* 작성 예시 — 용역 제작 한정. 헤더 우측 끝에 정렬(ml-auto). draft 모드에서만 노출. */}
+        {!readOnly && type === "service" && (
+          <button
+            type="button"
+            onClick={() => setExampleOpen(true)}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <FileText size={13} aria-hidden="true" /> 작성 예시
+          </button>
+        )}
       </header>
       {readOnly && (
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -346,10 +356,6 @@ export function ApplicationFormContainer({
               prevPath={prevPath}
               onSaveDraft={onSaveDraft}
               onSubmit={onOpenPreview}
-              // 용역 제작 신청서에만 작성 예시 모달 — 임시 저장 왼쪽 버튼.
-              onShowExample={
-                type === "service" ? () => setExampleOpen(true) : undefined
-              }
             />
           </div>
           <div className="lg:sticky lg:top-20">
@@ -502,15 +508,12 @@ interface DraftActionsProps {
   onSaveDraft: () => void;
   /** 신청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
   onSubmit: () => void;
-  /** 옵션 — [작성 예시] 버튼. 콜백 전달 시 임시 저장 왼쪽에 노출. 용역 제작 한정. */
-  onShowExample?: () => void;
 }
 
 function DraftActions({
   prevPath,
   onSaveDraft,
   onSubmit,
-  onShowExample,
 }: DraftActionsProps) {
   return (
     <div className="mt-2 flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
@@ -526,16 +529,6 @@ function DraftActions({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {onShowExample && (
-          <button
-            type="button"
-            onClick={onShowExample}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            <FileText size={14} aria-hidden="true" />
-            작성 예시
-          </button>
-        )}
         <SecondaryButton onClick={onSaveDraft} icon={Save} label="임시 저장" />
         <button
           type="button"
