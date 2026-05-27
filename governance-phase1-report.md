@@ -1,402 +1,232 @@
-# 거버넌스 시스템 개발 정리
+# 거버넌스 시스템 Phase 1 개발 정리
 
-> 인턴 강민정 / Phase 1 UI/UX 작업
-> GitHub Claude (개발) ↔ 사내 GitLab (배포)
+> 작성: 강민정 (인턴) / 거버넌스 시스템 UI/UX 작업
 
----
+## 들어가며
 
-## 1. 개발 환경 / 워크플로우
+지난 몇 주 동안 거버넌스 시스템의 신청서 작성·상세·관리 화면을 새로 다듬었습니다. 백엔드 스키마는 그대로 두고 프론트엔드 위주로 작업했고, 백엔드가 따라와야 할 부분은 Phase 2 로 분리해 두었습니다.
 
-- **두 저장소 동기화**: GitHub Claude (`~/Documents/github/datahub_project_claude/datahub-develop/`) ↔ 사내 GitLab clone (`~/documents/project/datahub/`)
-- **흐름**: GitHub Claude commit → `cp` 동기화 → 사내 feature 브랜치 → MR → develop 머지 → CI/CD 자동 배포 (`dev.datahub.lgair-data.com`)
-- **브랜치 정책**: `develop` 직접 push 금지, feature 브랜치 + MR 패턴 정착
-- **커밋 규약**: Conventional Commits (`feat:` / `fix:` / `refactor:` 등)
+작업은 GitHub 의 claude 저장소에서 코드를 만들고, 사내 GitLab clone 에 동기화한 뒤 feature 브랜치 → MR → develop 머지 → 자동 배포(`dev.datahub.lgair-data.com`) 흐름으로 진행했습니다. 초반에 실수로 develop 에 직접 push 한 적이 있어서 revert MR 로 복구한 뒤로는 항상 feature 브랜치를 거치게 했습니다.
 
 ---
 
-## 2. 사이드바 / 네비게이션
+## 사이드바부터 정리
 
-### 그룹 재구성
+먼저 사이드바 그룹명과 순서를 다듬었습니다. "신청서" 라는 이름이 모호해 보여서 **"요청"** 으로, "통합 검색" 은 실제로 검색이 아니라 목록 조회라 **"조회"** 로 바꿨습니다. 사용자가 자주 들어가는 요청 그룹을 조회 위로 올려서 시선 흐름도 맞췄어요.
 
-| 그룹 | 메뉴 |
-|------|------|
-| (단독) | 나의 현황 |
-| **요청** | 데이터 용역 제작 / 데이터 구매 / 데이터 구독 |
-| **조회** | 거버넌스 요청 목록 |
-| 가이드 | 프로세스 안내 / 거버넌스 정책 |
-| 관리 | 거버넌스 요청 관리 / 프로세스 관리 / 거버넌스 정책 관리 / 신청서 양식 카탈로그 / 통계·리포트 |
+```
+나의 현황 (단독)
+요청    │ 데이터 용역 제작 / 데이터 구매 / 데이터 구독
+조회    │ 거버넌스 요청 목록
+가이드  │ 프로세스 안내 / 거버넌스 정책
+관리    │ 거버넌스 요청 관리 / 프로세스 관리 / 거버넌스 정책 관리 /
+        │ 신청서 양식 카탈로그 / 통계·리포트
+```
 
-- 요청·조회 그룹명 변경 (신청서 → 요청, 통합 검색 → 조회)
-- 요청을 조회 위로 재배치
-- 사이드바 링크: `/governance/forms/planning?type=X` → `/governance/forms/intake?type=X` (계획 수립 substep 우회)
+여기서 부수적으로 발견한 버그가 하나 있었는데, 사이드바의 active 표시가 pathname 만 비교하다 보니 `/governance/process` 와 `/governance/process?manage=1` 가 같은 메뉴로 잡혀서 항상 "프로세스 안내" 만 활성화됐습니다. `SectionNav.isActive` 가 href 의 query 까지 같이 비교하도록 고쳐서 해결했습니다. 가이드 vs 관리 컨텍스트 분리에 핵심적인 동작이라 나중에도 계속 활용되고 있어요.
 
-### `SectionNav` active 매칭 개선
-
-- pathname 외 query string 도 비교 → 같은 path 의 query 메뉴(`?manage=1`) 와 일반 메뉴 구분
-- 게시판 가이드 vs 관리 분리에 핵심
+계획 수립 substep 은 사용자 시나리오상 굳이 거칠 필요가 없다는 결론이라 사이드바에서 곧바로 신청서 작성(`/governance/forms/intake?type=X`) 으로 가도록 바꿨고, `phase1-substeps.ts` 에서도 planning 항목을 빼서 상단 탭 바에도 안 보이게 했습니다.
 
 ---
 
-## 3. 신청서 작성 화면 (용역 제작 / 데이터 구매 / 데이터 구독)
+## 신청서 작성 화면 (세 유형)
 
 ### 표 레이아웃 통일
 
-- 신청자 정보 / 조직장 사전 승인 / 요청 정보 / Compliance / 기타 모든 섹션을 **표 형태**로 통일
-- 라벨 칸 240px 회색 + 입력 칸 1fr 흰색
-- 행 사이 구분선, 마지막 행만 구분선 없음
-- 신청자 정보는 별도 카드 → 표 행으로 변환
+세 신청서(용역 제작 / 구매 / 구독) 가 디자인이 제각각이라 라벨 240px 회색 + 입력 1fr 흰색의 **표 형태**로 모두 통일했습니다. 신청자 정보·조직장 사전 승인·요청 정보 등 모든 섹션이 같은 골격을 쓰게 됐어요. 행 사이엔 구분선, 마지막 행만 구분선이 없습니다.
 
-### 입력 단순화
+스키마(`schemas.ts`) 에 두 가지 속성을 추가해서 표 렌더링을 지원했습니다:
+- `SectionDef.layout: "default" | "table"` — 섹션 단위로 표 모드 적용
+- `FieldDef.tableLabel?` — checkbox 처럼 본 label 이 긴 안내문이라 표 라벨로 쓰기엔 부적합한 경우 짧은 표 라벨을 따로 지정
+- `FieldDef.rows?` — textarea 의 행 수 (rows=2 → min-h 64px, rows=3 → 90px) 로 입력칸 높이만 봐도 답변 길이를 가늠할 수 있게
 
-- 긴 placeholder → 짧은 핵심 단어 (예: "데이터셋이 활용되는 프로젝트명을 기재해 주세요" → "프로젝트명")
-- 라벨 축약 (예: "관련 프로젝트 (PMS 기준)" → "관련 프로젝트")
-- `inlineWithNext` — 수량+단위 한 행 배치
-- date 입력 max-width 200px
-- textarea `rows` 차등화 (rows=2 → min-h 64px, rows=3 → 90px)
+### 안내문은 짧게
 
-### 신규 schema 속성
+원래 placeholder 가 "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능, PMS 기준)" 처럼 한 줄이 너무 길었습니다. 이건 작성 화면을 답답하게 만들었다고 판단해서 핵심 단어만 남겼습니다 — "프로젝트명". 라벨도 마찬가지로 "관련 프로젝트 (PMS 기준)" → "관련 프로젝트" 식으로 줄였어요.
 
-- `FieldDef.rows?: number` (textarea 행 수)
-- `FieldDef.tableLabel?: string` (표 라벨 override — 긴 안내문 checkbox 용)
-- `SectionDef.layout?: "default" | "table"`
+대신 처음 보는 사용자가 헤맬 수 있어서 **[작성 예시]** 모달을 추가했습니다. 임시 저장 버튼 왼쪽에 두고, 클릭하면 ChatEXAONE 프롬프트 추천 고도화 케이스를 항목별 표로 보여줍니다 (12 행). 용역 제작에만 일단 붙였고, 다른 유형도 필요해지면 같은 패턴으로 늘릴 수 있게 만들었습니다.
 
-### 제출 전 검토 모달 (`PreSubmitPreviewModal`)
+### 제출 전 검토 모달
 
-- 세 유형 모두 schema 의 전체 데이터 필드 자동 노출
-- checkbox 액션성 항목만 제외
-
-### 작성 → 제출 흐름
-
-- 신청서는 전자결재 안내 문구 제거
-- 데이터 구독은 계획 수립 + 신청서만 (중간 과정 제거)
-- 제출 시 모든 신청 유형이 거버넌스 요청 목록으로 이동
+기존엔 service 유형만 모든 필드를 보여주고 purchase/subscribe 는 짧은 row 매핑을 썼는데, 일관성이 없어서 세 유형 모두 schema 의 데이터 필드를 자동으로 다 보여주도록 통일했습니다 (checkbox 같은 액션성 항목만 제외).
 
 ---
 
-## 4. 우측 채팅 패널 (`ChatPanel`) — 신청서 작성 + 상세 양쪽
+## 우측 채팅 패널
 
-### 구조
+신청서 작성 화면이 항목이 많아 길어지다 보니, 작성 중간에 담당자(김은솔) 한테 빠르게 물어볼 수 있는 채널이 있으면 좋겠다는 요구가 있었습니다. 그래서 우측에 카톡 스타일 채팅 패널을 붙였습니다.
 
-- 좌(1fr) 본문 + 우(300px) 채팅 2단 grid
-- 채팅 내부 3단 flex column: 헤더 / 메시지 영역 / 입력창
-- `flex-shrink-0` (헤더·입력창) + `min-h-0 flex-1 overflow-y-auto` (메시지 영역)
-- 메시지 많아도 헤더·입력창 항상 보임
+```
+좌(1fr) 신청서 폼          │ 우(300px) 채팅 패널 (sticky)
+```
 
-### 두 가지 높이 모드
+채팅 자체는 기존 `/api/governance/forms/{id}/messages` 엔드포인트를 그대로 썼습니다. 다만 draft 상태에선 formId 가 아직 없을 수 있어서, 메시지 전송 시 formId 가 없으면 `ensureFormId` 콜백으로 draft 를 자동 생성하고 그 id 로 메시지를 보내도록 했습니다. 그러려고 `persist()` 의 반환 타입을 `boolean → string|null` 로 바꿨는데, 기존 호출부의 `if(ok)` 패턴은 truthy 체크라 그대로 동작해서 다른 데를 건드릴 필요는 없었습니다.
 
-- **신청서 작성**: 고정 `h-[calc(100vh-104px)] max-h-[560px]` + sticky `top-20` (상단 네비 64px + 16px 여백)
-- **상세 페이지**: `fillParent` prop → `h-full` + 부모 grid `items-stretch` → 좌측 본문 높이에 맞춤
+상세 페이지에선 같은 ChatPanel 컴포넌트를 재사용하지만, 작성 화면과 달리 sticky 가 아니라 좌측 본문 높이에 stretch 되어야 자연스러웠습니다. 그래서 `fillParent` prop 을 추가해 한 컴포넌트로 두 모드를 모두 지원합니다.
 
-### 카톡 스타일 말풍선
+### sticky 위치 문제
 
-- 본인(currentUserEmail 매칭): 우측 파랑 (`bg-blue-50` 또는 brand `bg-[#FCEAE5]`), 꼬리 우상단
-- 담당자: 좌측 회색 + 아바타 + 이름, 꼬리 좌상단
-- `accent` prop (blue / brand) 으로 색상 톤 전환
+상세 페이지에서 채팅 헤더가 자꾸 상단 글로벌 네비게이션 바에 가려졌습니다. 처음엔 `top-6` (24px) 으로 줬는데 네비 높이(h-16 = 64px) 보다 작아서 가려진 거였어요. `top-20` (80px = 64 + 16 여백) + 높이는 `calc(100vh - 104px)` (104 = 네비 64 + 위 16 + 아래 24) 로 조정해서 해결했습니다.
 
 ### 단계 구분선
 
-- 메시지 사이 `stageAtSent` 가 달라지는 지점에 `── 신청 단계 ──` 구분선
-- 현재 단계는 `#D4533E` 빨강 + "현재" 꼬리표
-- `stageAtSent` 는 sessionStorage map (`dh:gov:chat-stages:{formId}`) 영속
+채팅이 같은 신청서의 모든 단계에서 보이는 단일 채널이라, 어느 단계에서 쓴 메시지인지 시각적으로 구분이 필요했습니다. 메시지 사이에 `── 신청 단계 ──` 같은 구분선을 넣고, 현재 단계만 빨강 + "현재" 꼬리표로 강조했어요.
 
-### 자동 draft 생성
-
-- `ApplicationFormContainer.persist` 반환 타입 `boolean → string|null` 확장
-- 메시지 전송 시 formId 없으면 `ensureFormId` 콜백으로 draft 자동 생성 후 전송 → 임시저장 없이도 채팅 가능
-
-### Window focus 자동 갱신
-
-- 담당자 답장 폴링 대용으로 `focus` 이벤트 재조회
+`stageAtSent` 같은 컬럼이 백엔드에 없어서 Phase 1 에선 sessionStorage map (`dh:gov:chat-stages:{formId}`) 으로 영속합니다. 새 메시지 전송 시 현재 단계를 map 에 기록하고, 렌더할 때 그 map 을 보고 구분선을 넣어요. Phase 2 에서 컬럼이 생기면 sessionStorage 부분만 교체하면 됩니다.
 
 ---
 
-## 5. 거버넌스 요청 상세 페이지 (용역 제작)
+## 거버넌스 요청 상세 페이지 (용역 제작)
 
-### 레이아웃 (위 → 아래)
+상세 페이지는 위→아래로 진행 상태 → 진행 이력 → 신청 정보 → 첨부 → 채팅 순으로 쌓이는 구조입니다.
 
-```
-헤더: 제목 + REQ 번호 + 미리보기 버튼
-── 풀 너비 ──
-ProgressBar (5단계 막대)
-HistoryTimeline (가로 진행 이력)
-── 2단 grid (items-stretch) ──
-좌(1fr)                              | 우(300px)
-신청 정보 표 ("신청 정보" 헤더)        | ChatPanel
-ApplicationStageTab (관리 진입만)      |   (fillParent — 좌측 높이 매칭)
-첨부파일 (AttachmentSection)          |
-[요청 목록으로] / [수정] 버튼          |
-```
+### 5단계 ProgressBar
 
-### `ProgressBar` — 막대 채우기형
+신청 / 협의 / 계약 / 진행 / 종료 5단계를 막대 채우기형으로 그렸습니다. 색은 완료 `#1D9E75` 녹색, 현재 `#D4533E` 빨강, 예정 회색이고요.
 
-- 5단계: 신청 / 협의 / 계약 / 진행 / 종료
-- 막대 두께 9px, gap 5px, border-radius 5px
-- 라벨 14px (가독성 ↑)
-- 색: 완료 `#1D9E75` / 현재 `#D4533E` + weight 500 / 예정 회색
-- `onStageClick` 전달 시 라벨이 버튼으로 변해 단계 자유 이동 (Phase 1 개발 편의)
-- 5단계 상태는 sessionStorage 영속 (`dh:gov:service-stage:{formId}`)
-- status `approved` 면 4(종료) 강제
+처음엔 막대 두께 8px, 라벨 11px 로 만들었는데 너무 흐려서 안 보인다는 피드백이 있었습니다. 막대 9px + 라벨 14px 로 키우고 예정 라벨 색도 tertiary → secondary 로 진하게 바꿔서 가독성을 올렸어요.
 
-### `HistoryTimeline` — 가로 진행 이력
+진행 상태가 자동으로 다음 단계로 넘어가던 버그가 있었는데, `status="submitted"` → 협의(1) 로 매핑하던 코드 때문이었습니다. 사용자 요구는 "제출만으로는 신청 단계(1/5) 에 머물고, 담당자가 검토·승인 버튼을 눌러야 협의로 넘어가야 한다" 였어요. status 매핑을 제거하고 sessionStorage 기반 수동 전환으로 바꿨습니다. 추가로 Phase 1 개발 편의를 위해 막대 라벨을 클릭하면 단계 자유 이동도 가능하게 만들었습니다 (`onStageClick`).
 
-- 카드 헤더: 시계 아이콘 + "진행 이력" + 건수 배지
-- 원형 노드 15px + 가로 1px 연결선
-- 마지막(최신) 노드만 채워진 원, 그 외는 테두리만
-- 노드 아래: 이벤트 아이콘+라벨 / 시간(M/d HH:mm) / 작성자
-- 이벤트 4건 이상 → 가로 스크롤 (`min-width: 560px`)
+### 가로 진행 이력
 
-| 이벤트 | 매핑 조건 | 색 | 아이콘 |
-|--------|----------|-----|--------|
-| 신청서 제출 | `status="submitted"` | `#378ADD` | Send |
-| 담당자 지정 | `status="reviewing"` or `action="review_started"` | `#993C1D` | UserCheck |
-| 신청서 수정 | `status="submitted"` + comment "임시 저장" | `#BA7517` | Pencil |
-| 보완 요청 | `status="info_requested"` | `#E08027` | Pencil |
-| 승인 완료 | `status="approved"` | `#1D9E75` | CircleCheck |
+진행 이력을 세로 타임라인으로 그릴까 가로로 그릴까 고민하다가, 단계가 5 개라 가로가 한눈에 들어와서 가로로 만들었습니다. 원형 노드 + 가로 연결선 + 노드 아래 아이콘·라벨·시간·작성자 순서로 쌓고, 이벤트 4건 이상이면 가로 스크롤되도록 `min-width: 560px` 처리.
 
-- `approvalHistoryToEvents` 헬퍼: camelCase/snake_case 양쪽 표기 모두 fallback
+이벤트 매핑은 백엔드 `approval_history` 의 status / action / comment 를 휴리스틱으로 해석합니다:
+- `status="submitted"` + comment "임시 저장" → 신청서 수정 (주황)
+- `status="submitted"` → 신청서 제출 (파랑)
+- `status="reviewing"` 또는 `action="review_started"` → 담당자 지정 (갈색)
+- `status="info_requested"` → 보완 요청 (주황)
+- `status="approved"` → 승인 완료 (녹색, 노드 채움)
+
+여기서 한참 헤맸던 버그가 있어요. `form.approval_history` 는 snake_case (`changed_at` / `changed_by`) 이고 `form.approvalHistory` 는 camelCase 인데, 함수가 camelCase 만 읽고 있었습니다. 그래서 모든 entry 가 `if (!h.changedAt) return;` 에서 early-return 되어 이벤트가 0건 → 카드 자체가 안 보이는 상태였어요. 양쪽 표기 모두 fallback 처리(`h.changedAt ?? h.changed_at`) 로 해결했습니다.
 
 ### 신청 정보 표
 
-- "신청 정보" 빨간 막대 헤더 추가
-- Row 컴포넌트: 라벨 칸 170px, 패딩 균일 (px-4 py-3), `align-middle`
-- 글자: 라벨 `text-[12px] gray-500`, 값 `text-[12px] gray-900`
-- 조직장 승인 label override → "조직장 승인" (긴 안내문 축약)
-- 조직장 승인 값: ✅ 이모지 → `<CheckCircle2>` 아이콘 + `#0F6E56` 녹색
+라벨 칸을 240px 에서 170px 로 줄여서 값 영역을 더 넓게 했습니다. 행 패딩을 균일하게(px-4 py-3) 하고 글자 크기도 통일했어요. 조직장 승인 값이 원래 `✅ 확인 완료` 이모지였는데 `<CheckCircle2>` 아이콘 + `#0F6E56` 녹색 텍스트로 바꿨고, 라벨도 긴 안내문 ("조직장 승인 완료 — 조직장 사전 승인을…") 대신 "조직장 승인" 으로 축약했습니다 (확인 화면 한정 override, 작성 화면의 schema label 은 그대로).
 
-### `AttachmentSection`
+### 첨부파일 섹션
 
-- 헤더: 빨간 막대 + "첨부파일" + 개수 배지 + 우측 [파일 업로드] 버튼
-- 업로드 → 숨겨진 file input 트리거 → 칩 추가
-- 타입별 아이콘 + 색:
-  - PDF (`FileText` + `#A32D2D`) / Excel·CSV (`FileSpreadsheet` + `#3B6D11`)
-  - Word (`FileText` + `#185FA5`) / 이미지 (`Image` + `#7C3AED`) / 기타 (`File` + 회색)
-- 칩: 아이콘 · 파일명 · 용량 · 다운로드 · X(제거)
-- 빈 상태: "첨부된 파일이 없습니다"
-- 제한: 20MB, .pdf/.docx/.xlsx/.csv/.png/.jpg/.gif/.webp/.svg
-- Phase 1: sessionStorage + ObjectURL mock (`uploadFormAttachment` API 미구현)
-- 백엔드 첨부파일(`form.attachments`) 과 함께 노출
+기존엔 단순한 목록(`<li>📎 파일명...`) 이었는데, 헤더에 빨간 막대 + 개수 배지 + 우측 [파일 업로드] 버튼을 두고 파일별 칩으로 다시 그렸습니다. 칩은 확장자별로 아이콘·색이 다르고 (PDF #A32D2D / Excel #3B6D11 / Word #185FA5 / 이미지 #7C3AED), 다운로드·X(제거) 버튼이 붙어 있어요.
 
-### 진입 컨텍스트별 노출 차이
+업로드 API(`api.uploadFormAttachment`) 가 placeholder 상태라서 Phase 1 에선 sessionStorage + ObjectURL 로 mock 했습니다. 새 세션에서는 blobUrl 이 만료되니까 다운로드 버튼이 안 보이게 처리해뒀고요. Phase 2 에서 GCS 업로드 API 가 생기면 `onFileSelected` 의 sessionStorage 부분만 교체하면 됩니다.
 
-| from | ProgressBar | HistoryTimeline | 신청 정보 | AttachmentSection | ApplicationStageTab | ChatPanel | 미리보기 |
-|------|------------|-----------------|----------|-------------------|---------------------|-----------|----------|
-| `admin` | ✓ | ✓ | ✓ | ✓ | ✓ (담당자 지정 + 검토) | ✓ | ✓ |
-| `list` | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ (숨김) |
-| `my` / 기본 | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ |
+### 진입 컨텍스트별 UI
+
+상세 페이지는 어디서 들어왔느냐(`?from=admin` / `from=list` / `from=my` / 기본) 에 따라 노출이 달라집니다:
+
+| 진입 | ApplicationStageTab | 미리보기 버튼 |
+|------|---------------------|--------------|
+| 거버넌스 요청 관리 (`admin`) | 노출 (담당자 지정 + 검토 액션) | 노출 |
+| 거버넌스 요청 목록 (`list`) | 미노출 | 미노출 (조회 전용) |
+| 내 문서 목록 (`my`) / 기본 | 미노출 | 노출 |
+
+ProgressBar / HistoryTimeline / 신청 정보 표 / 첨부 / 채팅은 모든 컨텍스트에서 동일하게 노출합니다.
 
 ---
 
-## 6. 거버넌스 요청 관리 — `ApplicationStageTab`
+## 거버넌스 요청 관리 — 담당자 지정 + 검토 흐름
 
-### 신청 단계 내부 sub-step
+`ApplicationStageTab` 컴포넌트가 이 화면의 핵심입니다. 신청 단계 내부에 sub-step 을 두고 흐름을 명시했어요:
 
 ```
 member_assignment → under_review ⇄ revision_requested → approved
 ```
 
-| sub-step | 액션 / UI |
-|----------|----------|
+| sub-step | 화면 |
+|----------|------|
 | `member_assignment` | 담당자 칩 + [실무자 추가] + [검토 요청] 버튼 |
-| `under_review` | 담당자 = [보완 요청] / [승인 · 협의 단계로] · 신청자 = "검토 중" 안내 |
-| `revision_requested` | 담당자 = [검토 재시작] · 신청자 = "보완 요청 받음" 주황 안내 |
-| `approved` | "신청 단계 승인 완료" ✓ (실제론 serviceStage 1+ 로 advance 됨) |
+| `under_review` | 담당자에겐 [보완 요청] / [승인 · 협의 단계로], 신청자에겐 "검토 중" 안내 |
+| `revision_requested` | 담당자에겐 [검토 재시작], 신청자에겐 주황 "보완 요청 받음" 안내 |
+| `approved` | "신청 단계 승인 완료" — 실제론 5단계 진행이 1+ 로 advance |
 
-### 담당자 칩
+총괄 담당자는 `FIXED_ASSIGNEE` (김은솔) 를 그대로 쓰고, 실무 담당자는 칩 형태로 추가/제거합니다. 처음엔 [실무자 추가] 를 `window.prompt` 두 번(이름 → 이메일) 으로 만들었는데 UX 가 좋지 않아서 커스텀 모달로 바꿨어요. 이름·이메일 input 한 화면에서 Enter 로 즉시 추가, Esc 로 취소, 한글 IME 조합 중 Enter 는 무시하도록 했습니다.
 
-- 총괄(`FIXED_ASSIGNEE` 김은솔) — 항상 표시, 제거 불가, `총괄` 배지
-- 실무자들 — 제거 가능 (X 버튼)
-- 본인 칩에 "나" 배지
+역할 식별은 이메일 매칭으로 처리하지만, Phase 1 개발 편의를 위해 버튼 disabled / 가시성 가드는 모두 해제한 상태입니다 ("일단 다 풀어줘 — 개발하는 중이니까"). Phase 2 백엔드 권한 가드와 함께 다시 적용할 예정이에요.
 
-### 실무자 추가 모달
-
-- 이름 / 이메일 input 한 화면
-- 자동 포커스 (이름)
-- Enter 로 즉시 추가 (한글 IME 조합 중 Enter 무시)
-- Esc / X / 취소 / 외부 클릭으로 닫기
-- 인라인 에러 (빈 입력 / 중복 이메일)
-- 다크모드 + 접근성 (`role="dialog"`, `aria-modal`)
-
-### 역할 식별 (Phase 1)
-
-- `isLead` = meEmail === FIXED_ASSIGNEE.email
-- `isMember` = meEmail in members[]
-- `isApplicant` = meEmail === submitterEmail
-- Phase 1 개발 편의 — 버튼 disabled / 가시성 가드 모두 해제
-
-### 데이터 영속 (Phase 1)
-
-- 실무자 목록: `dh:gov:stage1:members:{formId}`
-- sub-step: `dh:gov:stage1:substep:{formId}`
-- 5단계 진행: `dh:gov:service-stage:{formId}`
-- 채팅 stageAtSent: `dh:gov:chat-stages:{formId}`
-
-### 거버넌스 요청 관리 목록 페이지
-
-- 모든 로그인 사용자 접근 가능 (admin 가드 제거)
-- 상태 필터 탭 + 신청 종류 select + 검색 + CSV 다운로드
-- 행 클릭 → `/governance/forms/detail/{id}?from=admin`
+거버넌스 요청 관리 목록 페이지(`/governance/admin/forms`) 도 platform role=admin 가드를 제거해서 모든 로그인 사용자가 접근할 수 있게 했습니다. 사내 정책 변경에 따른 처리이고, 실제 admin 액션 가드는 백엔드 라우트에 그대로 남아 있어요.
 
 ---
 
-## 7. 게시판 (정책 / 프로세스)
+## 게시판 (정책 / 프로세스)
 
-### 가이드 vs 관리 컨텍스트
+가이드 vs 관리 컨텍스트 구분이 가장 까다로웠던 부분 중 하나입니다. URL 컨벤션을 두 가지로 시작했다가(`?manage=1` / `?from=manage`) 사이드바 active 매칭이 깨지는 걸 발견해서 결국 `?manage=1` 로 통일했어요. 관리 모드 진입 시 상단고정 / 수정 / 삭제 / 작성하기 버튼이 노출되고, 가이드 모드는 read-only.
 
-- URL: `?manage=1` 으로 관리 모드 식별
-- 진입 차이:
-  - 관리: 상단고정 / 수정 / 삭제 버튼 + 작성하기 버튼 노출
-  - 가이드: read-only
+여기서도 사내 정책에 따라 platform role=admin 가드를 풀고, `viewAsAdmin` prop 패턴으로 컨텍스트 기반 분기로 바꿨습니다. `PostNewView` 의 비-admin forbidden 리다이렉트도 제거.
 
-### `?manage=1` 단일 컨벤션 통일
-
-- 이전: list 페이지 `?manage=1`, detail/new `?from=manage` → 사이드바 active 매칭 깨짐
-- 통일 후: 모든 URL `?manage=1`
-
-### 권한 가드 해제
-
-- 모든 로그인 사용자에게 관리 그룹 개방
-- platform role=admin 조건 → `viewAsAdmin` prop 으로 컨텍스트 기반 분기
-- 게시글 작성: `POST /api/governance/posts` 백엔드도 admin 가드 해제 (사내 정책)
-- `PostNewView`: 비-admin 을 forbidden 페이지로 튕기던 useEffect 제거
-
-### Route 안전 장치
-
-- `process/[id]/page.tsx` 가 `id === "new"` 일 때 `PostNewView` 직접 렌더 → 정적 `new/page.tsx` 누락 환경 방어
-- policy 도 동일
+라우팅 안전 장치도 하나 넣었습니다. 사내 dev 환경에서 정적 `new/page.tsx` 가 누락되어 `/governance/process/new` 가 동적 `[id]` 라우트로 잡혀 404 가 났던 적이 있어요. `[id]/page.tsx` 에서 `id === "new"` 이면 `PostNewView` 를 직접 렌더하도록 가드를 넣어서, 정적 파일이 누락된 환경에서도 작성 화면이 뜨도록 했습니다.
 
 ---
 
-## 8. 전역 입력 스타일 (`globals.css`)
+## 전역 입력 스타일
 
-### Date Input
+`<input type="date">` 의 달력 picker 아이콘이 오른쪽 끝에 있는 게 어색해서 왼쪽으로 옮겼습니다 (`padding-left: 2rem !important`). 빈 상태(`required + :invalid`) 에서 "연도. 월. 일." 텍스트가 짙은 검정으로 보이던 것도 `gray-400` 으로 흐리게 했고요.
 
-- 달력 picker 아이콘 → 왼쪽 정렬 (`padding-left: 2rem !important`)
-- 호버 시 아이콘 진해짐 (opacity 0.45 → 1)
-- `required + :invalid` 상태에서 "연도. 월. 일." 텍스트 `gray-400`
+`<input type="number">` 의 브라우저 기본 spinner 화살표도 제거했습니다. 거버넌스 양식은 사용자가 직접 정확한 숫자를 적는 게 맞다고 봐서요.
 
-### Number Input
-
-- 브라우저 기본 spinner 화살표 제거 (`-moz-appearance: textfield` + webkit pseudo)
-- 사용자 직접 숫자 입력 — 거버넌스 양식 정확성 ↑
-
-### `DateField` 컴포넌트
-
-- `required` 기본 true → `:invalid` 셀렉터로 placeholder 색 처리
-- 거버넌스 신청서 전반 사용
+이게 전역(`globals.css`) 변경이라 다른 팀원의 페이지에도 영향이 갈 수 있다고 별도로 노트했고, 사내 디자인 가이드 통일 관점에서 그대로 두기로 합의했습니다.
 
 ---
 
-## 9. 목록 페이지 4종 에러 노출
+## 목록 페이지 4종 에러 노출
 
-### 변경
+새로고침하면 데이터가 사라져 보인다는 신고가 있었어요. 코드를 까보니 `.catch(() => setItems([]))` 로 모든 에러를 silently 빈 배열로 만들고 있었습니다. 401 / 네트워크 / DB 비었음이 모두 같은 빈 화면이라 사용자가 원인을 알 수 없었어요.
 
-- 기존 `.catch(() => setItems([]))` → 빨간 에러 박스 노출
-- 401 / 네트워크 / DB 비었음 즉시 구분 가능
-
-### 적용
-
-- `BoardListView` (정책/프로세스)
-- `PolicyBoardView` (정책 전용)
-- `forms/list/page.tsx` (거버넌스 요청 목록)
-- `admin/forms/page.tsx` (거버넌스 요청 관리)
+요청 목록 / 관리 / 정책 / 프로세스 네 페이지의 catch 를 모두 바꿔서, 빨간 안내 박스에 실제 에러 메시지가 뜨도록 했습니다. 디버깅에도 훨씬 도움이 되고, 사용자도 "다시 로그인해야겠다" 같은 판단이 가능해졌어요.
 
 ---
 
-## 10. Mock 데이터 (`prisma/seed.ts`)
+## Mock 데이터
 
-### 신청서 8건 (REQ-2026-00002 ~ 00009)
-
-- 6명 사용자 (박유진 / 이민수 / 최소연 / 김도윤 / 한재현 / 정혜원)
-- 상태 다양: submitted / reviewing / info_requested / approved
-- 신청 유형 다양: data_purchase / data_subscription / data_production / product_log_usage
-
-### 변경
-
-- `create` → `upsert` (재시드 시 mock 데이터 갱신 가능)
-- `info_requested` 상태일 때 history 자동 생성 (`[보완 요청]` 접두 포함)
+테스트용 mock 신청서 8건(REQ-2026-00002 ~ 00009) 을 시드에 추가하고, 시드 함수를 `create` → `upsert` 로 바꿔서 재시드해도 mock 이 갱신되도록 만들었습니다. status 가 다양해야 UI 검증이 되니까 submitted / reviewing / info_requested / approved 가 골고루 섞이도록 분배했고, `info_requested` 상태는 history 도 자동으로 만들어서 `[보완 요청]` 접두를 포함한 entry 가 생기게 했습니다.
 
 ---
 
-## 11. API Client 듀얼 셰이프 (`api-client-full.ts`)
+## API Client 듀얼 셰이프
 
-### 배경
+사내 dev 환경의 strict TS 빌드에서 76 개 에러가 한꺼번에 났던 적이 있어요. 백엔드는 camelCase 인데 옛 datahub-web 컴포넌트들이 snake_case 를 가정하고 있어서 타입이 안 맞은 거였습니다.
 
-사내 dev 환경 strict TS 빌드에서 76 개 에러 — 백엔드는 camelCase, 옛 datahub-web 컴포넌트는 snake_case 사용
-
-### 해결
-
-- 어댑터 함수 (`adaptForm`, `adaptMessage`, `adaptPost`) — 백엔드 응답을 camelCase + snake_case 양쪽 shape 으로 변환
-- `FormDetail` / `FormListItem` / `ApprovalEntry` 등 주요 타입에 양쪽 표기 모두 노출
-- 신규 코드 camelCase 권장, 옛 컴포넌트 snake_case 호환
+처음엔 컴포넌트들을 다 고치는 걸 생각했는데 양이 너무 많아서, **어댑터 함수**(`adaptForm` / `adaptMessage` / `adaptPost`) 를 두고 응답을 양쪽 shape 으로 동시에 노출하기로 했습니다. `FormDetail` 같은 핵심 타입에 `formType` 과 `form_type` 같은 alias 를 모두 포함시켜서, 신규 코드는 camelCase 권장하면서도 옛 컴포넌트가 깨지지 않게 했어요. 좀 지저분하지만 점진적 마이그레이션엔 이게 제일 안전한 패턴이라 생각했습니다.
 
 ---
 
-## 12. 컴포넌트 산출물 정리
+## 빌드 / 배포 시행착오
 
-### 신규 추가
+- `params.entries()` 의 for-of 가 TS target 호환성 때문에 빌드 실패 → `forEach((v, k) => …)` 로 교체
+- `Check` / `UserPlus` / `ChevronUp` 같은 lucide-react import 누락으로 빌드 깨진 적 여러 번. 리팩토링 중 컴포넌트를 제거할 때 import 도 같이 빼면서 다른 분기에서 쓰던 걸 놓침. 작은 실수지만 CI 가 매번 잡아줘서 다행이었어요.
+- URL `?type=purchase?type=purchase` 이중 query 발생 → `PlanningSubstep` 과 `PlanningFooter` 양쪽에서 query 를 부착하던 중복 제거
+- `forms/intake?type=service` 와 `forms/intake` 사이 단일 substep 일 때 빈 빨간 막대 카드만 떠있던 문제 → `ProcessStepper` 가 substep 1 개뿐이면 컨테이너 자체 미렌더
+
+---
+
+## 컴포넌트 / 파일 구조
+
+신규로 추가한 핵심 컴포넌트:
 
 ```
 components/governance/
-├── ProgressBar.tsx                  ★ 5단계 막대 + sessionStorage 헬퍼
-├── HistoryTimeline.tsx              ★ 가로 진행 이력 + 매핑 헬퍼
-├── AttachmentSection.tsx            ★ 첨부파일 업로드/칩
+├── ProgressBar.tsx                ★ 5단계 막대 + sessionStorage 헬퍼
+├── HistoryTimeline.tsx            ★ 가로 진행 이력 + 매핑 헬퍼
+├── AttachmentSection.tsx          ★ 첨부파일 업로드/칩
 ├── stages/
-│   └── ApplicationStageTab.tsx      ★ 담당자 지정 + 검토 액션 (관리 진입만)
-└── chat/
-    ├── ChatPanel.tsx                ★ 카톡 스타일, 단계 구분선, fillParent
-    └── ChatMessageBubble.tsx        ★ 좌우 분기 + accent 색
+│   └── ApplicationStageTab.tsx    ★ 담당자 지정 + 검토 액션 + 실무자 추가 모달
+├── chat/
+│   ├── ChatPanel.tsx              ★ 카톡 스타일, 단계 구분선, fillParent
+│   └── ChatMessageBubble.tsx      ★ 좌우 분기 + accent 색
+└── ApplicationForm/
+    └── ServiceExampleModal.tsx    ★ 용역 제작 작성 예시 모달
 
 lib/governance/
-└── chat-assignee.ts                 ★ 담당자 결정 (FIXED_ASSIGNEE 재사용)
+└── chat-assignee.ts               ★ 담당자 결정 (FIXED_ASSIGNEE 재사용)
 ```
 
-### 기존 컴포넌트 수정
-
-```
-ApplicationForm/
-├── ApplicationFormContainer.tsx     (draft 2-col 레이아웃 + ChatPanel + 자동 draft 저장 + persist 반환 boolean→string|null)
-├── ApplicationFormSection.tsx       (표 layout + tableLabel + inlineWithNext + textarea rows)
-└── PreSubmitPreviewModal.tsx        (세 유형 모두 전체 필드 노출)
-
-PostDetailView.tsx / PolicyDetailView.tsx    (관리/가이드 컨텍스트 분리)
-BoardListView.tsx / PolicyBoardView.tsx      (?manage=1 통일, 작성하기 버튼 모든 사용자 노출)
-FormStatusPanel.tsx                          (viewAsAdmin prop 추가)
-ProcessStepper.tsx                           (substep 1 개뿐이면 컨테이너 숨김)
-storyboard/section-nav.tsx                   (query 매칭 isActive)
-```
-
-### 데이터 / 스키마
-
-```
-lib/governance/forms/
-├── schemas.ts                       (3 폼 표 layout + 단축 placeholder + rows + tableLabel)
-└── phase1-substeps.ts               (planning substep 제거)
-
-prisma/seed.ts                       (mock 8건 + upsert + info_requested history)
-```
-
-### 라우트
-
-```
-app/(dashboard)/governance/
-├── layout.tsx                       (사이드바 그룹 재구성 + intake 진입 URL)
-├── forms/
-│   ├── detail/[id]/page.tsx         ★ 상세 페이지 전체 통합
-│   └── list/page.tsx                (에러 노출)
-├── admin/forms/page.tsx             (admin 가드 해제 + 에러 노출)
-├── process/[id]/page.tsx            (id="new" 가드)
-└── policy/[id]/page.tsx             (id="new" 가드)
-```
-
-### 전역
-
-```
-app/globals.css                      (date 아이콘 왼쪽 / number spinner 제거)
-```
+기존 컴포넌트는 표 layout 지원, 컨텍스트 기반 분기, sticky 처리, dual-shape 어댑터 등으로 대부분 손이 갔습니다.
 
 ---
 
-## 13. 데이터 영속 (Phase 1 sessionStorage 키)
+## Phase 1 sessionStorage 키 정리
+
+백엔드 컬럼이 아직 없어서 임시 영속으로 sessionStorage 를 많이 썼습니다. Phase 2 에서 이걸 백엔드 컬럼·API 로 옮길 거예요:
 
 | 키 | 용도 |
 |----|------|
@@ -405,39 +235,26 @@ app/globals.css                      (date 아이콘 왼쪽 / number spinner 제
 | `dh:gov:stage1:members:{formId}` | 실무 담당자 목록 mock |
 | `dh:gov:chat-stages:{formId}` | 메시지별 stageAtSent map |
 | `dh:gov:attachments:{formId}` | mock 첨부파일 메타데이터 |
-| `datahub:planningType` | 마지막 선택한 신청 유형 |
-| `datahub:lastFormId:{type}` | 유형별 마지막 신청 id |
 
 ---
 
-## 14. Phase 2 (백엔드 작업) 예정 항목
+## 남은 일 (Phase 2)
 
-| 영역 | 작업 |
-|------|------|
-| Prisma 스키마 | `GovernanceForm.serviceStage` / `subStep` 컬럼 |
-| Prisma 관계 | `GovernanceFormMember` (실무 담당자) |
-| Prisma 컬럼 | `GovernanceFormMessage.stageAtSent` |
-| API | `POST /api/governance/forms/{id}/attachments` (GCS 업로드 — 현재 placeholder) |
-| API | `GET /api/users?search=` (사용자 검색) |
-| API | `PATCH /api/governance/forms/{id}/assignees` (담당자 지정) |
-| 알림 | 단계 전환 / 메시지 / 담당자 지정 트리거 |
-| 권한 | 역할 기반 가드 복원 (`viewAsAdmin` 패턴 활용) |
-| 실시간 | WebSocket / SSE 채팅 |
-| 시드 | dev 자동 실행 Helm job |
+UI 는 거의 다 갖춰졌는데 백엔드가 따라와야 실사용이 됩니다. 우선순위 순으로 적어두면:
+
+1. **Prisma 스키마 확장**: `GovernanceForm.serviceStage` / `subStep` 컬럼, `GovernanceFormMember` 관계 테이블, `GovernanceFormMessage.stageAtSent`
+2. **첨부파일 업로드 API**: GCS 연동. 현재 `uploadFormAttachment` 는 placeholder
+3. **사용자 검색 API**: `GET /api/users?search=` — 실무자 추가 모달의 백엔드
+4. **담당자 지정 API**: `PATCH /api/governance/forms/{id}/assignees`
+5. **단계 전환 알림**: 단계 advance / 메시지 전송 / 담당자 지정 시 자동 알림
+6. **역할 기반 권한 가드 복원**: Phase 1 에서 풀어둔 `isAssignee` / `viewAsAdmin` 가드를 실제 백엔드 권한과 연결
+7. **dev DB 자동 시드**: 현재는 수동 실행. Helm post-install hook 으로 자동화하면 매 배포마다 mock 갱신 가능
+8. **실시간 채팅**: WebSocket / SSE — 현재는 window focus 폴링
 
 ---
 
-## 15. 주요 버그 해결 기록 (참고)
+## 마무리
 
-| 증상 | 해결 |
-|------|------|
-| URL `?type=purchase?type=purchase` 이중 query | `PlanningFooter` 의 query 부착 중복 제거 |
-| 76 개 TS 빌드 에러 | api-client 듀얼 셰이프 어댑터 도입 |
-| sticky 채팅 헤더가 네비바에 가려짐 | sticky top `t-6 → t-20` (80px) + `calc(100vh - 104px)` |
-| 진행 이력 0건 표시 | `approvalHistoryToEvents` snake_case fallback (`changed_at` / `changed_by`) |
-| 사이드바 active "안내" 만 활성 | `SectionNav.isActive` 에 query 비교 추가 |
-| `forEach` vs `for-of` 빌드 실패 | TS target es5 호환 — `forEach((v, k) => ...)` 로 교체 |
-| 단계 자동 전환 (제출 → 협의) | sessionStorage 기반 수동 전환으로 변경 |
-| `?from=manage` / `?manage=1` 혼용 | 모든 곳 `?manage=1` 로 통일 |
-| 401 Unauthorized | 진단 절차 (재로그인 / 쿠키 확인) 안내 |
-| 빌드 에러 (Check / UserPlus / ChevronUp import 누락) | lucide-react import 정리 |
+작업하면서 가장 어려웠던 건 **요구사항이 진화하는 속도** 였습니다. 처음엔 chevron 탭 스타일로 만들었던 ProgressBar 를 막대 채우기형으로 바꾸고, sub-progress 4-cell 막대를 추가했다가 다시 제거하고, 환영 메시지·추천 질문·온라인 배지 등 채팅 헤더 요소들도 추가됐다 빠지고를 반복했어요. 이런 변경을 빠르게 받아들이려면 컴포넌트 prop 설계가 중요했고, 그래서 `accent` / `fillParent` / `viewAsAdmin` / `onShowExample` 같은 옵션 prop 을 잘게 쪼개서 한 컴포넌트로 여러 컨텍스트를 처리하도록 만들었습니다.
+
+Phase 2 에서 백엔드 작업이 들어오면 sessionStorage 부분을 API 호출로 교체하면 되고, UI 자체는 거의 그대로 가져갈 수 있을 거라고 봅니다. 검증/문의 환영합니다.
