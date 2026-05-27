@@ -15,8 +15,54 @@ import {
   newService,
   type ApiFormValues,
 } from "@/components/governance/api-form/ApiApplicationForm";
-import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
+import { FORM_SCHEMAS, type FormSchema } from "@/lib/governance/forms/schemas";
 import type { FormType } from "@/lib/governance/api-client-full";
+
+// 카탈로그는 '표준 원본 양식' 참조용 — 작성 화면의 UX 개편(조직장 승인 row 이동,
+// 첨부파일 row 추가) 이전 형태를 그대로 노출. FORM_SCHEMAS 와 분리해 작성 화면
+// 변경이 카탈로그에 자동 반영되지 않도록 함.
+const CATALOG_DATA_PRODUCTION: FormSchema = {
+  type: "data_production",
+  label: "데이터 용역 제작 신청",
+  description: "외주 업체에 데이터 라벨링·수집·검수 작업을 의뢰할 때",
+  projectField: "관련_프로젝트_PMS",
+  sections: [
+    {
+      title: "조직장 사전 승인",
+      layout: "table",
+      fields: [
+        {
+          key: "조직장_승인_완료",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          tableLabel: "조직장 승인",
+          type: "checkbox",
+          required: true,
+        },
+      ],
+    },
+    {
+      title: "요청 정보",
+      layout: "table",
+      fields: [
+        { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "데이터셋이 활용되는 프로젝트명을 기재해 주세요 (복수 기재 가능)", required: true },
+        { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "데이터셋을 활용하는 목적을 기재해 주세요 (서비스 기능 평가)", rows: 2 },
+        { key: "데이터셋_이름", label: "데이터셋 이름", type: "text", placeholder: "K-Nowledge" },
+        { key: "희망_작업_착수일", label: "희망 작업 착수일", type: "date" },
+        { key: "희망_수령일", label: "희망 수령일", type: "date" },
+        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "문항 풀기 및 문항의 문화 적합성 평가" },
+        { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀" },
+        { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력", inlineWithNext: true },
+        { key: "단위", label: "단위", type: "text", placeholder: "e.g., 문항" },
+        { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "3명 이상" },
+        { key: "품질_평가_방식", label: "품질평가방식", type: "text", placeholder: "품질 평가 방식을 기재해 주세요" },
+      ],
+    },
+  ],
+};
+
+const CATALOG_SCHEMA_OVERRIDES: Partial<Record<FormType, FormSchema>> = {
+  data_production: CATALOG_DATA_PRODUCTION,
+};
 import { FormBuilder } from "@/components/governance/FormBuilder";
 import { getCatalogEntry, type CatalogEntry } from "../catalog-config";
 
@@ -115,7 +161,7 @@ function ApiFormPreview() {
 }
 
 function SchemaFormPreview({ formType }: { formType: FormType }) {
-  const schema = FORM_SCHEMAS[formType];
+  const schema = CATALOG_SCHEMA_OVERRIDES[formType] ?? FORM_SCHEMAS[formType];
   const [values, setValues] = useState<Record<string, unknown>>({});
   const onChange = (key: string, value: unknown) =>
     setValues((prev) => ({ ...prev, [key]: value }));
