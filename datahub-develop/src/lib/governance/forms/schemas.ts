@@ -127,19 +127,6 @@ const dataProduction: FormSchema = {
   projectField: "관련_프로젝트_PMS",
   sections: [
     {
-      title: "조직장 사전 승인",
-      layout: "table",
-      fields: [
-        {
-          key: "조직장_승인_완료",
-          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
-          tableLabel: "조직장 승인",
-          type: "checkbox",
-          required: true,
-        },
-      ],
-    },
-    {
       title: "요청 정보",
       layout: "table",
       fields: [
@@ -154,6 +141,14 @@ const dataProduction: FormSchema = {
         { key: "단위", label: "단위", type: "text", placeholder: "문항" },
         { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "3명 이상" },
         { key: "품질_평가_방식", label: "품질평가방식", type: "text", placeholder: "품질 평가 방식" },
+        // 조직장 사전 승인 — 별도 섹션에서 요청 정보 표 마지막 행으로 이동.
+        {
+          key: "조직장_승인_완료",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          tableLabel: "조직장 승인",
+          type: "checkbox",
+          required: true,
+        },
       ],
     },
   ],
