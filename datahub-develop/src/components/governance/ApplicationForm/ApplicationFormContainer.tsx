@@ -15,6 +15,7 @@ import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
+import { ServiceExampleModal } from "./ServiceExampleModal";
 import { StatusBanner } from "./StatusBanner";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
@@ -109,6 +110,8 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  // 용역 제작 신청서 [작성 예시] 모달 — 임시 저장 왼쪽 버튼 클릭으로 토글.
+  const [exampleOpen, setExampleOpen] = useState(false);
   // 추적 모드 '전자결재 품의' 버튼 → 전자결재 substep(/forms/approval) 로 이동.
   //   결재 본문 미리보기·표 형태 복사는 해당 페이지가 직접 제공.
   // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
@@ -343,6 +346,10 @@ export function ApplicationFormContainer({
               prevPath={prevPath}
               onSaveDraft={onSaveDraft}
               onSubmit={onOpenPreview}
+              // 용역 제작 신청서에만 작성 예시 모달 — 임시 저장 왼쪽 버튼.
+              onShowExample={
+                type === "service" ? () => setExampleOpen(true) : undefined
+              }
             />
           </div>
           <div className="lg:sticky lg:top-20">
@@ -382,6 +389,11 @@ export function ApplicationFormContainer({
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
           />
+        )}
+
+        {/* 작성 예시 모달 — 용역 제작 한정. */}
+        {exampleOpen && type === "service" && (
+          <ServiceExampleModal onClose={() => setExampleOpen(false)} />
         )}
       </>
     );
@@ -490,12 +502,15 @@ interface DraftActionsProps {
   onSaveDraft: () => void;
   /** 신청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
   onSubmit: () => void;
+  /** 옵션 — [작성 예시] 버튼. 콜백 전달 시 임시 저장 왼쪽에 노출. 용역 제작 한정. */
+  onShowExample?: () => void;
 }
 
 function DraftActions({
   prevPath,
   onSaveDraft,
   onSubmit,
+  onShowExample,
 }: DraftActionsProps) {
   return (
     <div className="mt-2 flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
@@ -511,6 +526,16 @@ function DraftActions({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {onShowExample && (
+          <button
+            type="button"
+            onClick={onShowExample}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <FileText size={14} aria-hidden="true" />
+            작성 예시
+          </button>
+        )}
         <SecondaryButton onClick={onSaveDraft} icon={Save} label="임시 저장" />
         <button
           type="button"
