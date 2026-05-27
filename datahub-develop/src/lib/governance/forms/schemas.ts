@@ -26,7 +26,9 @@ export type FieldType =
   /** 통화 단위(currencyKey 가 가리키는 필드)에 맞춰 prefix/suffix 가 붙는 금액 입력 */
   | "amount_with_currency"
   /** 결재선 — 이름을 한 명씩 입력 후 Enter 로 추가하는 칩 리스트. 값은 string[]. */
-  | "approver_list";
+  | "approver_list"
+  /** 첨부파일 — table 행 안에서 파일 업로드 + 칩 목록 렌더. Phase 1 sessionStorage mock. */
+  | "attachment";
 
 export interface FieldDef {
   key: string;
@@ -148,6 +150,12 @@ const dataProduction: FormSchema = {
           tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
+        },
+        // 첨부파일 — Phase 1 sessionStorage mock (실제 GCS 업로드는 Phase 2).
+        {
+          key: "첨부파일",
+          label: "첨부파일",
+          type: "attachment",
         },
       ],
     },

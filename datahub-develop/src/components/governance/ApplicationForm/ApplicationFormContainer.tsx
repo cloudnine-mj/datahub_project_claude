@@ -334,6 +334,8 @@ export function ApplicationFormContainer({
             values={values}
             onChange={onChange}
             disabled={readOnly}
+            formId={formId}
+            applicationType={type}
           />
         ))}
       </form>

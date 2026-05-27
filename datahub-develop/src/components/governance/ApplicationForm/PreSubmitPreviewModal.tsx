@@ -76,7 +76,8 @@ export function PreSubmitPreviewModal({
     const all: RowDef[] = [];
     schema.sections.forEach((sec) => {
       sec.fields.forEach((f: FieldDef) => {
-        if (f.type === "checkbox") return;
+        // checkbox 액션성 + attachment(payload 에 안 들어가는 sessionStorage 영속) 제외.
+        if (f.type === "checkbox" || f.type === "attachment") return;
         all.push({ key: f.key, label: f.label });
       });
     });

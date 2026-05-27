@@ -10,12 +10,16 @@ import { AlertCircle, Info, X } from "lucide-react";
 import type { FieldDef, SectionDef } from "@/lib/governance/forms/schemas";
 import { DateField } from "@/components/governance/DateField";
 import { NumberInput } from "@/components/governance/NumberInput";
+import { InlineAttachmentInput } from "./InlineAttachmentInput";
 
 interface Props {
   section: SectionDef;
   values: Record<string, unknown>;
   onChange: (key: string, value: unknown) => void;
   disabled?: boolean;
+  /** 첨부파일 필드용 — 임시저장된 form id (있을 때) + 신청 유형. attachment 필드만 사용. */
+  formId?: string | null;
+  applicationType?: string;
 }
 
 export function ApplicationFormSection({
@@ -23,6 +27,8 @@ export function ApplicationFormSection({
   values,
   onChange,
   disabled = false,
+  formId = null,
+  applicationType = "",
 }: Props) {
   // inlineWithNext 적용 — 같은 행에 묶을 두 필드를 사전 그룹핑.
   // 결과 배열은 [field] | [field, nextField] 의 시퀀스.
@@ -64,6 +70,8 @@ export function ApplicationFormSection({
               onChange={onChange}
               disabled={disabled}
               isLast={idx === groups.length - 1}
+              formId={formId}
+              applicationType={applicationType}
             />
           ))}
         </div>
@@ -96,18 +104,42 @@ function TableRow({
   onChange,
   disabled,
   isLast,
+  formId,
+  applicationType,
 }: {
   fields: FieldDef[];
   values: Record<string, unknown>;
   onChange: (key: string, v: unknown) => void;
   disabled: boolean;
   isLast: boolean;
+  formId: string | null;
+  applicationType: string;
 }) {
   const primary = fields[0];
   const isTallTextarea = primary.type === "textarea";
   const isCheckbox = primary.type === "checkbox";
+  const isAttachment = primary.type === "attachment";
   const borderCls = isLast ? "" : "border-b border-gray-200 dark:border-gray-700";
   const rowLabel = primary.tableLabel ?? primary.label;
+  const tallRow = isTallTextarea || isAttachment;
+
+  // 첨부파일 행 — 라벨 위쪽 정렬 + InlineAttachmentInput 사용 (FieldInput 분기 대신 직접 처리).
+  if (isAttachment) {
+    return (
+      <div className={`grid grid-cols-[240px_1fr] ${borderCls}`}>
+        <div className="flex items-start bg-gray-50 px-4 py-4 text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400">
+          {rowLabel}
+        </div>
+        <div className="px-4 py-3">
+          <InlineAttachmentInput
+            formId={formId}
+            applicationType={applicationType}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // checkbox 행 — 양쪽 padding 16px 로 라벨 칸과 동일한 시각 정렬.
   if (isCheckbox) {
