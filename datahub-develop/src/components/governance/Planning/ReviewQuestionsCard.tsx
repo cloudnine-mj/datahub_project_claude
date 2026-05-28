@@ -28,7 +28,7 @@ export function ReviewQuestionsCard({ questions, checks, onToggle }: Props) {
         </h3>
       </header>
       <p className="mb-2.5 text-[11px] text-gray-500 dark:text-gray-400">
-        아래 항목을 점검한 뒤 신청서 작성으로 진행하세요.
+        아래 항목을 점검한 뒤 요청서 작성으로 진행하세요.
       </p>
       <ul className="flex flex-col gap-1.5">
         {questions.map((q) => {

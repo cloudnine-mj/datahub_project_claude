@@ -1,8 +1,8 @@
-// 신청서 양식 안에 인라인으로 들어가는 첨부파일 입력 — table row 의 값 칸에 렌더.
+// 요청서 양식 안에 인라인으로 들어가는 첨부파일 입력 — table row 의 값 칸에 렌더.
 //
 // Phase 1: sessionStorage 영속 mock. key 는 form 컨텍스트에 따라 달라짐:
 //   - 임시저장 후(formId 있음): dh:gov:attachments:{formId}
-//   - 그 전(formId 없음): dh:gov:attachments:draft-temp:{type} — 같은 유형 신청서에 임시.
+//   - 그 전(formId 없음): dh:gov:attachments:draft-temp:{type} — 같은 유형 요청서에 임시.
 //   첫 임시저장으로 formId 가 생기면 detail 페이지의 AttachmentSection 과 동일 키 공유.
 //
 // UI: [파일 업로드] 버튼 + 칩 목록 (타입별 아이콘, 다운로드, 제거).

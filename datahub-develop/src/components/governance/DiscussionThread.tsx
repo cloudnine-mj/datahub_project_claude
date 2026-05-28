@@ -2,7 +2,7 @@
  * 담당자 논의·확정 단계의 코멘트 영역.
  *
  *  - 신청 유형(planning type) 에 따라 자동 지정된 담당자가 회신 대상.
- *  - 이 단계는 신청서 제출 전이라 백엔드 requestId 가 없음 → 로컬 state 만 사용.
+ *  - 이 단계는 요청서 제출 전이라 백엔드 requestId 가 없음 → 로컬 state 만 사용.
  *  - 데모 목적으로 담당자 샘플 메시지 1건을 미리 표시.
  *  - canConfirm: 담당자(assignee) 코멘트가 1건 이상 있을 때만 true → 부모가
  *    확정 체크박스 활성화 여부를 결정.
@@ -32,7 +32,7 @@ interface ThreadAttachment {
 
 interface ThreadMessage {
   id: string;
-  /** 'applicant' (신청자, 본인) | 'assignee' (담당자) */
+  /** 'applicant' (요청자, 본인) | 'assignee' (담당자) */
   role: "applicant" | "assignee";
   authorName: string;
   /** 'M/d HH:mm' 짧은 표기 */
@@ -77,7 +77,7 @@ export function DiscussionThread({
 }: Props) {
   const assignee = ASSIGNEE_BY_TYPE[planningType];
 
-  // 데모용 사전 메시지 — 신청자 1건 + 담당자 1건. 사용자는 그 위에 본인 코멘트를 추가.
+  // 데모용 사전 메시지 — 요청자 1건 + 담당자 1건. 사용자는 그 위에 본인 코멘트를 추가.
   const [messages, setMessages] = useState<ThreadMessage[]>(() => [
     {
       id: "demo-applicant",
@@ -243,7 +243,7 @@ function MessageRow({ msg }: { msg: ThreadMessage }) {
     ? {
         avatar: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
         badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-        label: "신청자",
+        label: "요청자",
       }
     : {
         avatar: "bg-orange-50 text-[#993C1D] dark:bg-orange-900/30 dark:text-orange-200",

@@ -1,6 +1,6 @@
 "use client";
 
-// 신청서 미리보기 모달 — detail 페이지 / FormBuilder 작성 중 양쪽에서 공용.
+// 요청서 미리보기 모달 — detail 페이지 / FormBuilder 작성 중 양쪽에서 공용.
 // 전자결재 본문 에디터에 붙여넣을 HTML 표를 보여주고, '복사하기' 로
 // HTML + plain text 를 클립보드에 함께 넣음.
 

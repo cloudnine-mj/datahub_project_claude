@@ -1,4 +1,4 @@
-// 1. 기획 / substep 2: 신청서 작성 — type/status 자동 해석 client 컴포넌트.
+// 1. 기획 / substep 2: 요청서 작성 — type/status 자동 해석 client 컴포넌트.
 //   1) URL ?type=...&status=... 우선
 //   2) 없으면 sessionStorage 의 datahub:planningType (계획 수립 마지막 선택)
 //   3) 없으면 저장된 lastFormId 가 있는 유형
@@ -49,7 +49,7 @@ export default function Page() {
   const sp = useSearchParams();
   const urlType = sp?.get("type") ?? null;
   const urlStatus = sp?.get("status") ?? null;
-  // 상세 페이지 '수정' 진입 — 기존 신청서 id 로 프리필해 작성 화면과 동일한 폼을 연다.
+  // 상세 페이지 '수정' 진입 — 기존 요청서 id 로 프리필해 작성 화면과 동일한 폼을 연다.
   const editFormId = sp?.get("id") ?? null;
 
   // SSR 단계에서는 sessionStorage 접근 불가 — 마운트 후 한 번 해석.
@@ -75,7 +75,7 @@ export default function Page() {
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: editFormId ? "신청서 수정" : "신청서 작성" },
+        { label: editFormId ? "요청서 수정" : "요청서 작성" },
       ]}
       phases={getPhase1Phases(stageType)}
       subSteps={buildPhase1SubSteps("form", stageType)}
@@ -89,7 +89,7 @@ export default function Page() {
           nextPath={next.path}
         />
       ) : resolved ? (
-        <PhaseBlock icon={FileText} title="신청서 작성">
+        <PhaseBlock icon={FileText} title="요청서 작성">
           <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
             계획 수립 단계에서 신청 유형을 선택한 뒤 다시 진입해 주세요.
           </p>

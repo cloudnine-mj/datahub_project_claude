@@ -1,7 +1,7 @@
 // 1단계(기획) substep + phase 정의.
 //
-// 사내 정책상 세 유형(service / purchase / subscribe) 모두 신청자 화면은
-// 계획 수립 → 신청서 작성 두 단계만 노출. 전자결재 / 결재 승인 확인 /
+// 사내 정책상 세 유형(service / purchase / subscribe) 모두 요청자 화면은
+// 계획 수립 → 요청서 작성 두 단계만 노출. 전자결재 / 결재 승인 확인 /
 // 담당자 논의·확정 / 계약 체결 substep 과 2.구축 · 적재 phase 는 모두 제거.
 //
 // path 값은 모두 기존과 동일 — UI/UX 와 라우트는 그대로 유지하고 데이터 정의만 변경.
@@ -42,10 +42,10 @@ interface SubstepDef {
   path: string;
 }
 
-// 모든 신청 유형 공용 — 계획 수립 substep 제거. 신청서 작성 1 단계만 노출.
+// 모든 신청 유형 공용 — 계획 수립 substep 제거. 요청서 작성 1 단계만 노출.
 // (계획 수립 페이지·라우트 자체는 남겨두지만 사이드바/탭 진입 동선에서 제외.)
 const SUBSTEP_DEFS_COMMON: SubstepDef[] = [
-  { id: "form", label: "신청서 작성", path: "/governance/forms/intake" },
+  { id: "form", label: "요청서 작성", path: "/governance/forms/intake" },
 ];
 
 function defsFor(_type: PlanningType | undefined): SubstepDef[] {
@@ -87,7 +87,7 @@ export function prevPhase1Substep(
   return defs[idx - 1];
 }
 
-/** 다음 substep 정보 — 마지막 substep(신청서 작성) 이면 신청 완료로 종료.
+/** 다음 substep 정보 — 마지막 substep(요청서 작성) 이면 신청 완료로 종료.
  *  제출 후 거버넌스 요청 목록(/forms/list) 으로 이동 — 사내 정책. */
 export function nextPhase1Substep(
   currentId: Phase1SubstepId,

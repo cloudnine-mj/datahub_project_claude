@@ -1,4 +1,4 @@
-// API 활용 계획서 · 1단계 기획 · 신청서 작성.
+// API 활용 계획서 · 1단계 기획 · 요청서 작성.
 //   ApiProcessStepper (현재 phase 만 노출) + 양식 본문 + 하단 액션 4종.
 
 "use client";
@@ -14,7 +14,7 @@ import {
   type ApiFormValues,
 } from "@/components/governance/api-form/ApiApplicationForm";
 
-// 데모용 신청자 정보 — 실제는 /me API 에서 로드.
+// 데모용 요청자 정보 — 실제는 /me API 에서 로드.
 const APPLICANT = {
   name: "김데이터",
   department: "AI Platform",
@@ -65,7 +65,7 @@ export default function Page() {
         items={[
           { label: "Governance", href: "/governance/home" },
           { label: "API 활용 계획서", href: "/governance/api-applications/planning" },
-          { label: "신청서 작성" },
+          { label: "요청서 작성" },
         ]}
       />
 
@@ -98,7 +98,7 @@ export default function Page() {
             onClick={onSubmit}
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white transition hover:bg-brand-dark"
           >
-            신청서 제출
+            요청서 제출
             <ArrowRight size={13} aria-hidden="true" />
           </button>
         </div>

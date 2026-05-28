@@ -1,6 +1,6 @@
 "use client";
 
-// 신청서 상단 프로세스 진행 바 — IPRS 의 chevron 스타일.
+// 요청서 상단 프로세스 진행 바 — IPRS 의 chevron 스타일.
 // 각 chevron 클릭 시 단계 설명 패널이 펼쳐짐(같은 단계 다시 클릭하면 닫힘).
 // 현재 데이터 구매 신청(data_purchase) 1종만 지원. 양식별 단계/설명이 모두
 // 달라 formType 분기로 정의를 따로 둠. 다른 양식으로 확장 시 STEP_DEFS 와
@@ -26,25 +26,25 @@ interface StepDef {
 const STEP_DEFS: Partial<Record<FormType, StepDef[]>> = {
   data_purchase: [
     { label: "필요성 정의 및 예산 확인" },
-    { label: "신청서 작성", scrollTo: "#form-content" },
-    { label: "신청서 진행 상황", showsProgress: true },
+    { label: "요청서 작성", scrollTo: "#form-content" },
+    { label: "요청서 진행 상황", showsProgress: true },
     { label: "전자결재 진행" },
   ],
 };
 
 // 단계 클릭 시 펼쳐질 설명 — LG 자료 원문 기반. 빈 배열이면 설명 패널 미노출.
-// step 1 (신청서 작성) 은 설명 없이 양식만 보이도록 빈 배열로 둠 — 클릭 시 scrollTo
+// step 1 (요청서 작성) 은 설명 없이 양식만 보이도록 빈 배열로 둠 — 클릭 시 scrollTo
 // 로 양식 영역으로 부드럽게 이동하기만 함.
 const STEP_GUIDES: Partial<Record<FormType, string[][]>> = {
   data_purchase: [
     [
-      "신청자는 구매 대상 데이터, 데이터 구매 목적, 활용 범위, 필요 기간 등을 정의합니다.",
-      "신청자는 데이터 구매 예산과 구매 비용을 확인합니다.",
+      "요청자는 구매 대상 데이터, 데이터 구매 목적, 활용 범위, 필요 기간 등을 정의합니다.",
+      "요청자는 데이터 구매 예산과 구매 비용을 확인합니다.",
     ],
     [],
     [],
     [
-      "결재선: 신청자의 소속 조직장",
+      "결재선: 요청자의 소속 조직장",
       "통보: AI Biz. Development Team장(박용민), Data Governance Team장(김의순), Data Governance Team 실무자(김은솔)",
       "조직장 결재 승인 후 데이터 구매가 진행됩니다.",
       "통보 대상자에게 결과가 자동 안내됩니다.",

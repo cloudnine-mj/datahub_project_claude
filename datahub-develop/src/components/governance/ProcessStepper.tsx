@@ -38,7 +38,7 @@ export function ProcessStepper({ phases, subSteps }: Props) {
   // 정보 가치가 없어 숨김. 2개 이상일 때만 노출.
   const showPhaseRow = phases.length > 1;
   // substep 도 1개 뿐이면 단일 칸이라 정보 가치가 없음 — 숨김 (계획 수립 제거
-  // 후 신청서 작성 단독). 2개 이상이거나 phase row 가 있을 때만 노출.
+  // 후 요청서 작성 단독). 2개 이상이거나 phase row 가 있을 때만 노출.
   const showSubstepRow = subSteps.length > 1;
   // 둘 다 안 보이면 컨테이너 자체 미렌더 — 빈 카드 사라짐.
   if (!showPhaseRow && !showSubstepRow) return null;

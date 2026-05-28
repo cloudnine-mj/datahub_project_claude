@@ -97,7 +97,7 @@ export interface FormMessageItem {
   senderEmail: string;
   senderRole: "applicant" | "assignee" | "admin";
   recipientName: string;
-  recipientRole: "담당자" | "신청자";
+  recipientRole: "담당자" | "요청자";
   body: string;
   createdAt: string;
   attachments: FormMessageAttachmentItem[];

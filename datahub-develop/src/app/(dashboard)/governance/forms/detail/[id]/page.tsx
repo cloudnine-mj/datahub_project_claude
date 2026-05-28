@@ -38,9 +38,9 @@ import {
 } from "@/components/governance/HistoryTimeline";
 import { AttachmentSection } from "@/components/governance/AttachmentSection";
 
-/** 신청서 편집 진입 URL.
+/** 요청서 편집 진입 URL.
  *  작성 흐름(ApplicationFormContainer)이 지원하는 유형이면 작성 화면과 동일한 intake 폼을
- *  기존 신청서 id 로 프리필해서 열고, 그 외 유형은 기존 FormBuilder 편집 모드를 유지한다. */
+ *  기존 요청서 id 로 프리필해서 열고, 그 외 유형은 기존 FormBuilder 편집 모드를 유지한다. */
 function buildEditHref(form: FormDetail, from: string | null): string {
   const appType = FORM_TYPE_TO_APPLICATION[form.form_type];
   if (appType) {
@@ -62,8 +62,8 @@ export default function Page({ params }: { params: { id: string } }) {
   const [me, setMe] = useState<Me | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // 진행 바에서 선택된 단계 — '신청서 작성'(1) / '신청서 진행 상황'(2) 일 때는
-  // 신청서 데이터 표를 함께 노출 (작성된 내용 또는 진행 중인 내용 확인용).
+  // 진행 바에서 선택된 단계 — '요청서 작성'(1) / '요청서 진행 상황'(2) 일 때는
+  // 요청서 데이터 표를 함께 노출 (작성된 내용 또는 진행 중인 내용 확인용).
   // 사전·후속 단계(0 필요성 정의 / 3 전자결재 진행) 에서는 단계별 정보만 보이도록
   // 데이터 표 숨김.
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
@@ -180,7 +180,7 @@ export default function Page({ params }: { params: { id: string } }) {
   const schema = FORM_SCHEMAS[form.form_type];
   const label = FORM_TYPE_LABELS[form.form_type];
   const allFields = schema.sections.flatMap((s) => s.fields);
-  // 스키마에 첨부파일 필드가 있으면 신청 정보 표의 행으로 인라인 노출(아래 별도 섹션 생략).
+  // 스키마에 첨부파일 필드가 있으면 요청 정보 표의 행으로 인라인 노출(아래 별도 섹션 생략).
   // 없는 유형은 기존처럼 표 아래 별도 첨부파일 섹션을 노출.
   const hasInlineAttachment = allFields.some((f) => f.type === "attachment");
 
@@ -232,13 +232,13 @@ export default function Page({ params }: { params: { id: string } }) {
         })()
       : null;
 
-  // 신청 정보 카드 — 상단 마진은 사용처에서 부여.
+  // 요청 정보 카드 — 상단 마진은 사용처에서 부여.
   const requestInfoCard = (
     <div className={hideForm ? "hidden" : ""}>
       <div className="mb-3 flex items-center gap-1.5">
         <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-          신청 정보
+          요청 정보
         </h3>
       </div>
       <div
@@ -247,11 +247,11 @@ export default function Page({ params }: { params: { id: string } }) {
       >
         <table className="w-full text-sm">
           <tbody>
-            <Row label="신청자 이름">{form.submitter_name}</Row>
+            <Row label="요청자 이름">{form.submitter_name}</Row>
             <Row label="소속">{form.submitter_department || "-"}</Row>
             <Row label="이메일">{form.submitter_email}</Row>
             {allFields.map((f) => {
-              // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행으로 인라인 노출.
+              // 첨부파일 — 요청서 양식과 동일하게 요청 정보 표의 마지막 행으로 인라인 노출.
               if (f.type === "attachment") {
                 return (
                   <Row key={f.key} label="첨부파일">
@@ -491,14 +491,14 @@ export default function Page({ params }: { params: { id: string } }) {
 
       {form.form_type === "data_production" ? (
         // 용역 제작 — 2블록 레이아웃.
-        //   블록1: 좌측(신청 정보 카드 + 버튼 행) + 우측(채팅). grid items-stretch 로
-        //          채팅 높이가 '신청 정보 + 버튼' 합친 좌측 블록 전체 높이에 맞춰지고,
+        //   블록1: 좌측(요청 정보 카드 + 버튼 행) + 우측(채팅). grid items-stretch 로
+        //          채팅 높이가 '요청 정보 + 버튼' 합친 좌측 블록 전체 높이에 맞춰지고,
         //          채팅 입력창 바닥이 버튼 행과 정렬됨 (채팅에 고정 높이 주지 않음).
         //   블록2: 전체 너비. 담당자 카드(full width).
         <>
           {processBar}
 
-          {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이 */}
+          {/* 블록 1 — 좌(요청 정보 + 버튼) / 우(채팅), 같은 높이 */}
           <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]">
             <div className="flex min-w-0 flex-col gap-3">
               {requestInfoCard}

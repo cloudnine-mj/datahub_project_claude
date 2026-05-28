@@ -1,6 +1,6 @@
-// 신청서 미리보기 — 전자결재(EAS) 본문 에디터에 붙여넣을 HTML 표 / plain text 를 생성.
+// 요청서 미리보기 — 전자결재(EAS) 본문 에디터에 붙여넣을 HTML 표 / plain text 를 생성.
 //
-// detail 페이지(저장된 신청서)와 FormBuilder 작성 중(in-progress 값) 양쪽에서 사용하므로
+// detail 페이지(저장된 요청서)와 FormBuilder 작성 중(in-progress 값) 양쪽에서 사용하므로
 // 도메인 객체에 직접 의존하지 않고 정규화된 PreviewData 만 받음.
 
 import type { FieldDef } from "./schemas";
@@ -62,7 +62,7 @@ export function escapeHtml(s: string): string {
 export function buildPreviewHtml(d: PreviewData): string {
   const rows: { label: string; value: string }[] = [
     { label: "신청 종류", value: d.typeLabel },
-    { label: "신청자 이름", value: d.submitterName },
+    { label: "요청자 이름", value: d.submitterName },
     { label: "소속", value: d.submitterDepartment || "-" },
     { label: "이메일", value: d.submitterEmail },
   ];
@@ -94,7 +94,7 @@ export function buildPreviewPlainText(d: PreviewData): string {
   const rows: string[] = [
     heading,
     "",
-    `신청자 이름\t${d.submitterName}`,
+    `요청자 이름\t${d.submitterName}`,
     `소속\t${d.submitterDepartment || "-"}`,
     `이메일\t${d.submitterEmail}`,
   ];

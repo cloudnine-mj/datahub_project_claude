@@ -51,7 +51,7 @@ interface Props {
   hideAdminActions?: boolean;
   /** 사내 정책상 관리 탭(거버넌스 요청 관리) 은 모든 사용자에게 열려 있음.
    *  true 이면 platform role 이 admin 이 아니어도 관리자 액션을 노출.
-   *  본인 신청서 여부 / hideAdminActions 는 별도로 적용. */
+   *  본인 요청서 여부 / hideAdminActions 는 별도로 적용. */
   viewAsAdmin?: boolean;
 }
 
@@ -119,7 +119,7 @@ function actionsForStatus(status: FormStatus | string): AdminAction[] {
         },
       ];
     case "info_requested":
-      // 버튼 없음 — 신청자 재제출 대기.
+      // 버튼 없음 — 요청자 재제출 대기.
       return [];
     default:
       return [];
@@ -205,7 +205,7 @@ export function FormStatusPanel({
             <p className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-amber-700">
               <Clock size={12} aria-hidden="true" />
               {status === "info_requested"
-                ? "신청자가 보완 자료를 재제출할 때까지 대기 중입니다."
+                ? "요청자가 보완 자료를 재제출할 때까지 대기 중입니다."
                 : "이 상태에서 가능한 액션이 없습니다."}
             </p>
           ) : (
@@ -419,7 +419,7 @@ interface ActionStyle {
 const ACTION_STYLE: Record<string, ActionStyle> = {
   제출됨: {
     icon: Send,
-    label: "신청서 제출",
+    label: "요청서 제출",
     dotCls: "bg-blue-50 text-blue-600",
   },
   "검토 시작": {

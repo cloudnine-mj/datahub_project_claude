@@ -1,5 +1,5 @@
 // 1. 기획 / substep 5: 담당자 논의·확정.
-//   신청 유형에 따라 자동 지정된 담당자와 논의 후 신청서 확정.
+//   신청 유형에 따라 자동 지정된 담당자와 논의 후 요청서 확정.
 //   - 담당자와의 논의 카드: 첨부 지원 코멘트 스레드 (담당자 회신 대상 자동).
 //   - 확정 게이트: 담당자 코멘트가 최소 1건 이상일 때만 체크박스 활성화,
 //     체크해야 '2단계로 진행' 버튼 활성.
@@ -62,7 +62,7 @@ export default function Page() {
       nextLabel={next.label}
       canProceed={canProceed}
     >
-      <HelpBanner message="지정된 담당자와 데이터 구축/구매/구독을 논의한 후 신청서를 확정합니다." />
+      <HelpBanner message="지정된 담당자와 데이터 구축/구매/구독을 논의한 후 요청서를 확정합니다." />
 
       <PhaseBlock icon={UserCheck} title="지정된 담당자">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
@@ -90,14 +90,14 @@ export default function Page() {
         onAssigneeReplyChange={setHasAssigneeReply}
       />
 
-      <PhaseBlock icon={CheckCircle2} title="신청서 확정">
+      <PhaseBlock icon={CheckCircle2} title="요청서 확정">
         <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-          담당자와 논의를 마친 후 신청서를 최종 확정합니다.
+          담당자와 논의를 마친 후 요청서를 최종 확정합니다.
         </p>
         <div className={canCheckConfirm ? "" : "pointer-events-none opacity-45"}>
           <PhaseChecklistRow
             id="discussion-confirmed"
-            label="담당자 논의 및 신청서 확정"
+            label="담당자 논의 및 요청서 확정"
             checked={confirmed}
             onToggle={() => setConfirmed((v) => !v)}
           />

@@ -4,8 +4,8 @@
 //   member_assignment   — 담당자 지정 전
 //      ↓ [담당자 지정 완료] (담당자)
 //   under_review        — 담당자 지정됨, 채팅 논의
-//      ↓ [승인 요청] (신청자, 상단 버튼 행 — 상세 페이지)
-//   approval_requested  — 신청자가 승인 요청함 → [승인 완료] 활성
+//      ↓ [승인 요청] (요청자, 상단 버튼 행 — 상세 페이지)
+//   approval_requested  — 요청자가 승인 요청함 → [승인 완료] 활성
 //      ↓ [승인 완료] (담당자)
 //   approved            — 승인 완료 + 5단계 협의(1)로 전환
 //
@@ -86,7 +86,7 @@ export function ApplicationStageTab({
   }
 
   // 진행 이력(approval_history) 에 이벤트 1건 기록 후 부모에 갱신 알림.
-  // actorName/actorRole 로 주체(총괄/신청자) 표시명을 명시 — 타임라인 작성자 표기에 사용.
+  // actorName/actorRole 로 주체(총괄/요청자) 표시명을 명시 — 타임라인 작성자 표기에 사용.
   function logEvent(
     action: string,
     comment: string,
@@ -226,7 +226,7 @@ export function ApplicationStageTab({
               </div>
               {!isAwaitingApproval && (
                 <p className="mt-1.5 text-center text-[10px] text-gray-400">
-                  신청자가 승인을 요청하면 [승인 완료]가 활성화됩니다
+                  요청자가 승인을 요청하면 [승인 완료]가 활성화됩니다
                 </p>
               )}
             </>

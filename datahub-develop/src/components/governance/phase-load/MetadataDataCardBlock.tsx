@@ -1,5 +1,5 @@
 // 3단계 / 블록 2 — 메타데이터 및 데이터카드 작성.
-//   2 체크 row (각 row 우측에 '작성' 버튼). 신청서 내용이 초안으로 반영.
+//   2 체크 row (각 row 우측에 '작성' 버튼). 요청서 내용이 초안으로 반영.
 //   데모: '작성' 클릭 시 /governance/coming-soon 으로 이동 (실제 작성 화면은 준비중).
 
 "use client";
@@ -27,7 +27,7 @@ export function MetadataDataCardBlock({
   return (
     <PhaseBlock icon={BookOpen} title="메타데이터 및 데이터카드 작성">
       <p className="-mt-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
-        적재한 데이터에 대한 메타데이터와 데이터카드를 작성하세요. 신청서에 작성한
+        적재한 데이터에 대한 메타데이터와 데이터카드를 작성하세요. 요청서에 작성한
         내용이 초안으로 반영됩니다.
       </p>
       <ul className="space-y-1.5">

@@ -1,4 +1,4 @@
-// 양식 미리보기 페이지 — 카탈로그에서 선택한 신청서 양식을 readOnly 로 노출.
+// 양식 미리보기 페이지 — 카탈로그에서 선택한 요청서 양식을 readOnly 로 노출.
 //   ProcessStepper / Breadcrumb / 하단 액션 등 페이지 부속은 모두 제외하고 양식 본문만.
 //   읽기 전용: 양식 컨테이너를 <fieldset disabled> + pointer-events-none 으로 감싸 입력 차단.
 
@@ -33,7 +33,7 @@ const CATALOG_DATA_PRODUCTION: FormSchema = {
       fields: [
         {
           key: "조직장_승인_완료",
-          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 요청서를 제출해 주세요.",
           tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
@@ -84,7 +84,7 @@ export default function Page({ params }: { params: { formId: string } }) {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
-          { label: "신청서 양식 카탈로그", href: "/governance/admin/forms-catalog" },
+          { label: "요청서 양식 카탈로그", href: "/governance/admin/forms-catalog" },
           { label: entry.label },
         ]}
       />
@@ -181,12 +181,12 @@ function SchemaFormPreview({ formType }: { formType: FormType }) {
         )}
       </header>
 
-      {/* 신청자 정보 */}
+      {/* 요청자 정보 */}
       <div className="mb-5">
         <div className="mb-3 flex items-center gap-1.5">
           <span aria-hidden="true" className="h-3.5 w-[3px] rounded-[1px] bg-brand" />
           <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100">
-            신청자 정보
+            요청자 정보
           </span>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">

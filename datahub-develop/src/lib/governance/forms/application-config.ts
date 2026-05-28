@@ -1,4 +1,4 @@
-// 신청서 작성 substep 추적 모드 — 상태/이력/유형 타입 + mock payload.
+// 요청서 작성 substep 추적 모드 — 상태/이력/유형 타입 + mock payload.
 //   실제 양식 필드 정의는 FORM_SCHEMAS (formSchemas.ts) 가 단일 진실의 원천.
 //   여기는 그 위에 얹는 status / history / 페이지 메타데이터만 담당.
 
@@ -20,7 +20,7 @@ export const APPLICATION_TO_FORM_TYPE: Record<ApplicationType, FormType> = {
   subscribe: "data_subscription",
 };
 
-/** FormType → ApplicationType (역방향). 신청서 작성 흐름(ApplicationFormContainer)이
+/** FormType → ApplicationType (역방향). 요청서 작성 흐름(ApplicationFormContainer)이
  *  지원하는 3종만 매핑. 매핑이 없는 유형은 작성 흐름이 없어 호출부가 기존 FormBuilder 로 fallback. */
 export const FORM_TYPE_TO_APPLICATION: Partial<Record<FormType, ApplicationType>> = {
   data_production: "service",
@@ -77,7 +77,7 @@ export interface StatusHistoryItem {
   id: string;
   action: HistoryAction;
   actor: string;
-  actorRole: "신청자" | "Data Governance Team";
+  actorRole: "요청자" | "Data Governance Team";
   /** 'M/d HH:mm' 짧은 표기 (호환). */
   timestamp: string;
   /** ISO 8601 원본 — 날짜 그룹핑 용. 옛 mock 은 미설정일 수 있음. */
@@ -90,14 +90,14 @@ const FULL_MOCK_HISTORY: StatusHistoryItem[] = [
     id: "h1",
     action: "임시 저장",
     actor: "김데이터",
-    actorRole: "신청자",
+    actorRole: "요청자",
     timestamp: "5/10 14:22",
   },
   {
     id: "h2",
     action: "제출됨",
     actor: "김데이터",
-    actorRole: "신청자",
+    actorRole: "요청자",
     timestamp: "5/12 09:15",
   },
   {

@@ -15,12 +15,12 @@ export interface ApprovalRow {
 }
 
 export interface ApprovalData {
-  /** '데이터 구독 신청서' 같은 문서 제목. */
+  /** '데이터 구독 요청서' 같은 문서 제목. */
   title: string;
   rows: ApprovalRow[];
 }
 
-/** 결재 본문에 노출할 행 데이터 — 신청자 + schema.sections 의 텍스트화 가능한 필드. */
+/** 결재 본문에 노출할 행 데이터 — 요청자 + schema.sections 의 텍스트화 가능한 필드. */
 export function buildApprovalData(
   type: ApplicationType,
   payload: Record<string, unknown>,
@@ -34,7 +34,7 @@ export function buildApprovalData(
     ? `${applicantName} (${applicantDepartment})`
     : applicantName;
 
-  const rows: ApprovalRow[] = [{ label: "신청자", value: applicant }];
+  const rows: ApprovalRow[] = [{ label: "요청자", value: applicant }];
 
   for (const section of schema.sections) {
     for (const f of section.fields) {

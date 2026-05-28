@@ -1,5 +1,5 @@
 // 진행 이력 카드 — 시스템 이벤트(StatusHistoryItem) + 사용자 메시지 통합 타임라인.
-//   - 좌측 28px 아바타: 시스템=회색 + 아이콘, 신청자=파랑, 담당자=빨강, 어드민=보라
+//   - 좌측 28px 아바타: 시스템=회색 + 아이콘, 요청자=파랑, 담당자=빨강, 어드민=보라
 //   - 헤더 우측 '시스템 이벤트 포함' 토글 + 접기/펼치기
 //   - 하단 composer: textarea + [첨부](최대 5개·각 50MB) + [전송].
 //     답할 대상은 determineReplyTarget 으로 자동 지정 — 사용자가 선택 불가.
@@ -62,7 +62,7 @@ interface Props {
   currentUserName?: string;
   /** 현재 사용자 채팅 역할 — 답할 대상 자동 결정에 사용. */
   currentUserRole?: SenderRoleForChat;
-  /** 신청자 정보 — 담당자가 메시지 작성 시 회신 대상이 됨. */
+  /** 요청자 정보 — 담당자가 메시지 작성 시 회신 대상이 됨. */
   applicantName?: string;
   /** 백엔드 신청 id (cuid). 주어지면 메시지를 API 로 조회·전송. 없으면 로컬 state 만 사용 (데모). */
   formId?: string;
@@ -136,7 +136,7 @@ export function ProgressHistoryBlock({
   canPostMessage = false,
   currentUserName = "나",
   currentUserRole = "applicant",
-  applicantName = "신청자",
+  applicantName = "요청자",
   formId,
   commentsOnly = false,
   refreshNonce = 0,
@@ -554,7 +554,7 @@ function UserMessageRow({ msg, canEdit = false, onEdit, onDelete }: UserMessageR
       ? {
           avatar: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
           badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-          label: "신청자",
+          label: "요청자",
         }
       : msg.senderRole === "admin"
       ? {

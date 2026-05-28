@@ -1,7 +1,7 @@
-// 신청서 작성 substep 메인 컨테이너 — status 에 따라 작성/추적 두 모드로 분기.
+// 요청서 작성 substep 메인 컨테이너 — status 에 따라 작성/추적 두 모드로 분기.
 //   - 디자인은 커스텀 (빨간 막대 섹션 + 120px 라벨 + 유형 칩 + custom 액션 영역)
 //   - 양식 필드는 FORM_SCHEMAS 를 단일 진실의 원천으로 사용 (이전 임의 config 폐기)
-//   - draft: 안내 배너 + 양식 카드(신청자 정보 + 스키마 섹션들) + 작성 액션
+//   - draft: 안내 배너 + 양식 카드(요청자 정보 + 스키마 섹션들) + 작성 액션
 //   - submitted/reviewing/approved: 큰 제목 + 진행 상태/이력 + 요약 + 추적 액션
 
 "use client";
@@ -62,7 +62,7 @@ function buildHistoryFromBackend(entries: ApprovalEntry[]): StatusHistoryItem[] 
         id: `srv-${i}-${at}`,
         action,
         actor: by,
-        actorRole: "신청자",
+        actorRole: "요청자",
         timestamp: isoToShort(at),
         comment: e.comment ?? undefined,
       };
@@ -80,8 +80,8 @@ function isAppStatus(s: string): s is ApplicationStatus {
 interface Props {
   type: ApplicationType;
   initialStatus: ApplicationStatus;
-  /** 상세 페이지 '수정' 진입 시 편집할 기존 신청서 id (cuid).
-   *  지정되면 해당 신청서를 프리필하고, 상태와 무관하게 작성 화면과 동일한 편집 폼을 노출한다. */
+  /** 상세 페이지 '수정' 진입 시 편집할 기존 요청서 id (cuid).
+   *  지정되면 해당 요청서를 프리필하고, 상태와 무관하게 작성 화면과 동일한 편집 폼을 노출한다. */
   editFormId?: string;
   /** 작성 모드 '계획 수립 다시 보기' 버튼 경로. */
   prevPath?: string;
@@ -114,11 +114,11 @@ export function ApplicationFormContainer({
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
-  // 용역 제작 신청서 [작성 예시] 모달 — 임시 저장 왼쪽 버튼 클릭으로 토글.
+  // 용역 제작 요청서 [작성 예시] 모달 — 임시 저장 왼쪽 버튼 클릭으로 토글.
   const [exampleOpen, setExampleOpen] = useState(false);
   // 추적 모드 '전자결재 품의' 버튼 → 전자결재 substep(/forms/approval) 로 이동.
   //   결재 본문 미리보기·표 형태 복사는 해당 페이지가 직접 제공.
-  // 추적 모드(submitted+) 에서 '← 신청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
+  // 추적 모드(submitted+) 에서 '← 요청서 화면' 클릭 시 양식을 읽기 전용으로 다시 노출.
   const [showFormView, setShowFormView] = useState(false);
   // 백엔드에 저장된 신청 id — 첫 저장 후 채워짐. 이후 임시 저장·제출은 PATCH 로 같은 row 갱신.
   // cuid 문자열 id — 백엔드 GovernanceForm.id 와 매칭.
@@ -148,18 +148,18 @@ export function ApplicationFormContainer({
       });
   }, []);
 
-  // 신청자 화면은 draft(작성 중) 만 노출. 이미 제출된 상태(submitted / reviewing /
+  // 요청자 화면은 draft(작성 중) 만 노출. 이미 제출된 상태(submitted / reviewing /
   // approved) 로 직접 진입한 경우는 진행 상태 추적 화면을 보여주지 않고
   // 거버넌스 요청 목록으로 보냄 — 사내 정책 변경.
   useEffect(() => {
-    // 편집 모드(상세 '수정')는 제출된 신청서도 그대로 편집해야 하므로 리다이렉트하지 않는다.
+    // 편집 모드(상세 '수정')는 제출된 요청서도 그대로 편집해야 하므로 리다이렉트하지 않는다.
     if (isEditMode) return;
     if (status !== "draft") {
       router.replace("/governance/forms/list");
     }
   }, [status, router, isEditMode]);
 
-  // 편집 모드 — 지정된 id 의 신청서를 백엔드에서 불러와 프리필.
+  // 편집 모드 — 지정된 id 의 요청서를 백엔드에서 불러와 프리필.
   useEffect(() => {
     if (!editFormId) return;
     api
@@ -177,7 +177,7 @@ export function ApplicationFormContainer({
       });
   }, [editFormId]);
 
-  // 사용자가 같은 유형 신청서로 돌아왔을 때, 직전에 저장/제출한 form 을 복원.
+  // 사용자가 같은 유형 요청서로 돌아왔을 때, 직전에 저장/제출한 form 을 복원.
   //   - sessionStorage 에서 마지막 id 조회
   //   - api.getForm 으로 백엔드에서 payload/status/approval_history 가져와 state 복원
   //   - 실패 시 sessionStorage 정리하고 기본 동작
@@ -222,7 +222,7 @@ export function ApplicationFormContainer({
         id: `${action}-${Date.now()}`,
         action,
         actor: applicant.name,
-        actorRole: "신청자",
+        actorRole: "요청자",
         timestamp: nowShort(),
       },
     ]);
@@ -293,22 +293,22 @@ export function ApplicationFormContainer({
     const ok = await persist(true);
     if (ok) {
       showToast("임시 저장되었습니다");
-      // 추적 모드에서 '신청서 화면' 으로 들어와 임시 저장한 경우, 상태도 draft 로 내려와야 UI 가 일관됨.
+      // 추적 모드에서 '요청서 화면' 으로 들어와 임시 저장한 경우, 상태도 draft 로 내려와야 UI 가 일관됨.
       setStatus("draft");
       setShowFormView(false);
     }
   };
-  // 신청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
+  // 요청서 제출 클릭 → 즉시 제출이 아니라 미리보기 모달을 먼저 띄움.
   const onOpenPreview = () => setPreviewOpen(true);
   // 미리보기 모달 안의 '제출' 버튼 클릭 시 실제 백엔드 제출 + 거버넌스 요청 목록으로 이동.
   // 사내 정책 변경으로 제출 후 진행 상태 추적 화면(ProgressStatusBlock + SubmittedSummaryBlock)
-  // 은 노출하지 않음 — 신청자는 거버넌스 요청 목록에서 상태만 확인.
+  // 은 노출하지 않음 — 요청자는 거버넌스 요청 목록에서 상태만 확인.
   // ?submitted=1 query 로 목록 페이지가 토스트를 한 번 더 띄울 수 있도록 신호 전달.
   const onConfirmSubmit = async () => {
     const ok = await persist(false);
     if (!ok) return;
     // 제출 = 검토 시작 — 용역 제작 한정으로 review_started 를 자동 기록(시스템 주체).
-    // 진행 이력 타임라인에서 '신청서 제출' 노드에 '검토 시작' 보조 칩으로 병합 표시됨.
+    // 진행 이력 타임라인에서 '요청서 제출' 노드에 '검토 시작' 보조 칩으로 병합 표시됨.
     if (type === "service") {
       await api
         .appendFormEvent(ok, {
@@ -328,7 +328,7 @@ export function ApplicationFormContainer({
   const onProceedToApproval = () => router.push(nextPath);
 
 
-  // 작성 모드 양식 카드 — draft 또는 추적 모드에서 '신청서 화면' 토글 시 노출.
+  // 작성 모드 양식 카드 — draft 또는 추적 모드에서 '요청서 화면' 토글 시 노출.
   const renderFormCard = (readOnly: boolean) => (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 sm:px-6 sm:py-5">
       <header className="flex items-center gap-2">
@@ -338,7 +338,7 @@ export function ApplicationFormContainer({
           className="text-gray-500 dark:text-gray-400"
         />
         <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-          신청서 작성
+          요청서 작성
           {isEditMode && (
             <span className="ml-1 font-normal text-gray-400">(수정)</span>
           )}
@@ -357,7 +357,7 @@ export function ApplicationFormContainer({
       </header>
       {readOnly && (
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          제출된 신청서 내용을 확인할 수 있습니다.
+          제출된 요청서 내용을 확인할 수 있습니다.
         </p>
       )}
 
@@ -389,8 +389,8 @@ export function ApplicationFormContainer({
       <>
         <StatusBanner status={isEditMode ? "draft" : status} />
 
-        {/* 작성 모드 — 신청서 단일 칸. (이전엔 우측 담당자 채팅 패널이 있었으나
-            신청서 단계에서는 사용자 요청으로 제거. 5단계 상세 페이지의 ChatPanel
+        {/* 작성 모드 — 요청서 단일 칸. (이전엔 우측 담당자 채팅 패널이 있었으나
+            요청서 단계에서는 사용자 요청으로 제거. 5단계 상세 페이지의 ChatPanel
             은 유지.) */}
         <div>
           {renderFormCard(false)}
@@ -431,7 +431,7 @@ export function ApplicationFormContainer({
     );
   }
 
-  // 추적 모드에서 '← 신청서 화면' 클릭한 상태 — 양식을 읽기 전용으로 노출.
+  // 추적 모드에서 '← 요청서 화면' 클릭한 상태 — 양식을 읽기 전용으로 노출.
   if (showFormView) {
     return (
       <div className="space-y-4">
@@ -442,7 +442,7 @@ export function ApplicationFormContainer({
           <ApplicationTypeChip type={type} />
         </div>
 
-        {/* 추적 모드에서 들어왔지만 편집 가능 — 임시 저장 / 신청서 제출 동일 동작. */}
+        {/* 추적 모드에서 들어왔지만 편집 가능 — 임시 저장 / 요청서 제출 동일 동작. */}
         {renderFormCard(false)}
 
         <DraftActions
@@ -481,8 +481,8 @@ export function ApplicationFormContainer({
   return null;
 }
 
-// --- 신청자 정보 (읽기 전용) ---
-// 빨간 막대 + '신청자 정보' 헤더 + 표 (라벨 240px 회색 / 값 1fr 흰색, 행 사이 구분선).
+// --- 요청자 정보 (읽기 전용) ---
+// 빨간 막대 + '요청자 정보' 헤더 + 표 (라벨 240px 회색 / 값 1fr 흰색, 행 사이 구분선).
 // 양식의 다른 섹션(조직장 사전 승인 / 요청 정보) 의 표 레이아웃과 시각 통일.
 
 function SubmitterReadOnlySection({
@@ -500,7 +500,7 @@ function SubmitterReadOnlySection({
       <div className="mb-3 flex items-center gap-1.5">
         <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-          신청자 정보
+          요청자 정보
         </h3>
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -532,7 +532,7 @@ function SubmitterReadOnlySection({
 interface DraftActionsProps {
   prevPath?: string;
   onSaveDraft: () => void;
-  /** 신청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
+  /** 요청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
   onSubmit: () => void;
 }
 
@@ -561,7 +561,7 @@ function DraftActions({
           onClick={onSubmit}
           className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
         >
-          신청서 제출
+          요청서 제출
           <ArrowRight size={14} aria-hidden="true" />
         </button>
       </div>

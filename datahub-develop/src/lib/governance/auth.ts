@@ -27,7 +27,7 @@ export async function requireGovernanceAuth(): Promise<GovernanceAuthContext | n
   };
 }
 
-/** Phase 1 고정 담당자 — 진행이력 채팅에서 신청자에게 회신 가능한 단일 담당자. */
+/** Phase 1 고정 담당자 — 진행이력 채팅에서 요청자에게 회신 가능한 단일 담당자. */
 export const FIXED_ASSIGNEE = {
   email: process.env.GOVERNANCE_ASSIGNEE_EMAIL ?? "kim.eunsol@company.com",
   name: process.env.GOVERNANCE_ASSIGNEE_NAME ?? "김은솔",
@@ -35,8 +35,8 @@ export const FIXED_ASSIGNEE = {
 
 export type GovernanceChatRole = "applicant" | "assignee" | "admin" | "observer";
 
-/** 신청서에 대한 현재 사용자의 채팅 역할 판정.
- *  - 신청자 이메일 == me  → applicant
+/** 요청서에 대한 현재 사용자의 채팅 역할 판정.
+ *  - 요청자 이메일 == me  → applicant
  *  - FIXED_ASSIGNEE 이메일 == me → assignee
  *  - ADMIN role → admin
  *  - 그 외 → observer (composer 미노출)
@@ -56,9 +56,9 @@ export function resolveChatRole(
 export function resolveRecipient(
   form: { submitterName: string },
   senderRole: GovernanceChatRole,
-): { name: string; role: "담당자" | "신청자" } {
+): { name: string; role: "담당자" | "요청자" } {
   if (senderRole === "assignee") {
-    return { name: form.submitterName, role: "신청자" };
+    return { name: form.submitterName, role: "요청자" };
   }
   return { name: FIXED_ASSIGNEE.name, role: "담당자" };
 }

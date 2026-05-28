@@ -1,4 +1,4 @@
-// 용역 제작 신청서 작성 예시 모달 — [작성 예시] 버튼 클릭 시 노출.
+// 용역 제작 요청서 작성 예시 모달 — [작성 예시] 버튼 클릭 시 노출.
 //
 // 표 형태: 항목 / 입력 내용 예시 두 컬럼. 사용자가 어떤 내용을 적어야 하는지
 // 실제 사례로 참고할 수 있도록 ChatEXAONE 프롬프트 고도화 예시를 제시.
@@ -23,7 +23,7 @@ const ROWS: Row[] = [
   },
   { label: "데이터셋 이름", example: "후속질문 추천 데이터셋" },
   {
-    label: "작업 착수 희망일 (신청서 제출 기준으로 3주 이후부터 선택 가능)",
+    label: "작업 착수 희망일 (요청서 제출 기준으로 3주 이후부터 선택 가능)",
     example: "2025/6/16",
   },
   { label: "데이터 수령 희망일 (작업 마감 기한)", example: "2025/6/30" },
@@ -107,7 +107,7 @@ export function ServiceExampleModal({ onClose }: { onClose: () => void }) {
             </button>
           </div>
           <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            데이터 용역 제작 신청서 작성 시 참고할 수 있는 항목별 예시입니다.
+            데이터 용역 제작 요청서 작성 시 참고할 수 있는 항목별 예시입니다.
           </p>
         </header>
 

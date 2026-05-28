@@ -1,4 +1,4 @@
-// 신청서 양식 카탈로그 — 단일 출처 config.
+// 요청서 양식 카탈로그 — 단일 출처 config.
 //   카탈로그 목록 페이지와 양식 미리보기 페이지가 공유.
 
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";

@@ -1,7 +1,7 @@
 // API 활용 계획서 · 1단계 기획 · 계획 수립 substep.
 //   페이지 헤더 + ApiProcessStepper + 안내 배너 + 사전 품의서 라디오 +
 //   좌우 분할(검토 사항 / 작성 예시) + 예산 체크박스 + 하단 액션.
-//   필수 항목: 사전 품의서 옵션 선택 + 예산 필수 3 체크. 모두 충족해야 [신청서 작성으로] 활성.
+//   필수 항목: 사전 품의서 옵션 선택 + 예산 필수 3 체크. 모두 충족해야 [요청서 작성으로] 활성.
 
 "use client";
 
@@ -90,7 +90,7 @@ export function ApiPlanningSubstep() {
 
       <ApiProcessStepper currentSubstep="planning" onlyCurrentPhase />
 
-      <HelpBanner message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
+      <HelpBanner message="요청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
 
       <PriorApprovalCheckCard value={approval} onChange={setApproval} />
 
@@ -111,8 +111,8 @@ export function ApiPlanningSubstep() {
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-4 py-3.5 dark:bg-gray-800/40">
         <span className="text-[12px] text-gray-500 dark:text-gray-400">
           {canProceed
-            ? "모든 필수 항목 확인 완료. 신청서 작성으로 진행하세요."
-            : "필수 항목을 모두 확인한 뒤 신청서 작성으로 진행하세요."}
+            ? "모든 필수 항목 확인 완료. 요청서 작성으로 진행하세요."
+            : "필수 항목을 모두 확인한 뒤 요청서 작성으로 진행하세요."}
         </span>
         <button
           type="button"
@@ -120,7 +120,7 @@ export function ApiPlanningSubstep() {
           disabled={!canProceed}
           className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-4 py-2 text-[13px] font-medium text-blue-700 transition hover:brightness-95 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 dark:bg-blue-900/30 dark:text-blue-300 dark:disabled:bg-gray-700/40 dark:disabled:text-gray-500"
         >
-          신청서 작성으로 →
+          요청서 작성으로 →
         </button>
       </div>
     </div>
@@ -159,7 +159,7 @@ function PriorApprovalCheckCard({
           checked={value === "exists"}
           onSelect={() => onChange("exists")}
           title="기존 사전 품의서가 있습니다"
-          description="품의번호를 신청서에 입력하면 신규 품의 없이 진행됩니다."
+          description="품의번호를 요청서에 입력하면 신규 품의 없이 진행됩니다."
         />
         <RadioOption
           name="approval-exists"
@@ -220,7 +220,7 @@ function ChecklistCard({ items }: { items: string[] }) {
         </h2>
       </header>
       <p className="mb-2.5 text-[11px] text-gray-500 dark:text-gray-400">
-        아래 항목을 정리한 뒤 신청서 작성으로 진행하세요.
+        아래 항목을 정리한 뒤 요청서 작성으로 진행하세요.
       </p>
       <ul className="flex flex-col gap-1.5">
         {items.map((item) => {

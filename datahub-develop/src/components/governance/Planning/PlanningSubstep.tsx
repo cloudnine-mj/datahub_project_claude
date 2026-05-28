@@ -96,7 +96,7 @@ export function PlanningSubstep() {
         subSteps={buildPhase1SubSteps("planning", type)}
       />
 
-      <HelpBanner message="신청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
+      <HelpBanner message="요청서를 작성하기 전에 아래 사항을 미리 정리·확인해 주세요." />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <ReviewQuestionsCard

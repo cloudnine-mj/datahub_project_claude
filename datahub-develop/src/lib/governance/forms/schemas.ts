@@ -146,7 +146,7 @@ const dataProduction: FormSchema = {
         // 조직장 사전 승인 — 별도 섹션에서 요청 정보 표 마지막 행으로 이동.
         {
           key: "조직장_승인_완료",
-          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 요청서를 제출해 주세요.",
           tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
@@ -171,7 +171,7 @@ const COMPLIANCE_FIELD: FieldDef = {
   options: ["확인 완료", "확인 필요"],
   required: true,
   hint:
-    "신청서 제출 후 Compliance 팀의 추가 검토가 진행됩니다. 라이선스 검토 결과에 따라 계약 조건이 조정될 수 있습니다. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
+    "요청서 제출 후 Compliance 팀의 추가 검토가 진행됩니다. 라이선스 검토 결과에 따라 계약 조건이 조정될 수 있습니다. 자문이 필요하면 {link}에서 신청할 수 있습니다.",
   hintLink: {
     url: "https://legal.lgresearch.ai/#/app/law/save",
     label: "법무팀 자문 시스템",
@@ -205,7 +205,7 @@ const dataPurchase: FormSchema = {
       fields: [
         {
           key: "조직장_승인_완료",
-          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 요청서를 제출해 주세요.",
           tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
@@ -317,7 +317,7 @@ const dataSubscription: FormSchema = {
       fields: [
         {
           key: "조직장_승인_완료",
-          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 신청서를 제출해 주세요.",
+          label: "조직장 승인 완료 — 조직장 사전 승인을 완료한 후 요청서를 제출해 주세요.",
           tableLabel: "조직장 승인",
           type: "checkbox",
           required: true,
@@ -411,7 +411,7 @@ const productLogUsage: FormSchema = {
   projectField: "프로젝트명",
   sections: [
     {
-      title: "신청 정보",
+      title: "요청 정보",
       fields: [
         { key: "프로젝트명", label: "프로젝트명", type: "text", required: true },
         { key: "대상_product", label: "대상 product", type: "text", required: true },
@@ -453,7 +453,7 @@ const apiUsagePlan: FormSchema = {
   projectField: "관련_프로젝트",
   sections: [
     {
-      title: "신청 정보",
+      title: "요청 정보",
       fields: [
         {
           key: "관련_프로젝트",
@@ -507,7 +507,7 @@ const productivityTool: FormSchema = {
   projectField: "서비스_목록",
   sections: [
     {
-      title: "신청 정보",
+      title: "요청 정보",
       fields: [
         { key: "서비스_목록", label: "", type: "service_blocks" },
       ],

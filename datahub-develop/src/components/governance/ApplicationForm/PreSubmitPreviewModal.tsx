@@ -1,4 +1,4 @@
-// 작성 모드의 '제출 전 검토' 모달 — draft 사용자가 신청서 제출 직전 입력 내용을 표로 최종 확인.
+// 작성 모드의 '제출 전 검토' 모달 — draft 사용자가 요청서 제출 직전 입력 내용을 표로 최종 확인.
 //   복사 기능 없음 (양식이 화면에 그대로 있어 복사가 의미 없음).
 //
 // 모든 신청 유형(service / purchase / subscribe) 에서 스키마의 데이터 필드 전체 노출.
@@ -51,7 +51,7 @@ export function PreSubmitPreviewModal({
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
-    // 즉시 Enter 로 제출 확정할 수 있도록 [신청서 제출] 에 포커스.
+    // 즉시 Enter 로 제출 확정할 수 있도록 [요청서 제출] 에 포커스.
     submitButtonRef.current?.focus();
 
     const prevOverflow = document.body.style.overflow;
@@ -136,7 +136,7 @@ export function PreSubmitPreviewModal({
 
           <table className="w-full border-collapse text-[13px]">
             <tbody>
-              <PreviewRow label="신청자" value={applicant} />
+              <PreviewRow label="요청자" value={applicant} />
               {rows.map((r, idx) => {
                 const v = payload[r.key];
                 const text = formatValue(v);
@@ -159,7 +159,7 @@ export function PreSubmitPreviewModal({
           <div className="mb-3 flex items-start gap-2 rounded-md bg-blue-50 px-3 py-2.5 text-[12px] text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
             <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
             <p className="leading-relaxed">
-              제출하면 신청서가 <strong className="font-semibold">거버넌스 요청 목록</strong>으로 이동하며, 담당자 검토가 시작됩니다.
+              제출하면 요청서가 <strong className="font-semibold">거버넌스 요청 목록</strong>으로 이동하며, 담당자 검토가 시작됩니다.
               진행 상황은 거버넌스 요청 목록에서 확인할 수 있습니다.
             </p>
           </div>
@@ -177,7 +177,7 @@ export function PreSubmitPreviewModal({
               onClick={onConfirmSubmit}
               className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
             >
-              신청서 제출
+              요청서 제출
               <ArrowRight size={14} aria-hidden="true" />
             </button>
           </div>

@@ -68,7 +68,7 @@ export function SubmittedSummaryBlock({
 
       <dl className="divide-y divide-gray-100 dark:divide-gray-800">
         <div className="grid grid-cols-[120px_1fr] gap-3 py-3 first:pt-1">
-          <dt className="text-sm text-gray-500 dark:text-gray-400">신청자</dt>
+          <dt className="text-sm text-gray-500 dark:text-gray-400">요청자</dt>
           <dd className="text-sm text-gray-900 dark:text-gray-100">{applicantLabel}</dd>
         </div>
         {rows.map((r) => {
