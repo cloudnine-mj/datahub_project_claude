@@ -128,10 +128,9 @@ export function ApplicationStageTab({
     logEvent("member_assigned", "담당자 지정", lead.name, "lead");
   }
 
-  // [승인 완료] — approval_requested 일 때만 동작. → approved + 5단계 협의(1)로 전환.
-  // 5단계 전환의 유일한 트리거.
+  // [승인 완료] — approved + 5단계 협의(1)로 전환. 5단계 전환의 유일한 트리거.
+  // (개발 테스트: 상태 가드 해제 — 어느 sub-step 에서도 즉시 승인 가능.)
   function onApprove(): void {
-    if (subStep !== "approval_requested") return;
     onSubStepChange("approved");
     onAdvanceStage();
     logEvent("approved", "승인 완료", lead.name, "lead");
@@ -218,17 +217,11 @@ export function ApplicationStageTab({
                 <button
                   type="button"
                   onClick={onApprove}
-                  disabled={!isAwaitingApproval}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1D9E75] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1D9E75] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
                 >
                   <CircleCheck size={14} aria-hidden="true" /> 승인 완료
                 </button>
               </div>
-              {!isAwaitingApproval && (
-                <p className="mt-1.5 text-center text-[10px] text-gray-400">
-                  신청자가 승인을 요청하면 [승인 완료]가 활성화됩니다
-                </p>
-              )}
             </>
           )
         ) : currentStage < 4 ? (
