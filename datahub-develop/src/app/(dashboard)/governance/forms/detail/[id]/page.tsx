@@ -114,6 +114,18 @@ export default function Page({ params }: { params: { id: string } }) {
         submitter_email: form.submitter_email,
         submitter_department: form.submitter_department ?? undefined,
       });
+      // 제출 = 검토 시작 — 용역 제작 한정으로 review_started 자동 기록(진행 이력 병합 노드).
+      if (form.form_type === "data_production") {
+        await api
+          .appendFormEvent(form.id, {
+            action: "review_started",
+            comment: "검토 시작",
+            actorRole: "system",
+          })
+          .catch(() => {
+            /* ignore */
+          });
+      }
       // 내 문서 목록 등 다른 페이지의 Router Cache 무효화
       router.refresh();
       router.push(`/governance/forms/submitted?id=${form.id}`);

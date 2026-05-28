@@ -104,10 +104,16 @@ export function ApplicationStageTab({
   }
 
   // 진행 이력(approval_history) 에 이벤트 1건 기록 후 부모에 갱신 알림.
+  // actorName/actorRole 로 주체(총괄/신청자) 표시명을 명시 — 타임라인 작성자 표기에 사용.
   // 백엔드 실패는 조용히 무시 (Phase 1 mock 흐름 — UI 진행은 sessionStorage 가 책임).
-  function logEvent(action: string, comment?: string): void {
+  function logEvent(
+    action: string,
+    comment: string,
+    actorName: string,
+    actorRole: string,
+  ): void {
     api
-      .appendFormEvent(formId, { action, comment })
+      .appendFormEvent(formId, { action, comment, actorName, actorRole })
       .then(() => onActivity?.())
       .catch(() => {
         /* ignore */
@@ -126,7 +132,8 @@ export function ApplicationStageTab({
       ...members,
       { id: `mock-${Date.now()}`, name: n, email: e },
     ]);
-    logEvent("assigned", `실무 담당자 지정: ${n}`);
+    // 담당자 지정 — 총괄 주체로 기록.
+    logEvent("member_assigned", `실무 담당자 지정: ${n}`, lead.name, "lead");
     return null;
   }
 
@@ -138,18 +145,21 @@ export function ApplicationStageTab({
   // Phase 1 개발 편의: members 0 가드 제거 — 자유 이동 허용.
   function onRequestReview(): void {
     onSubStepChange("under_review");
-    logEvent("review_started", "검토 요청");
+    // 승인 요청 — 신청자 주체로 기록.
+    logEvent("approval_requested", "승인 요청", submitterName, "applicant");
   }
 
   function onRequestRevision(): void {
     onSubStepChange("revision_requested");
-    logEvent("info_requested", "보완 요청");
+    // 보완 요청 — 총괄 주체로 기록.
+    logEvent("info_requested", "보완 요청", lead.name, "lead");
   }
 
   function onApproveAndAdvance(): void {
     onSubStepChange("approved");
     onAdvanceStage();
-    logEvent("approved", "승인 완료");
+    // 승인 완료 — 총괄 주체로 기록.
+    logEvent("approved", "승인 완료", lead.name, "lead");
   }
 
   function onResumeReview(): void {
@@ -286,7 +296,7 @@ function Stage0Actions({
           disabled={!membersAssigned}
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
         >
-          실무자 지정 완료 · 검토 요청
+          실무자 지정 완료 · 승인 요청
           <ArrowRight size={14} aria-hidden="true" />
         </button>
         {!membersAssigned && (

@@ -14,12 +14,17 @@ import { prisma } from "@/lib/prisma";
 import { requireGovernanceAuth } from "@/lib/governance/auth";
 
 const EVENT_ACTIONS = new Set([
+  "member_assigned",
   "assigned",
   "edited",
+  "revision",
   "review_started",
+  "approval_requested",
   "info_requested",
   "approved",
 ]);
+
+const ACTOR_ROLES = new Set(["applicant", "lead", "member", "system"]);
 
 interface RouteContext {
   params: { id: string };
@@ -31,6 +36,7 @@ interface HistoryEntry {
   changedAt: string;
   comment?: string | null;
   action?: string;
+  actorRole?: string;
 }
 
 export async function POST(request: NextRequest, { params }: RouteContext) {
@@ -38,9 +44,14 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const auth = await requireGovernanceAuth();
   if (!auth) return audit.fail(401, "Unauthorized");
 
-  let body: { action?: string; comment?: string };
+  let body: { action?: string; comment?: string; actorName?: string; actorRole?: string };
   try {
-    body = (await request.json()) as { action?: string; comment?: string };
+    body = (await request.json()) as {
+      action?: string;
+      comment?: string;
+      actorName?: string;
+      actorRole?: string;
+    };
   } catch {
     return audit.fail(400, "invalid JSON body");
   }
@@ -63,12 +74,18 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return audit.ok(200, NextResponse.json(form), { resourceId: form.id });
   }
 
+  // 협업 단계 이벤트는 주체(총괄/신청자 등) 표시명을 명시적으로 받을 수 있다.
+  // 미지정 시 로그인 사용자명으로 폴백.
+  const actorName = (body.actorName ?? "").trim() || auth.dbUser.name || auth.session.user.email;
+  const actorRole = body.actorRole && ACTOR_ROLES.has(body.actorRole) ? body.actorRole : undefined;
+
   history.push({
     status: form.status,
-    changedBy: auth.dbUser.name ?? auth.session.user.email,
+    changedBy: actorName,
     changedAt: new Date().toISOString(),
     comment: commentText || null,
     action: body.action,
+    actorRole,
   });
 
   const updated = await prisma.governanceForm.update({
