@@ -307,7 +307,19 @@ export function ApplicationFormContainer({
   const onConfirmSubmit = async () => {
     const ok = await persist(false);
     if (!ok) return;
-    // 제출 = 검토 — 별도 검토 이벤트 없이, 진행 이력의 제출 노드를 '신청서 검토'로 표기.
+    // 제출 = 검토 시작 — 용역 제작 한정으로 review_started 를 자동 기록(시스템 주체).
+    // 진행 이력 타임라인에서 '신청서 제출' 노드에 '검토 시작' 보조 칩으로 병합 표시됨.
+    if (type === "service") {
+      await api
+        .appendFormEvent(ok, {
+          action: "review_started",
+          comment: "검토 시작",
+          actorRole: "system",
+        })
+        .catch(() => {
+          /* ignore — 진행 이력 보조 기록 실패는 제출 흐름을 막지 않음 */
+        });
+    }
     setPreviewOpen(false);
     router.push("/governance/forms/list?submitted=1");
   };
