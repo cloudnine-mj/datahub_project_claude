@@ -376,11 +376,11 @@ export default function Page({ params }: { params: { id: string } }) {
           </button>
         );
       })()}
-      {/* 승인 요청 — 용역 제작 신청 단계 한정. 누르면 사라지지 않고 회색 '승인 대기 중'으로 전환. */}
-      {form.form_type === "data_production" && serviceStage === 0 && (
+      {/* 승인 요청 — 용역 제작 한정. 단계가 넘어가도 사라지지 않고, 요청 후엔 회색 비활성 유지. */}
+      {form.form_type === "data_production" && (
         <button
           type="button"
-          disabled={subStep === "approval_requested"}
+          disabled={subStep === "approval_requested" || subStep === "approved"}
           onClick={() => {
             setSubStep("approval_requested");
             api
@@ -398,7 +398,11 @@ export default function Page({ params }: { params: { id: string } }) {
           className="inline-flex items-center gap-1 rounded-md bg-[#378ADD] px-3 py-2 text-xs font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
         >
           <SendHorizontal size={12} />{" "}
-          {subStep === "approval_requested" ? "승인 대기 중" : "승인 요청"}
+          {subStep === "approved"
+            ? "승인 완료"
+            : subStep === "approval_requested"
+              ? "승인 대기 중"
+              : "승인 요청"}
         </button>
       )}
       {from === "admin" && (
