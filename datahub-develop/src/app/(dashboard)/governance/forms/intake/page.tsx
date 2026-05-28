@@ -49,6 +49,8 @@ export default function Page() {
   const sp = useSearchParams();
   const urlType = sp?.get("type") ?? null;
   const urlStatus = sp?.get("status") ?? null;
+  // 상세 페이지 '수정' 진입 — 기존 신청서 id 로 프리필해 작성 화면과 동일한 폼을 연다.
+  const editFormId = sp?.get("id") ?? null;
 
   // SSR 단계에서는 sessionStorage 접근 불가 — 마운트 후 한 번 해석.
   const [resolved, setResolved] = useState<{
@@ -82,6 +84,7 @@ export default function Page() {
         <ApplicationFormContainer
           type={resolved.type}
           initialStatus={resolved.status}
+          editFormId={editFormId ?? undefined}
           prevPath={prev?.path}
           nextPath={next.path}
         />

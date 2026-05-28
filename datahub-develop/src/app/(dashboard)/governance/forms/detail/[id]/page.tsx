@@ -12,6 +12,7 @@ import { FormStatusPanel } from "@/components/governance/FormStatusPanel";
 import { FormProcessBar } from "@/components/governance/FormProcessBar";
 import { FORM_TYPE_LABELS } from "@/lib/governance/forms/utils-bridge";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/governance/forms/schemas";
+import { FORM_TYPE_TO_APPLICATION } from "@/lib/governance/forms/application-config";
 import { approverInitials } from "@/lib/governance/forms/utils-bridge";
 import { FormPreviewModal } from "@/components/governance/FormPreviewModal";
 import { copyPreviewToClipboard, type PreviewData } from "@/lib/governance/forms/preview";
@@ -36,6 +37,17 @@ import {
   approvalHistoryToEvents,
 } from "@/components/governance/HistoryTimeline";
 import { AttachmentSection } from "@/components/governance/AttachmentSection";
+
+/** 신청서 편집 진입 URL.
+ *  작성 흐름(ApplicationFormContainer)이 지원하는 유형이면 작성 화면과 동일한 intake 폼을
+ *  기존 신청서 id 로 프리필해서 열고, 그 외 유형은 기존 FormBuilder 편집 모드를 유지한다. */
+function buildEditHref(form: FormDetail, from: string | null): string {
+  const appType = FORM_TYPE_TO_APPLICATION[form.form_type];
+  if (appType) {
+    return `/governance/forms/intake?type=${appType}&id=${form.id}`;
+  }
+  return `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`;
+}
 
 export default function Page({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -231,11 +243,9 @@ export default function Page({ params }: { params: { id: string } }) {
           history={form.approval_history}
           onSelectedStepChange={(step) => {
             // 신청서 작성 chevron(index 1) = 실제로 양식을 작성/편집할 수 있는 상태로 이동.
-            // 본 상세는 read-only 라 step 1 클릭은 FormBuilder 편집 모드로 진입시킴.
+            // 본 상세는 read-only 라 step 1 클릭은 작성 화면과 동일한 편집 폼으로 진입시킴.
             if (step === 1) {
-              router.push(
-                `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`,
-              );
+              router.push(buildEditHref(form, from));
               return;
             }
             setSelectedStep(step);
@@ -407,7 +417,7 @@ export default function Page({ params }: { params: { id: string } }) {
           if (!isOwner && !isAdmin) return null;
           return (
             <button
-              onClick={() => router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`)}
+              onClick={() => router.push(buildEditHref(form, from))}
               className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
             >
               <Pencil size={12} /> 수정
@@ -495,7 +505,7 @@ export default function Page({ params }: { params: { id: string } }) {
                 type="button"
                 onClick={() => {
                   setMissingField(null);
-                  if (form) router.push(`/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`);
+                  if (form) router.push(buildEditHref(form, from));
                 }}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
               >

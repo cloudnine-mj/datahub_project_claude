@@ -80,6 +80,9 @@ function isAppStatus(s: string): s is ApplicationStatus {
 interface Props {
   type: ApplicationType;
   initialStatus: ApplicationStatus;
+  /** 상세 페이지 '수정' 진입 시 편집할 기존 신청서 id (cuid).
+   *  지정되면 해당 신청서를 프리필하고, 상태와 무관하게 작성 화면과 동일한 편집 폼을 노출한다. */
+  editFormId?: string;
   /** 작성 모드 '계획 수립 다시 보기' 버튼 경로. */
   prevPath?: string;
   /** 다음 substep (전자결재 품의) 경로. */
@@ -101,10 +104,13 @@ const FALLBACK_APPLICANT_INFO = {
 export function ApplicationFormContainer({
   type,
   initialStatus,
+  editFormId,
   prevPath,
   nextPath,
 }: Props) {
   const router = useRouter();
+  // 상세 '수정' 진입 — 상태와 무관하게 편집 폼을 노출하고 추적-모드 리다이렉트를 끈다.
+  const isEditMode = !!editFormId;
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -146,10 +152,30 @@ export function ApplicationFormContainer({
   // approved) 로 직접 진입한 경우는 진행 상태 추적 화면을 보여주지 않고
   // 거버넌스 요청 목록으로 보냄 — 사내 정책 변경.
   useEffect(() => {
+    // 편집 모드(상세 '수정')는 제출된 신청서도 그대로 편집해야 하므로 리다이렉트하지 않는다.
+    if (isEditMode) return;
     if (status !== "draft") {
       router.replace("/governance/forms/list");
     }
-  }, [status, router]);
+  }, [status, router, isEditMode]);
+
+  // 편집 모드 — 지정된 id 의 신청서를 백엔드에서 불러와 프리필.
+  useEffect(() => {
+    if (!editFormId) return;
+    api
+      .getForm(editFormId)
+      .then((f) => {
+        setFormId(f.id);
+        setValues((f.payload ?? {}) as Record<string, unknown>);
+        if (isAppStatus(f.status)) setStatus(f.status);
+        if (f.approval_history && f.approval_history.length > 0) {
+          setHistory(buildHistoryFromBackend(f.approval_history));
+        }
+      })
+      .catch(() => {
+        /* 로드 실패 — 빈 폼으로 둠 */
+      });
+  }, [editFormId]);
 
   // 사용자가 같은 유형 신청서로 돌아왔을 때, 직전에 저장/제출한 form 을 복원.
   //   - sessionStorage 에서 마지막 id 조회
@@ -157,6 +183,8 @@ export function ApplicationFormContainer({
   //   - 실패 시 sessionStorage 정리하고 기본 동작
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // 편집 모드면 명시된 id 만 사용 — 마지막 작성분 복원으로 덮어쓰지 않는다.
+    if (editFormId) return;
     const savedIdStr = sessionStorage.getItem(STORAGE_KEY(type));
     if (!savedIdStr) return;
     const savedId = Number(savedIdStr);
@@ -181,7 +209,7 @@ export function ApplicationFormContainer({
       .catch(() => {
         sessionStorage.removeItem(STORAGE_KEY(type));
       });
-  }, [type]);
+  }, [type, editFormId]);
 
   const formType = APPLICATION_TO_FORM_TYPE[type];
   const schema = FORM_SCHEMAS[formType];
@@ -340,10 +368,10 @@ export function ApplicationFormContainer({
     </section>
   );
 
-  if (status === "draft") {
+  if (isEditMode || status === "draft") {
     return (
       <>
-        <StatusBanner status={status} />
+        <StatusBanner status={isEditMode ? "draft" : status} />
 
         {/* 작성 모드 — 신청서 단일 칸. (이전엔 우측 담당자 채팅 패널이 있었으나
             신청서 단계에서는 사용자 요청으로 제거. 5단계 상세 페이지의 ChatPanel

@@ -20,6 +20,14 @@ export const APPLICATION_TO_FORM_TYPE: Record<ApplicationType, FormType> = {
   subscribe: "data_subscription",
 };
 
+/** FormType → ApplicationType (역방향). 신청서 작성 흐름(ApplicationFormContainer)이
+ *  지원하는 3종만 매핑. 매핑이 없는 유형은 작성 흐름이 없어 호출부가 기존 FormBuilder 로 fallback. */
+export const FORM_TYPE_TO_APPLICATION: Partial<Record<FormType, ApplicationType>> = {
+  data_production: "service",
+  data_purchase: "purchase",
+  data_subscription: "subscribe",
+};
+
 /** 추적 모드 데모용 mock payload — FORM_SCHEMAS 의 실제 key 와 일치해야 함. */
 export const MOCK_SUBMITTED_PAYLOAD: Record<
   ApplicationType,
