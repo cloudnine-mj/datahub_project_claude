@@ -128,11 +128,10 @@ export function ApplicationStageTab({
     logEvent("member_assigned", "담당자 지정", lead.name, "lead");
   }
 
-  // [승인 완료] — approved + 5단계 협의(1)로 전환. 5단계 전환의 유일한 트리거.
+  // [승인 완료] — 승인만 확정(approved). 단계 이동은 별도 [협의 단계로] 버튼에서 처리.
   // (개발 테스트: 상태 가드 해제 — 어느 sub-step 에서도 즉시 승인 가능.)
   function onApprove(): void {
     onSubStepChange("approved");
-    onAdvanceStage();
     logEvent("approved", "승인 완료", lead.name, "lead");
   }
 
@@ -201,9 +200,12 @@ export function ApplicationStageTab({
       <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
         {currentStage === 0 ? (
           isApproved ? (
-            <p className="inline-flex w-full items-center justify-center gap-1.5 text-center text-[11px] text-[#1D9E75]">
-              <CircleCheck size={13} aria-hidden="true" /> 승인 완료 · 협의 단계로 전환되었습니다
-            </p>
+            <div>
+              <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] text-[#1D9E75]">
+                <CircleCheck size={13} aria-hidden="true" /> 승인 완료
+              </p>
+              <GenericAdvanceButton stageIndex={0} onAdvance={onAdvanceGeneric} />
+            </div>
           ) : (
             <>
               <div className="flex gap-2">
@@ -245,13 +247,15 @@ function GenericAdvanceButton({
   onAdvance: () => void;
 }) {
   const label =
-    stageIndex === 1
-      ? "계약 단계로"
-      : stageIndex === 2
-        ? "진행 단계로"
-        : stageIndex === 3
-          ? "종료 단계로"
-          : "완료";
+    stageIndex === 0
+      ? "협의 단계로"
+      : stageIndex === 1
+        ? "계약 단계로"
+        : stageIndex === 2
+          ? "진행 단계로"
+          : stageIndex === 3
+            ? "종료 단계로"
+            : "완료";
   return (
     <button
       type="button"
