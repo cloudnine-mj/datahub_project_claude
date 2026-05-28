@@ -17,8 +17,6 @@ import { ApplicationFormSection } from "./ApplicationFormSection";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { ServiceExampleModal } from "./ServiceExampleModal";
 import { StatusBanner } from "./StatusBanner";
-import { ChatPanel } from "@/components/governance/chat/ChatPanel";
-import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   APPLICATION_TO_FORM_TYPE,
   mockHistoryFor,
@@ -343,39 +341,21 @@ export function ApplicationFormContainer({
   );
 
   if (status === "draft") {
-    const assignee = getChatAssignee();
     return (
       <>
         <StatusBanner status={status} />
 
-        {/* 작성 모드 — 좌측 신청서(1fr) + 우측 담당자 채팅(300px) 2단 레이아웃.
-            태블릿/모바일(< lg) 에서는 1단 세로 쌓기. */}
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_300px]">
-          <div className="min-w-0">
-            {renderFormCard(false)}
+        {/* 작성 모드 — 신청서 단일 칸. (이전엔 우측 담당자 채팅 패널이 있었으나
+            신청서 단계에서는 사용자 요청으로 제거. 5단계 상세 페이지의 ChatPanel
+            은 유지.) */}
+        <div>
+          {renderFormCard(false)}
 
-            <DraftActions
-              prevPath={prevPath}
-              onSaveDraft={onSaveDraft}
-              onSubmit={onOpenPreview}
-            />
-          </div>
-          <div className="lg:sticky lg:top-20">
-            <ChatPanel
-              formId={formId}
-              currentUserEmail={applicant.email}
-              assigneeTeam={assignee.team}
-              // service 전용 — 담당자 온라인 배지 + brand 강조.
-              // 환영 메시지 / 추천 질문은 사용자 요청으로 제외.
-              headerVariant={type === "service" ? "online" : "writing"}
-              accent={type === "service" ? "brand" : "blue"}
-              ensureFormId={async () => {
-                // 메시지 전송 시점에 formId 가 없으면 draft 자동 생성.
-                if (formId) return formId;
-                return await persist(true);
-              }}
-            />
-          </div>
+          <DraftActions
+            prevPath={prevPath}
+            onSaveDraft={onSaveDraft}
+            onSubmit={onOpenPreview}
+          />
         </div>
 
         {toast && (
