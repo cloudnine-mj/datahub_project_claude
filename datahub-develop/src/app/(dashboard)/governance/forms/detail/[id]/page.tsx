@@ -376,34 +376,29 @@ export default function Page({ params }: { params: { id: string } }) {
           </button>
         );
       })()}
-      {/* 승인 요청 — 용역 제작 신청 단계 한정. 담당자 지정 완료(under_review) 후 활성,
-          승인 요청 후엔 '승인 대기 중' 비활성. 승인 완료(협의 전환) 후엔 숨김. */}
-      {form.form_type === "data_production" &&
-        serviceStage === 0 &&
-        subStep !== "approved" && (
-          <button
-            type="button"
-            disabled={subStep !== "under_review"}
-            onClick={() => {
-              setSubStep("approval_requested");
-              api
-                .appendFormEvent(form.id, {
-                  action: "approval_requested",
-                  comment: "승인 요청",
-                  actorName: form.submitter_name,
-                  actorRole: "applicant",
-                })
-                .then(refetch)
-                .catch(() => {
-                  /* ignore */
-                });
-            }}
-            className="inline-flex items-center gap-1 rounded-md bg-[#378ADD] px-3 py-2 text-xs font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
-          >
-            <SendHorizontal size={12} />{" "}
-            {subStep === "approval_requested" ? "승인 대기 중" : "승인 요청"}
-          </button>
-        )}
+      {/* 승인 요청 — 용역 제작 요청 단계 한정. 개발 테스트: 상태 가드 해제(항상 활성). */}
+      {form.form_type === "data_production" && serviceStage === 0 && (
+        <button
+          type="button"
+          onClick={() => {
+            setSubStep("approval_requested");
+            api
+              .appendFormEvent(form.id, {
+                action: "approval_requested",
+                comment: "승인 요청",
+                actorName: form.submitter_name,
+                actorRole: "applicant",
+              })
+              .then(refetch)
+              .catch(() => {
+                /* ignore */
+              });
+          }}
+          className="inline-flex items-center gap-1 rounded-md bg-[#378ADD] px-3 py-2 text-xs font-medium text-white transition hover:brightness-110"
+        >
+          <SendHorizontal size={12} /> 승인 요청
+        </button>
+      )}
       {from === "admin" && (
         <DeleteFormButton
           formId={form.id}
