@@ -37,7 +37,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = 50 * 1024 * 1024;
 
 function storageKey(formId: string | null, applicationType: string): string {
   return formId
@@ -118,7 +118,7 @@ export function InlineAttachmentInput({ formId, applicationType, disabled }: Pro
     for (let i = 0; i < picked.length; i++) {
       const f = picked[i];
       if (f.size > MAX_BYTES) {
-        setErr(`"${f.name}" 은(는) 20MB 를 초과합니다.`);
+        setErr(`"${f.name}" 은(는) 50MB 를 초과합니다.`);
         continue;
       }
       next.push({
@@ -147,9 +147,13 @@ export function InlineAttachmentInput({ formId, applicationType, disabled }: Pro
         >
           <Paperclip size={13} aria-hidden="true" /> 파일 업로드
         </button>
-        {files.length > 0 && (
+        {files.length > 0 ? (
           <span className="text-[11px] text-gray-500 dark:text-gray-400">
             총 {files.length}개
+          </span>
+        ) : (
+          <span className="text-[11px] text-gray-400 dark:text-gray-500">
+            샘플 데이터, 작업 가이드라인 등 · 최대 50MB
           </span>
         )}
         <input
