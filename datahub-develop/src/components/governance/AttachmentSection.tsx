@@ -42,6 +42,9 @@ interface MockAttachment {
 interface Props {
   formId: string;
   backend: BackendAttachment[];
+  /** 신청 정보 표 안의 한 행으로 끼워 넣을 때 — 빨간 막대 헤더/외곽 박스 없이
+   *  업로드 버튼 + 파일 목록만 렌더 (라벨은 표의 행 라벨이 담당). */
+  embedded?: boolean;
 }
 
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -94,7 +97,7 @@ function pickIcon(filename: string): {
   return { Icon: FileIcon, color: "#6B7280" };
 }
 
-export function AttachmentSection({ formId, backend }: Props) {
+export function AttachmentSection({ formId, backend, embedded = false }: Props) {
   const [mocks, setMocks] = useState<MockAttachment[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +146,73 @@ export function AttachmentSection({ formId, backend }: Props) {
 
   const total = backend.length + mocks.length;
 
+  const hiddenInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      multiple
+      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp,.svg"
+      className="hidden"
+      onChange={onFileSelected}
+    />
+  );
+
+  const errorMsg = error ? (
+    <p className="mb-2 text-[11px] text-red-700" role="alert">
+      {error}
+    </p>
+  ) : null;
+
+  const fileList =
+    total > 0 ? (
+      <div className={`flex flex-col gap-2 ${embedded ? "mb-2.5" : "mb-3"}`}>
+        {backend.map((a) => (
+          <FileChip
+            key={`b-${a.id}`}
+            filename={a.filename}
+            sizeBytes={a.size_bytes}
+            downloadHref={api.formAttachmentUrl(formId, a.id)}
+          />
+        ))}
+        {mocks.map((m) => (
+          <FileChip
+            key={m.id}
+            filename={m.filename}
+            sizeBytes={m.sizeBytes}
+            downloadHref={m.blobUrl || undefined}
+            onRemove={() => onRemove(m.id)}
+          />
+        ))}
+      </div>
+    ) : null;
+
+  const uploadRow = (
+    <div className="flex items-center gap-2.5">
+      <button
+        type="button"
+        onClick={onPickFile}
+        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        <Paperclip size={13} aria-hidden="true" /> 파일 업로드
+      </button>
+      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+        샘플 데이터, 작업 가이드라인 등 · 최대 50MB
+      </span>
+    </div>
+  );
+
+  // 신청 정보 표 안의 행으로 끼워 넣을 때 — 헤더/외곽 박스 없이 목록 + 업로드만.
+  if (embedded) {
+    return (
+      <div>
+        {hiddenInput}
+        {errorMsg}
+        {fileList}
+        {uploadRow}
+      </div>
+    );
+  }
+
   return (
     <section>
       {/* 헤더 — 빨간 막대 + 제목 + 개수 (업로드 버튼은 아래 박스 안으로 이동) */}
@@ -158,57 +228,13 @@ export function AttachmentSection({ formId, backend }: Props) {
         )}
       </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp,.svg"
-        className="hidden"
-        onChange={onFileSelected}
-      />
-
-      {error && (
-        <p className="mb-2 text-[11px] text-red-700" role="alert">
-          {error}
-        </p>
-      )}
+      {hiddenInput}
+      {errorMsg}
 
       {/* 등록 박스 — 업로드 버튼 + 안내를 박스 안에 두고, 파일이 있으면 위에 목록 표시 */}
       <div className="rounded-xl border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-900">
-        {total > 0 && (
-          <div className="mb-3 flex flex-col gap-2">
-            {backend.map((a) => (
-              <FileChip
-                key={`b-${a.id}`}
-                filename={a.filename}
-                sizeBytes={a.size_bytes}
-                downloadHref={api.formAttachmentUrl(formId, a.id)}
-              />
-            ))}
-            {mocks.map((m) => (
-              <FileChip
-                key={m.id}
-                filename={m.filename}
-                sizeBytes={m.sizeBytes}
-                downloadHref={m.blobUrl || undefined}
-                onRemove={() => onRemove(m.id)}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={onPickFile}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-          >
-            <Paperclip size={13} aria-hidden="true" /> 파일 업로드
-          </button>
-          <span className="text-[11px] text-gray-400 dark:text-gray-500">
-            샘플 데이터, 작업 가이드라인 등 · 최대 50MB
-          </span>
-        </div>
+        {fileList}
+        {uploadRow}
       </div>
     </section>
   );

@@ -168,6 +168,9 @@ export default function Page({ params }: { params: { id: string } }) {
   const schema = FORM_SCHEMAS[form.form_type];
   const label = FORM_TYPE_LABELS[form.form_type];
   const allFields = schema.sections.flatMap((s) => s.fields);
+  // 스키마에 첨부파일 필드가 있으면 신청 정보 표의 행으로 인라인 노출(아래 별도 섹션 생략).
+  // 없는 유형은 기존처럼 표 아래 별도 첨부파일 섹션을 노출.
+  const hasInlineAttachment = allFields.some((f) => f.type === "attachment");
 
   return (
     <div>
@@ -306,6 +309,19 @@ export default function Page({ params }: { params: { id: string } }) {
               <Row label="소속">{form.submitter_department || "-"}</Row>
               <Row label="이메일">{form.submitter_email}</Row>
               {allFields.map((f) => {
+                // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행(조직장 승인 아래)
+                // 으로 노출. 값 유무와 무관하게 항상 행을 보여주고 업로드/목록을 인라인 렌더.
+                if (f.type === "attachment") {
+                  return (
+                    <Row key={f.key} label="첨부파일">
+                      <AttachmentSection
+                        formId={form.id}
+                        backend={form.attachments}
+                        embedded
+                      />
+                    </Row>
+                  );
+                }
                 const v = form.payload[f.key];
                 if (v === undefined || v === null || v === "") return null;
                 // 확인 화면에서는 긴 안내 문구 라벨을 짧게 — 작성 화면 label 은 그대로.
@@ -376,11 +392,13 @@ export default function Page({ params }: { params: { id: string } }) {
         );
       })()}
 
-      {/* 첨부파일 — 빨간 막대 헤더 + 개수 + 업로드 버튼 + 칩 목록.
-          Phase 1 업로드 mock (sessionStorage) + 백엔드 첨부파일 함께 노출. */}
-      <div className="mt-5">
-        <AttachmentSection formId={form.id} backend={form.attachments} />
-      </div>
+      {/* 첨부파일 — 스키마에 첨부파일 필드가 없는 유형은 표 아래 별도 섹션으로 노출.
+          (data_production 등 인라인 행으로 노출되는 유형은 위 표 안에서 처리.) */}
+      {!hasInlineAttachment && (
+        <div className="mt-5">
+          <AttachmentSection formId={form.id} backend={form.attachments} />
+        </div>
+      )}
 
       <div className="mt-4 flex justify-end gap-2">
         {from === "admin" && (
