@@ -160,7 +160,7 @@ export function PreSubmitPreviewModal({
             <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
             <p className="leading-relaxed">
               제출하면 신청서가 <strong className="font-semibold">거버넌스 요청 목록</strong>으로 이동하며, 담당자 검토가 시작됩니다.
-              진행 상황은 요청 목록에서 확인할 수 있습니다.
+              진행 상황은 거버넌스 요청 목록에서 확인할 수 있습니다.
             </p>
           </div>
           <div className="flex items-center justify-end gap-2">
