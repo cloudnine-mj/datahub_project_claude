@@ -75,7 +75,7 @@ export default function Page() {
       crumbs={[
         { label: "Governance", href: "/governance/home" },
         typeCrumb,
-        { label: "신청서 작성" },
+        { label: editFormId ? "신청서 수정" : "신청서 작성" },
       ]}
       phases={getPhase1Phases(stageType)}
       subSteps={buildPhase1SubSteps("form", stageType)}

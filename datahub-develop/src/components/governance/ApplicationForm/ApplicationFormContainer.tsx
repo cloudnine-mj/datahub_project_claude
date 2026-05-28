@@ -326,6 +326,9 @@ export function ApplicationFormContainer({
         />
         <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
           신청서 작성
+          {isEditMode && (
+            <span className="ml-1 font-normal text-gray-400">(수정)</span>
+          )}
         </h2>
         <ApplicationTypeChip type={type} />
         {/* 작성 예시 — 용역 제작 한정. 헤더 우측 끝에 정렬(ml-auto). draft 모드에서만 노출. */}

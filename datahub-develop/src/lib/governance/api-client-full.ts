@@ -211,14 +211,17 @@ function adaptForm(f: Record<string, unknown>): FormDetail & Record<string, unkn
         (s): s is string => typeof s === "string" && s.trim().length > 0,
       )
     : [];
-  const camelHistory = (f.approvalHistory as { status: string; changedBy?: string; changedAt?: string; comment?: string | null }[] | null) ?? null;
-  // snake_case 호환 — datahub-web 옛 FormDetail/ApprovalEntry shape
+  const camelHistory = (f.approvalHistory as { status: string; changedBy?: string; changedAt?: string; comment?: string | null; action?: string }[] | null) ?? null;
+  // snake_case 호환 — datahub-web 옛 FormDetail/ApprovalEntry shape.
+  // action 은 진행 이력 타임라인이 이벤트 종류(수정/담당자 지정/검토중 등)를 정확히
+  // 분류하는 데 쓰이므로 반드시 함께 전달 (누락 시 status 휴리스틱으로 잘못 분류됨).
   const snakeHistory = camelHistory
     ? camelHistory.map((e) => ({
         status: e.status,
         changed_by: e.changedBy ?? "",
         changed_at: e.changedAt ?? "",
         comment: e.comment ?? null,
+        action: e.action,
       }))
     : null;
   const attachments = ((f.attachments as { id: string; filename: string; sizeBytes: number }[]) ?? []).map(
