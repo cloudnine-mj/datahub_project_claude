@@ -199,7 +199,7 @@ export function ApplicationStageTab({
       </header>
       <p className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
         {currentStage === 0 && subStep === "member_assignment"
-          ? "실무 담당자를 1명 이상 지정해 주세요 — 검토 요청을 보내려면 필수입니다."
+          ? "실무 담당자를 1명 이상 지정해 주세요."
           : "현재 단계에서 담당자 변경은 자유롭게 가능합니다."}
       </p>
 
