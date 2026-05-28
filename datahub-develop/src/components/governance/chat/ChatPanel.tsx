@@ -1,26 +1,30 @@
 // 담당자와 소통 — 신청서 작성 화면 우측 채팅 패널.
 //
-// 레이아웃: 고정 높이 560px, flex column.
-//   ┌─ 헤더(고정): "담당자와 소통" + 상태 배지
-//   ├─ 메시지 영역(flex 1, overflow-y auto): 카톡 좌우 말풍선
-//   └─ 입력창(고정): 캡슐형 input + 원형 send 버튼
+// 레이아웃: flex column.
+//   ┌─ 헤더(고정): "담당자와 소통"
+//   ├─ 메시지 영역(flex 1, overflow-y auto): 카톡 좌우 말풍선 (텍스트 + 첨부)
+//   └─ 입력창(고정): [전송 전 첨부 미리보기] + 캡슐형 input(클립·textarea·send)
 //
 // 데이터:
 //   formId 가 없으면 send 시점에 ensureFormId 콜백으로 draft 자동 생성.
-//   GET /api/governance/forms/{formId}/messages 로 메시지 로드.
-//   POST 로 메시지 전송. 시스템 이벤트는 본 채팅에 표시하지 않음.
-//
-// 변형:
-//   - welcome / suggestedQuestions: 빈 상태 대신 환영 메시지 + 추천 질문 칩 노출 (용역 제작 전용).
-//   - headerVariant: "writing"(amber) | "online"(green) — 상태 배지 톤.
-//   - accent: "blue" | "brand" — 본인 말풍선 / 전송 버튼 / 추천 칩 색.
+//   메시지 본문은 백엔드(POST messages, 빈 본문 허용) 저장.
+//   첨부는 Phase 1 mock — messageId 기준 sessionStorage(dh:gov:chat-attachments:{formId}).
+//   Phase 2 전환 시 lib/governance/chat-upload.ts 의 uploadChatAttachment 구현부만 교체.
 
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { Download, MessageCircle, Paperclip, Send } from "lucide-react";
+import { MessageCircle, Paperclip, Send, X } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 import type { FormMessageItem } from "@/lib/governance/forms/types";
+import {
+  CHAT_ACCEPT,
+  chatExtColor,
+  chatExtLabel,
+  uploadChatAttachment,
+  validateChatFile,
+  type ChatAttachment,
+} from "@/lib/governance/chat-upload";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 
 interface WelcomeMessage {
@@ -38,8 +42,7 @@ interface Props {
   assigneeTeam?: string;
   /** 상단 상태 배지 톤 — "writing"(amber, 기본) | "online"(green). */
   headerVariant?: "writing" | "online";
-  /** formId 가 없을 때 호출 — draft 자동 생성 후 새 formId 반환.
-   *  반환값 null 이면 생성 실패. ApplicationFormContainer 가 persist(true) 로 구현. */
+  /** formId 가 없을 때 호출 — draft 자동 생성 후 새 formId 반환. */
   ensureFormId?: () => Promise<string | null>;
   /** 첫 진입 시 빈 영역 채우는 담당자 환영 메시지 — 없으면 기본 빈 안내 표시. */
   welcome?: WelcomeMessage;
@@ -47,17 +50,15 @@ interface Props {
   suggestedQuestions?: string[];
   /** 본인 말풍선 / 추천 칩 / 전송 버튼의 강조 색. brand 는 #D4533E, blue 는 #2563EB 톤. */
   accent?: "blue" | "brand";
-  /** true 면 부모 컨테이너 높이를 100% 채움 (h-full) — 그리드 items-stretch 와 조합해
-   *  좌측 폼 박스와 동일한 높이로 정렬. false(기본) 면 뷰포트 기반 sticky 친화 높이. */
+  /** true 면 부모 컨테이너 높이를 100% 채움 (h-full). */
   fillParent?: boolean;
-  /** 현재 진행 단계 인덱스 — 새 메시지에 stageAtSent 로 기록되고, 메시지 사이
-   *  단계 변경 지점에 구분선을 그려줌. 미지정 시 구분선 미노출 (단일 채널 모드). */
+  /** 현재 진행 단계 인덱스 — 메시지 사이 단계 변경 지점에 구분선. */
   currentStage?: number;
-  /** 단계 인덱스를 라벨로 매핑 — 미지정 시 SERVICE_STAGES 기본값 사용. */
+  /** 단계 인덱스를 라벨로 매핑 — 미지정 시 기본값 사용. */
   stageLabels?: readonly string[];
 }
 
-const DEFAULT_STAGE_LABELS = ["신청", "협의", "계약", "진행", "종료"] as const;
+const DEFAULT_STAGE_LABELS = ["요청서 검토", "협의", "계약", "진행", "종료"] as const;
 
 const STAGE_MAP_KEY = (formId: string) => `dh:gov:chat-stages:${formId}`;
 
@@ -80,65 +81,31 @@ function writeStageMap(formId: string, next: Record<string, number>): void {
   }
 }
 
-// ── 채팅 첨부파일 (Phase 1 mock) ─────────────────────────────────────────
-// 실제 업로드(GCS)는 Phase 2. 지금은 sessionStorage 메타데이터 + ObjectURL(세션 한정 다운로드).
-// Phase 2 전환 시: 이 저장 계층만 api.uploadFormAttachment + 메시지 attachments 필드로 교체.
-// 메타데이터 형태({id,filename,sizeBytes,...})는 백엔드 반환과 맞춰 두어 말풍선 렌더는 그대로 재사용.
-interface ChatAttachmentMock {
-  id: string;
-  filename: string;
-  sizeBytes: number;
-  /** 업로드 시점 ObjectURL — 세션 한정 다운로드용. 새 세션엔 빈 값(칩만 표시). */
-  blobUrl: string;
-  createdAt: string; // ISO — 메시지와 시간순 병합에 사용
-  senderEmail: string; // 본인 여부 판정(우/좌 정렬)
-}
+// ── 채팅 첨부 (Phase 1 mock) — messageId → ChatAttachment[] 맵을 sessionStorage 영속.
+//    이미지 dataURL 은 새로고침에도 미리보기 유지. 용량(약 5MB) 초과 시 저장 실패해도
+//    in-memory 로는 동작(graceful degrade — 새로고침 시에만 일부 유실 가능).
+const ATTACH_MAP_KEY = (formId: string) => `dh:gov:chat-attachments:${formId}`;
 
-const ATTACH_KEY = (formId: string) => `dh:gov:chat-attachments:${formId}`;
-const MAX_CHAT_FILE = 50 * 1024 * 1024;
-type StoredChatAttachment = Omit<ChatAttachmentMock, "blobUrl">;
-
-function readChatAttachments(formId: string): ChatAttachmentMock[] {
-  if (typeof window === "undefined") return [];
+function readMsgAttachments(formId: string): Record<string, ChatAttachment[]> {
+  if (typeof window === "undefined") return {};
   try {
-    const raw = sessionStorage.getItem(ATTACH_KEY(formId));
-    if (!raw) return [];
-    return (JSON.parse(raw) as StoredChatAttachment[]).map((a) => ({
-      ...a,
-      blobUrl: "",
-    }));
+    const raw = sessionStorage.getItem(ATTACH_MAP_KEY(formId));
+    return raw ? (JSON.parse(raw) as Record<string, ChatAttachment[]>) : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-function writeChatAttachments(formId: string, list: ChatAttachmentMock[]): void {
+function writeMsgAttachments(
+  formId: string,
+  next: Record<string, ChatAttachment[]>,
+): void {
   if (typeof window === "undefined") return;
   try {
-    const stored = list.map(({ blobUrl, ...rest }) => {
-      void blobUrl;
-      return rest;
-    });
-    sessionStorage.setItem(ATTACH_KEY(formId), JSON.stringify(stored));
+    sessionStorage.setItem(ATTACH_MAP_KEY(formId), JSON.stringify(next));
   } catch {
-    /* ignore */
+    /* 용량 초과 등 — 저장 실패해도 in-memory 상태는 유지(새로고침 시 일부 유실). */
   }
-}
-
-function fmtBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function fmtClockTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const h = d.getHours();
-  const m = String(d.getMinutes()).padStart(2, "0");
-  const ampm = h < 12 ? "오전" : "오후";
-  const hh = ((h + 11) % 12) + 1;
-  return `${ampm} ${hh}:${m}`;
 }
 
 export function ChatPanel({
@@ -159,18 +126,19 @@ export function ChatPanel({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  // messageId → stageAtSent. sessionStorage 영속 (Phase 1, 백엔드 컬럼 없음).
-  // 과거 메시지는 default 0(신청) 으로 폴백.
   const [stageMap, setStageMap] = useState<Record<string, number>>({});
-  // 채팅 첨부 (Phase 1 mock) — 메시지와 별도 트랙, 렌더 시 시간순 병합.
-  const [attachments, setAttachments] = useState<ChatAttachmentMock[]>([]);
+  // 전송 전 첨부 미리보기 + 전송 완료된 메시지별 첨부 맵.
+  const [pending, setPending] = useState<ChatAttachment[]>([]);
+  const [msgAttachments, setMsgAttachments] = useState<
+    Record<string, ChatAttachment[]>
+  >({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const showDividers = currentStage !== undefined;
 
   useEffect(() => {
     if (!formId) return;
     setStageMap(readStageMap(formId));
-    setAttachments(readChatAttachments(formId));
+    setMsgAttachments(readMsgAttachments(formId));
   }, [formId]);
 
   const fetchMessages = useCallback(async () => {
@@ -185,7 +153,6 @@ export function ChatPanel({
 
   useEffect(() => {
     void fetchMessages();
-    // 다른 창에서 담당자가 답장하면 윈도우 focus 복귀 시 자동 갱신.
     const onFocus = () => {
       void fetchMessages();
     };
@@ -197,36 +164,43 @@ export function ChatPanel({
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, attachments.length]);
+  }, [messages.length, pending.length]);
 
-  const canSend = text.trim().length > 0 && !sending;
+  const canSend = (text.trim().length > 0 || pending.length > 0) && !sending;
 
-  async function sendText(body: string) {
-    if (!body || sending) return;
+  /** 텍스트(+첨부) 전송. 성공 시 true. */
+  async function sendMessage(
+    body: string,
+    atts: ChatAttachment[],
+  ): Promise<boolean> {
+    if ((!body && atts.length === 0) || sending) return false;
     setSending(true);
     setError(null);
     try {
-      // formId 없으면 ensureFormId 로 draft 자동 생성 → 새 id 로 메시지 전송.
       let targetId = formId;
       if (!targetId) {
-        if (!ensureFormId) {
-          throw new Error("신청서 저장 후 다시 시도해 주세요.");
-        }
+        if (!ensureFormId) throw new Error("신청서 저장 후 다시 시도해 주세요.");
         targetId = await ensureFormId();
-        if (!targetId) {
-          throw new Error("신청서 저장에 실패했습니다.");
-        }
+        if (!targetId) throw new Error("신청서 저장에 실패했습니다.");
       }
       const created = await api.createFormMessage(targetId, body);
       setMessages((prev) => [...prev, created]);
-      // 새 메시지의 stageAtSent 영속 — Phase 1, 단계 구분선용.
-      if (currentStage !== undefined && targetId) {
+      // 첨부 — 생성된 messageId 기준으로 영속.
+      if (atts.length > 0) {
+        const nextMap = { ...msgAttachments, [created.id]: atts };
+        setMsgAttachments(nextMap);
+        writeMsgAttachments(targetId, nextMap);
+      }
+      // 단계 구분선용 stageAtSent.
+      if (currentStage !== undefined) {
         const next = { ...stageMap, [created.id]: currentStage };
         setStageMap(next);
         writeStageMap(targetId, next);
       }
+      return true;
     } catch (e) {
       setError((e as Error).message);
+      return false;
     } finally {
       setSending(false);
     }
@@ -234,9 +208,11 @@ export function ChatPanel({
 
   async function send() {
     if (!canSend) return;
-    const body = text.trim();
-    await sendText(body);
-    setText("");
+    const ok = await sendMessage(text.trim(), pending);
+    if (ok) {
+      setText("");
+      setPending([]);
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -250,65 +226,39 @@ export function ChatPanel({
     fileInputRef.current?.click();
   }
 
-  // 파일 첨부 (Phase 1 mock) — sessionStorage 영속 + ObjectURL. formId 없으면 draft 자동 생성.
+  // 파일 선택 → 검증 후 mock 업로드하여 전송 전 미리보기(pending) 에 추가.
   async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     setError(null);
-    let targetId = formId;
-    if (!targetId) {
-      if (!ensureFormId) {
-        setError("신청서 저장 후 다시 시도해 주세요.");
-        e.target.value = "";
-        return;
-      }
-      targetId = await ensureFormId();
-      if (!targetId) {
-        setError("신청서 저장에 실패했습니다.");
-        e.target.value = "";
-        return;
-      }
-    }
-    const nextAttachments = [...attachments];
-    const nextStageMap = { ...stageMap };
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      if (f.size > MAX_CHAT_FILE) {
-        setError(`"${f.name}" 은(는) 50MB 를 초과합니다.`);
+    const list = Array.from(files);
+    const accepted: ChatAttachment[] = [];
+    // es5: 인덱스 for (순차 await). for...of 미사용.
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      const err = validateChatFile(f);
+      if (err) {
+        setError(err);
         continue;
       }
-      const att: ChatAttachmentMock = {
-        id: `chatfile-${Date.now()}-${i}`,
-        filename: f.name,
-        sizeBytes: f.size,
-        blobUrl: URL.createObjectURL(f),
-        createdAt: new Date().toISOString(),
-        senderEmail: currentUserEmail,
-      };
-      nextAttachments.push(att);
-      if (currentStage !== undefined) nextStageMap[att.id] = currentStage;
+      try {
+        accepted.push(await uploadChatAttachment(f));
+      } catch {
+        setError(`"${f.name}" 처리에 실패했습니다.`);
+      }
     }
-    setAttachments(nextAttachments);
-    writeChatAttachments(targetId, nextAttachments);
-    if (currentStage !== undefined) {
-      setStageMap(nextStageMap);
-      writeStageMap(targetId, nextStageMap);
-    }
-    // 같은 파일 다시 선택 가능하도록 input 비움.
+    if (accepted.length > 0) setPending((prev) => [...prev, ...accepted]);
     e.target.value = "";
   }
 
-  // 메시지 + 첨부(mock) 를 createdAt 기준 시간순으로 병합한 렌더 타임라인.
-  const timeline = [
-    ...messages.map((m) => ({ kind: "msg" as const, id: m.id, at: m.createdAt, msg: m })),
-    ...attachments.map((a) => ({ kind: "file" as const, id: a.id, at: a.createdAt, file: a })),
-  ].sort((x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : 0));
+  function removePending(id: string) {
+    setPending((prev) => prev.filter((a) => a.id !== id));
+  }
 
-  // 추천 질문 칩 노출 조건: 추천 목록 있고 + 아직 아무 대화(메시지/첨부) 도 없음.
   const showSuggestions =
     !!suggestedQuestions &&
     suggestedQuestions.length > 0 &&
-    timeline.length === 0;
+    messages.length === 0;
 
   const accentBubble =
     accent === "brand"
@@ -318,11 +268,10 @@ export function ChatPanel({
     accent === "brand"
       ? "bg-[#D4533E] hover:brightness-110"
       : "bg-blue-50 hover:brightness-95 dark:bg-blue-900/40";
-  const accentSendIconCls = accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
+  const accentSendIconCls =
+    accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
   const accentIconHeader = accent === "brand" ? "text-[#D4533E]" : "text-blue-500";
 
-  // fillParent: 부모 컨테이너 높이를 채움 (그리드 items-stretch 와 조합 — detail 페이지에서
-  // 좌측 폼 박스 높이에 맞춤). 기본은 뷰포트 기반 sticky 친화 높이.
   const heightCls = fillParent
     ? "h-full"
     : "h-[calc(100vh-104px)] max-h-[560px]";
@@ -331,7 +280,6 @@ export function ChatPanel({
       className={`flex ${heightCls} flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900`}
       aria-label="담당자와 소통"
     >
-      {/* 헤더 — 항상 보이도록 shrink 금지. 상태 배지는 노출하지 않음 (사용자 요청). */}
       <header className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-4 py-3.5 dark:border-gray-800">
         <MessageCircle size={16} className={accentIconHeader} aria-hidden="true" />
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -350,7 +298,7 @@ export function ChatPanel({
           <SuggestionChips
             questions={suggestedQuestions!}
             disabled={sending}
-            onPick={(q) => void sendText(q)}
+            onPick={(q) => void sendMessage(q, [])}
             accentBorder={
               accent === "brand"
                 ? "border-[#D4533E] text-[#D4533E] hover:bg-[#FCEAE5]/40"
@@ -359,7 +307,7 @@ export function ChatPanel({
           />
         )}
 
-        {timeline.length === 0 && !welcome && !showSuggestions && (
+        {messages.length === 0 && !welcome && !showSuggestions && (
           <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
             아직 메시지가 없습니다.
           </div>
@@ -367,32 +315,25 @@ export function ChatPanel({
 
         {(() => {
           let lastStage = -1;
-          return timeline.map((it) => {
-            const stage = stageMap[it.id] ?? 0;
+          return messages.map((m) => {
+            const stage = stageMap[m.id] ?? 0;
             const showDivider = showDividers && stage !== lastStage;
             if (showDividers) lastStage = stage;
             return (
-              <Fragment key={it.id}>
+              <Fragment key={m.id}>
                 {showDivider && (
                   <StageDivider
                     label={stageLabels[stage] ?? `단계 ${stage + 1}`}
                     isCurrent={stage === currentStage}
                   />
                 )}
-                {it.kind === "msg" ? (
-                  <ChatMessageBubble
-                    message={it.msg}
-                    currentUserEmail={currentUserEmail}
-                    assigneeTeam={assigneeTeam}
-                    mineBubbleClass={accentBubble}
-                  />
-                ) : (
-                  <ChatAttachmentBubble
-                    file={it.file}
-                    currentUserEmail={currentUserEmail}
-                    mineBubbleClass={accentBubble}
-                  />
-                )}
+                <ChatMessageBubble
+                  message={m}
+                  currentUserEmail={currentUserEmail}
+                  assigneeTeam={assigneeTeam}
+                  mineBubbleClass={accentBubble}
+                  attachments={msgAttachments[m.id]}
+                />
               </Fragment>
             );
           });
@@ -407,10 +348,20 @@ export function ChatPanel({
 
       {/* 입력창 — 항상 보이도록 shrink 금지. */}
       <div className="shrink-0 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+        {/* 전송 전 첨부 미리보기 */}
+        {pending.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {pending.map((a) => (
+              <PendingChip key={a.id} att={a} onRemove={() => removePending(a.id)} />
+            ))}
+          </div>
+        )}
+
         <div className="flex items-center gap-2 rounded-full bg-gray-50 py-1.5 pl-2 pr-1.5 dark:bg-gray-800">
           <input
             ref={fileInputRef}
             type="file"
+            accept={CHAT_ACCEPT}
             multiple
             className="hidden"
             onChange={onFileSelected}
@@ -448,54 +399,46 @@ export function ChatPanel({
   );
 }
 
-/** 채팅 첨부 말풍선 (Phase 1 mock) — 본인(currentUserEmail)이면 우측, 아니면 좌측.
- *  파일 칩(아이콘+이름+크기) + 세션 내 다운로드. blobUrl 없으면(새 세션) 칩만 표시. */
-function ChatAttachmentBubble({
-  file,
-  currentUserEmail,
-  mineBubbleClass,
+/** 전송 전 첨부 미리보기 칩 — 이미지 썸네일 / 파일 칩 + 개별 제거. */
+function PendingChip({
+  att,
+  onRemove,
 }: {
-  file: ChatAttachmentMock;
-  currentUserEmail: string;
-  mineBubbleClass?: string;
+  att: ChatAttachment;
+  onRemove: () => void;
 }) {
-  const isMine =
-    !!currentUserEmail &&
-    file.senderEmail.toLowerCase() === currentUserEmail.toLowerCase();
-  const time = fmtClockTime(file.createdAt);
-  const mineCls =
-    mineBubbleClass ?? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200";
-  const chip = (
-    <div
-      className={`flex items-center gap-2 rounded-[12px] px-3 py-2.5 ${
-        isMine ? mineCls : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
-      }`}
-    >
-      <Paperclip size={15} className="shrink-0 opacity-70" aria-hidden="true" />
-      <div className="min-w-0">
-        <div className="truncate text-[12px] font-medium" title={file.filename}>
-          {file.filename}
-        </div>
-        <div className="text-[10px] opacity-60">{fmtBytes(file.sizeBytes)}</div>
-      </div>
-      {file.blobUrl && (
-        <a
-          href={file.blobUrl}
-          download={file.filename}
-          aria-label={`${file.filename} 다운로드`}
-          className="shrink-0 opacity-60 transition hover:opacity-100"
-        >
-          <Download size={15} aria-hidden="true" />
-        </a>
-      )}
-    </div>
-  );
   return (
-    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-      <div className={`flex max-w-[80%] flex-col ${isMine ? "items-end" : "items-start"}`}>
-        {chip}
-        {time && <span className="mt-1 text-[10px] text-gray-400">{time}</span>}
-      </div>
+    <div className="relative flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white py-1 pl-1 pr-1.5 dark:border-gray-700 dark:bg-gray-800">
+      {att.kind === "image" ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={att.url}
+          alt={att.name}
+          className="h-11 w-11 rounded object-cover"
+        />
+      ) : (
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-md text-[9px] font-medium text-white"
+          style={{ background: chatExtColor(att.name) }}
+          aria-hidden="true"
+        >
+          {chatExtLabel(att.name)}
+        </span>
+      )}
+      <span
+        className="max-w-[120px] truncate text-[11px] text-gray-700 dark:text-gray-200"
+        title={att.name}
+      >
+        {att.name}
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`${att.name} 제거`}
+        className="shrink-0 rounded-full p-0.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+      >
+        <X size={13} aria-hidden="true" />
+      </button>
     </div>
   );
 }
@@ -527,8 +470,7 @@ function WelcomeBlock({ welcome }: { welcome: WelcomeMessage }) {
   );
 }
 
-/** 단계 구분선 — 메시지 사이에서 단계가 바뀌는 지점에 노출.
- *  현재 단계면 빨강 강조, 그 외는 회색. */
+/** 단계 구분선 — 메시지 사이에서 단계가 바뀌는 지점에 노출. */
 function StageDivider({ label, isCurrent }: { label: string; isCurrent: boolean }) {
   if (isCurrent) {
     return (
@@ -583,7 +525,7 @@ function SuggestionChips({
               disabled={disabled}
               className={`rounded-full border bg-white px-3 py-2 text-left text-[11px] transition disabled:opacity-50 dark:bg-gray-900 ${accentBorder}`}
             >
-              💬 {q}
+              {q}
             </button>
           ))}
         </div>
