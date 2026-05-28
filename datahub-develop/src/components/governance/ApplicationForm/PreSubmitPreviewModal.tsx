@@ -219,24 +219,27 @@ export function PreSubmitPreviewModal({
             )}
           </h3>
 
-          <table className="w-full border-collapse text-[13px]">
-            <tbody>
-              <PreviewRow label="신청자" value={applicant} />
-              {rows.map((r, idx) => {
-                const text = formatValue(payload[r.key]);
-                const isLast = idx === rows.length - 1;
-                return (
-                  <PreviewRow
-                    key={r.key}
-                    label={r.label}
-                    value={text}
-                    noBorder={isLast}
-                    changed={isEdit && changedKeys.has(r.key)}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
+          {/* 미리보기 표 — 바깥 테두리 + radius + overflow hidden (행은 내부 구분선 유지). */}
+          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full border-collapse text-[13px]">
+              <tbody>
+                <PreviewRow label="신청자" value={applicant} />
+                {rows.map((r, idx) => {
+                  const text = formatValue(payload[r.key]);
+                  const isLast = idx === rows.length - 1;
+                  return (
+                    <PreviewRow
+                      key={r.key}
+                      label={r.label}
+                      value={text}
+                      noBorder={isLast}
+                      changed={isEdit && changedKeys.has(r.key)}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* sticky 푸터 — info 안내 + 액션 버튼 */}
