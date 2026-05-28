@@ -56,7 +56,7 @@ interface Config {
 const EVENT_CONFIG: Record<HistoryEventType, Config> = {
   submitted: { label: "신청서 제출", icon: Send, color: "#378ADD" },
   assigned: { label: "담당자 지정", icon: UserCheck, color: "#993C1D" },
-  reviewing: { label: "신청서 검토", icon: Search, color: "#7A5AF8" },
+  reviewing: { label: "검토중", icon: Search, color: "#7A5AF8" },
   edited: { label: "신청서 수정", icon: Pencil, color: "#BA7517" },
   info_requested: { label: "보완 요청", icon: Pencil, color: "#E08027" },
   approved: { label: "승인 완료", icon: CircleCheck, color: "#1D9E75" },
