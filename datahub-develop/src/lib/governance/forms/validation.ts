@@ -20,6 +20,9 @@ export function findFirstEmptyRequired(
     if (section.optional) continue;
     for (const f of section.fields) {
       if (f.type === "checkbox") continue;
+      // 첨부파일은 payload 에 들어가지 않고 sessionStorage 에 별도 영속되며
+      // 별도 '파일 첨부' 섹션을 통해 업로드된다 — 필수 검증 대상에서 제외.
+      if (f.type === "attachment") continue;
       if (isFieldEmpty(f, values[f.key])) return f.label || f.key;
     }
   }
