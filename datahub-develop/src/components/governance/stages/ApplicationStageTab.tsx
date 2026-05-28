@@ -67,10 +67,14 @@ export function ApplicationStageTab({
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
+  // sessionStorage hydration 이 끝났는지 — false 동안엔 권한 게이트가 isMember 를
+  // false 로 잘못 판단하지 않도록 가시성 결정을 보류한다.
+  const [hydrated, setHydrated] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const meEmail = me?.user.email ?? null;
 
-  // 역할 식별 — Phase 1 검토 버튼 가시성에 사용.
+  // 역할 식별 — Phase 1 검토 버튼 가시성 + 담당자 섹션 권한 게이트에 사용.
+  const isAdmin = me?.user.role === "admin";
   const isLead = !!meEmail && meEmail.toLowerCase() === lead.email.toLowerCase();
   const isMember =
     !!meEmail &&
@@ -78,8 +82,12 @@ export function ApplicationStageTab({
   const isApplicant =
     !!meEmail && meEmail.toLowerCase() === submitterEmail.toLowerCase();
   const isAssignee = isLead || isMember;
+  // 신청자(만) / 미관여자 → 섹션 자체 미노출. 담당자(총괄·실무) 또는 관리자 → 노출.
+  const canView = isAdmin || isAssignee;
+  // 담당자 추가/제거 같은 편집 액션은 관리자만. 담당자는 읽기 전용 칩만 본다.
+  const canEdit = isAdmin;
 
-  // Phase 1 — 실무 담당자 sessionStorage 영속.
+  // Phase 1 — 실무 담당자 sessionStorage 영속 + hydration 완료 마킹.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -88,6 +96,7 @@ export function ApplicationStageTab({
     } catch {
       /* ignore */
     }
+    setHydrated(true);
   }, [formId]);
 
   function persistMembers(next: MemberMock[]): void {
@@ -143,6 +152,11 @@ export function ApplicationStageTab({
   }
 
   if (formType !== "data_production") return null;
+  // hydration 전에는 sessionStorage 의 members 가 아직 비어 있어 isMember 가
+  // false 일 수 있으므로 관리자/총괄이 아닌 한 잠시 보류. (SSR 시점엔 server HTML
+  // 도 동일하게 null 로 일치 → hydration mismatch 회피)
+  if (!isAdmin && !isLead && !hydrated) return null;
+  if (!canView) return null;
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
@@ -169,9 +183,11 @@ export function ApplicationStageTab({
         )}
       </header>
       <p className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
-        {currentStage === 0 && subStep === "member_assignment"
+        {currentStage === 0 && subStep === "member_assignment" && canEdit
           ? "실무 담당자를 1명 이상 지정해 주세요 — 검토 요청을 보내려면 필수입니다."
-          : "현재 단계에서 담당자 변경은 자유롭게 가능합니다."}
+          : canEdit
+            ? "현재 단계에서 담당자 변경은 자유롭게 가능합니다."
+            : "이 신청서에 지정된 담당자 목록입니다."}
       </p>
 
       <div className="flex flex-wrap items-center gap-1.5">
@@ -185,17 +201,19 @@ export function ApplicationStageTab({
             key={m.id}
             name={m.name}
             isMe={meEmail?.toLowerCase() === m.email.toLowerCase()}
-            removable
-            onRemove={() => onRemoveMember(m.id)}
+            removable={canEdit}
+            onRemove={canEdit ? () => onRemoveMember(m.id) : undefined}
           />
         ))}
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-[11px] text-gray-500 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
-        >
-          <Plus size={11} aria-hidden="true" /> 실무자 추가
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-3 py-1.5 text-[11px] text-gray-500 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+          >
+            <Plus size={11} aria-hidden="true" /> 실무자 추가
+          </button>
+        )}
       </div>
 
       {modalOpen && (
