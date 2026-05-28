@@ -1,4 +1,4 @@
-// 데이터 도입 유형 카드 데이터 — '1. 기획 > 요청서 작성' 화면에서 사용.
+// 데이터 도입 유형 카드 데이터 — '1. 기획 > 신청서 작성' 화면에서 사용.
 // 시각 디자인은 ApplicationTypeCard 가 처리하고 여기서는 데이터만 정의.
 
 import type { LucideIcon } from "lucide-react";

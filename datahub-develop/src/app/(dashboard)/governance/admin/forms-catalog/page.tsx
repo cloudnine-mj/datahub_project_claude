@@ -1,4 +1,4 @@
-// 관리 · 요청서 양식 카탈로그 — 시스템에 등록된 모든 요청서 양식을 카테고리별로 정리.
+// 관리 · 신청서 양식 카탈로그 — 시스템에 등록된 모든 신청서 양식을 카테고리별로 정리.
 //   각 카드 클릭 → /governance/admin/forms-catalog/[formId] 미리보기 페이지로 이동.
 //   접근 권한: 모든 로그인 사용자 (관리자 액션은 백엔드 가드).
 
@@ -26,13 +26,13 @@ export default function Page() {
       <Breadcrumb
         items={[
           { label: "Governance", href: "/governance/home" },
-          { label: "요청서 양식 카탈로그" },
+          { label: "신청서 양식 카탈로그" },
         ]}
       />
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">요청서 양식 카탈로그</h1>
+        <h1 className="text-3xl font-bold tracking-tight">신청서 양식 카탈로그</h1>
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-          시스템에 등록된 모든 요청서 양식을 카테고리별로 정리했습니다. 항목을 클릭하면 해당 양식을 미리볼 수 있습니다.
+          시스템에 등록된 모든 신청서 양식을 카테고리별로 정리했습니다. 항목을 클릭하면 해당 양식을 미리볼 수 있습니다.
         </p>
       </header>
 

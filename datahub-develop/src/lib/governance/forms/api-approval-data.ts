@@ -42,7 +42,7 @@ export function buildApiApprovalData(
   const applicantStr = applicant.department
     ? `${applicant.name} (${applicant.department})`
     : applicant.name;
-  rows.push({ label: "요청자", value: applicantStr });
+  rows.push({ label: "신청자", value: applicantStr });
 
   if (form.projectName.trim()) {
     rows.push({ label: "연관 프로젝트", value: form.projectName });
@@ -70,7 +70,7 @@ export function buildApiApprovalData(
   rows.push({ label: "비용 처리", value: "지급수수료-API" });
 
   return {
-    title: "API 활용 요청서",
+    title: "API 활용 신청서",
     rows,
   };
 }

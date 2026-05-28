@@ -22,7 +22,7 @@ const items: SectionNavItem[] = [
   // 홈 — 그룹 밖 단독
   { title: "나의 현황", href: "/governance/home", icon: Home },
 
-  // 요청 — 계획 수립 substep 제거에 따라 곧바로 요청서 작성(intake) 진입.
+  // 요청 — 계획 수립 substep 제거에 따라 곧바로 신청서 작성(intake) 진입.
   { title: "데이터 용역 제작", href: "/governance/forms/intake?type=service", icon: Hammer, group: "요청" },
   { title: "데이터 구매", href: "/governance/forms/intake?type=purchase", icon: ShoppingCart, group: "요청" },
   { title: "데이터 구독", href: "/governance/forms/intake?type=subscribe", icon: RefreshCw, group: "요청" },
@@ -38,7 +38,7 @@ const items: SectionNavItem[] = [
   { title: "거버넌스 요청 관리", href: "/governance/admin/forms", icon: Inbox, group: "관리" },
   { title: "프로세스 관리", href: "/governance/process?manage=1", icon: Route, group: "관리" },
   { title: "거버넌스 정책 관리", href: "/governance/policy?manage=1", icon: BookOpen, group: "관리" },
-  { title: "요청서 양식 카탈로그", href: "/governance/admin/forms-catalog", icon: Settings, group: "관리" },
+  { title: "신청서 양식 카탈로그", href: "/governance/admin/forms-catalog", icon: Settings, group: "관리" },
   { title: "통계·리포트", href: "/governance/admin/stats", icon: BarChart3, group: "관리" },
 ];
 

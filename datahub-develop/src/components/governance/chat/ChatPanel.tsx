@@ -1,4 +1,4 @@
-// 담당자와 소통 — 요청서 작성 화면 우측 채팅 패널.
+// 담당자와 소통 — 신청서 작성 화면 우측 채팅 패널.
 //
 // 레이아웃: 고정 높이 560px, flex column.
 //   ┌─ 헤더(고정): "담당자와 소통" + 상태 배지
@@ -30,7 +30,7 @@ interface WelcomeMessage {
 }
 
 interface Props {
-  /** 요청서 ID — null 이면 send 시점에 ensureFormId 로 자동 draft 생성. */
+  /** 신청서 ID — null 이면 send 시점에 ensureFormId 로 자동 draft 생성. */
   formId: string | null;
   /** 현재 로그인 사용자 이메일 — 본인 메시지 우측 배치 결정. */
   currentUserEmail: string;
@@ -57,7 +57,7 @@ interface Props {
   stageLabels?: readonly string[];
 }
 
-const DEFAULT_STAGE_LABELS = ["요청서 검토", "협의", "계약", "진행", "종료"] as const;
+const DEFAULT_STAGE_LABELS = ["신청", "협의", "계약", "진행", "종료"] as const;
 
 const STAGE_MAP_KEY = (formId: string) => `dh:gov:chat-stages:${formId}`;
 
@@ -145,11 +145,11 @@ export function ChatPanel({
       let targetId = formId;
       if (!targetId) {
         if (!ensureFormId) {
-          throw new Error("요청서 저장 후 다시 시도해 주세요.");
+          throw new Error("신청서 저장 후 다시 시도해 주세요.");
         }
         targetId = await ensureFormId();
         if (!targetId) {
-          throw new Error("요청서 저장에 실패했습니다.");
+          throw new Error("신청서 저장에 실패했습니다.");
         }
       }
       const created = await api.createFormMessage(targetId, body);

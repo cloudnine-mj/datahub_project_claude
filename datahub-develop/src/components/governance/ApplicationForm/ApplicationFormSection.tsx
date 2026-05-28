@@ -1,4 +1,4 @@
-// 요청서 작성 양식 섹션 — 빨간 세로 막대 + 제목 + 필수/선택 표시 + 필드 row 리스트.
+// 신청서 작성 양식 섹션 — 빨간 세로 막대 + 제목 + 필수/선택 표시 + 필드 row 리스트.
 //   FORM_SCHEMAS 의 SectionDef / FieldDef 를 받아 커스텀 디자인으로 렌더.
 //   지원 type: text / textarea / date / number / select / radio / checkbox / approver_list.
 //   미지원 type(service_blocks 등) 은 textarea 로 fallback — 추후 필요 시 확장.

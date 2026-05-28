@@ -1,8 +1,8 @@
-// 답할 대상 결정 로직 — 메시지 발신자 역할 + 요청 정보 기반으로 자동 지정.
+// 답할 대상 결정 로직 — 메시지 발신자 역할 + 신청 정보 기반으로 자동 지정.
 //
-// Phase 1 (현재): 담당자 김은솔(고정) ↔ 요청자 양방향 회신 구조.
-//   - 요청자 / potential-assignee / 어드민 → 김은솔에게 회신
-//   - 김은솔(assignee) → 요청자에게 회신
+// Phase 1 (현재): 담당자 김은솔(고정) ↔ 신청자 양방향 회신 구조.
+//   - 신청자 / potential-assignee / 어드민 → 김은솔에게 회신
+//   - 김은솔(assignee) → 신청자에게 회신
 //
 // 사용자가 답할 대상을 선택할 필요 없음. UI 상 답할 대상은 정보 표시용 칩으로만 노출.
 //
@@ -19,8 +19,8 @@ export type SenderRoleForChat = "applicant" | "assignee" | "potential-assignee" 
 
 export interface ReplyTargetUser {
   name: string;
-  /** '담당자' / '요청자' 같은 라벨. */
-  role: "담당자" | "요청자";
+  /** '담당자' / '신청자' 같은 라벨. */
+  role: "담당자" | "신청자";
 }
 
 export interface ApplicantInfo {
@@ -43,10 +43,10 @@ export function determineReplyTarget(
 ): ReplyTargetUser {
   void applicationType; // Phase 2 예약
 
-  // 담당자(김은솔 등)가 메시지를 작성하면 요청자에게 회신.
+  // 담당자(김은솔 등)가 메시지를 작성하면 신청자에게 회신.
   if (senderRole === "assignee") {
-    return { name: applicant.name, role: "요청자" };
+    return { name: applicant.name, role: "신청자" };
   }
-  // 그 외(요청자 본인 / 잠재 담당자 / 어드민) 는 고정 담당자에게 회신.
+  // 그 외(신청자 본인 / 잠재 담당자 / 어드민) 는 고정 담당자에게 회신.
   return { name: FIXED_ASSIGNEE.name, role: FIXED_ASSIGNEE.role };
 }

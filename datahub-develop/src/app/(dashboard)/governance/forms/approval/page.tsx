@@ -119,7 +119,7 @@ export default function Page() {
           className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
         />
         <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
-          Datahub에서 작성한 요청서를 기반으로{" "}
+          Datahub에서 작성한 신청서를 기반으로{" "}
           <strong className="font-medium">G Portal 전자결재</strong>에 품의를 작성하고 승인 요청을 진행합니다.
         </span>
       </div>
@@ -131,7 +131,7 @@ export default function Page() {
           <h2 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">결재선</h2>
         </header>
         <div className="rounded-md bg-gray-50 px-3 py-2.5 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200">
-          요청자의 소속 조직장 전결
+          신청자의 소속 조직장 전결
         </div>
       </section>
 

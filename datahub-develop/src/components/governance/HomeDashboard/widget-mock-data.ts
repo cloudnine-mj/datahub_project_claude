@@ -122,7 +122,7 @@ export const MOCK_NOTICES: NoticeItem[] = [
   },
   {
     id: "n2",
-    title: "요청서 양식 업데이트 (5월부터 적용)",
+    title: "신청서 양식 업데이트 (5월부터 적용)",
     publishedAt: "2026-05-10",
     isImportant: false,
   },

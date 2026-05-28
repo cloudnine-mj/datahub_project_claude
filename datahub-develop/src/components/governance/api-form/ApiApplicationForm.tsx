@@ -1,5 +1,5 @@
-// API 활용 계획서 — 요청서 작성 양식.
-//   섹션: 요청자 정보(자동) / 요청 정보 (연관 프로젝트 + API 사용 목적 + 사용 서비스 N개
+// API 활용 계획서 — 신청서 작성 양식.
+//   섹션: 신청자 정보(자동) / 신청 정보 (연관 프로젝트 + API 사용 목적 + 사용 서비스 N개
 //   + 총 예상 비용 자동 합계) / 파일 첨부.
 //   서비스는 최소 1개 (서비스 1 의 X 버튼 비활성), 추가/삭제 가능.
 //   총 예상 비용은 통화별 분리 합산 (환율 변환 없음).
@@ -133,14 +133,14 @@ export function ApiApplicationForm({ applicant, values, onChange }: Props) {
             className="text-blue-700 dark:text-blue-300"
           />
           <h2 className="text-[15px] font-medium text-gray-900 dark:text-gray-100">
-            API 활용 요청서
+            API 활용 신청서
           </h2>
         </div>
       </header>
 
-      {/* 요청자 정보 */}
+      {/* 신청자 정보 */}
       <div className="mb-5">
-        <SectionHeader title="요청자 정보" />
+        <SectionHeader title="신청자 정보" />
         <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
           <dl
             className="grid gap-y-2 gap-x-3.5 text-[12px]"
@@ -156,9 +156,9 @@ export function ApiApplicationForm({ applicant, values, onChange }: Props) {
         </div>
       </div>
 
-      {/* 요청 정보 */}
+      {/* 신청 정보 */}
       <div className="mb-5">
-        <SectionHeader title="요청 정보" required />
+        <SectionHeader title="신청 정보" required />
 
         {/* 공통 필드 — 연관 프로젝트 / API 사용 목적 */}
         <div

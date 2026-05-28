@@ -4,10 +4,10 @@
 //   │ ⊙ 진행 이력  [4건]                                          │
 //   │                                                            │
 //   │  ○──────────●──────────●──────────●                         │
-//   │ [요청서 제출]  [담당자 지정]  [승인 요청]  [승인 완료]            │
+//   │ [신청서 제출]  [담당자 지정]  [승인 요청]  [승인 완료]            │
 //   │ [검토 시작]                                                  │
 //   │ 5/28 13:43   5/28 14:10   5/28 14:55   5/28 15:12            │
-//   │              김은솔(총괄)   강민정(요청자) 김은솔(총괄)          │
+//   │              김은솔(총괄)   강민정(신청자) 김은솔(총괄)          │
 //   └──────────────────────────────────────────────────────────┘
 //
 // - 제출(submitted) + 검토 시작(review_started) 은 한 노드로 병합 (제출=검토 개시).
@@ -58,17 +58,17 @@ interface Config {
 }
 
 const EVENT_CONFIG: Record<HistoryEventType, Config> = {
-  submitted: { label: "요청서 제출", icon: Send, node: "#378ADD", chipBg: "#E6F1FB", chipText: "#0C447C" },
+  submitted: { label: "신청서 제출", icon: Send, node: "#378ADD", chipBg: "#E6F1FB", chipText: "#0C447C" },
   review_started: { label: "검토 시작", icon: Eye, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   member_assigned: { label: "담당자 지정", icon: UserPlus, node: "#993C1D", chipBg: "#FAECE7", chipText: "#993C1D" },
-  revision: { label: "요청서 수정", icon: Pencil, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
+  revision: { label: "신청서 수정", icon: Pencil, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   approval_requested: { label: "승인 요청", icon: SendHorizontal, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   approved: { label: "승인 완료", icon: CircleCheck, node: "#1D9E75", chipBg: "#E1F5EE", chipText: "#0F6E56" },
   info_requested: { label: "보완 요청", icon: Pencil, node: "#E08027", chipBg: "#FBEBD6", chipText: "#B5610F" },
 };
 
 const ROLE_LABEL: Record<ActorRole, string> = {
-  applicant: "요청자",
+  applicant: "신청자",
   lead: "총괄",
   member: "담당자",
   system: "",

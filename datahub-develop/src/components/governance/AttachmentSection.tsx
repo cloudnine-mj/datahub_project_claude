@@ -42,7 +42,7 @@ interface MockAttachment {
 interface Props {
   formId: string;
   backend: BackendAttachment[];
-  /** 요청 정보 표 안의 한 행으로 끼워 넣을 때 — 빨간 막대 헤더/외곽 박스 없이
+  /** 신청 정보 표 안의 한 행으로 끼워 넣을 때 — 빨간 막대 헤더/외곽 박스 없이
    *  업로드 버튼 + 파일 목록만 렌더 (라벨은 표의 행 라벨이 담당). */
   embedded?: boolean;
 }
@@ -201,7 +201,7 @@ export function AttachmentSection({ formId, backend, embedded = false }: Props) 
     </div>
   );
 
-  // 요청 정보 표 안의 행으로 끼워 넣을 때 — 헤더/외곽 박스 없이 목록 + 업로드만.
+  // 신청 정보 표 안의 행으로 끼워 넣을 때 — 헤더/외곽 박스 없이 목록 + 업로드만.
   if (embedded) {
     return (
       <div>

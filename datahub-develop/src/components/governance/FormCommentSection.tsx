@@ -73,7 +73,7 @@ export function FormCommentSection({ formId, me }: Props) {
           <h2 className="text-base font-bold">Discussions</h2>
           <span className="text-xs text-gray-400">{count}개의 댓글</span>
         </div>
-        <span className="text-[11px] text-gray-400">요청자 + 검토자 간 논의 공간</span>
+        <span className="text-[11px] text-gray-400">신청자 + 검토자 간 논의 공간</span>
       </header>
 
       {/* 본문 */}

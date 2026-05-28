@@ -51,7 +51,7 @@ export function ApplicationTypeCard({ data, onSelect }: Props) {
         className="mt-auto pt-3"
       >
         <div className="rounded-lg bg-red-50 px-3 py-2 text-center text-sm font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300">
-          요청서 작성하기 →
+          신청서 작성하기 →
         </div>
       </button>
     </div>

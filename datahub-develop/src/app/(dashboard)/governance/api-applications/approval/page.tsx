@@ -28,7 +28,7 @@ import { copyHtmlAndPlain } from "@/lib/governance/forms/clipboard-copy";
 
 const G_PORTAL_URL = "https://gportal.lgresearch.ai/portal/main/portalMain.do";
 
-// 데모용 요청서 데이터 — 실 폼이 생기면 storage / API 에서 로드.
+// 데모용 신청서 데이터 — 실 폼이 생기면 storage / API 에서 로드.
 const DEMO_APPLICANT = { name: "김데이터", department: "AI Platform" };
 const DEMO_FORM = {
   projectName: "2026 고객 행동 분석 플랫폼 구축",
@@ -96,7 +96,7 @@ export default function Page() {
           className="mt-px shrink-0 text-blue-700 dark:text-blue-300"
         />
         <span className="text-[13px] leading-relaxed text-blue-700 dark:text-blue-300">
-          Datahub에서 작성한 요청서를 기반으로{" "}
+          Datahub에서 작성한 신청서를 기반으로{" "}
           <strong className="font-medium">G Portal 전자결재</strong>에 품의를 작성하고 승인 요청을 진행합니다.
         </span>
       </div>
@@ -108,7 +108,7 @@ export default function Page() {
           <h2 className="text-[13px] font-medium text-gray-900 dark:text-gray-100">결재선</h2>
         </header>
         <div className="rounded-md bg-gray-50 px-3 py-2.5 text-[13px] text-gray-800 dark:bg-gray-800/40 dark:text-gray-200">
-          요청자의 소속 조직장 전결
+          신청자의 소속 조직장 전결
         </div>
       </section>
 
@@ -174,7 +174,7 @@ export default function Page() {
           className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           <ArrowLeft size={14} aria-hidden="true" />
-          요청서 작성 다시 보기
+          신청서 작성 다시 보기
         </Link>
         <button
           type="button"

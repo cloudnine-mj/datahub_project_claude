@@ -53,7 +53,7 @@ export function FormBuilder({
   const [missingField, setMissingField] = useState<{ label: string; blocking: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 요청자 정보 — 로그인 사용자 정보로 자동 입력. 사용자가 직접 수정 가능.
+  // 신청자 정보 — 로그인 사용자 정보로 자동 입력. 사용자가 직접 수정 가능.
   const [submitterName, setSubmitterName] = useState("");
   const [submitterDepartment, setSubmitterDepartment] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
@@ -77,7 +77,7 @@ export function FormBuilder({
   const [loadedStatus, setLoadedStatus] = useState<string>("draft");
   // chevron '승인 완료' 패널의 진행 이력에 표시할 데이터. 편집 모드에서 form 로드 시 채움.
   const [loadedHistory, setLoadedHistory] = useState<ApprovalEntry[] | null>(null);
-  // 진행 바에서 선택된 단계 — '요청서 작성'(index 1) 일 때만 양식 폼 노출.
+  // 진행 바에서 선택된 단계 — '신청서 작성'(index 1) 일 때만 양식 폼 노출.
   // 다른 단계 선택 시 양식 숨김 (해당 단계 정보만 보이도록).
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
   const hideForm = selectedStep !== null && selectedStep !== 1;
@@ -120,7 +120,7 @@ export function FormBuilder({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copyDone, setCopyDone] = useState(false);
 
-  // 요청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
+  // 신청자 정보 섹션 토글 — 기본 접힘. SSO 로 이미 채워져 있으므로 평소엔 가려두고
   // 필요할 때만 펼쳐 확인.
   const [submitterOpen, setSubmitterOpen] = useState(false);
 
@@ -278,12 +278,12 @@ export function FormBuilder({
         onSubmit={onSubmit}
         className={`space-y-8 ${hideForm ? "hidden" : ""}`}
       >
-        {/* 요청자 정보 — SSO 로그인 정보로 자동 입력. 항상 노출, 흰 박스 + 0.5px 테두리 + dl 레이아웃. */}
+        {/* 신청자 정보 — SSO 로그인 정보로 자동 입력. 항상 노출, 흰 박스 + 0.5px 테두리 + dl 레이아웃. */}
         <section>
           <div className="mb-3 flex items-center gap-1.5">
             <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
             <h2 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-              요청자 정보
+              신청자 정보
             </h2>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white px-3.5 py-3 dark:border-gray-700 dark:bg-gray-900">
@@ -1087,7 +1087,7 @@ function ServiceBlockCard({
 
   return (
     <div className="rounded-lg bg-gray-50 px-4 py-3.5 dark:bg-gray-800/40">
-      {/* 서비스 카드 헤더 — API 활용 요청서와 동일한 빨간 막대 + 라벨 + X 버튼 */}
+      {/* 서비스 카드 헤더 — API 활용 신청서와 동일한 빨간 막대 + 라벨 + X 버튼 */}
       <header className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
@@ -1105,7 +1105,7 @@ function ServiceBlockCard({
         </button>
       </header>
 
-      {/* grid 레이아웃 — API 활용 요청서와 동일 (100px 라벨 + 입력) */}
+      {/* grid 레이아웃 — API 활용 신청서와 동일 (100px 라벨 + 입력) */}
       <div
         className="grid items-start gap-x-3.5 gap-y-2.5 text-[12px]"
         style={{ gridTemplateColumns: "100px 1fr" }}

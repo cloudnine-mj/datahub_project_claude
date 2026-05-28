@@ -1,4 +1,4 @@
-// 요청서 상세 상단 진행 카드 — 막대 채우기형(스타일 B).
+// 신청서 상세 상단 진행 카드 — 막대 채우기형(스타일 B).
 //
 //   ┌────────────────────────────────────────────────────────┐
 //   │ 진행 상태                              신청 단계 · 1/5    │
@@ -99,7 +99,7 @@ export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
 }
 
 /** 용역 제작(data_production) 의 5단계. */
-export const SERVICE_STAGES = ["요청서 검토", "협의", "계약", "진행", "종료"] as const;
+export const SERVICE_STAGES = ["신청", "협의", "계약", "진행", "종료"] as const;
 
 /** Phase 1 — 5단계 진행은 form status 와 무관한 별도 상태로 관리.
  *  신청 단계(0) 에서 총괄 담당자가 실무자 지정 후 [협의 단계로] 버튼을 눌러야

@@ -14,7 +14,7 @@ export function PostForbiddenView() {
   const body =
     "안녕하세요,%0A%0A" +
     "DataHub Governance 게시판에 글을 작성할 수 있는 권한을 요청합니다.%0A%0A" +
-    "- 요청자 이름: %0A" +
+    "- 신청자 이름: %0A" +
     "- 소속/팀: %0A" +
     "- 사용 목적: %0A%0A" +
     "감사합니다.";

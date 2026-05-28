@@ -1,5 +1,5 @@
 // API 활용 계획서 — 2단계 (기획 / 운영) 프로세스 구성 + 진행 상태 헬퍼.
-//   각 phase 는 3 substep 으로 구성. 1단계: 계획 수립 / 요청서 작성 / 전자결재 품의.
+//   각 phase 는 3 substep 으로 구성. 1단계: 계획 수립 / 신청서 작성 / 전자결재 품의.
 //   2단계: API 활용 / 비용 처리 / 결과물 적재.
 //
 //   기존 데이터 용역/구매/구독(3단계 ProcessStepper) 과 달리, API 플로우는
@@ -41,7 +41,7 @@ export const API_PROCESS: ApiPhaseDef[] = [
     groupLabel: "1단계 · 기획",
     substeps: [
       { id: "planning", label: "계획 수립", path: `${BASE}/planning` },
-      { id: "form", label: "요청서 작성", path: `${BASE}/form` },
+      { id: "form", label: "신청서 작성", path: `${BASE}/form` },
       { id: "approval", label: "전자결재 품의", path: `${BASE}/approval` },
     ],
   },

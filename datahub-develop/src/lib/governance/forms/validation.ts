@@ -12,7 +12,7 @@ export function findFirstEmptyRequired(
   values: Record<string, unknown>,
   submitter: { submitterName: string; submitterDepartment: string; submitterEmail: string },
 ): string | null {
-  if (!submitter.submitterName.trim()) return "요청자 이름";
+  if (!submitter.submitterName.trim()) return "신청자 이름";
   if (!submitter.submitterDepartment.trim()) return "소속";
   if (!submitter.submitterEmail.trim()) return "이메일";
 
