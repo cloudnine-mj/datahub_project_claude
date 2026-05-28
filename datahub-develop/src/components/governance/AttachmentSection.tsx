@@ -44,7 +44,7 @@ interface Props {
   backend: BackendAttachment[];
 }
 
-const MAX_BYTES = 20 * 1024 * 1024;
+const MAX_BYTES = 50 * 1024 * 1024;
 const STORAGE_KEY = (formId: string) => `dh:gov:attachments:${formId}`;
 // blobUrl 은 ObjectURL 이라 sessionStorage 영속이 의미 없지만, 메타데이터(이름·크기·id) 만
 // 직렬화. 새 세션에서는 blobUrl 비어있어 다운로드 불가 — 그때는 칩만 표시.
@@ -122,7 +122,7 @@ export function AttachmentSection({ formId, backend }: Props) {
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
       if (f.size > MAX_BYTES) {
-        setError(`"${f.name}" 은(는) 20MB 를 초과합니다.`);
+        setError(`"${f.name}" 은(는) 50MB 를 초과합니다.`);
         continue;
       }
       next.push({
@@ -145,7 +145,7 @@ export function AttachmentSection({ formId, backend }: Props) {
 
   return (
     <section>
-      {/* 헤더 — 빨간 막대 + 제목 + 개수 + 우측 업로드 버튼 */}
+      {/* 헤더 — 빨간 막대 + 제목 + 개수 (업로드 버튼은 아래 박스 안으로 이동) */}
       <div className="mb-3 flex items-center gap-2">
         <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
@@ -156,22 +156,16 @@ export function AttachmentSection({ formId, backend }: Props) {
             {total}
           </span>
         )}
-        <button
-          type="button"
-          onClick={onPickFile}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-        >
-          <Paperclip size={13} aria-hidden="true" /> 파일 업로드
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp,.svg"
-          className="hidden"
-          onChange={onFileSelected}
-        />
       </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp,.svg"
+        className="hidden"
+        onChange={onFileSelected}
+      />
 
       {error && (
         <p className="mb-2 text-[11px] text-red-700" role="alert">
@@ -179,14 +173,10 @@ export function AttachmentSection({ formId, backend }: Props) {
         </p>
       )}
 
-      {/* 목록 */}
-      {total === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-8 text-center text-[12px] text-gray-400 dark:border-gray-700 dark:bg-gray-900">
-          첨부된 파일이 없습니다.
-        </div>
-      ) : (
-        <div className="rounded-xl border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex flex-col gap-2">
+      {/* 등록 박스 — 업로드 버튼 + 안내를 박스 안에 두고, 파일이 있으면 위에 목록 표시 */}
+      <div className="rounded-xl border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-900">
+        {total > 0 && (
+          <div className="mb-3 flex flex-col gap-2">
             {backend.map((a) => (
               <FileChip
                 key={`b-${a.id}`}
@@ -205,8 +195,21 @@ export function AttachmentSection({ formId, backend }: Props) {
               />
             ))}
           </div>
+        )}
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={onPickFile}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <Paperclip size={13} aria-hidden="true" /> 파일 업로드
+          </button>
+          <span className="text-[11px] text-gray-400 dark:text-gray-500">
+            샘플 데이터, 작업 가이드라인 등 · 최대 50MB
+          </span>
         </div>
-      )}
+      </div>
     </section>
   );
 }
