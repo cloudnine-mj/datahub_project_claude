@@ -376,10 +376,11 @@ export default function Page({ params }: { params: { id: string } }) {
           </button>
         );
       })()}
-      {/* 승인 요청 — 용역 제작 신청 단계 한정. 개발 테스트: 상태 가드 해제(항상 활성). */}
+      {/* 승인 요청 — 용역 제작 신청 단계 한정. 누르면 사라지지 않고 회색 '승인 대기 중'으로 전환. */}
       {form.form_type === "data_production" && serviceStage === 0 && (
         <button
           type="button"
+          disabled={subStep === "approval_requested"}
           onClick={() => {
             setSubStep("approval_requested");
             api
@@ -394,9 +395,10 @@ export default function Page({ params }: { params: { id: string } }) {
                 /* ignore */
               });
           }}
-          className="inline-flex items-center gap-1 rounded-md bg-[#378ADD] px-3 py-2 text-xs font-medium text-white transition hover:brightness-110"
+          className="inline-flex items-center gap-1 rounded-md bg-[#378ADD] px-3 py-2 text-xs font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
         >
-          <SendHorizontal size={12} /> 승인 요청
+          <SendHorizontal size={12} />{" "}
+          {subStep === "approval_requested" ? "승인 대기 중" : "승인 요청"}
         </button>
       )}
       {from === "admin" && (
