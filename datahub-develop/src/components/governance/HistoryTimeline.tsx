@@ -22,7 +22,6 @@ import {
   Eye,
   History,
   Pencil,
-  Send,
   SendHorizontal,
   UserPlus,
   type LucideIcon,
@@ -58,7 +57,7 @@ interface Config {
 }
 
 const EVENT_CONFIG: Record<HistoryEventType, Config> = {
-  submitted: { label: "신청서 제출", icon: Send, node: "#378ADD", chipBg: "#E6F1FB", chipText: "#0C447C" },
+  submitted: { label: "신청서 검토", icon: Eye, node: "#378ADD", chipBg: "#E6F1FB", chipText: "#0C447C" },
   review_started: { label: "검토 시작", icon: Eye, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   member_assigned: { label: "담당자 지정", icon: UserPlus, node: "#993C1D", chipBg: "#FAECE7", chipText: "#993C1D" },
   revision: { label: "신청서 수정", icon: Pencil, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
