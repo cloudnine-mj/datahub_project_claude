@@ -239,7 +239,7 @@ export function ChatPanel({
 
         {messages.length === 0 && !welcome && !showSuggestions && (
           <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
-            아직 메시지가 없습니다. 작성 중 궁금한 점을 담당자에게 문의해 보세요.
+            아직 메시지가 없습니다.
           </div>
         )}
 
