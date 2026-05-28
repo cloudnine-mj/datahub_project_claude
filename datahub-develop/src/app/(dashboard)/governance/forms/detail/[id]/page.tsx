@@ -172,6 +172,241 @@ export default function Page({ params }: { params: { id: string } }) {
   // 없는 유형은 기존처럼 표 아래 별도 첨부파일 섹션을 노출.
   const hasInlineAttachment = allFields.some((f) => f.type === "attachment");
 
+  // ── 본문 구성 조각 (data_production 2블록 / 그 외 단일컬럼 레이아웃에서 공유) ──
+
+  // 진행 chevron 바 — admin/list 진입에선 미노출.
+  const processBar =
+    from !== "admin" && from !== "list" ? (
+      <FormProcessBar
+        formType={form.form_type}
+        status={form.status}
+        history={form.approval_history}
+        onSelectedStepChange={(step) => {
+          // 신청서 작성 chevron(index 1) = 작성 화면과 동일한 편집 폼으로 진입.
+          if (step === 1) {
+            router.push(buildEditHref(form, from));
+            return;
+          }
+          setSelectedStep(step);
+        }}
+      />
+    ) : null;
+
+  // 진행 상태 카드 — 용역 제작 외 유형만.
+  const statusPanelBlock =
+    selectedStep === null && form.form_type !== "data_production"
+      ? (() => {
+          const isAdminDetail =
+            from === "admin" &&
+            !!me &&
+            me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
+          const isListView = from === "list";
+          const showInlineHistory = isAdminDetail || isListView;
+          const inlineHistory = showInlineHistory
+            ? approvalHistoryToStatusItems(form.approval_history, form.submitter_name)
+            : undefined;
+          return (
+            <div id="form-status" className="scroll-mt-4">
+              <FormStatusPanel
+                formId={form.id}
+                status={form.status}
+                history={form.approval_history}
+                me={me}
+                submitterEmail={form.submitter_email}
+                onChanged={refetch}
+                inlineHistory={inlineHistory}
+                hideAdminActions={isListView}
+                viewAsAdmin={isAdminDetail}
+              />
+            </div>
+          );
+        })()
+      : null;
+
+  // 신청 정보 카드 — 상단 마진은 사용처에서 부여 (블록1에선 채팅과 상단 정렬을 위해 생략).
+  const requestInfoCard = (
+    <div className={hideForm ? "hidden" : ""}>
+      <div className="mb-3 flex items-center gap-1.5">
+        <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
+        <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
+          신청 정보
+        </h3>
+      </div>
+      <div
+        id="form-content"
+        className="overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4"
+      >
+        <table className="w-full text-sm">
+          <tbody>
+            <Row label="신청자 이름">{form.submitter_name}</Row>
+            <Row label="소속">{form.submitter_department || "-"}</Row>
+            <Row label="이메일">{form.submitter_email}</Row>
+            {allFields.map((f) => {
+              // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행(조직장 승인 아래)
+              // 으로 노출. 값 유무와 무관하게 항상 행을 보여주고 업로드/목록을 인라인 렌더.
+              if (f.type === "attachment") {
+                return (
+                  <Row key={f.key} label="첨부파일">
+                    <AttachmentSection
+                      formId={form.id}
+                      backend={form.attachments}
+                      embedded
+                    />
+                  </Row>
+                );
+              }
+              const v = form.payload[f.key];
+              if (v === undefined || v === null || v === "") return null;
+              // 확인 화면에서는 긴 안내 문구 라벨을 짧게 — 작성 화면 label 은 그대로.
+              const displayLabel =
+                f.key === "조직장_승인_완료" ? "조직장 승인" : f.label;
+              return (
+                <Row key={f.key} label={displayLabel}>
+                  <FieldValue field={f} value={v} />
+                </Row>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // 담당자(실무자 지정) 카드 — 용역 제작 한정. Phase 1 권한 게이트 없음(모든 진입 노출).
+  const stageTabCard =
+    form.form_type === "data_production" ? (
+      <ApplicationStageTab
+        formId={form.id}
+        formType={form.form_type}
+        submitterEmail={form.submitter_email}
+        submitterName={form.submitter_name}
+        me={me}
+        currentStage={serviceStage}
+        subStep={subStep}
+        onSubStepChange={setSubStep}
+        onAdvanceStage={advanceServiceStage}
+        onActivity={refetch}
+      />
+    ) : null;
+
+  // 활동/코멘트 영역 — 용역 제작 외 유형만 (용역 제작은 우측 ChatPanel 이 대체).
+  const commentsBlock =
+    form.form_type !== "data_production"
+      ? (() => {
+          const chatRole = getChatRole(form, me);
+          if (chatRole === "observer") return null;
+          const isAdminDetail =
+            from === "admin" &&
+            !!me &&
+            me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
+          const isListView = from === "list";
+          const useCommentsOnly = isAdminDetail || isListView;
+          return (
+            <div className="mt-4">
+              <ProgressHistoryBlock
+                formId={form.id}
+                history={approvalHistoryToStatusItems(
+                  form.approval_history,
+                  form.submitter_name,
+                )}
+                canPostMessage
+                currentUserName={me?.user.name ?? "나"}
+                currentUserEmail={me?.user.email}
+                currentUserRole={chatRole}
+                applicantName={form.submitter_name}
+                commentsOnly={useCommentsOnly}
+                refreshNonce={messageRefreshNonce}
+              />
+            </div>
+          );
+        })()
+      : null;
+
+  // 첨부파일 — 인라인 행이 없는 유형만 표 아래 별도 섹션으로 노출.
+  const bottomAttachmentBlock = !hasInlineAttachment ? (
+    <div className="mt-5">
+      <AttachmentSection formId={form.id} backend={form.attachments} />
+    </div>
+  ) : null;
+
+  // 하단 액션 버튼들 (목록으로 / 수정 / 삭제 / 제출).
+  const actionButtons = (
+    <>
+      {from === "admin" && (
+        <Link
+          href="/governance/admin/forms"
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium hover:bg-gray-50"
+        >
+          <ArrowLeft size={12} /> 관리 페이지로 돌아가기
+        </Link>
+      )}
+      {from === "my" && (
+        <Link
+          href="/governance/forms/my"
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium hover:bg-gray-50"
+        >
+          <ArrowLeft size={12} /> 내 문서 목록
+        </Link>
+      )}
+      {from === "list" && (
+        <Link
+          href="/governance/forms/list"
+          className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium hover:bg-gray-50"
+        >
+          <ArrowLeft size={12} /> 요청 목록으로 돌아가기
+        </Link>
+      )}
+      {/* 수정 버튼 — 작성자 본인이거나 admin 이면 노출. */}
+      {(() => {
+        const isOwner =
+          !!me &&
+          me.user.email.toLowerCase() === form.submitter_email.toLowerCase();
+        const isAdmin = me?.user.role === "admin";
+        if (!isOwner && !isAdmin) return null;
+        return (
+          <button
+            onClick={() => router.push(buildEditHref(form, from))}
+            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium hover:bg-gray-50"
+          >
+            <Pencil size={12} /> 수정
+          </button>
+        );
+      })()}
+      {from === "admin" && (
+        <DeleteFormButton
+          formId={form.id}
+          contextLabel={form.project_name}
+          onDeleted={() => router.push("/governance/admin/forms")}
+        />
+      )}
+      {form.status === "draft" && justEdited && (
+        <button
+          type="button"
+          onClick={submitDraft}
+          disabled={submitting}
+          className="inline-flex items-center gap-1 rounded-md bg-blue-500 px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 disabled:opacity-60"
+        >
+          <Send size={12} /> {submitting ? "제출 중..." : "제출"}
+        </button>
+      )}
+    </>
+  );
+
+  // 우측 ChatPanel — 용역 제작 전용.
+  const chatPanel =
+    form.form_type === "data_production" ? (
+      <ChatPanel
+        formId={form.id}
+        currentUserEmail={me?.user.email ?? ""}
+        assigneeTeam={getChatAssignee().team}
+        headerVariant="online"
+        accent="brand"
+        ensureFormId={async () => form.id}
+        fillParent
+        currentStage={serviceStage}
+      />
+    ) : null;
+
   return (
     <div>
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -223,266 +458,37 @@ export default function Page({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* 용역 제작 — 좌(1fr) 본문 + 우(300px sticky) 담당자 채팅 2단 레이아웃.
-          그 외(구매/구독 등) 는 본문만. 본문 끝(맨 하단) 에 실무자 지정 카드 추가. */}
-      <div
-        className={
-          form.form_type === "data_production"
-            ? "grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]"
-            : ""
-        }
-      >
-        <div className="min-w-0">
+      {form.form_type === "data_production" ? (
+        // 용역 제작 — 2블록 레이아웃.
+        //   블록1: 신청 정보(1fr) + 채팅(300px). grid items-stretch 로 채팅 높이가
+        //          신청 정보 카드 높이에 자동으로 맞춰짐 (채팅에 고정 높이 주지 않음).
+        //   블록2: 전체 너비. 상단 액션 버튼(우측 정렬) + 하단 담당자 카드(full width).
+        <>
+          {processBar}
 
-      {/* chevron 진행 바 / 진행 상태·이력 패널 노출 정책
-          - from=admin (거버넌스 요청 관리): 검토/승인 화면이라 chevron 미노출.
-              FormStatusPanel 은 admin 액션을 위해 그대로 노출.
-          - from=list  (거버넌스 요청 목록): 순수 read-only 조회. 둘 다 미노출.
-          - 그 외 (from=my, 기본): 둘 다 노출. */}
-      {from !== "admin" && from !== "list" && (
-        <FormProcessBar
-          formType={form.form_type}
-          status={form.status}
-          history={form.approval_history}
-          onSelectedStepChange={(step) => {
-            // 신청서 작성 chevron(index 1) = 실제로 양식을 작성/편집할 수 있는 상태로 이동.
-            // 본 상세는 read-only 라 step 1 클릭은 작성 화면과 동일한 편집 폼으로 진입시킴.
-            if (step === 1) {
-              router.push(buildEditHref(form, from));
-              return;
-            }
-            setSelectedStep(step);
-          }}
-        />
-      )}
-
-      {/* 진행 상태 카드.
-          - 용역 제작(data_production): 상단 5단계 ProgressBar 가 진행 상태를 표시하므로
-            본 카드는 노출하지 않음.
-          - from=admin + 관리자 + 타인 신청 → 관리자 액션 + 진행 이력 토글 노출.
-          - from=list → 관리자 액션 숨김, 진행 이력 토글만 노출 (read-only).
-          - from=my / 기본 진입 → 기존 동작 (액션 + 통합 활동 카드 하단). */}
-      {selectedStep === null && form.form_type !== "data_production" && (() => {
-        // 사내 정책상 관리 탭은 platform role 무관 모든 사용자에게 열려 있음.
-        // 본인 신청서가 아닐 때만 관리자 레이아웃(진행 이력 inline + 코멘트 분리) 노출.
-        const isAdminDetail =
-          from === "admin" &&
-          !!me &&
-          me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
-        const isListView = from === "list";
-        const showInlineHistory = isAdminDetail || isListView;
-        const inlineHistory = showInlineHistory
-          ? approvalHistoryToStatusItems(form.approval_history, form.submitter_name)
-          : undefined;
-        return (
-          <div id="form-status" className="scroll-mt-4">
-            <FormStatusPanel
-              formId={form.id}
-              status={form.status}
-              history={form.approval_history}
-              me={me}
-              submitterEmail={form.submitter_email}
-              onChanged={refetch}
-              inlineHistory={inlineHistory}
-              hideAdminActions={isListView}
-              viewAsAdmin={isAdminDetail}
-            />
+          {/* 블록 1 — 신청 정보 + 채팅 (같은 높이) */}
+          <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]">
+            <div className="min-w-0">{requestInfoCard}</div>
+            <div className="min-h-0">{chatPanel}</div>
           </div>
-        );
-      })()}
 
-      {/* 신청 정보 — 빨간 막대 + 제목 위에, 표 본문 아래. */}
-      <div className={`mt-6 ${hideForm ? "hidden" : ""}`}>
-        <div className="mb-3 flex items-center gap-1.5">
-          <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-brand" />
-          <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-            신청 정보
-          </h3>
-        </div>
-        <div
-          id="form-content"
-          className="overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4"
-        >
-          <table className="w-full text-sm">
-            <tbody>
-              <Row label="신청자 이름">{form.submitter_name}</Row>
-              <Row label="소속">{form.submitter_department || "-"}</Row>
-              <Row label="이메일">{form.submitter_email}</Row>
-              {allFields.map((f) => {
-                // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행(조직장 승인 아래)
-                // 으로 노출. 값 유무와 무관하게 항상 행을 보여주고 업로드/목록을 인라인 렌더.
-                if (f.type === "attachment") {
-                  return (
-                    <Row key={f.key} label="첨부파일">
-                      <AttachmentSection
-                        formId={form.id}
-                        backend={form.attachments}
-                        embedded
-                      />
-                    </Row>
-                  );
-                }
-                const v = form.payload[f.key];
-                if (v === undefined || v === null || v === "") return null;
-                // 확인 화면에서는 긴 안내 문구 라벨을 짧게 — 작성 화면 label 은 그대로.
-                const displayLabel =
-                  f.key === "조직장_승인_완료" ? "조직장 승인" : f.label;
-                return (
-                  <Row key={f.key} label={displayLabel}>
-                    <FieldValue field={f} value={v} />
-                  </Row>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 실무자 지정 — 신청서 확인 바로 아래, 본문 흐름 안.
-          요청 관리 / 요청 목록 / 내 문서 목록 / 기본 진입 모두에서 노출 (Phase 1 권한 게이트 없음). */}
-      {form.form_type === "data_production" && (
-        <div className="mt-5">
-          <ApplicationStageTab
-            formId={form.id}
-            formType={form.form_type}
-            submitterEmail={form.submitter_email}
-            submitterName={form.submitter_name}
-            me={me}
-            currentStage={serviceStage}
-            subStep={subStep}
-            onSubStepChange={setSubStep}
-            onAdvanceStage={advanceServiceStage}
-            onActivity={refetch}
-          />
-        </div>
-      )}
-
-      {/* 활동/코멘트 영역.
-          - 용역 제작(data_production): 우측 ChatPanel 이 담당자 소통을 대체 → 코멘트 카드 미노출.
-          - from=admin + 관리자 + 타인 신청 → 코멘트 카드 (사람 코멘트만, 시스템 이벤트 제외).
-            진행 이력은 위 진행 상태 카드 안의 토글로 노출.
-          - from=list → 동일 분리 레이아웃 (코멘트 카드). chatRole=observer 면 카드 자체 숨김.
-          - 그 외 진입(my / 기본) → 기존 활동 카드 (시스템 + 사람 통합 타임라인). */}
-      {form.form_type !== "data_production" && (() => {
-        const chatRole = getChatRole(form, me);
-        if (chatRole === "observer") return null;
-        const isAdminDetail =
-          from === "admin" &&
-          !!me &&
-          me.user.email.toLowerCase() !== form.submitter_email.toLowerCase();
-        const isListView = from === "list";
-        const useCommentsOnly = isAdminDetail || isListView;
-        return (
+          {/* 블록 2 — 전체 너비: 액션 버튼 + 담당자 카드 */}
           <div className="mt-4">
-            <ProgressHistoryBlock
-              formId={form.id}
-              history={approvalHistoryToStatusItems(
-                form.approval_history,
-                form.submitter_name,
-              )}
-              canPostMessage
-              currentUserName={me?.user.name ?? "나"}
-              currentUserEmail={me?.user.email}
-              currentUserRole={chatRole}
-              applicantName={form.submitter_name}
-              commentsOnly={useCommentsOnly}
-              refreshNonce={messageRefreshNonce}
-            />
+            <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
+            {stageTabCard && <div className="mt-4">{stageTabCard}</div>}
           </div>
-        );
-      })()}
-
-      {/* 첨부파일 — 스키마에 첨부파일 필드가 없는 유형은 표 아래 별도 섹션으로 노출.
-          (data_production 등 인라인 행으로 노출되는 유형은 위 표 안에서 처리.) */}
-      {!hasInlineAttachment && (
-        <div className="mt-5">
-          <AttachmentSection formId={form.id} backend={form.attachments} />
+        </>
+      ) : (
+        // 그 외 유형 — 기존 단일 컬럼.
+        <div>
+          {processBar}
+          {statusPanelBlock}
+          <div className="mt-6">{requestInfoCard}</div>
+          {commentsBlock}
+          {bottomAttachmentBlock}
+          <div className="mt-4 flex justify-end gap-2">{actionButtons}</div>
         </div>
       )}
-
-      <div className="mt-4 flex justify-end gap-2">
-        {from === "admin" && (
-          <Link
-            href="/governance/admin/forms"
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-          >
-            <ArrowLeft size={12} /> 관리 페이지로 돌아가기
-          </Link>
-        )}
-        {from === "my" && (
-          <Link
-            href="/governance/forms/my"
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-          >
-            <ArrowLeft size={12} /> 내 문서 목록
-          </Link>
-        )}
-        {from === "list" && (
-          <Link
-            href="/governance/forms/list"
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-          >
-            <ArrowLeft size={12} /> 요청 목록으로 돌아가기
-          </Link>
-        )}
-        {/* 수정 버튼 — 작성자 본인이거나 admin 이면 노출.
-            본인: 진입 컨텍스트(my / list / 기본 / admin) 무관.
-            admin: 타인 신청도 수정 가능 (검토 중 데이터 보정 등). */}
-        {(() => {
-          const isOwner =
-            !!me &&
-            me.user.email.toLowerCase() === form.submitter_email.toLowerCase();
-          const isAdmin = me?.user.role === "admin";
-          if (!isOwner && !isAdmin) return null;
-          return (
-            <button
-              onClick={() => router.push(buildEditHref(form, from))}
-              className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-gray-50"
-            >
-              <Pencil size={12} /> 수정
-            </button>
-          );
-        })()}
-        {/* 상세 페이지의 삭제 버튼은 admin 의 '거버넌스 요청 관리' 진입 시에만 노출.
-            '내 문서 목록' 에서는 행 단위 휴지통 아이콘으로, 그 외 컨텍스트(요청 목록 등)
-            에서는 파괴적 액션을 띄우지 않음. */}
-        {from === "admin" && (
-          <DeleteFormButton
-            formId={form.id}
-            contextLabel={form.project_name}
-            onDeleted={() => router.push("/governance/admin/forms")}
-          />
-        )}
-        {form.status === "draft" && justEdited && (
-          <button
-            type="button"
-            onClick={submitDraft}
-            disabled={submitting}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-600 disabled:opacity-60"
-          >
-            <Send size={12} /> {submitting ? "제출 중..." : "제출"}
-          </button>
-        )}
-      </div>
-      </div>
-
-      {/* 우측 ChatPanel — 용역 제작 전용. 좌측 폼 박스와 동일 높이로 stretch.
-          fillParent=true 로 컬럼 높이 채움 (sticky 대신 좌측과 같이 스크롤). */}
-      {form.form_type === "data_production" && (
-        <div className="min-h-0">
-          <ChatPanel
-            formId={form.id}
-            currentUserEmail={me?.user.email ?? ""}
-            assigneeTeam={getChatAssignee().team}
-            headerVariant="online"
-            accent="brand"
-            ensureFormId={async () => form.id}
-            fillParent
-            currentStage={serviceStage}
-          />
-        </div>
-      )}
-      </div>
 
       {missingField && (
         <div
