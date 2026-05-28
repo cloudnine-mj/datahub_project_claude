@@ -18,7 +18,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, Send } from "lucide-react";
+import { Download, MessageCircle, Paperclip, Send } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 import type { FormMessageItem } from "@/lib/governance/forms/types";
 import { ChatMessageBubble } from "./ChatMessageBubble";
@@ -80,6 +80,67 @@ function writeStageMap(formId: string, next: Record<string, number>): void {
   }
 }
 
+// ── 채팅 첨부파일 (Phase 1 mock) ─────────────────────────────────────────
+// 실제 업로드(GCS)는 Phase 2. 지금은 sessionStorage 메타데이터 + ObjectURL(세션 한정 다운로드).
+// Phase 2 전환 시: 이 저장 계층만 api.uploadFormAttachment + 메시지 attachments 필드로 교체.
+// 메타데이터 형태({id,filename,sizeBytes,...})는 백엔드 반환과 맞춰 두어 말풍선 렌더는 그대로 재사용.
+interface ChatAttachmentMock {
+  id: string;
+  filename: string;
+  sizeBytes: number;
+  /** 업로드 시점 ObjectURL — 세션 한정 다운로드용. 새 세션엔 빈 값(칩만 표시). */
+  blobUrl: string;
+  createdAt: string; // ISO — 메시지와 시간순 병합에 사용
+  senderEmail: string; // 본인 여부 판정(우/좌 정렬)
+}
+
+const ATTACH_KEY = (formId: string) => `dh:gov:chat-attachments:${formId}`;
+const MAX_CHAT_FILE = 50 * 1024 * 1024;
+type StoredChatAttachment = Omit<ChatAttachmentMock, "blobUrl">;
+
+function readChatAttachments(formId: string): ChatAttachmentMock[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(ATTACH_KEY(formId));
+    if (!raw) return [];
+    return (JSON.parse(raw) as StoredChatAttachment[]).map((a) => ({
+      ...a,
+      blobUrl: "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writeChatAttachments(formId: string, list: ChatAttachmentMock[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = list.map(({ blobUrl, ...rest }) => {
+      void blobUrl;
+      return rest;
+    });
+    sessionStorage.setItem(ATTACH_KEY(formId), JSON.stringify(stored));
+  } catch {
+    /* ignore */
+  }
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function fmtClockTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h < 12 ? "오전" : "오후";
+  const hh = ((h + 11) % 12) + 1;
+  return `${ampm} ${hh}:${m}`;
+}
+
 export function ChatPanel({
   formId,
   currentUserEmail,
@@ -101,11 +162,15 @@ export function ChatPanel({
   // messageId → stageAtSent. sessionStorage 영속 (Phase 1, 백엔드 컬럼 없음).
   // 과거 메시지는 default 0(신청) 으로 폴백.
   const [stageMap, setStageMap] = useState<Record<string, number>>({});
+  // 채팅 첨부 (Phase 1 mock) — 메시지와 별도 트랙, 렌더 시 시간순 병합.
+  const [attachments, setAttachments] = useState<ChatAttachmentMock[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const showDividers = currentStage !== undefined;
 
   useEffect(() => {
     if (!formId) return;
     setStageMap(readStageMap(formId));
+    setAttachments(readChatAttachments(formId));
   }, [formId]);
 
   const fetchMessages = useCallback(async () => {
@@ -128,11 +193,11 @@ export function ChatPanel({
     return () => window.removeEventListener("focus", onFocus);
   }, [fetchMessages]);
 
-  // 새 메시지 추가/도착 시 최신으로 자동 스크롤.
+  // 새 메시지/첨부 추가·도착 시 최신으로 자동 스크롤.
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length]);
+  }, [messages.length, attachments.length]);
 
   const canSend = text.trim().length > 0 && !sending;
 
@@ -181,12 +246,69 @@ export function ChatPanel({
     }
   }
 
-  // 추천 질문 칩 노출 조건: 추천 목록 있고 + 사용자가 아직 메시지 안 보냄.
-  // welcome 유무와 무관.
+  function onPickFile() {
+    fileInputRef.current?.click();
+  }
+
+  // 파일 첨부 (Phase 1 mock) — sessionStorage 영속 + ObjectURL. formId 없으면 draft 자동 생성.
+  async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setError(null);
+    let targetId = formId;
+    if (!targetId) {
+      if (!ensureFormId) {
+        setError("신청서 저장 후 다시 시도해 주세요.");
+        e.target.value = "";
+        return;
+      }
+      targetId = await ensureFormId();
+      if (!targetId) {
+        setError("신청서 저장에 실패했습니다.");
+        e.target.value = "";
+        return;
+      }
+    }
+    const nextAttachments = [...attachments];
+    const nextStageMap = { ...stageMap };
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (f.size > MAX_CHAT_FILE) {
+        setError(`"${f.name}" 은(는) 50MB 를 초과합니다.`);
+        continue;
+      }
+      const att: ChatAttachmentMock = {
+        id: `chatfile-${Date.now()}-${i}`,
+        filename: f.name,
+        sizeBytes: f.size,
+        blobUrl: URL.createObjectURL(f),
+        createdAt: new Date().toISOString(),
+        senderEmail: currentUserEmail,
+      };
+      nextAttachments.push(att);
+      if (currentStage !== undefined) nextStageMap[att.id] = currentStage;
+    }
+    setAttachments(nextAttachments);
+    writeChatAttachments(targetId, nextAttachments);
+    if (currentStage !== undefined) {
+      setStageMap(nextStageMap);
+      writeStageMap(targetId, nextStageMap);
+    }
+    // 같은 파일 다시 선택 가능하도록 input 비움.
+    e.target.value = "";
+  }
+
+  // 메시지 + 첨부(mock) 를 createdAt 기준 시간순으로 병합한 렌더 타임라인.
+  const timeline = [
+    ...messages.map((m) => ({ kind: "msg" as const, id: m.id, at: m.createdAt, msg: m })),
+    ...attachments.map((a) => ({ kind: "file" as const, id: a.id, at: a.createdAt, file: a })),
+  ].sort((x, y) => (x.at < y.at ? -1 : x.at > y.at ? 1 : 0));
+
+  // 추천 질문 칩 노출 조건: 추천 목록 있고 + 아직 아무 대화(메시지/첨부) 도 없음.
   const showSuggestions =
     !!suggestedQuestions &&
     suggestedQuestions.length > 0 &&
-    messages.length === 0;
+    timeline.length === 0;
 
   const accentBubble =
     accent === "brand"
@@ -237,46 +359,44 @@ export function ChatPanel({
           />
         )}
 
-        {messages.length === 0 && !welcome && !showSuggestions && (
+        {timeline.length === 0 && !welcome && !showSuggestions && (
           <div className="m-auto max-w-[220px] text-center text-[12px] leading-relaxed text-gray-400">
             아직 메시지가 없습니다.
           </div>
         )}
 
-        {showDividers
-          ? (() => {
-              let lastStage = -1;
-              return messages.map((m) => {
-                const stage = stageMap[m.id] ?? 0;
-                const showDivider = stage !== lastStage;
-                lastStage = stage;
-                return (
-                  <Fragment key={m.id}>
-                    {showDivider && (
-                      <StageDivider
-                        label={stageLabels[stage] ?? `단계 ${stage + 1}`}
-                        isCurrent={stage === currentStage}
-                      />
-                    )}
-                    <ChatMessageBubble
-                      message={m}
-                      currentUserEmail={currentUserEmail}
-                      assigneeTeam={assigneeTeam}
-                      mineBubbleClass={accentBubble}
-                    />
-                  </Fragment>
-                );
-              });
-            })()
-          : messages.map((m) => (
-              <ChatMessageBubble
-                key={m.id}
-                message={m}
-                currentUserEmail={currentUserEmail}
-                assigneeTeam={assigneeTeam}
-                mineBubbleClass={accentBubble}
-              />
-            ))}
+        {(() => {
+          let lastStage = -1;
+          return timeline.map((it) => {
+            const stage = stageMap[it.id] ?? 0;
+            const showDivider = showDividers && stage !== lastStage;
+            if (showDividers) lastStage = stage;
+            return (
+              <Fragment key={it.id}>
+                {showDivider && (
+                  <StageDivider
+                    label={stageLabels[stage] ?? `단계 ${stage + 1}`}
+                    isCurrent={stage === currentStage}
+                  />
+                )}
+                {it.kind === "msg" ? (
+                  <ChatMessageBubble
+                    message={it.msg}
+                    currentUserEmail={currentUserEmail}
+                    assigneeTeam={assigneeTeam}
+                    mineBubbleClass={accentBubble}
+                  />
+                ) : (
+                  <ChatAttachmentBubble
+                    file={it.file}
+                    currentUserEmail={currentUserEmail}
+                    mineBubbleClass={accentBubble}
+                  />
+                )}
+              </Fragment>
+            );
+          });
+        })()}
 
         {error && (
           <div className="rounded-md bg-red-50 px-2.5 py-1.5 text-[11px] text-red-700">
@@ -287,7 +407,23 @@ export function ChatPanel({
 
       {/* 입력창 — 항상 보이도록 shrink 금지. */}
       <div className="shrink-0 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
-        <div className="flex items-center gap-2 rounded-full bg-gray-50 py-1.5 pl-3.5 pr-1.5 dark:bg-gray-800">
+        <div className="flex items-center gap-2 rounded-full bg-gray-50 py-1.5 pl-2 pr-1.5 dark:bg-gray-800">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={onFileSelected}
+          />
+          <button
+            type="button"
+            onClick={onPickFile}
+            disabled={sending}
+            aria-label="파일 첨부"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:text-gray-600 disabled:opacity-40 dark:hover:text-gray-200"
+          >
+            <Paperclip size={15} aria-hidden="true" />
+          </button>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -309,6 +445,58 @@ export function ChatPanel({
         </div>
       </div>
     </aside>
+  );
+}
+
+/** 채팅 첨부 말풍선 (Phase 1 mock) — 본인(currentUserEmail)이면 우측, 아니면 좌측.
+ *  파일 칩(아이콘+이름+크기) + 세션 내 다운로드. blobUrl 없으면(새 세션) 칩만 표시. */
+function ChatAttachmentBubble({
+  file,
+  currentUserEmail,
+  mineBubbleClass,
+}: {
+  file: ChatAttachmentMock;
+  currentUserEmail: string;
+  mineBubbleClass?: string;
+}) {
+  const isMine =
+    !!currentUserEmail &&
+    file.senderEmail.toLowerCase() === currentUserEmail.toLowerCase();
+  const time = fmtClockTime(file.createdAt);
+  const mineCls =
+    mineBubbleClass ?? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200";
+  const chip = (
+    <div
+      className={`flex items-center gap-2 rounded-[12px] px-3 py-2.5 ${
+        isMine ? mineCls : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+      }`}
+    >
+      <Paperclip size={15} className="shrink-0 opacity-70" aria-hidden="true" />
+      <div className="min-w-0">
+        <div className="truncate text-[12px] font-medium" title={file.filename}>
+          {file.filename}
+        </div>
+        <div className="text-[10px] opacity-60">{fmtBytes(file.sizeBytes)}</div>
+      </div>
+      {file.blobUrl && (
+        <a
+          href={file.blobUrl}
+          download={file.filename}
+          aria-label={`${file.filename} 다운로드`}
+          className="shrink-0 opacity-60 transition hover:opacity-100"
+        >
+          <Download size={15} aria-hidden="true" />
+        </a>
+      )}
+    </div>
+  );
+  return (
+    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+      <div className={`flex max-w-[80%] flex-col ${isMine ? "items-end" : "items-start"}`}>
+        {chip}
+        {time && <span className="mt-1 text-[10px] text-gray-400">{time}</span>}
+      </div>
+    </div>
   );
 }
 
