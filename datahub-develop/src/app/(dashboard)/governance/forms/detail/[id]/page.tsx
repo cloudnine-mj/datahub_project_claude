@@ -336,6 +336,7 @@ export default function Page({ params }: { params: { id: string } }) {
             subStep={subStep}
             onSubStepChange={setSubStep}
             onAdvanceStage={advanceServiceStage}
+            onActivity={refetch}
           />
         </div>
       )}

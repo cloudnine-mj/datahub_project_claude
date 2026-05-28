@@ -388,6 +388,18 @@ export const api = {
         body: JSON.stringify(body),
       })) as Record<string, unknown>,
     ),
+  /** 진행 이력에 협업 단계 이벤트(담당자 지정/검토중/승인/보완요청 등) 1건 추가.
+   *  status 는 바꾸지 않고 approval_history 에만 append. */
+  appendFormEvent: async (
+    id: string | number,
+    body: { action: string; comment?: string },
+  ) =>
+    adaptForm(
+      (await request(`/governance/forms/${id}/events`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      })) as Record<string, unknown>,
+    ),
   exportFormUrl: (id: string | number) => `${BASE}/governance/forms/${id}/export`,
 
   // Form attachments — Phase 5 (GCS) 보류, placeholder URL.

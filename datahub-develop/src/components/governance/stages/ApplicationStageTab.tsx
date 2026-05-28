@@ -22,7 +22,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, Plus, RefreshCw, Users, X } from "lucide-react";
-import type { Me } from "@/lib/governance/api-client-full";
+import { api, type Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import type { SubStep } from "@/components/governance/ProgressBar";
 
@@ -46,6 +46,8 @@ interface Props {
   onSubStepChange: (next: SubStep) => void;
   /** [협의 단계로] 등 다음 단계로 진행. 부모가 sessionStorage 영속 처리. */
   onAdvanceStage: () => void;
+  /** 진행 이력에 영향을 주는 액션 후 부모가 폼을 다시 불러오도록 알림 (타임라인 갱신). */
+  onActivity?: () => void;
 }
 
 function initial(name: string): string {
@@ -64,6 +66,7 @@ export function ApplicationStageTab({
   subStep,
   onSubStepChange,
   onAdvanceStage,
+  onActivity,
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
@@ -100,6 +103,17 @@ export function ApplicationStageTab({
     }
   }
 
+  // 진행 이력(approval_history) 에 이벤트 1건 기록 후 부모에 갱신 알림.
+  // 백엔드 실패는 조용히 무시 (Phase 1 mock 흐름 — UI 진행은 sessionStorage 가 책임).
+  function logEvent(action: string, comment?: string): void {
+    api
+      .appendFormEvent(formId, { action, comment })
+      .then(() => onActivity?.())
+      .catch(() => {
+        /* ignore */
+      });
+  }
+
   function onAddMember(name: string, email: string): string | null {
     const n = name.trim();
     const e = email.trim();
@@ -112,6 +126,7 @@ export function ApplicationStageTab({
       ...members,
       { id: `mock-${Date.now()}`, name: n, email: e },
     ]);
+    logEvent("assigned", `실무 담당자 지정: ${n}`);
     return null;
   }
 
@@ -123,15 +138,18 @@ export function ApplicationStageTab({
   // Phase 1 개발 편의: members 0 가드 제거 — 자유 이동 허용.
   function onRequestReview(): void {
     onSubStepChange("under_review");
+    logEvent("review_started", "검토 요청");
   }
 
   function onRequestRevision(): void {
     onSubStepChange("revision_requested");
+    logEvent("info_requested", "보완 요청");
   }
 
   function onApproveAndAdvance(): void {
     onSubStepChange("approved");
     onAdvanceStage();
+    logEvent("approved", "승인 완료");
   }
 
   function onResumeReview(): void {

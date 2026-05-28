@@ -151,6 +151,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     });
   };
   const hadPriorInfoRequest = history.some((h) => h.action === "info_requested");
+  // 이 신청서가 한 번이라도 제출된 적이 있는지 — 순수 draft 작성 중의 내용 변경은
+  // '수정' 이벤트로 남기지 않기 위함.
+  const wasEverSubmitted =
+    prevStatus !== "draft" ||
+    history.some(
+      (h) =>
+        h.status === "submitted" ||
+        h.action === "submitted" ||
+        h.action === "info_resubmitted",
+    );
+  let loggedTransition = false;
 
   if (prevStatus !== nextStatus) {
     if (nextStatus === "submitted") {
@@ -160,16 +171,24 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       } else {
         append("submitted", "최초 제출", "submitted");
       }
+      loggedTransition = true;
     } else if (nextStatus === "reviewing" && prevStatus === "info_requested") {
       // 보완 요청됨 → reviewing 자동 전이 (신청자 재제출). info_resubmitted 로 기록.
       append("reviewing", "보완 자료 재제출", "info_resubmitted");
+      loggedTransition = true;
     } else if (nextStatus === "draft") {
       append("draft", "임시 저장", "draft");
+      loggedTransition = true;
     }
-  } else if (changes.length > 0) {
-    if (nextStatus === "draft") append("draft", "임시 저장 갱신", "draft");
-    // 같은 'submitted' status 에서의 내용 수정은 진행 이력에 별도 이벤트로 남기지 않는다
-    // (편집 이력은 editHistory 에 별도로 기록). 진행 이력은 상태 전이만 표시.
+  } else if (changes.length > 0 && nextStatus === "draft") {
+    append("draft", "임시 저장 갱신", "draft");
+    loggedTransition = true;
+  }
+
+  // 제출된 신청서의 내용 수정 → 진행 이력에 '신청서 수정'(edited) 이벤트로 기록.
+  // 상태 전이가 이미 기록됐거나(중복 방지) 아직 제출 전 draft 작성 중이면 제외.
+  if (!loggedTransition && changes.length > 0 && wasEverSubmitted && nextStatus !== "draft") {
+    append(nextStatus, "신청서 수정", "edited");
   }
 
   const editHistory: { editedBy: string; editedAt: string; changes: FieldChange[] }[] = Array.isArray(form.editHistory)

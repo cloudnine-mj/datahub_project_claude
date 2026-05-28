@@ -26,6 +26,7 @@ import {
   CircleCheck,
   History,
   Pencil,
+  Search,
   Send,
   UserCheck,
   type LucideIcon,
@@ -34,6 +35,7 @@ import {
 export type HistoryEventType =
   | "submitted"
   | "assigned"
+  | "reviewing"
   | "edited"
   | "info_requested"
   | "approved";
@@ -54,6 +56,7 @@ interface Config {
 const EVENT_CONFIG: Record<HistoryEventType, Config> = {
   submitted: { label: "신청서 제출", icon: Send, color: "#378ADD" },
   assigned: { label: "담당자 지정", icon: UserCheck, color: "#993C1D" },
+  reviewing: { label: "검토중", icon: Search, color: "#7A5AF8" },
   edited: { label: "신청서 수정", icon: Pencil, color: "#BA7517" },
   info_requested: { label: "보완 요청", icon: Pencil, color: "#E08027" },
   approved: { label: "승인 완료", icon: CircleCheck, color: "#1D9E75" },
@@ -137,15 +140,24 @@ export function HistoryTimeline({ events }: { events: HistoryEvent[] }) {
   );
 }
 
-/** approval_history(status 변경 로그) → HistoryEvent[] 변환.
- *  Phase 1: 백엔드 history 의 status / action / comment 를 휴리스틱으로 매핑.
- *    status="submitted"        → submitted
- *    status="reviewing"        → assigned (담당자 검토 시작)
- *    status="info_requested"   → info_requested (보완 요청)
- *    status="approved"         → approved
- *    comment "임시 저장" 포함  → edited (그 외 status 무시)
- *  중복 type 은 누적 (수정 회차마다 새 entry).
- *  changedBy 가 비어있으면 '시스템'.
+/** 명시적 action 코드 → 타임라인 이벤트 타입.
+ *  백엔드(status route / events route / form PATCH) 가 기록하는 action 을 단일 진실로 사용. */
+const ACTION_TO_TYPE: Record<string, HistoryEventType> = {
+  submitted: "submitted",
+  info_resubmitted: "submitted",
+  assigned: "assigned",
+  edited: "edited",
+  review_started: "reviewing",
+  review_resumed: "reviewing",
+  info_requested: "info_requested",
+  approved: "approved",
+};
+
+/** approval_history(진행 이력 로그) → HistoryEvent[] 변환.
+ *  - action 코드가 있으면 그대로 매핑 (제출/수정/담당자 지정/검토중/보완 요청/승인).
+ *  - action 이 없는 옛 엔트리는 status / comment 휴리스틱으로 fallback.
+ *  - draft(임시 저장) 단독 엔트리는 타임라인에 노출하지 않음.
+ *  중복 type 은 누적 (수정/검토 회차마다 새 entry). changedBy 가 비어있으면 '시스템'.
  *
  *  ApprovalEntry 는 camelCase(changedBy/changedAt) / snake_case(changed_by/changed_at)
  *  둘 다 허용 — 두 표기 모두 fallback 처리. */
@@ -166,19 +178,23 @@ export function approvalHistoryToEvents(
     const changedAt = h.changedAt ?? h.changed_at;
     if (!changedAt) return;
     const changedBy = h.changedBy ?? h.changed_by ?? "시스템";
-    let type: HistoryEventType | null = null;
     const status = h.status ?? "";
     const action = h.action ?? "";
     const comment = h.comment ?? "";
-    if (status === "submitted" && comment.includes("임시 저장")) {
+
+    let type: HistoryEventType | null = null;
+    if (action && ACTION_TO_TYPE[action]) {
+      type = ACTION_TO_TYPE[action];
+    } else if (status === "submitted" && comment.includes("임시 저장")) {
+      // 옛 데이터 호환 — action 없이 임시저장 코멘트로 수정 회차를 표시하던 케이스.
       type = "edited";
     } else if (status === "submitted") {
       type = "submitted";
-    } else if (status === "reviewing" || action === "review_started") {
-      type = "assigned";
-    } else if (status === "info_requested" || action === "info_requested") {
+    } else if (status === "reviewing") {
+      type = "reviewing";
+    } else if (status === "info_requested") {
       type = "info_requested";
-    } else if (status === "approved" || action === "approved") {
+    } else if (status === "approved") {
       type = "approved";
     }
     if (!type) return;
