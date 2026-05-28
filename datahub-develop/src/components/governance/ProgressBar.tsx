@@ -139,6 +139,7 @@ export function writeServiceStage(formId: string, stage: number): void {
 export type SubStep =
   | "member_assignment"
   | "under_review"
+  | "approval_requested"
   | "revision_requested"
   | "approved";
 
@@ -146,6 +147,7 @@ const SUBSTEP_KEY = (formId: string) => `dh:gov:stage1:substep:${formId}`;
 const SUB_STEPS: readonly SubStep[] = [
   "member_assignment",
   "under_review",
+  "approval_requested",
   "revision_requested",
   "approved",
 ];
