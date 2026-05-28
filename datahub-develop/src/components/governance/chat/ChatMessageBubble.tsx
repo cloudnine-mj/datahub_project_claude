@@ -52,20 +52,30 @@ function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
     <div className="flex flex-col gap-1.5">
       {attachments.map((a) =>
         a.kind === "image" ? (
-          <a
-            key={a.id}
-            href={a.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={a.url}
-              alt={a.name}
-              className="block max-h-[180px] max-w-[200px] object-cover"
-            />
-          </a>
+          <div key={a.id} className="relative w-fit">
+            <a
+              href={a.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={a.url}
+                alt={a.name}
+                className="block max-h-[180px] max-w-[200px] object-cover"
+              />
+            </a>
+            {/* 다운로드 버튼 — 썸네일 우측 하단 오버레이 (파일과 동일하게 받기 가능). */}
+            <a
+              href={a.url}
+              download={a.name}
+              aria-label={`${a.name} 다운로드`}
+              className="absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+            >
+              <Download size={13} aria-hidden="true" />
+            </a>
+          </div>
         ) : (
           <a
             key={a.id}
