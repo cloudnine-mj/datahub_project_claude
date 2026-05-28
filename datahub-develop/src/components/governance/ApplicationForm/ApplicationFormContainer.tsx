@@ -286,6 +286,21 @@ export function ApplicationFormContainer({
       const result = formId
         ? await api.updateForm(formId, body)
         : await api.submitForm(body);
+      // 첨부 마이그레이션 — 작성 중 임시 키(draft-temp:{type})에 모인 첨부를 실제 form id
+      // 키로 옮기고 임시 키를 비운다. (1) 상세 페이지가 첨부를 찾게 하고 (2) 다음 신규 작성에
+      // 이전 첨부가 남지 않게 함.
+      if (typeof window !== "undefined") {
+        try {
+          const draftKey = `dh:gov:attachments:draft-temp:${type}`;
+          const draftData = sessionStorage.getItem(draftKey);
+          if (draftData) {
+            sessionStorage.setItem(`dh:gov:attachments:${result.id}`, draftData);
+            sessionStorage.removeItem(draftKey);
+          }
+        } catch {
+          /* ignore */
+        }
+      }
       setFormId(result.id);
       // 같은 유형으로 다시 들어왔을 때 복원할 수 있도록 sessionStorage 에 기록.
       if (typeof window !== "undefined") {
