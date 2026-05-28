@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, ChevronDown, FileText, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, FileText, Pencil, Save } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus } from "@/lib/governance/api-client-full";
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
@@ -113,6 +113,8 @@ export function ApplicationFormContainer({
   const isEditMode = !!editFormId;
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
+  // 수정 진입 시점의 원본 값 스냅샷 — 변경 항목 비교(제출 전 검토 모달) 에 사용.
+  const [originalValues, setOriginalValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
   // 용역 제작 신청서 [작성 예시] 모달 — 임시 저장 왼쪽 버튼 클릭으로 토글.
   const [exampleOpen, setExampleOpen] = useState(false);
@@ -166,7 +168,9 @@ export function ApplicationFormContainer({
       .getForm(editFormId)
       .then((f) => {
         setFormId(f.id);
-        setValues((f.payload ?? {}) as Record<string, unknown>);
+        const loaded = (f.payload ?? {}) as Record<string, unknown>;
+        setValues(loaded);
+        setOriginalValues(loaded); // 원본 스냅샷 — 변경 항목 비교 기준.
         if (isAppStatus(f.status)) setStatus(f.status);
         if (f.approval_history && f.approval_history.length > 0) {
           setHistory(buildHistoryFromBackend(f.approval_history));
@@ -307,9 +311,9 @@ export function ApplicationFormContainer({
   const onConfirmSubmit = async () => {
     const ok = await persist(false);
     if (!ok) return;
-    // 제출 = 검토 시작 — 용역 제작 한정으로 review_started 를 자동 기록(시스템 주체).
-    // 진행 이력 타임라인에서 '신청서 제출' 노드에 '검토 시작' 보조 칩으로 병합 표시됨.
-    if (type === "service") {
+    // 신규 제출(create) = 검토 시작 — 용역 제작 한정으로 review_started 를 자동 기록(시스템 주체).
+    // 수정 제출(edit)은 백엔드 PATCH 가 내용 변경을 'edited'(신청서 수정) 으로 기록하므로 생략.
+    if (type === "service" && !isEditMode) {
       await api
         .appendFormEvent(ok, {
           action: "review_started",
@@ -399,6 +403,7 @@ export function ApplicationFormContainer({
             prevPath={prevPath}
             onSaveDraft={onSaveDraft}
             onSubmit={onOpenPreview}
+            isEdit={isEditMode}
           />
         </div>
 
@@ -420,6 +425,8 @@ export function ApplicationFormContainer({
             applicantDepartment={applicant.department}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
+            mode={isEditMode ? "edit" : "create"}
+            originalPayload={originalValues}
           />
         )}
 
@@ -534,12 +541,15 @@ interface DraftActionsProps {
   onSaveDraft: () => void;
   /** 신청서 제출 버튼 클릭 핸들러 — 미리보기 모달을 먼저 열고 그 안에서 실제 제출 확정. */
   onSubmit: () => void;
+  /** 수정 모드 — true 면 [임시 저장] 제거하고 제출 버튼을 [수정 제출](앰버) 로 표시. */
+  isEdit?: boolean;
 }
 
 function DraftActions({
   prevPath,
   onSaveDraft,
   onSubmit,
+  isEdit = false,
 }: DraftActionsProps) {
   return (
     <div className="mt-2 flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
@@ -555,15 +565,30 @@ function DraftActions({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <SecondaryButton onClick={onSaveDraft} icon={Save} label="임시 저장" />
-        <button
-          type="button"
-          onClick={onSubmit}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
-        >
-          신청서 제출
-          <ArrowRight size={14} aria-hidden="true" />
-        </button>
+        {/* 수정 모드에는 임시 저장 없음 — 바로 [수정 제출] */}
+        {!isEdit && (
+          <SecondaryButton onClick={onSaveDraft} icon={Save} label="임시 저장" />
+        )}
+        {isEdit ? (
+          <button
+            type="button"
+            onClick={onSubmit}
+            className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-white transition hover:brightness-110"
+            style={{ background: "#BA7517" }}
+          >
+            <Pencil size={14} aria-hidden="true" />
+            수정 제출
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onSubmit}
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
+          >
+            신청서 제출
+            <ArrowRight size={14} aria-hidden="true" />
+          </button>
+        )}
       </div>
     </div>
   );

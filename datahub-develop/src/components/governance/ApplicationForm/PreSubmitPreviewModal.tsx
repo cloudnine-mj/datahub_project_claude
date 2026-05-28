@@ -1,16 +1,14 @@
-// 작성 모드의 '제출 전 검토' 모달 — draft 사용자가 신청서 제출 직전 입력 내용을 표로 최종 확인.
-//   복사 기능 없음 (양식이 화면에 그대로 있어 복사가 의미 없음).
+// '제출 전 검토' 모달 — 제출(create) / 수정(edit) 두 맥락으로 분기.
+//   create: 입력 내용 최종 확인 후 신청서 제출.
+//   edit:   원본 대비 변경 항목 요약 + 변경 행 강조 + '수정 제출'.
 //
 // 모든 신청 유형(service / purchase / subscribe) 에서 스키마의 데이터 필드 전체 노출.
-// checkbox 액션성 항목(조직장 승인, 첨부 체크리스트 등) 만 제외.
-//
-// 레이아웃: 모달 max-h 85vh + flex column. 헤더·푸터 sticky, 본문 영역만 세로 스크롤.
-// 푸터에 info 안내 박스 노출 — 제출 후 거버넌스 요청 목록으로 이동한다는 안내.
+// checkbox 액션성 항목(조직장 승인 등) / attachment(sessionStorage 영속) 는 제외.
 
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { ArrowRight, Info, X } from "lucide-react";
+import { ArrowRight, Info, Pencil, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   APPLICATION_TO_FORM_TYPE,
@@ -21,6 +19,13 @@ import { FORM_SCHEMAS, type FieldDef } from "@/lib/governance/forms/schemas";
 interface RowDef {
   key: string;
   label: string;
+}
+
+interface ChangeItem {
+  key: string;
+  label: string;
+  before: string;
+  after: string;
 }
 
 const PROJECT_KEY: Record<ApplicationType, string> = {
@@ -36,6 +41,10 @@ interface Props {
   applicantDepartment: string;
   onClose: () => void;
   onConfirmSubmit: () => void;
+  /** 'create'(기본) | 'edit'. edit 면 수정 맥락(변경 요약 / 수정 제출)으로 분기. */
+  mode?: "create" | "edit";
+  /** 수정 진입 시점 원본 값 — edit 모드에서 변경 항목 비교에 사용. */
+  originalPayload?: Record<string, unknown>;
 }
 
 export function PreSubmitPreviewModal({
@@ -45,13 +54,15 @@ export function PreSubmitPreviewModal({
   applicantDepartment,
   onClose,
   onConfirmSubmit,
+  mode = "create",
+  originalPayload,
 }: Props) {
+  const isEdit = mode === "edit";
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
-    // 즉시 Enter 로 제출 확정할 수 있도록 [신청서 제출] 에 포커스.
     submitButtonRef.current?.focus();
 
     const prevOverflow = document.body.style.overflow;
@@ -71,12 +82,10 @@ export function PreSubmitPreviewModal({
 
   const schema = FORM_SCHEMAS[APPLICATION_TO_FORM_TYPE[type]];
 
-  // 세 유형 모두 스키마의 모든 데이터 필드를 자동 노출. checkbox 액션성 항목만 제외.
   const rows: RowDef[] = useMemo(() => {
     const all: RowDef[] = [];
     schema.sections.forEach((sec) => {
       sec.fields.forEach((f: FieldDef) => {
-        // checkbox 액션성 + attachment(payload 에 안 들어가는 sessionStorage 영속) 제외.
         if (f.type === "checkbox" || f.type === "attachment") return;
         all.push({ key: f.key, label: f.label });
       });
@@ -84,8 +93,26 @@ export function PreSubmitPreviewModal({
     return all;
   }, [schema]);
 
-  const projectName = String(payload[PROJECT_KEY[type]] ?? "").trim();
+  // edit 모드 — 원본 대비 변경된 필드만 수집 (es5 호환: forEach).
+  const changes: ChangeItem[] = useMemo(() => {
+    if (!isEdit || !originalPayload) return [];
+    const out: ChangeItem[] = [];
+    rows.forEach((r) => {
+      const before = formatValue(originalPayload[r.key]);
+      const after = formatValue(payload[r.key]);
+      if (before !== after) {
+        out.push({ key: r.key, label: r.label, before, after });
+      }
+    });
+    return out;
+  }, [isEdit, originalPayload, payload, rows]);
 
+  const changedKeys = useMemo(
+    () => new Set(changes.map((c) => c.key)),
+    [changes],
+  );
+
+  const projectName = String(payload[PROJECT_KEY[type]] ?? "").trim();
   const applicant = applicantDepartment
     ? `${applicantName} (${applicantDepartment})`
     : applicantName;
@@ -105,12 +132,22 @@ export function PreSubmitPreviewModal({
         {/* sticky 헤더 */}
         <header className="sticky top-0 z-10 rounded-t-xl border-b border-gray-100 bg-white px-7 pb-4 pt-6 dark:border-gray-800 dark:bg-gray-900">
           <div className="mb-1 flex items-center justify-between">
-            <h2
-              id="pre-submit-title"
-              className="text-[17px] font-medium text-gray-900 dark:text-gray-100"
-            >
-              제출 전 검토
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2
+                id="pre-submit-title"
+                className="text-[17px] font-medium text-gray-900 dark:text-gray-100"
+              >
+                제출 전 검토
+              </h2>
+              {isEdit && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  style={{ background: "#FAEEDA", color: "#854F0B" }}
+                >
+                  <Pencil size={11} aria-hidden="true" /> 수정 제출
+                </span>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}
@@ -121,12 +158,60 @@ export function PreSubmitPreviewModal({
             </button>
           </div>
           <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            입력한 내용을 확인한 뒤 제출하세요. ({APPLICATION_TYPE_LABEL[type]} 신청)
+            {isEdit
+              ? "변경한 내용을 확인한 뒤 다시 제출하세요."
+              : `입력한 내용을 확인한 뒤 제출하세요. (${APPLICATION_TYPE_LABEL[type]} 신청)`}
           </p>
         </header>
 
         {/* 본문 — 세로 스크롤 */}
         <div className="flex-1 overflow-y-auto px-7 py-5">
+          {/* edit 모드 — 변경 항목 요약 블록 */}
+          {isEdit && (
+            <div
+              className="mb-5 rounded-md px-4 py-3.5"
+              style={{ background: "#FAEEDA" }}
+            >
+              {changes.length === 0 ? (
+                <p className="text-[12px]" style={{ color: "#854F0B" }}>
+                  변경된 내용이 없습니다.
+                </p>
+              ) : (
+                <>
+                  <p
+                    className="mb-2 text-[12px] font-medium"
+                    style={{ color: "#854F0B" }}
+                  >
+                    변경된 항목 {changes.length}건
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {changes.map((c) => (
+                      <div
+                        key={c.key}
+                        className="flex items-baseline gap-2 text-[12px]"
+                      >
+                        <span className="w-[140px] shrink-0 text-gray-500">
+                          {c.label}
+                        </span>
+                        <span className="text-gray-400 line-through">
+                          {c.before}
+                        </span>
+                        <ArrowRight
+                          size={12}
+                          aria-hidden="true"
+                          className="shrink-0 text-gray-400"
+                        />
+                        <span className="font-medium" style={{ color: "#854F0B" }}>
+                          {c.after}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <h3 className="mb-[14px] text-[15px] font-medium text-gray-900 dark:text-gray-100">
             {schema.label}
             {projectName && (
@@ -138,8 +223,7 @@ export function PreSubmitPreviewModal({
             <tbody>
               <PreviewRow label="신청자" value={applicant} />
               {rows.map((r, idx) => {
-                const v = payload[r.key];
-                const text = formatValue(v);
+                const text = formatValue(payload[r.key]);
                 const isLast = idx === rows.length - 1;
                 return (
                   <PreviewRow
@@ -147,6 +231,7 @@ export function PreSubmitPreviewModal({
                     label={r.label}
                     value={text}
                     noBorder={isLast}
+                    changed={isEdit && changedKeys.has(r.key)}
                   />
                 );
               })}
@@ -156,13 +241,26 @@ export function PreSubmitPreviewModal({
 
         {/* sticky 푸터 — info 안내 + 액션 버튼 */}
         <footer className="sticky bottom-0 rounded-b-xl border-t border-gray-100 bg-white px-7 py-4 dark:border-gray-800 dark:bg-gray-900">
-          <div className="mb-3 flex items-start gap-2 rounded-md bg-blue-50 px-3 py-2.5 text-[12px] text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-            <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
-            <p className="leading-relaxed">
-              제출하면 신청서가 <strong className="font-semibold">거버넌스 요청 목록</strong>으로 이동하며, 담당자 검토가 시작됩니다.
-              진행 상황은 거버넌스 요청 목록에서 확인할 수 있습니다.
-            </p>
-          </div>
+          {isEdit ? (
+            <div
+              className="mb-3 flex items-start gap-2 rounded-md px-3 py-2.5 text-[12px]"
+              style={{ background: "#E6F1FB", color: "#0C447C" }}
+            >
+              <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <p className="leading-relaxed">
+                다시 제출하면 담당자에게 수정 사실이 전달되고, 진행 이력에{" "}
+                <strong className="font-semibold">신청서 수정</strong>으로 기록됩니다.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-3 flex items-start gap-2 rounded-md bg-blue-50 px-3 py-2.5 text-[12px] text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
+              <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <p className="leading-relaxed">
+                제출하면 신청서가 <strong className="font-semibold">거버넌스 요청 목록</strong>으로 이동하며, 담당자 검토가 시작됩니다.
+                진행 상황은 거버넌스 요청 목록에서 확인할 수 있습니다.
+              </p>
+            </div>
+          )}
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
@@ -171,15 +269,27 @@ export function PreSubmitPreviewModal({
             >
               닫기
             </button>
-            <button
-              ref={submitButtonRef}
-              type="button"
-              onClick={onConfirmSubmit}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
-            >
-              신청서 제출
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
+            {isEdit ? (
+              <button
+                ref={submitButtonRef}
+                type="button"
+                onClick={onConfirmSubmit}
+                className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-[13px] font-medium text-white transition hover:brightness-110"
+                style={{ background: "#BA7517" }}
+              >
+                <Pencil size={14} aria-hidden="true" /> 수정 제출
+              </button>
+            ) : (
+              <button
+                ref={submitButtonRef}
+                type="button"
+                onClick={onConfirmSubmit}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-5 py-2 text-[13px] font-medium text-red-700 transition hover:brightness-95 dark:bg-red-900/30 dark:text-red-300"
+              >
+                신청서 제출
+                <ArrowRight size={14} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </footer>
       </div>
@@ -210,16 +320,18 @@ function PreviewRow({
   label,
   value,
   noBorder,
+  changed,
 }: {
   label: string;
   value: string;
   noBorder?: boolean;
+  changed?: boolean;
 }) {
   const borderClass = noBorder
     ? ""
     : "border-b border-gray-200 dark:border-gray-800";
   return (
-    <tr className={borderClass}>
+    <tr className={borderClass} style={changed ? { background: "#FCF8EF" } : undefined}>
       <th
         scope="row"
         className="w-[160px] bg-gray-50 px-[14px] py-[11px] text-left text-gray-500 font-normal dark:bg-gray-800/40 dark:text-gray-400"
@@ -228,6 +340,11 @@ function PreviewRow({
       </th>
       <td className="px-[14px] py-[11px] text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
         {value}
+        {changed && (
+          <span className="ml-1.5 text-[11px]" style={{ color: "#854F0B" }}>
+            (변경됨)
+          </span>
+        )}
       </td>
     </tr>
   );
