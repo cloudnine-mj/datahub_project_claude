@@ -9,7 +9,8 @@
 
 "use client";
 
-import { Download } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, X } from "lucide-react";
 import type { FormMessageItem } from "@/lib/governance/forms/types";
 import {
   chatExtColor,
@@ -46,18 +47,34 @@ function initial(name: string): string {
   return trimmed.slice(0, 1);
 }
 
-/** 첨부 목록 — 이미지 썸네일 / 파일 카드. 부모 정렬(items-end/start) 을 따른다. */
+/** 첨부 목록 — 이미지 썸네일(클릭=확대 라이트박스) / 파일 카드. 부모 정렬을 따른다. */
 function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
+  const [zoom, setZoom] = useState<ChatAttachment | null>(null);
+
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(null);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [zoom]);
+
   return (
     <div className="flex flex-col gap-1.5">
       {attachments.map((a) =>
         a.kind === "image" ? (
           <div key={a.id} className="relative w-fit">
-            <a
-              href={a.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block overflow-hidden rounded-[10px] border border-gray-200 dark:border-gray-700"
+            <button
+              type="button"
+              onClick={() => setZoom(a)}
+              aria-label={`${a.name} 확대`}
+              className="block overflow-hidden rounded-[10px] border border-gray-200 transition hover:brightness-95 dark:border-gray-700"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -65,8 +82,8 @@ function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
                 alt={a.name}
                 className="block max-h-[180px] max-w-[200px] object-cover"
               />
-            </a>
-            {/* 다운로드 버튼 — 썸네일 우측 하단 오버레이 (파일과 동일하게 받기 가능). */}
+            </button>
+            {/* 다운로드 버튼 — 썸네일 우측 하단 오버레이. */}
             <a
               href={a.url}
               download={a.name}
@@ -104,6 +121,42 @@ function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
             <Download size={14} className="shrink-0 text-gray-400" aria-hidden="true" />
           </a>
         ),
+      )}
+
+      {/* 확대 라이트박스 — 오버레이/Esc 클릭으로 닫기, 이미지 클릭은 유지. */}
+      {zoom && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-6"
+          onClick={() => setZoom(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${zoom.name} 확대 보기`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={zoom.url}
+            alt={zoom.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+          />
+          <a
+            href={zoom.url}
+            download={zoom.name}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`${zoom.name} 다운로드`}
+            className="absolute right-16 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+          >
+            <Download size={16} aria-hidden="true" />
+          </a>
+          <button
+            type="button"
+            onClick={() => setZoom(null)}
+            aria-label="닫기"
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
       )}
     </div>
   );
