@@ -44,7 +44,7 @@ import { AttachmentSection } from "@/components/governance/AttachmentSection";
 function buildEditHref(form: FormDetail, from: string | null): string {
   const appType = FORM_TYPE_TO_APPLICATION[form.form_type];
   if (appType) {
-    return `/governance/forms/intake?type=${appType}&id=${form.id}`;
+    return `/governance/forms/intake?type=${appType}&id=${form.id}${from ? `&from=${from}` : ""}`;
   }
   return `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`;
 }

@@ -83,6 +83,8 @@ interface Props {
   /** 상세 페이지 '수정' 진입 시 편집할 기존 신청서 id (cuid).
    *  지정되면 해당 신청서를 프리필하고, 상태와 무관하게 작성 화면과 동일한 편집 폼을 노출한다. */
   editFormId?: string;
+  /** 수정 진입 출처(from) — 수정 제출 후 상세 페이지로 복귀할 때 컨텍스트 유지에 사용. */
+  editFrom?: string;
   /** 작성 모드 '계획 수립 다시 보기' 버튼 경로. */
   prevPath?: string;
   /** 다음 substep (전자결재 품의) 경로. */
@@ -105,6 +107,7 @@ export function ApplicationFormContainer({
   type,
   initialStatus,
   editFormId,
+  editFrom,
   prevPath,
   nextPath,
 }: Props) {
@@ -325,7 +328,14 @@ export function ApplicationFormContainer({
         });
     }
     setPreviewOpen(false);
-    router.push("/governance/forms/list?submitted=1");
+    // 수정 제출 → 방금 보던 상세 페이지로 복귀(컨텍스트 from 유지). 신규 제출 → 요청 목록.
+    if (isEditMode) {
+      router.push(
+        `/governance/forms/detail/${ok}${editFrom ? `?from=${editFrom}` : ""}`,
+      );
+    } else {
+      router.push("/governance/forms/list?submitted=1");
+    }
   };
 
   // '전자결재 품의 →' 버튼 — substep 3 (전자결재 품의 페이지) 로 이동.
