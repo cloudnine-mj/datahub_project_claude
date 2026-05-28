@@ -184,6 +184,10 @@ export default function Page({ params }: { params: { id: string } }) {
   // 없는 유형은 기존처럼 표 아래 별도 첨부파일 섹션을 노출.
   const hasInlineAttachment = allFields.some((f) => f.type === "attachment");
 
+  // 승인 완료 판정 — sub-step 이 approved 이거나 5단계가 협의(1) 이상이면 신청 내용 확정.
+  // 이후엔 신청자 수정 차단(승인=확정, 변경은 채팅으로 논의).
+  const isApproved = subStep === "approved" || serviceStage >= 1;
+
   // ── 본문 구성 조각 (data_production 2블록 / 그 외 단일컬럼 레이아웃에서 공유) ──
 
   const processBar =
@@ -367,6 +371,8 @@ export default function Page({ params }: { params: { id: string } }) {
           me.user.email.toLowerCase() === form.submitter_email.toLowerCase();
         const isAdmin = me?.user.role === "admin";
         if (!isOwner && !isAdmin) return null;
+        // 승인 완료 후에는 신청 내용 수정 차단 — [수정] 버튼 숨김.
+        if (isApproved) return null;
         return (
           <button
             onClick={() => router.push(buildEditHref(form, from))}

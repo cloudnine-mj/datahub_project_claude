@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Pencil, Save } from "lucide-react";
 import { api, type ApprovalEntry, type FormStatus } from "@/lib/governance/api-client-full";
 import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
+import { readServiceStage, readSubStep } from "@/components/governance/ProgressBar";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
@@ -163,6 +164,20 @@ export function ApplicationFormContainer({
       router.replace("/governance/forms/list");
     }
   }, [status, router, isEditMode]);
+
+  // 승인 완료된 신청서는 수정 진입 차단 — URL 직접 접근 등도 상세 페이지로 리다이렉트.
+  // 승인 판정은 mock 상태(sub-step / 5단계) 기준 (상세 페이지의 isApproved 와 동일 규칙).
+  useEffect(() => {
+    if (!editFormId || typeof window === "undefined") return;
+    const approved =
+      readSubStep(editFormId) === "approved" ||
+      readServiceStage(editFormId, "") >= 1;
+    if (approved) {
+      router.replace(
+        `/governance/forms/detail/${editFormId}${editFrom ? `?from=${editFrom}` : ""}`,
+      );
+    }
+  }, [editFormId, editFrom, router]);
 
   // 편집 모드 — 지정된 id 의 신청서를 백엔드에서 불러와 프리필.
   useEffect(() => {
