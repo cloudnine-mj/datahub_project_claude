@@ -22,18 +22,15 @@ import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   formatAmount,
   readNegotiation,
-  writeNegotiation,
-  type NegotiationField,
   type NegotiationResult,
 } from "@/lib/governance/negotiation-storage";
-import { initSystemEntry, pushChange } from "@/lib/governance/agreement-change-log";
 import { readContract, writeContract } from "@/lib/governance/contract-storage";
 import {
   exportNegotiationToPdf,
   exportNegotiationToXlsx,
   type NegotiationExportData,
 } from "@/lib/governance/negotiation-export";
-import { AgreementCard } from "./contract/AgreementCard";
+import { AgreementReadonlyCard } from "./contract/AgreementReadonlyCard";
 import { EasInfoCard } from "./contract/EasInfoCard";
 import { ContractFilesCard } from "./contract/ContractFilesCard";
 import { ProceedToProgressModal } from "./contract/ProceedToProgressModal";
@@ -60,6 +57,7 @@ export function ContractStageTab({
   onActivity,
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
+  // 협의 단계에서 확정된 최종 협의 내용 — 계약 단계에서는 읽기 전용 참조(수정 없음).
   const [negotiation, setNegotiation] = useState<NegotiationResult>(() =>
     readNegotiation(formId),
   );
@@ -68,21 +66,10 @@ export function ContractStageTab({
   );
   const [modalOpen, setModalOpen] = useState(false);
 
-  // 계약 단계 진입 — changeLog 시스템 항목 1건 자동 생성(없을 때만).
   useEffect(() => {
-    const next = initSystemEntry(formId, lead.name);
-    setNegotiation(next);
-    setContractNo(readContract(formId).easApprovalNumber);
-  }, [formId, lead.name]);
-
-  // 최종 협의 내용 셀 편집 — 값이 실제 바뀌면 changeLog 에 기록 후 저장.
-  function onField(key: NegotiationField, next: string): void {
-    const before = negotiation[key];
-    if (before === next) return;
-    writeNegotiation(formId, { [key]: next });
-    pushChange(formId, key, before, next, lead.name);
     setNegotiation(readNegotiation(formId));
-  }
+    setContractNo(readContract(formId).easApprovalNumber);
+  }, [formId]);
 
   function onContractField(next: string): void {
     const saved = writeContract(formId, { easApprovalNumber: next });
@@ -140,13 +127,13 @@ export function ContractStageTab({
 
         <CollapsibleRequestInfo>{requestInfoTable}</CollapsibleRequestInfo>
 
-        <AgreementCard value={negotiation} onField={onField} onDownload={onDownload} />
+        <AgreementReadonlyCard value={negotiation} onDownload={onDownload} />
 
         <EasInfoCard value={contractNo} onCommit={onContractField} />
 
         <ContractFilesCard formId={formId} />
 
-        {/* Phase 1 — 권한 분기 없이 모든 사용자에게 노출. */}
+        {/* Phase 1 — 권한 분기 없이 모든 사용자에게 노출. 모달이 품의번호 입력을 검증. */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
@@ -155,6 +142,9 @@ export function ContractStageTab({
           진행 단계로
           <ArrowRight size={14} aria-hidden="true" />
         </button>
+        <p className="text-center text-[11px] text-gray-400">
+          Phase 1: 모든 사용자 노출 · 품의번호 입력 시 활성
+        </p>
       </div>
 
       <div className="min-h-0">{chatPanel}</div>
