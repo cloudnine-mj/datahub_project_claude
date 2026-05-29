@@ -1,17 +1,17 @@
 // 협의 단계(2/5) 상세 탭 — 용역 제작(data_production) 폼 협의 단계 본문.
 //
 // 레이아웃: 2열 그리드 (좌측 카드 컬럼 + 우측 채팅, items-stretch 로 높이 정렬).
-//   좌측: 지금 할 일 / 신청 정보(접힘) / 합의 결과 / 협의 자료 / [계약 단계로 진행]
+//   좌측: 안내 카드 / 신청 정보(접힘) / 최종 협의 내용 / 협의 자료 / [계약 단계로 진행]
 //   우측: 담당자와 소통 채팅 (부모가 전달한 ChatPanel 그대로 재사용)
 //
 // 권한 (Phase 1 목업):
 //   진행 바 자유 이동과 동일하게 역할 게이팅 없이 전 역할 노출.
-//   합의 결과 인라인 편집 / [계약 단계로 진행] 버튼 모두 잠금(locked) 여부로만 제어.
+//   최종 협의 내용 인라인 편집 / [계약 단계로 진행] 버튼 모두 노출.
 //   TODO(Phase 2): 담당자(isLead || isMember) 한정으로 복원 — 신청자는 읽기 전용 + 버튼 미렌더.
 //
-// 단계 전환은 모달의 [계약 단계로 진행 →] 에서만 발생(자동 전환 금지). 확정 시:
-//   1) 합의 결과 잠금(locked=true)  2) stage_transition 이력 기록
-//   3) 부모 onAdvanceToContract() → serviceStage 를 계약(2) 로 갱신
+// 협의 단계엔 잠금 없음. 단계 전환은 모달의 [계약 단계로 진행 →] 에서만 발생(자동 전환 금지). 확정 시:
+//   1) stage_transition 이력 기록
+//   2) 부모 onAdvanceToContract() → serviceStage 를 계약(2) 로 갱신
 //   채팅 단계 구분선은 계약 단계 메시지 발생 시 ChatPanel 이 chat-stages 맵으로 자동 노출
 //   (기존 컨벤션 — 별도 시스템 메시지 생성하지 않음).
 
@@ -23,12 +23,17 @@ import { api, type FormDetail } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   ensureWorkCountDefault,
-  lockNegotiation,
+  formatAmount,
   readNegotiation,
   writeNegotiation,
   type NegotiationField,
   type NegotiationResult,
 } from "@/lib/governance/negotiation-storage";
+import {
+  exportNegotiationToPdf,
+  exportNegotiationToXlsx,
+  type NegotiationExportData,
+} from "@/lib/governance/negotiation-export";
 import { AgreementResultCard } from "./negotiation/AgreementResultCard";
 import { NegotiationFilesCard } from "./negotiation/NegotiationFilesCard";
 import { ProceedToContractModal } from "./negotiation/ProceedToContractModal";
@@ -68,21 +73,46 @@ export function NegotiationStageTab({
     setNegotiation(readNegotiation(formId));
   }, [formId, form]);
 
-  const locked = negotiation.locked;
-  // Phase 1(목업) — 진행 바 자유 이동과 동일하게 역할 게이팅 없이 전 역할 노출.
-  //   합의 결과 편집 / [계약 단계로 진행] 버튼 모두 잠금 여부로만 제어.
+  // Phase 1(목업) — 진행 바 자유 이동과 동일하게 역할 게이팅 없이 전 역할 편집 노출.
   //   TODO(Phase 2): 담당자(isLead || isMember) 한정으로 복원.
-  const canEdit = !locked;
+  const canEdit = true;
 
   function onField(key: NegotiationField, next: string): void {
-    if (!canEdit) return;
     setNegotiation(writeNegotiation(formId, { [key]: next }));
   }
 
-  // [계약 단계로 진행 →] 확정 — 잠금 + 이력 기록 + 단계 갱신.
+  // 최종 협의 내용 다운로드 — 메타(요청 정보) + 현재 4필드를 export 데이터로 조립.
+  function buildExportData(): NegotiationExportData {
+    const datasetRaw = form.payload?.["데이터셋_이름"];
+    const dept = form.submitter_department
+      ? ` (${form.submitter_department})`
+      : "";
+    const now = new Date();
+    const issuedAt = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return {
+      requestNo: form.request_no,
+      datasetName:
+        datasetRaw === undefined || datasetRaw === null ? "" : String(datasetRaw),
+      applicant: `${form.submitter_name}${dept}`,
+      assignee: lead.name,
+      issuedAt,
+      selectedVendor: negotiation.selectedVendor,
+      amount: formatAmount(negotiation.amount),
+      period: negotiation.period,
+      workCount: negotiation.workCount,
+    };
+  }
+
+  function onDownload(format: "xlsx" | "pdf"): void {
+    const data = buildExportData();
+    const run = format === "xlsx" ? exportNegotiationToXlsx : exportNegotiationToPdf;
+    void run(data).catch(() => {
+      /* 다운로드 실패는 조용히 무시(Phase 1) */
+    });
+  }
+
+  // [계약 단계로 진행 →] 확정 — 이력 기록 + 단계 갱신(잠금 없음).
   function onProceedToContract(): void {
-    const lockedResult = lockNegotiation(formId);
-    setNegotiation(lockedResult);
     api
       .appendFormEvent(formId, {
         action: "stage_transition",
@@ -101,15 +131,15 @@ export function NegotiationStageTab({
   return (
     <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_320px]">
       <div className="flex min-w-0 flex-col gap-3">
-        <TodoCard />
+        <InfoCard />
 
         <CollapsibleRequestInfo>{requestInfoTable}</CollapsibleRequestInfo>
 
         <AgreementResultCard
           value={negotiation}
           canEdit={canEdit}
-          locked={locked}
           onField={onField}
+          onDownload={onDownload}
         />
 
         <NegotiationFilesCard formId={formId} />
@@ -118,8 +148,7 @@ export function NegotiationStageTab({
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          disabled={locked}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110"
         >
           계약 단계로 진행
           <ArrowRight size={14} aria-hidden="true" />
@@ -140,8 +169,8 @@ export function NegotiationStageTab({
   );
 }
 
-/** 지금 할 일 카드 — 신청자/담당자 동일 문구. */
-function TodoCard() {
+/** 안내 카드 — 제목 없이 본문만. 신청자/담당자 동일 문구. */
+function InfoCard() {
   return (
     <section
       className="flex items-start gap-2.5 rounded-xl p-4"
@@ -152,12 +181,9 @@ function TodoCard() {
         aria-hidden="true"
         className="mt-px shrink-0 text-[#D4533E]"
       />
-      <div>
-        <h3 className="mb-0.5 text-[13px] font-medium text-[#993C1D]">지금 할 일</h3>
-        <p className="text-[12px] leading-relaxed text-[#993C1D]/85">
-          채팅으로 작업 내용·업체·견적을 논의하세요. 합의가 끝나면 담당자가 합의 결과를 정리하고 [계약 단계로 진행]을 눌러 다음 단계로 넘어갑니다.
-        </p>
-      </div>
+      <p className="text-[11px] text-[#993C1D]" style={{ lineHeight: 1.7 }}>
+        작업 내용 및 업체, 견적을 논의하세요. 협의가 종료되면 담당자가 최종 협의 내용을 작성한 후 계약 단계로 넘어갑니다.
+      </p>
     </section>
   );
 }

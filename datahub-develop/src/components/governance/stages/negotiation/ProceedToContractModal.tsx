@@ -1,6 +1,6 @@
 // 계약 단계 전환 모달 — 담당자가 [계약 단계로 진행] 클릭 시 오픈.
 //
-// 합의 결과 4필드를 최종 확인. 모달 안에서도 인라인 편집 가능(빈칸 클릭 → input).
+// 최종 협의 내용 4필드를 최종 확인. 모달 안에서도 인라인 편집 가능(빈칸 클릭 → input).
 //   - 미입력 항목 존재: 경고 배너 + 진행 버튼 비활성.
 //   - 모두 입력: 완료 배너 + 진행 버튼 활성.
 // 진행 확정은 onProceed (부모 onProceedToContract) 가 담당. 5단계 자동 전환 금지 —
@@ -84,7 +84,7 @@ export function ProceedToContractModal({
           </button>
         </div>
         <p className="mb-3 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">
-          합의 결과를 최종 확인해 주세요. 계약·진행 단계에서 참조됩니다.
+          최종 협의 내용을 최종 확인해 주세요. 계약·진행 단계에서 참조됩니다.
         </p>
 
         <div className="overflow-hidden rounded-lg border border-[var(--color-border-primary,#e5e7eb)]">
@@ -153,7 +153,7 @@ export function ProceedToContractModal({
           >
             <CircleCheck size={14} aria-hidden="true" className="mt-px shrink-0" />
             <span>
-              모든 항목이 입력되었습니다. 진행 시 합의 결과가 잠기고 채팅에 단계 구분선이 추가됩니다.
+              모든 항목이 입력되었습니다. 진행 시 채팅에 단계 구분선이 추가됩니다.
             </span>
           </div>
         )}

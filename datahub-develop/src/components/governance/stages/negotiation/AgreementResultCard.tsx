@@ -1,17 +1,18 @@
-// 합의 결과 카드 — 협의 단계 핵심. 담당자가 채팅 합의 내용을 4필드로 정리(인라인 편집).
+// 최종 협의 내용 카드 — 협의 단계 핵심. 담당자가 협의 내용을 4필드로 정리(인라인 편집).
 //
 // 권한:
 //   담당자(canEdit) — 셀 클릭 → 인라인 input, Enter/blur 저장(입력 중 300ms debounce 자동 저장).
 //                     빈칸은 "+ 클릭해서 입력", 작성된 셀은 호버 시 Pencil 노출.
-//   신청자          — 읽기 전용. 빈칸은 "—", "자동 저장" 라벨 미노출.
-//   잠김(locked)    — 편집 불가 + 잠금 안내. 4필드 고정(증감 금지).
+//   신청자          — 읽기 전용. 빈칸은 "—", "자동 저장 (담당자만)" 라벨 미노출.
+//   [다운로드 ▾]    — 양쪽 모두 노출. 엑셀(.xlsx) / PDF(.pdf) 선택 다운로드(부모 onDownload 위임).
+//   4필드 고정(증감 금지). 협의 단계엔 잠금 없음.
 //
 // 저장은 부모(NegotiationStageTab) 가 lib/negotiation-storage 로 영속. 본 카드는 표시 + 편집 위임.
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Lock, Pencil, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Pencil, Save } from "lucide-react";
 import {
   formatAmount,
   type NegotiationField,
@@ -36,37 +37,36 @@ const FIELD_CONFIG: readonly FieldConfig[] = [
 
 interface Props {
   value: NegotiationResult;
-  /** 담당자 && !locked 일 때만 true. */
+  /** 인라인 편집 가능 여부(담당자). */
   canEdit: boolean;
-  /** 잠김 여부 — 계약 단계 전환 후 true. */
-  locked: boolean;
   /** 4필드 중 하나 저장. */
   onField: (key: NegotiationField, next: string) => void;
+  /** 다운로드 — 엑셀/PDF. 양쪽 역할 모두 호출 가능. */
+  onDownload: (format: "xlsx" | "pdf") => void;
 }
 
-export function AgreementResultCard({ value, canEdit, locked, onField }: Props) {
+export function AgreementResultCard({ value, canEdit, onField, onDownload }: Props) {
   return (
     <section className="rounded-xl border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
-      <header className="mb-1 flex items-center gap-1.5">
+      <header className="mb-1 flex items-center gap-2">
         <span
           aria-hidden="true"
           className="block h-3.5 w-[3px] rounded-[1px] bg-[#D4533E]"
         />
         <h3 className="text-[14px] font-medium text-gray-900 dark:text-gray-100">
-          합의 결과
+          최종 협의 내용
         </h3>
-        {locked ? (
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-gray-400">
-            <Lock size={12} aria-hidden="true" /> 합의 결과 잠김 (계약 단계 진행됨)
-          </span>
-        ) : canEdit ? (
-          <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-gray-400">
-            <Save size={12} aria-hidden="true" /> 자동 저장 (담당자만)
-          </span>
-        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          <DownloadMenu onDownload={onDownload} />
+          {canEdit && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
+              <Save size={12} aria-hidden="true" /> 자동 저장 (담당자만)
+            </span>
+          )}
+        </div>
       </header>
       <p className="mb-3 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-        채팅에서 합의된 최종 내용을 정리합니다. 담당자가 직접 입력하며, 다 채우지 않아도 자동 저장됩니다.
+        최종 협의된 내용을 작성합니다. 담당자가 직접 입력합니다.
       </p>
 
       <div className="overflow-hidden rounded-lg border border-[var(--color-border-primary,#e5e7eb)]">
@@ -113,6 +113,114 @@ export function AgreementResultCard({ value, canEdit, locked, onField }: Props) 
           : "신청자: 읽기 전용, 빈칸은 “—” 로 표시"}
       </p>
     </section>
+  );
+}
+
+/** [다운로드 ▾] 드롭다운 — 엑셀(.xlsx) / PDF(.pdf). 외부 클릭·ESC 로 닫힘. */
+function DownloadMenu({
+  onDownload,
+}: {
+  onDownload: (format: "xlsx" | "pdf") => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function pick(format: "xlsx" | "pdf"): void {
+    setOpen(false);
+    onDownload(format);
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1 rounded-[7px] border-[0.5px] px-2.5 py-[5px] text-[11px] transition ${
+          open
+            ? "border-[#D4533E] text-[#D4533E]"
+            : "border-[var(--color-border-secondary,#d1d5db)] text-gray-600 hover:text-gray-800 dark:text-gray-300"
+        }`}
+      >
+        <Download size={12} aria-hidden="true" />
+        다운로드
+        {open ? (
+          <ChevronUp size={12} aria-hidden="true" />
+        ) : (
+          <ChevronDown size={12} aria-hidden="true" />
+        )}
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-20 mt-1 w-[180px] rounded-lg border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
+          style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+        >
+          <DownloadItem
+            label="엑셀 (.xlsx)"
+            badge="XLS"
+            badgeColor="#3B6D11"
+            onClick={() => pick("xlsx")}
+          />
+          <DownloadItem
+            label="PDF (.pdf)"
+            badge="PDF"
+            badgeColor="#A32D2D"
+            onClick={() => pick("pdf")}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DownloadItem({
+  label,
+  badge,
+  badgeColor,
+  onClick,
+}: {
+  label: string;
+  badge: string;
+  badgeColor: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] text-gray-700 transition hover:bg-[var(--color-background-secondary,#f3f4f6)] dark:text-gray-200 dark:hover:bg-gray-800"
+    >
+      <span
+        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded text-[8px] font-medium text-white"
+        style={{ background: badgeColor }}
+        aria-hidden="true"
+      >
+        {badge}
+      </span>
+      {label}
+    </button>
   );
 }
 

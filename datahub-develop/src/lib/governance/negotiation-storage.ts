@@ -1,12 +1,12 @@
-// 협의 단계(2/5) 합의 결과 sessionStorage CRUD 헬퍼.
+// 협의 단계(2/5) 최종 협의 내용 sessionStorage CRUD 헬퍼.
 //
-// Phase 1: 백엔드 컬럼이 없으므로 합의 결과(선정 업체/금액/작업 기간/작업 건수)를
+// Phase 1: 백엔드 컬럼이 없으므로 최종 협의 내용(선정 업체/금액/작업 기간/작업 건수)을
 //   sessionStorage 에 영속. 키 컨벤션은 dh:gov:{도메인}:{formId} 유지.
 // Phase 2: GovernanceForm 에 negotiation 컬럼(또는 별도 테이블) 추가 + API 로 교체.
-//   본 파일의 read/write/lock 시그니처는 유지하고 내부 구현만 교체하면 됨.
+//   본 파일의 read/write 시그니처는 유지하고 내부 구현만 교체하면 됨.
 //
-// 합의 결과 4필드는 고정(임의 증감 금지). 작업 건수 초기값은 신청서 '목표 데이터 수량'.
-// [계약 단계로 진행] 확정 시 locked=true 로 마킹해 이후 편집을 차단한다.
+// 4필드 고정(임의 증감 금지). 작업 건수 초기값은 신청서 '목표 데이터 수량'.
+// 협의 단계에는 잠금 기능을 두지 않는다(계약 단계에서 별도 변경 이력 정책 적용 예정).
 
 export interface NegotiationResult {
   /** 선정 업체 */
@@ -17,8 +17,6 @@ export interface NegotiationResult {
   period: string;
   /** 작업 건수 — 초기값은 신청서 목표 데이터 수량. */
   workCount: string;
-  /** 계약 단계 전환 후 true → 합의 결과 잠금(편집 불가). */
-  locked: boolean;
   /** 마지막 저장 시각(ISO). */
   updatedAt: string;
 }
@@ -43,7 +41,6 @@ function emptyResult(): NegotiationResult {
     amount: "",
     period: "",
     workCount: "",
-    locked: false,
     updatedAt: "",
   };
 }
@@ -61,7 +58,6 @@ export function readNegotiation(formId: string): NegotiationResult {
       amount: String(parsed.amount ?? ""),
       period: String(parsed.period ?? ""),
       workCount: String(parsed.workCount ?? ""),
-      locked: Boolean(parsed.locked),
       updatedAt: String(parsed.updatedAt ?? ""),
     };
   } catch {
@@ -78,13 +74,12 @@ function persist(formId: string, value: NegotiationResult): void {
   }
 }
 
-/** 4개 필드 중 일부를 갱신(merge). locked 상태면 변경 거부(현재 값 반환). */
+/** 4개 필드 중 일부를 갱신(merge). */
 export function writeNegotiation(
   formId: string,
   patch: Partial<Record<NegotiationField, string>>,
 ): NegotiationResult {
   const current = readNegotiation(formId);
-  if (current.locked) return current;
   const next: NegotiationResult = {
     ...current,
     ...patch,
@@ -101,24 +96,11 @@ export function ensureWorkCountDefault(
   defaultWorkCount: string,
 ): NegotiationResult {
   const current = readNegotiation(formId);
-  if (current.locked) return current;
   if (current.workCount.trim().length > 0) return current;
   if (defaultWorkCount.trim().length === 0) return current;
   const next: NegotiationResult = {
     ...current,
     workCount: defaultWorkCount,
-    updatedAt: new Date().toISOString(),
-  };
-  persist(formId, next);
-  return next;
-}
-
-/** 계약 단계 전환 확정 — 합의 결과 잠금. */
-export function lockNegotiation(formId: string): NegotiationResult {
-  const current = readNegotiation(formId);
-  const next: NegotiationResult = {
-    ...current,
-    locked: true,
     updatedAt: new Date().toISOString(),
   };
   persist(formId, next);
