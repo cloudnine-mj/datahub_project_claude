@@ -33,7 +33,7 @@ const SUMMARY_ROWS: Record<ApplicationType, SummaryRow[]> = {
     { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)" },
     { key: "데이터셋_이름", label: "데이터셋 이름" },
     { key: "목표_데이터_수량", label: "목표 데이터 수량" },
-    { key: "희망_수령일", label: "희망 수령일" },
+    { key: "희망_수령일", label: "데이터 수령 희망일" },
   ],
 };
 

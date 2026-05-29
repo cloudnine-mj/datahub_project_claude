@@ -80,6 +80,12 @@ export interface FieldDef {
    * 경우에 짧은 표 라벨을 별도 지정 (예: '조직장 승인').
    */
   tableLabel?: string;
+  /**
+   * 입력칸 우측에 같은 행으로 붙는 인라인 안내 — 빨강 별표(*) + 회색 보조 텍스트.
+   * 컬럼명(label)에 부제를 붙이는 대신 입력칸 옆에 안내를 배치할 때 사용.
+   * 예: 날짜 필드 "신청서 제출 기준 3주 이후부터 선택 가능".
+   */
+  inlineNote?: string;
 }
 
 /**
@@ -132,17 +138,18 @@ const dataProduction: FormSchema = {
       title: "요청 정보",
       layout: "table",
       fields: [
-        { key: "관련_프로젝트_PMS", label: "관련 프로젝트", type: "text", placeholder: "프로젝트명", required: true },
+        { key: "관련_프로젝트_PMS", label: "관련 프로젝트 (PMS 기준)", type: "text", placeholder: "프로젝트명", required: true },
         { key: "데이터셋_활용_목적", label: "데이터셋 활용 목적", type: "textarea", placeholder: "활용 목적", rows: 2 },
         { key: "데이터셋_이름", label: "데이터셋 이름", type: "text", placeholder: "K-Nowledge" },
-        { key: "희망_작업_착수일", label: "희망 작업 착수일", type: "date" },
-        { key: "희망_수령일", label: "희망 수령일", type: "date" },
+        { key: "희망_작업_착수일", label: "작업 착수 희망일", type: "date", inlineNote: "신청서 제출 기준 3주 이후부터 선택 가능" },
+        { key: "희망_수령일", label: "데이터 수령 희망일", type: "date", inlineNote: "작업 마감 기한" },
         { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "문항 풀기 및 평가" },
         { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀" },
-        { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력", inlineWithNext: true },
-        { key: "단위", label: "단위", type: "text", placeholder: "문항" },
+        { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력" },
+        { key: "목표_데이터_수량_단위상세", label: "목표 데이터 수량 (단위 상세)", type: "textarea", placeholder: "예: Seed Q: 500개 / Following Q 8지선다 선택: 2500건 / AB test: 500건" },
         { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "3명 이상" },
-        { key: "품질_평가_방식", label: "품질평가방식", type: "text", placeholder: "품질 평가 방식" },
+        { key: "작업자_보유_기술", label: "작업자 보유 기술", type: "text", placeholder: "예: 영어모어화자, 특정 자격증, 도메인 지식 등" },
+        { key: "품질_평가_방식", label: "품질 평가 방식", type: "text", placeholder: "품질 평가 방식" },
         // 조직장 사전 승인 — 별도 섹션에서 요청 정보 표 마지막 행으로 이동.
         {
           key: "조직장_승인_완료",

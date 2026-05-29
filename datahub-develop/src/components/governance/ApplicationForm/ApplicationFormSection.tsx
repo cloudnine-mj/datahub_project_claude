@@ -180,16 +180,34 @@ function TableRow({
       </div>
       <div className={`flex ${isTallTextarea ? "items-start" : "items-center"} gap-2.5 px-3.5 py-3`}>
         {fields.length === 1 ? (
-          // date 만 폭 제한 — 그 외는 가로 전체. hint 도 함께 표시 (compliance 의 amber 경고 등).
-          <div className={`flex-1 ${primary.type === "date" ? "max-w-[200px]" : ""}`}>
-            <FieldInput
-              field={primary}
-              value={values[primary.key]}
-              onChange={(v) => onChange(primary.key, v)}
-              disabled={disabled}
-            />
-            {primary.hint && <FieldHint field={primary} value={values[primary.key]} />}
-          </div>
+          primary.inlineNote ? (
+            // 인라인 안내 — 입력칸 우측에 빨강 별표(*) + 회색 보조 텍스트를 같은 행에 배치.
+            <div className="flex flex-1 items-center gap-2">
+              <div className={primary.type === "date" ? "w-[200px] shrink-0" : "flex-1"}>
+                <FieldInput
+                  field={primary}
+                  value={values[primary.key]}
+                  onChange={(v) => onChange(primary.key, v)}
+                  disabled={disabled}
+                />
+              </div>
+              <span className="text-[11px] leading-snug text-[var(--color-text-tertiary,#9ca3af)] dark:text-gray-500">
+                <span aria-hidden="true" className="mr-1 text-[#D4533E]">*</span>
+                {primary.inlineNote}
+              </span>
+            </div>
+          ) : (
+            // date 만 폭 제한 — 그 외는 가로 전체. hint 도 함께 표시 (compliance 의 amber 경고 등).
+            <div className={`flex-1 ${primary.type === "date" ? "max-w-[200px]" : ""}`}>
+              <FieldInput
+                field={primary}
+                value={values[primary.key]}
+                onChange={(v) => onChange(primary.key, v)}
+                disabled={disabled}
+              />
+              {primary.hint && <FieldHint field={primary} value={values[primary.key]} />}
+            </div>
+          )
         ) : (
           // inlineWithNext — 수량 + 단위 처럼 한 행에 두 필드.
           <>
