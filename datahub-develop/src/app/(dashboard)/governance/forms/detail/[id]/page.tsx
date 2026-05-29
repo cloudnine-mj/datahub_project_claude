@@ -22,7 +22,6 @@ import { getChatRole } from "@/lib/governance/forms/get-chat-role";
 import { approvalHistoryToStatusItems } from "@/lib/governance/forms/history-adapter";
 import {
   ProgressBar,
-  SERVICE_STAGES,
   readServiceStage,
   writeServiceStage,
   readSubStep,
@@ -496,23 +495,15 @@ export default function Page({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* 용역 제작 전용 진행 카드 — 협의·계약 통합 단계(serviceStage 1·2)에서는 4단계 막대
-          (신청/협의/진행/종료), 그 외(신청 등)에서는 기존 5단계 막대. */}
+      {/* 용역 제작 전용 진행 카드 — 협의·계약 통합으로 4단계 막대(신청/협의/진행/종료) 사용.
+          내부 5단계 service-stage 인덱스를 4단계 표시 인덱스로 매핑. */}
       {form.form_type === "data_production" && (
         <div className="mb-4">
-          {serviceStage === 1 || serviceStage === 2 ? (
-            <ProgressBar
-              stages={FOUR_STAGES}
-              currentIndex={fiveToFourIndex(serviceStage)}
-              onStageClick={(i) => jumpServiceStage(FOUR_TO_FIVE[i] ?? 0)}
-            />
-          ) : (
-            <ProgressBar
-              stages={[...SERVICE_STAGES]}
-              currentIndex={serviceStage}
-              onStageClick={jumpServiceStage}
-            />
-          )}
+          <ProgressBar
+            stages={FOUR_STAGES}
+            currentIndex={fiveToFourIndex(serviceStage)}
+            onStageClick={(i) => jumpServiceStage(FOUR_TO_FIVE[i] ?? 0)}
+          />
         </div>
       )}
 
