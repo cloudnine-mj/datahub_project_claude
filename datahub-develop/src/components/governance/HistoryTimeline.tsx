@@ -47,6 +47,8 @@ export interface HistoryEvent {
   timestamp: string; // ISO
   actor: string;
   actorRole?: ActorRole;
+  /** 라벨 override — stage_transition 처럼 같은 타입이 단계별로 다른 문구를 쓸 때 사용. */
+  label?: string;
 }
 
 interface Config {
@@ -186,7 +188,7 @@ export function HistoryTimeline({ events }: { events: HistoryEvent[] }) {
           {nodes.map((node, i) => {
             const cfg = EVENT_CONFIG[node.primary.type];
             const isLast = i === lastIdx;
-            const primaryLabel = labelFor(node.primary.type);
+            const primaryLabel = node.primary.label ?? labelFor(node.primary.type);
             const secondaryLabel = node.secondary ? labelFor(node.secondary.type) : null;
             const actor = actorText(node.primary);
             return (
@@ -290,12 +292,19 @@ export function approvalHistoryToEvents(
       type = "approved";
     }
     if (!type) return;
+    // stage_transition 은 단계별로 문구가 달라 comment 를 라벨 override 로 사용
+    // (예: "계약 단계 진입" / "진행 단계 진입"). comment 없으면 기본 라벨.
+    const label =
+      type === "stage_transition" && comment.trim().length > 0
+        ? comment.trim()
+        : undefined;
     out.push({
       id: `${changedAt}-${i}`,
       type,
       timestamp: changedAt,
       actor: changedBy,
       actorRole: isActorRole(roleRaw) ? roleRaw : undefined,
+      label,
     });
   });
   return out;

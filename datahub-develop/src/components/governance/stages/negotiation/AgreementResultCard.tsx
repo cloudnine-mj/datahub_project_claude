@@ -116,8 +116,9 @@ export function AgreementResultCard({ value, canEdit, onField, onDownload }: Pro
   );
 }
 
-/** [다운로드 ▾] 드롭다운 — 엑셀(.xlsx) / PDF(.pdf). 외부 클릭·ESC 로 닫힘. */
-function DownloadMenu({
+/** [다운로드 ▾] 드롭다운 — 엑셀(.xlsx) / PDF(.pdf). 외부 클릭·ESC 로 닫힘.
+ *  계약 단계 AgreementCard 에서도 재사용. */
+export function DownloadMenu({
   onDownload,
 }: {
   onDownload: (format: "xlsx" | "pdf") => void;

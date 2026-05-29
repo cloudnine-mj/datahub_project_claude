@@ -8,6 +8,19 @@
 // 4필드 고정(임의 증감 금지). 작업 건수 초기값은 신청서 '목표 데이터 수량'.
 // 협의 단계에는 잠금 기능을 두지 않는다(계약 단계에서 별도 변경 이력 정책 적용 예정).
 
+/** 최종 협의 내용 변경 이력 1건.
+ *  - field='system' 은 단계 진입 같은 시스템 이벤트(before/after 없음, note 사용).
+ *  - 그 외는 셀 편집으로 값이 실제 바뀐 경우만 기록. */
+export interface ChangeLogEntry {
+  timestamp: string;
+  actor: string;
+  field: NegotiationField | "system";
+  fieldLabel: string;
+  before: string | null;
+  after: string | null;
+  note?: string;
+}
+
 export interface NegotiationResult {
   /** 선정 업체 */
   selectedVendor: string;
@@ -19,9 +32,11 @@ export interface NegotiationResult {
   workCount: string;
   /** 마지막 저장 시각(ISO). */
   updatedAt: string;
+  /** 계약 단계 변경 이력 — 별도 키로 분리하지 않고 본 객체 안에 통합 보관. */
+  changeLog: ChangeLogEntry[];
 }
 
-/** 합의 결과에서 입력해야 하는 4개 필드 키. locked/updatedAt 은 제외. */
+/** 합의 결과에서 입력해야 하는 4개 필드 키. updatedAt/changeLog 은 제외. */
 export type NegotiationField =
   | "selectedVendor"
   | "amount"
@@ -42,6 +57,7 @@ function emptyResult(): NegotiationResult {
     period: "",
     workCount: "",
     updatedAt: "",
+    changeLog: [],
   };
 }
 
@@ -59,13 +75,15 @@ export function readNegotiation(formId: string): NegotiationResult {
       period: String(parsed.period ?? ""),
       workCount: String(parsed.workCount ?? ""),
       updatedAt: String(parsed.updatedAt ?? ""),
+      changeLog: Array.isArray(parsed.changeLog) ? parsed.changeLog : [],
     };
   } catch {
     return emptyResult();
   }
 }
 
-function persist(formId: string, value: NegotiationResult): void {
+/** negotiation 객체 전체 저장 — changeLog 헬퍼(agreement-change-log) 가 사용. */
+export function persistNegotiation(formId: string, value: NegotiationResult): void {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(KEY(formId), JSON.stringify(value));
@@ -73,6 +91,8 @@ function persist(formId: string, value: NegotiationResult): void {
     /* 용량 초과 등 — 저장 실패해도 in-memory 상태는 유지. */
   }
 }
+
+const persist = persistNegotiation;
 
 /** 4개 필드 중 일부를 갱신(merge). */
 export function writeNegotiation(

@@ -31,6 +31,7 @@ import {
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 import { NegotiationStageTab } from "@/components/governance/stages/NegotiationStageTab";
+import { ContractStageTab } from "@/components/governance/stages/ContractStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
@@ -514,6 +515,20 @@ export default function Page({ params }: { params: { id: string } }) {
               requestInfoTable={requestInfoTable}
               chatPanel={chatPanel}
               onAdvanceToContract={advanceServiceStage}
+              onActivity={refetch}
+            />
+          </>
+        ) : serviceStage === 2 ? (
+          // 계약 단계(3/5) — 안내 / 신청 정보 접힘 / 최종 협의 내용(수정+변경이력) /
+          //   계약 정보(EAS) / 계약 자료 / [진행 단계로] + 우측 채팅. ContractStageTab 가 조립.
+          <>
+            {processBar}
+            <ContractStageTab
+              formId={form.id}
+              form={form}
+              requestInfoTable={requestInfoTable}
+              chatPanel={chatPanel}
+              onAdvanceToProgress={advanceServiceStage}
               onActivity={refetch}
             />
           </>
