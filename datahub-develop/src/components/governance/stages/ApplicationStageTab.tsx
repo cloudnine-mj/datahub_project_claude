@@ -63,6 +63,8 @@ export function ApplicationStageTab({
   const lead = useMemo(() => getChatAssignee(), []);
   const [members, setMembers] = useState<MemberMock[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  // [승인 완료] 확인 모달.
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
   const meEmail = me?.user.email ?? null;
 
   // Phase 1 — 담당자 sessionStorage 영속.
@@ -128,11 +130,12 @@ export function ApplicationStageTab({
     logEvent("member_assigned", "담당자 지정", lead.name, "lead");
   }
 
-  // [승인 완료] — 승인만 확정(approved). 단계 이동은 별도 [협의 단계로] 버튼에서 처리.
-  // (개발 테스트: 상태 가드 해제 — 어느 sub-step 에서도 즉시 승인 가능.)
-  function onApprove(): void {
+  // [승인 완료] 확인 모달 — '협의 단계로' 클릭 시 승인 확정 + 협의(1)로 즉시 이동.
+  function confirmApprove(): void {
     onSubStepChange("approved");
+    onAdvanceStage();
     logEvent("approved", "승인 완료", lead.name, "lead");
+    setApproveModalOpen(false);
   }
 
   function onAdvanceGeneric(): void {
@@ -142,7 +145,6 @@ export function ApplicationStageTab({
 
   if (formType !== "data_production") return null;
 
-  const isApproved = subStep === "approved";
   const isAwaitingApproval = subStep === "approval_requested";
 
   return (
@@ -199,33 +201,22 @@ export function ApplicationStageTab({
 
       <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
         {currentStage === 0 ? (
-          isApproved ? (
-            <div>
-              <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] text-[#1D9E75]">
-                <CircleCheck size={13} aria-hidden="true" /> 승인 완료
-              </p>
-              <GenericAdvanceButton stageIndex={0} onAdvance={onAdvanceGeneric} />
-            </div>
-          ) : (
-            <>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={onAssignComplete}
-                  className="flex-1 rounded-md bg-[#D4533E] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
-                >
-                  담당자 지정 완료
-                </button>
-                <button
-                  type="button"
-                  onClick={onApprove}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1D9E75] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
-                >
-                  <CircleCheck size={14} aria-hidden="true" /> 승인 완료
-                </button>
-              </div>
-            </>
-          )
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onAssignComplete}
+              className="flex-1 rounded-md bg-[#D4533E] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
+            >
+              담당자 지정 완료
+            </button>
+            <button
+              type="button"
+              onClick={() => setApproveModalOpen(true)}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#1D9E75] px-3 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
+            >
+              <CircleCheck size={14} aria-hidden="true" /> 승인 완료
+            </button>
+          </div>
         ) : currentStage < 4 ? (
           <GenericAdvanceButton stageIndex={currentStage} onAdvance={onAdvanceGeneric} />
         ) : (
@@ -234,6 +225,58 @@ export function ApplicationStageTab({
           </p>
         )}
       </div>
+
+      {/* 승인 완료 확인 모달 — '협의 단계로' 확인 시 승인 확정 + 협의(1)로 즉시 이동. */}
+      {approveModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setApproveModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="approve-modal-title"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <span
+                className="grid h-8 w-8 place-items-center rounded-full"
+                style={{ background: "#E1F5EE", color: "#0F6E56" }}
+                aria-hidden="true"
+              >
+                <CircleCheck size={16} />
+              </span>
+              <h3
+                id="approve-modal-title"
+                className="text-[14px] font-medium text-gray-900 dark:text-gray-100"
+              >
+                승인 완료
+              </h3>
+            </div>
+            <p className="mb-5 text-[12px] leading-relaxed text-gray-600 dark:text-gray-300">
+              신청 단계 승인이 완료되었습니다. 협의 단계로 넘어갑니다.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setApproveModalOpen(false)}
+                className="rounded-md border border-gray-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={confirmApprove}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#1D9E75] px-3.5 py-1.5 text-[12px] font-medium text-white transition hover:brightness-110"
+              >
+                협의 단계로
+                <ArrowRight size={13} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
