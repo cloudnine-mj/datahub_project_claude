@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, ChevronDown, FileText, Pencil, Save } from "lucide-react";
@@ -115,6 +115,27 @@ export function ApplicationFormContainer({
   const router = useRouter();
   // 상세 '수정' 진입 — 상태와 무관하게 편집 폼을 노출하고 추적-모드 리다이렉트를 끈다.
   const isEditMode = !!editFormId;
+
+  // 새 신청서(편집 아님) 진입 시 작성 중 임시 첨부 키를 1회 비운다.
+  //   draft-temp:{type} 은 저장 전 첨부를 잠시 담는 키인데, 저장 없이 새로고침/이탈하면
+  //   값(폼 입력)은 초기화되는 반면 이 키만 sessionStorage 에 남아 다음 새 작성에 이전 첨부가
+  //   유령처럼 보였다(새로고침 후 ObjectURL 소실로 다운로드도 불가). 자식 InlineAttachmentInput
+  //   이 키를 읽기 전(부모 렌더 단계)에 정리해 새 작성은 항상 빈 첨부로 시작하게 한다.
+  const didClearDraftAttachmentsRef = useRef(false);
+  if (
+    !didClearDraftAttachmentsRef.current &&
+    typeof window !== "undefined"
+  ) {
+    didClearDraftAttachmentsRef.current = true;
+    if (!editFormId) {
+      try {
+        sessionStorage.removeItem(`dh:gov:attachments:draft-temp:${type}`);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
   // 수정 진입 시점의 원본 값 스냅샷 — 변경 항목 비교(제출 전 검토 모달) 에 사용.
