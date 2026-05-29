@@ -511,7 +511,6 @@ export default function Page({ params }: { params: { id: string } }) {
             <NegotiationStageTab
               formId={form.id}
               form={form}
-              me={me}
               requestInfoTable={requestInfoTable}
               chatPanel={chatPanel}
               onAdvanceToContract={advanceServiceStage}

@@ -4,9 +4,10 @@
 //   좌측: 지금 할 일 / 신청 정보(접힘) / 합의 결과 / 협의 자료 / [계약 단계로 진행]
 //   우측: 담당자와 소통 채팅 (부모가 전달한 ChatPanel 그대로 재사용)
 //
-// 권한:
-//   담당자(isLead || isMember) — 합의 결과 인라인 편집 + [계약 단계로 진행] 노출.
-//   신청자                      — 합의 결과 읽기 전용, [계약 단계로 진행] 미렌더(자리 없음).
+// 권한 (Phase 1 목업):
+//   진행 바 자유 이동과 동일하게 역할 게이팅 없이 전 역할 노출.
+//   합의 결과 인라인 편집 / [계약 단계로 진행] 버튼 모두 잠금(locked) 여부로만 제어.
+//   TODO(Phase 2): 담당자(isLead || isMember) 한정으로 복원 — 신청자는 읽기 전용 + 버튼 미렌더.
 //
 // 단계 전환은 모달의 [계약 단계로 진행 →] 에서만 발생(자동 전환 금지). 확정 시:
 //   1) 합의 결과 잠금(locked=true)  2) stage_transition 이력 기록
@@ -18,7 +19,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowRight, ArrowRightCircle, ChevronDown, CircleCheck } from "lucide-react";
-import { api, type FormDetail, type Me } from "@/lib/governance/api-client-full";
+import { api, type FormDetail } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   ensureWorkCountDefault,
@@ -32,18 +33,9 @@ import { AgreementResultCard } from "./negotiation/AgreementResultCard";
 import { NegotiationFilesCard } from "./negotiation/NegotiationFilesCard";
 import { ProceedToContractModal } from "./negotiation/ProceedToContractModal";
 
-const MEMBERS_KEY = (formId: string) => `dh:gov:stage1:members:${formId}`;
-
-interface MemberMock {
-  id: string;
-  name: string;
-  email: string;
-}
-
 interface Props {
   formId: string;
   form: FormDetail;
-  me: Me | null;
   /** 신청 정보 표(헤더 제외) — 부모가 만든 표를 접힘 카드 본문으로 재사용. */
   requestInfoTable: ReactNode;
   /** 우측 채팅 패널 — 부모가 만든 ChatPanel(fillParent) 그대로. */
@@ -57,7 +49,6 @@ interface Props {
 export function NegotiationStageTab({
   formId,
   form,
-  me,
   requestInfoTable,
   chatPanel,
   onAdvanceToContract,
@@ -69,22 +60,6 @@ export function NegotiationStageTab({
   );
   const [modalOpen, setModalOpen] = useState(false);
 
-  const meEmail = me?.user.email?.toLowerCase() ?? null;
-
-  // 담당자 판별 — 총괄(고정) + 멤버 키. 신청자는 읽기 전용.
-  const isAssignee = useMemo(() => {
-    if (!meEmail) return false;
-    if (meEmail === lead.email.toLowerCase()) return true;
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = sessionStorage.getItem(MEMBERS_KEY(formId));
-      const members = raw ? (JSON.parse(raw) as MemberMock[]) : [];
-      return members.some((m) => m.email.toLowerCase() === meEmail);
-    } catch {
-      return false;
-    }
-  }, [meEmail, lead.email, formId]);
-
   // 작업 건수 초기값 — 신청서 '목표 데이터 수량' 으로 1회 자동 채움(미입력 시에만).
   useEffect(() => {
     const raw = form.payload?.["목표_데이터_수량"];
@@ -94,7 +69,10 @@ export function NegotiationStageTab({
   }, [formId, form]);
 
   const locked = negotiation.locked;
-  const canEdit = isAssignee && !locked;
+  // Phase 1(목업) — 진행 바 자유 이동과 동일하게 역할 게이팅 없이 전 역할 노출.
+  //   합의 결과 편집 / [계약 단계로 진행] 버튼 모두 잠금 여부로만 제어.
+  //   TODO(Phase 2): 담당자(isLead || isMember) 한정으로 복원.
+  const canEdit = !locked;
 
   function onField(key: NegotiationField, next: string): void {
     if (!canEdit) return;
@@ -136,23 +114,16 @@ export function NegotiationStageTab({
 
         <NegotiationFilesCard formId={formId} />
 
-        {/* 담당자에게만 렌더 — 신청자에게는 null(자리 차지 안 함). */}
-        {isAssignee && (
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            disabled={locked}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
-          >
-            계약 단계로 진행
-            <ArrowRight size={14} aria-hidden="true" />
-          </button>
-        )}
-        {isAssignee && (
-          <p className="text-center text-[11px] text-gray-400">
-            담당자에게만 노출 · 신청자에게는 미렌더
-          </p>
-        )}
+        {/* Phase 1(목업) — 역할 게이팅 없이 전 역할 노출. Phase 2 에서 담당자 한정 복원. */}
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          disabled={locked}
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+        >
+          계약 단계로 진행
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
       </div>
 
       <div className="min-h-0">{chatPanel}</div>
