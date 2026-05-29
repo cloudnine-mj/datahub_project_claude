@@ -8,7 +8,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, FileText } from "lucide-react";
+import { Download } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 import {
   chatExtColor,
@@ -106,12 +106,7 @@ export function NegotiationFilesCard({ formId, refreshNonce }: Props) {
         </span>
       </header>
 
-      {files.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 px-3 py-4 text-[11px] text-gray-400 dark:border-gray-700">
-          <FileText size={14} aria-hidden="true" />
-          협의 단계 채팅에 첨부된 파일이 없습니다.
-        </div>
-      ) : (
+      {files.length > 0 && (
         <ul className="space-y-2">
           {files.map(({ att, senderName, createdAt }) => (
             <li
