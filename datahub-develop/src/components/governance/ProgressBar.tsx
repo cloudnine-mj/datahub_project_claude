@@ -98,26 +98,27 @@ export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
   );
 }
 
-/** 용역 제작(data_production) 의 5단계. */
-export const SERVICE_STAGES = ["요청서 검토", "협의", "계약", "진행", "종료"] as const;
+/** 용역 제작(data_production) 의 4단계. 협의·계약 통합으로 5→4 단계로 축소. */
+export const SERVICE_STAGES = ["신청", "협의", "진행", "종료"] as const;
 
-/** Phase 1 — 5단계 진행은 form status 와 무관한 별도 상태로 관리.
- *  신청 단계(0) 에서 총괄 담당자가 실무자 지정 후 [협의 단계로] 버튼을 눌러야
+/** Phase 1 — 4단계 진행은 form status 와 무관한 별도 상태로 관리.
+ *  신청 단계(0) 에서 총괄 담당자가 실무자 지정 후 [승인 완료] 를 눌러야
  *  1(협의) 로 넘어가는 흐름. 백엔드 컬럼이 없으므로 sessionStorage 에 영속.
- *  status === 'approved' 면 종료(4) 로 고정.
+ *  status === 'approved' 면 종료(3) 로 고정.
  *
+ *  단계 인덱스(0-based): 0=신청, 1=협의, 2=진행, 3=종료.
  *  Phase 2 에서 GovernanceForm 에 serviceStage 컬럼 추가 + API 로 교체 예정. */
 const STAGE_KEY = (formId: string) => `dh:gov:service-stage:${formId}`;
 
 export function readServiceStage(formId: string, status: string): number {
-  if (status === "approved") return 4;
+  if (status === "approved") return 3;
   if (typeof window === "undefined") return 0;
   try {
     const raw = sessionStorage.getItem(STAGE_KEY(formId));
     if (raw == null) return 0;
     const n = Number(raw);
     if (!Number.isFinite(n)) return 0;
-    return Math.max(0, Math.min(4, n));
+    return Math.max(0, Math.min(3, n));
   } catch {
     return 0;
   }
@@ -128,7 +129,7 @@ export function writeServiceStage(formId: string, stage: number): void {
   try {
     sessionStorage.setItem(
       STAGE_KEY(formId),
-      String(Math.max(0, Math.min(4, stage))),
+      String(Math.max(0, Math.min(3, stage))),
     );
   } catch {
     /* ignore */
@@ -175,5 +176,5 @@ export function writeSubStep(formId: string, step: SubStep): void {
 
 /** @deprecated readServiceStage 로 대체. */
 export function serviceStageIndexFromStatus(status: string): number {
-  return status === "approved" ? 4 : 0;
+  return status === "approved" ? 3 : 0;
 }

@@ -58,7 +58,7 @@ interface Props {
   stageLabels?: readonly string[];
 }
 
-const DEFAULT_STAGE_LABELS = ["요청서 검토", "협의", "계약", "진행", "종료"] as const;
+const DEFAULT_STAGE_LABELS = ["신청", "협의", "진행", "종료"] as const;
 
 const STAGE_MAP_KEY = (formId: string) => `dh:gov:chat-stages:${formId}`;
 

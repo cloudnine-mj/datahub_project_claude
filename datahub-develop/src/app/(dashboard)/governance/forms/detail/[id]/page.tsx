@@ -22,6 +22,7 @@ import { getChatRole } from "@/lib/governance/forms/get-chat-role";
 import { approvalHistoryToStatusItems } from "@/lib/governance/forms/history-adapter";
 import {
   ProgressBar,
+  SERVICE_STAGES,
   readServiceStage,
   writeServiceStage,
   readSubStep,
@@ -47,18 +48,6 @@ function buildEditHref(form: FormDetail, from: string | null): string {
     return `/governance/forms/intake?type=${appType}&id=${form.id}${from ? `&from=${from}` : ""}`;
   }
   return `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`;
-}
-
-/** 협의·계약 통합 단계용 4단계 막대 — 신청/협의/진행/종료.
- *  내부 5단계 service-stage 인덱스(0신청·1협의·2계약·3진행·4종료)와의 매핑.
- *  신청 단계 페이지의 5단계 막대는 그대로 두고, 통합 단계에서만 4단계 막대를 사용. */
-const FOUR_STAGES = ["신청", "협의", "진행", "종료"];
-const FOUR_TO_FIVE = [0, 1, 3, 4];
-function fiveToFourIndex(five: number): number {
-  if (five <= 1) return five; // 0→0, 1→1
-  if (five === 2) return 1; // 계약(미사용)도 협의로 표시
-  if (five === 3) return 2; // 진행
-  return 3; // 종료
 }
 
 export default function Page({ params }: { params: { id: string } }) {
@@ -161,16 +150,16 @@ export default function Page({ params }: { params: { id: string } }) {
 
   const advanceServiceStage = useCallback(() => {
     if (!form) return;
-    const next = Math.min(4, serviceStage + 1);
+    const next = Math.min(3, serviceStage + 1);
     setServiceStage(next);
     writeServiceStage(form.id, next);
   }, [form, serviceStage]);
 
-  // Phase 1 — 개발 편의를 위해 chevron 탭 클릭 시 자유 이동. 권한 가드 없음.
+  // Phase 1 — 개발 편의를 위해 진행 바 라벨 클릭 시 자유 이동. 권한 가드 없음.
   const jumpServiceStage = useCallback(
     (idx: number) => {
       if (!form) return;
-      const clamped = Math.max(0, Math.min(4, idx));
+      const clamped = Math.max(0, Math.min(3, idx));
       setServiceStage(clamped);
       writeServiceStage(form.id, clamped);
     },
@@ -495,14 +484,13 @@ export default function Page({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* 용역 제작 전용 진행 카드 — 협의·계약 통합으로 4단계 막대(신청/협의/진행/종료) 사용.
-          내부 5단계 service-stage 인덱스를 4단계 표시 인덱스로 매핑. */}
+      {/* 용역 제작 전용 진행 카드 — 4단계 막대(신청/협의/진행/종료). */}
       {form.form_type === "data_production" && (
         <div className="mb-4">
           <ProgressBar
-            stages={FOUR_STAGES}
-            currentIndex={fiveToFourIndex(serviceStage)}
-            onStageClick={(i) => jumpServiceStage(FOUR_TO_FIVE[i] ?? 0)}
+            stages={[...SERVICE_STAGES]}
+            currentIndex={serviceStage}
+            onStageClick={jumpServiceStage}
           />
         </div>
       )}
@@ -515,9 +503,9 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {form.form_type === "data_production" ? (
-        serviceStage === 1 || serviceStage === 2 ? (
-          // 협의·계약 통합 단계(4단계 막대 기준 2/4) — 안내 / 신청 정보 접힘 / 최종 협의 내용 /
-          //   계약 정보(EAS) / 협의 자료 / [진행 단계로] + 우측 채팅. 진행(5단계 인덱스 3)으로 전환.
+        serviceStage === 1 ? (
+          // 협의·계약 통합 단계(2/4) — 안내 / 신청 정보 접힘 / 최종 협의 내용 /
+          //   계약 정보(EAS) / 협의 자료 / [진행 단계로] + 우측 채팅. 진행(인덱스 2)으로 전환.
           <>
             {processBar}
             <NegotiationContractStageTab
@@ -525,7 +513,7 @@ export default function Page({ params }: { params: { id: string } }) {
               form={form}
               requestInfoTable={requestInfoTable}
               chatPanel={chatPanel}
-              onAdvanceToProgress={() => jumpServiceStage(3)}
+              onAdvanceToProgress={() => jumpServiceStage(2)}
               onActivity={refetch}
             />
           </>
