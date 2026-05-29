@@ -18,6 +18,7 @@
 "use client";
 
 import {
+  ArrowRightCircle,
   CircleCheck,
   Eye,
   History,
@@ -35,7 +36,8 @@ export type HistoryEventType =
   | "revision"
   | "approval_requested"
   | "approved"
-  | "info_requested";
+  | "info_requested"
+  | "stage_transition";
 
 export type ActorRole = "applicant" | "lead" | "member" | "system";
 
@@ -65,6 +67,7 @@ const EVENT_CONFIG: Record<HistoryEventType, Config> = {
   approval_requested: { label: "승인 요청", icon: SendHorizontal, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   approved: { label: "승인 완료", icon: CircleCheck, node: "#1D9E75", chipBg: "#E1F5EE", chipText: "#0F6E56" },
   info_requested: { label: "보완 요청", icon: Pencil, node: "#E08027", chipBg: "#FBEBD6", chipText: "#B5610F" },
+  stage_transition: { label: "계약 단계 전환", icon: ArrowRightCircle, node: "#D4533E", chipBg: "#FCEAE5", chipText: "#993C1D" },
 };
 
 const ROLE_LABEL: Record<ActorRole, string> = {
@@ -76,7 +79,12 @@ const ROLE_LABEL: Record<ActorRole, string> = {
 
 /** actorRole 미저장 옛 엔트리 대비 — 이벤트 타입으로 주체 역할 추정. */
 function roleForType(type: HistoryEventType): ActorRole {
-  if (type === "member_assigned" || type === "approved" || type === "info_requested") {
+  if (
+    type === "member_assigned" ||
+    type === "approved" ||
+    type === "info_requested" ||
+    type === "stage_transition"
+  ) {
     return "lead";
   }
   if (type === "review_started") return "system";
@@ -228,6 +236,7 @@ const ACTION_TO_TYPE: Record<string, HistoryEventType> = {
   info_resubmitted: "revision",
   info_requested: "info_requested",
   approved: "approved",
+  stage_transition: "stage_transition",
 };
 
 function isActorRole(v: unknown): v is ActorRole {

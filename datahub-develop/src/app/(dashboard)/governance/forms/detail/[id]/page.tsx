@@ -30,6 +30,7 @@ import {
   type SubStep,
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
+import { NegotiationStageTab } from "@/components/governance/stages/NegotiationStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
@@ -236,6 +237,45 @@ export default function Page({ params }: { params: { id: string } }) {
         })()
       : null;
 
+  // 신청 정보 표(헤더 제외) — 신청 단계 카드와 협의 단계 접힘 카드에서 공유.
+  const requestInfoTable = (
+    <div
+      id="form-content"
+      className="overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4"
+    >
+      <table className="w-full text-sm">
+        <tbody>
+          <Row label="신청자 이름">{form.submitter_name}</Row>
+          <Row label="소속">{form.submitter_department || "-"}</Row>
+          <Row label="이메일">{form.submitter_email}</Row>
+          {allFields.map((f) => {
+            // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행으로 인라인 노출.
+            if (f.type === "attachment") {
+              return (
+                <Row key={f.key} label="첨부파일">
+                  <AttachmentSection
+                    formId={form.id}
+                    backend={form.attachments}
+                    embedded
+                  />
+                </Row>
+              );
+            }
+            const v = form.payload[f.key];
+            if (v === undefined || v === null || v === "") return null;
+            const displayLabel =
+              f.key === "조직장_승인_완료" ? "조직장 승인" : f.label;
+            return (
+              <Row key={f.key} label={displayLabel}>
+                <FieldValue field={f} value={v} />
+              </Row>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   // 신청 정보 카드 — 상단 마진은 사용처에서 부여.
   const requestInfoCard = (
     <div className={hideForm ? "hidden" : ""}>
@@ -245,41 +285,7 @@ export default function Page({ params }: { params: { id: string } }) {
           신청 정보
         </h3>
       </div>
-      <div
-        id="form-content"
-        className="overflow-hidden rounded-lg border border-gray-200 bg-white scroll-mt-4"
-      >
-        <table className="w-full text-sm">
-          <tbody>
-            <Row label="신청자 이름">{form.submitter_name}</Row>
-            <Row label="소속">{form.submitter_department || "-"}</Row>
-            <Row label="이메일">{form.submitter_email}</Row>
-            {allFields.map((f) => {
-              // 첨부파일 — 신청서 양식과 동일하게 신청 정보 표의 마지막 행으로 인라인 노출.
-              if (f.type === "attachment") {
-                return (
-                  <Row key={f.key} label="첨부파일">
-                    <AttachmentSection
-                      formId={form.id}
-                      backend={form.attachments}
-                      embedded
-                    />
-                  </Row>
-                );
-              }
-              const v = form.payload[f.key];
-              if (v === undefined || v === null || v === "") return null;
-              const displayLabel =
-                f.key === "조직장_승인_완료" ? "조직장 승인" : f.label;
-              return (
-                <Row key={f.key} label={displayLabel}>
-                  <FieldValue field={f} value={v} />
-                </Row>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {requestInfoTable}
     </div>
   );
 
@@ -497,26 +503,43 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {form.form_type === "data_production" ? (
-        // 용역 제작 — 2블록 레이아웃.
-        //   블록1: 좌측(신청 정보 카드 + 버튼 행) + 우측(채팅). grid items-stretch 로
-        //          채팅 높이가 '신청 정보 + 버튼' 합친 좌측 블록 전체 높이에 맞춰지고,
-        //          채팅 입력창 바닥이 버튼 행과 정렬됨 (채팅에 고정 높이 주지 않음).
-        //   블록2: 전체 너비. 담당자 카드(full width).
-        <>
-          {processBar}
+        serviceStage === 1 ? (
+          // 협의 단계(2/5) — 좌측 카드 컬럼(지금 할 일 / 신청 정보 접힘 / 합의 결과 /
+          //   협의 자료 / [계약 단계로 진행]) + 우측 채팅. NegotiationStageTab 가 조립.
+          <>
+            {processBar}
+            <NegotiationStageTab
+              formId={form.id}
+              form={form}
+              me={me}
+              requestInfoTable={requestInfoTable}
+              chatPanel={chatPanel}
+              onAdvanceToContract={advanceServiceStage}
+              onActivity={refetch}
+            />
+          </>
+        ) : (
+          // 신청 단계(및 그 외) — 2블록 레이아웃.
+          //   블록1: 좌측(신청 정보 카드 + 버튼 행) + 우측(채팅). grid items-stretch 로
+          //          채팅 높이가 '신청 정보 + 버튼' 합친 좌측 블록 전체 높이에 맞춰지고,
+          //          채팅 입력창 바닥이 버튼 행과 정렬됨 (채팅에 고정 높이 주지 않음).
+          //   블록2: 전체 너비. 담당자 카드(full width).
+          <>
+            {processBar}
 
-          {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이 */}
-          <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]">
-            <div className="flex min-w-0 flex-col gap-3">
-              {requestInfoCard}
-              <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
+            {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이 */}
+            <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]">
+              <div className="flex min-w-0 flex-col gap-3">
+                {requestInfoCard}
+                <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
+              </div>
+              <div className="min-h-0">{chatPanel}</div>
             </div>
-            <div className="min-h-0">{chatPanel}</div>
-          </div>
 
-          {/* 블록 2 — 전체 너비: 담당자 카드 */}
-          {stageTabCard && <div className="mt-4">{stageTabCard}</div>}
-        </>
+            {/* 블록 2 — 전체 너비: 담당자 카드 */}
+            {stageTabCard && <div className="mt-4">{stageTabCard}</div>}
+          </>
+        )
       ) : (
         // 그 외 유형 — 기존 단일 컬럼.
         <div>
