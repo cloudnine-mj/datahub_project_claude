@@ -30,8 +30,7 @@ import {
   type SubStep,
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
-import { NegotiationStageTab } from "@/components/governance/stages/NegotiationStageTab";
-import { ContractStageTab } from "@/components/governance/stages/ContractStageTab";
+import { NegotiationContractStageTab } from "@/components/governance/stages/NegotiationContractStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
@@ -49,6 +48,18 @@ function buildEditHref(form: FormDetail, from: string | null): string {
     return `/governance/forms/intake?type=${appType}&id=${form.id}${from ? `&from=${from}` : ""}`;
   }
   return `/governance/forms/${form.form_type}/new?id=${form.id}${from ? `&from=${from}` : ""}`;
+}
+
+/** 협의·계약 통합 단계용 4단계 막대 — 신청/협의/진행/종료.
+ *  내부 5단계 service-stage 인덱스(0신청·1협의·2계약·3진행·4종료)와의 매핑.
+ *  신청 단계 페이지의 5단계 막대는 그대로 두고, 통합 단계에서만 4단계 막대를 사용. */
+const FOUR_STAGES = ["신청", "협의", "진행", "종료"];
+const FOUR_TO_FIVE = [0, 1, 3, 4];
+function fiveToFourIndex(five: number): number {
+  if (five <= 1) return five; // 0→0, 1→1
+  if (five === 2) return 1; // 계약(미사용)도 협의로 표시
+  if (five === 3) return 2; // 진행
+  return 3; // 종료
 }
 
 export default function Page({ params }: { params: { id: string } }) {
@@ -485,14 +496,23 @@ export default function Page({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      {/* 용역 제작 전용 진행 카드 — 5단계 막대 채우기형. */}
+      {/* 용역 제작 전용 진행 카드 — 협의·계약 통합 단계(serviceStage 1·2)에서는 4단계 막대
+          (신청/협의/진행/종료), 그 외(신청 등)에서는 기존 5단계 막대. */}
       {form.form_type === "data_production" && (
         <div className="mb-4">
-          <ProgressBar
-            stages={[...SERVICE_STAGES]}
-            currentIndex={serviceStage}
-            onStageClick={jumpServiceStage}
-          />
+          {serviceStage === 1 || serviceStage === 2 ? (
+            <ProgressBar
+              stages={FOUR_STAGES}
+              currentIndex={fiveToFourIndex(serviceStage)}
+              onStageClick={(i) => jumpServiceStage(FOUR_TO_FIVE[i] ?? 0)}
+            />
+          ) : (
+            <ProgressBar
+              stages={[...SERVICE_STAGES]}
+              currentIndex={serviceStage}
+              onStageClick={jumpServiceStage}
+            />
+          )}
         </div>
       )}
 
@@ -504,31 +524,17 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {form.form_type === "data_production" ? (
-        serviceStage === 1 ? (
-          // 협의 단계(2/5) — 좌측 카드 컬럼(지금 할 일 / 신청 정보 접힘 / 합의 결과 /
-          //   협의 자료 / [계약 단계로 진행]) + 우측 채팅. NegotiationStageTab 가 조립.
+        serviceStage === 1 || serviceStage === 2 ? (
+          // 협의·계약 통합 단계(4단계 막대 기준 2/4) — 안내 / 신청 정보 접힘 / 최종 협의 내용 /
+          //   계약 정보(EAS) / 협의 자료 / [진행 단계로] + 우측 채팅. 진행(5단계 인덱스 3)으로 전환.
           <>
             {processBar}
-            <NegotiationStageTab
+            <NegotiationContractStageTab
               formId={form.id}
               form={form}
               requestInfoTable={requestInfoTable}
               chatPanel={chatPanel}
-              onAdvanceToContract={advanceServiceStage}
-              onActivity={refetch}
-            />
-          </>
-        ) : serviceStage === 2 ? (
-          // 계약 단계(3/5) — 안내 / 신청 정보 접힘 / 최종 협의 내용(수정+변경이력) /
-          //   계약 정보(EAS) / 계약 자료 / [진행 단계로] + 우측 채팅. ContractStageTab 가 조립.
-          <>
-            {processBar}
-            <ContractStageTab
-              formId={form.id}
-              form={form}
-              requestInfoTable={requestInfoTable}
-              chatPanel={chatPanel}
-              onAdvanceToProgress={advanceServiceStage}
+              onAdvanceToProgress={() => jumpServiceStage(3)}
               onActivity={refetch}
             />
           </>

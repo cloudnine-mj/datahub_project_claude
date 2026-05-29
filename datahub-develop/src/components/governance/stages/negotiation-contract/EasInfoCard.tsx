@@ -1,10 +1,10 @@
-// 계약 정보 (EAS) 카드 — 품의번호 1행. 인라인 편집(Enter/blur 저장, 300ms debounce).
-//   품의번호 1개 고정(필드 증감 금지). 저장은 부모가 lib/contract-storage 로 영속.
+// 계약 정보 (EAS) 카드 — 협의·계약 통합 단계 안에 포함. 품의번호 1행(인라인 편집).
+//   품의번호 1개 고정(필드 증감 금지). 저장은 부모가 contract-storage 로 영속.
 
 "use client";
 
 import { Save } from "lucide-react";
-import { AgreementCell } from "../negotiation/AgreementResultCard";
+import { InlineCell } from "./InlineCell";
 
 interface Props {
   value: string;
@@ -20,7 +20,7 @@ export function EasInfoCard({ value, onCommit }: Props) {
           계약 정보 (EAS)
         </h3>
         <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-gray-400">
-          <Save size={12} aria-hidden="true" /> 자동 저장
+          <Save size={12} aria-hidden="true" /> 자동 저장 (담당자만)
         </span>
       </header>
       <p className="mb-3 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
@@ -35,9 +35,8 @@ export function EasInfoCard({ value, onCommit }: Props) {
                 품의번호
               </td>
               <td className="px-3 py-[9px] align-middle text-gray-900 dark:text-gray-100">
-                <AgreementCell
+                <InlineCell
                   value={value}
-                  canEdit
                   emptyEditable="+ 클릭해서 입력"
                   onCommit={onCommit}
                 />
