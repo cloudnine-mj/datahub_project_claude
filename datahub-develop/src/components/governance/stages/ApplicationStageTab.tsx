@@ -138,11 +138,6 @@ export function ApplicationStageTab({
     setApproveModalOpen(false);
   }
 
-  function onAdvanceGeneric(): void {
-    if (currentStage >= 4) return;
-    onAdvanceStage();
-  }
-
   if (formType !== "data_production") return null;
 
   const isAwaitingApproval = subStep === "approval_requested";
@@ -199,8 +194,10 @@ export function ApplicationStageTab({
         <AddMemberModal onClose={() => setModalOpen(false)} onAdd={onAddMember} />
       )}
 
-      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        {currentStage === 0 ? (
+      {/* 신청 단계(0) 에서만 액션 영역 노출. 협의 이후 단계 이동은 승인 완료 모달 /
+          상단 진행 바가 담당하므로, 담당자 지정 카드엔 단계 진행 버튼을 두지 않는다. */}
+      {currentStage === 0 && (
+        <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
           <div className="flex gap-2">
             <button
               type="button"
@@ -217,14 +214,8 @@ export function ApplicationStageTab({
               <CircleCheck size={14} aria-hidden="true" /> 승인 완료
             </button>
           </div>
-        ) : currentStage < 4 ? (
-          <GenericAdvanceButton stageIndex={currentStage} onAdvance={onAdvanceGeneric} />
-        ) : (
-          <p className="text-center text-[11px] text-gray-400">
-            모든 단계가 완료되었습니다.
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 승인 완료 확인 모달 — '협의 단계로' 확인 시 승인 확정 + 협의(1)로 즉시 이동. */}
       {approveModalOpen && (
@@ -278,36 +269,6 @@ export function ApplicationStageTab({
         </div>
       )}
     </section>
-  );
-}
-
-/** 협의 이후 단계용 — 단순 [다음 단계로] 버튼. */
-function GenericAdvanceButton({
-  stageIndex,
-  onAdvance,
-}: {
-  stageIndex: number;
-  onAdvance: () => void;
-}) {
-  const label =
-    stageIndex === 0
-      ? "협의 단계로"
-      : stageIndex === 1
-        ? "계약 단계로"
-        : stageIndex === 2
-          ? "진행 단계로"
-          : stageIndex === 3
-            ? "종료 단계로"
-            : "완료";
-  return (
-    <button
-      type="button"
-      onClick={onAdvance}
-      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-[#D4533E] px-4 py-2.5 text-[12px] font-medium text-white transition hover:brightness-110"
-    >
-      {label}
-      <ArrowRight size={14} aria-hidden="true" />
-    </button>
   );
 }
 
