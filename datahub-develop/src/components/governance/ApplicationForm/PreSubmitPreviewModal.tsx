@@ -61,6 +61,8 @@ interface Props {
   /** 수정 모드에서 백엔드(form.attachments)로 로드된 첨부 — sessionStorage 에 없을 수 있어
    *  함께 병합해 표시. {id, filename, sizeBytes} 형태. */
   backendAttachments?: StoredAttachment[];
+  /** 참조자(CC users) — 현재 메모리 목록. 미리보기 표에 칩으로 표시(빈 배열이면 '—'). */
+  ccUsers?: string[];
 }
 
 export function PreSubmitPreviewModal({
@@ -74,6 +76,7 @@ export function PreSubmitPreviewModal({
   originalPayload,
   formId = null,
   backendAttachments = [],
+  ccUsers = [],
 }: Props) {
   const isEdit = mode === "edit";
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -104,12 +107,26 @@ export function PreSubmitPreviewModal({
     const all: RowDef[] = [];
     schema.sections.forEach((sec) => {
       sec.fields.forEach((f: FieldDef) => {
-        if (f.type === "checkbox" || f.type === "attachment") return;
+        if (
+          f.type === "checkbox" ||
+          f.type === "attachment" ||
+          f.type === "cc_users"
+        )
+          return;
         all.push({ key: f.key, label: f.label });
       });
     });
     return all;
   }, [schema]);
+
+  // 참조자 — 스키마에 cc_users 필드가 있는 유형에서만 행 노출(값은 prop ccUsers).
+  const hasCcUsersField = useMemo(
+    () =>
+      schema.sections.some((sec) =>
+        sec.fields.some((f) => f.type === "cc_users"),
+      ),
+    [schema],
+  );
 
   // 첨부파일 — payload 가 아닌 sessionStorage 에 영속되므로 formId(또는 임시 키)로 읽는다.
   //   스키마에 attachment 필드가 있는 유형(용역 제작 등)에서만 행을 노출.
@@ -276,7 +293,9 @@ export function PreSubmitPreviewModal({
                 {rows.map((r, idx) => {
                   const text = formatValue(payload[r.key]);
                   const isLast =
-                    idx === rows.length - 1 && !hasAttachmentField;
+                    idx === rows.length - 1 &&
+                    !hasAttachmentField &&
+                    !hasCcUsersField;
                   return (
                     <PreviewRow
                       key={r.key}
@@ -290,6 +309,7 @@ export function PreSubmitPreviewModal({
                 {hasAttachmentField && (
                   <AttachmentRow attachments={attachments} />
                 )}
+                {hasCcUsersField && <CcUsersRow users={ccUsers} />}
               </tbody>
             </table>
           </div>
@@ -436,6 +456,42 @@ function AttachmentRow({ attachments }: { attachments: StoredAttachment[] }) {
               </li>
             ))}
           </ul>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+/** 참조자 행 — 미리보기 표 마지막 행. 이름을 파란 칩으로 나열. 비어 있으면 '—'. */
+function CcUsersRow({ users }: { users: string[] }) {
+  return (
+    <tr>
+      <th
+        scope="row"
+        className="w-[160px] bg-gray-50 px-[14px] py-[11px] text-left align-top text-gray-500 font-normal dark:bg-gray-800/40 dark:text-gray-400"
+      >
+        참조자
+      </th>
+      <td className="px-[14px] py-[11px] text-gray-900 dark:text-gray-100">
+        {users.length === 0 ? (
+          <span className="text-gray-400">—</span>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {users.map((n) => (
+              <span
+                key={n}
+                className="inline-flex items-center text-[11px]"
+                style={{
+                  background: "#E6F1FB",
+                  color: "#0C447C",
+                  borderRadius: 14,
+                  padding: "3px 10px",
+                }}
+              >
+                {n}
+              </span>
+            ))}
+          </div>
         )}
       </td>
     </tr>

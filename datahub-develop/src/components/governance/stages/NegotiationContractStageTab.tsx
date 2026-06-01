@@ -30,6 +30,7 @@ import {
 } from "@/lib/governance/negotiation-storage";
 import { readContract, writeContract } from "@/lib/governance/contract-storage";
 import { AgreementCard } from "./negotiation-contract/AgreementCard";
+import { CcUsersCard } from "./negotiation-contract/CcUsersCard";
 import { EasInfoCard } from "./negotiation-contract/EasInfoCard";
 import { NegotiationFilesCard } from "./negotiation-contract/NegotiationFilesCard";
 import { ProceedToProgressModal } from "./negotiation-contract/ProceedToProgressModal";
@@ -108,6 +109,8 @@ export function NegotiationContractStageTab({
         <InfoCard />
 
         <CollapsibleRequestInfo>{requestInfoTable}</CollapsibleRequestInfo>
+
+        <CcUsersCard formId={formId} />
 
         <AgreementCard value={negotiation} onField={onAgreementField} />
 

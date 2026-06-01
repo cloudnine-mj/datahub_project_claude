@@ -28,7 +28,9 @@ export type FieldType =
   /** 결재선 — 이름을 한 명씩 입력 후 Enter 로 추가하는 칩 리스트. 값은 string[]. */
   | "approver_list"
   /** 첨부파일 — table 행 안에서 파일 업로드 + 칩 목록 렌더. Phase 1 sessionStorage mock. */
-  | "attachment";
+  | "attachment"
+  /** 참조자(CC users) — 이름 칩 입력. 값은 payload 가 아닌 별도 sessionStorage 키에 보관. */
+  | "cc_users";
 
 export interface FieldDef {
   key: string;
@@ -163,6 +165,12 @@ const dataProduction: FormSchema = {
           key: "첨부파일",
           label: "첨부파일",
           type: "attachment",
+        },
+        // 참조자(CC users) — 선택 입력. payload 가 아닌 별도 sessionStorage 키에 보관.
+        {
+          key: "참조자",
+          label: "참조자",
+          type: "cc_users",
         },
       ],
     },

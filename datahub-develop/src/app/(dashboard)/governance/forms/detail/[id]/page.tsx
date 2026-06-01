@@ -261,6 +261,8 @@ export default function Page({ params }: { params: { id: string } }) {
                 </Row>
               );
             }
+            // 참조자(cc_users)는 payload 외부(sessionStorage) 관리 + 협의 단계 카드에서 표시 — 표 제외.
+            if (f.type === "cc_users") return null;
             const v = form.payload[f.key];
             if (v === undefined || v === null || v === "") return null;
             const displayLabel =

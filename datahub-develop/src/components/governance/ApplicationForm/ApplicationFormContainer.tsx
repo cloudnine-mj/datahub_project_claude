@@ -15,6 +15,12 @@ import { FORM_SCHEMAS } from "@/lib/governance/forms/schemas";
 import { readServiceStage, readSubStep } from "@/components/governance/ProgressBar";
 import { ApplicationTypeChip } from "./ApplicationTypeChip";
 import { ApplicationFormSection } from "./ApplicationFormSection";
+import {
+  readCcUsers,
+  writeCcUsers,
+  migrateCcUsers,
+  clearDraftCcUsers,
+} from "@/lib/governance/cc-users-storage";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { ServiceExampleModal } from "./ServiceExampleModal";
 import { StatusBanner } from "./StatusBanner";
@@ -133,6 +139,8 @@ export function ApplicationFormContainer({
       } catch {
         /* ignore */
       }
+      // 참조자 임시 키도 동일하게 1회 정리 — 새 작성은 빈 참조자로 시작.
+      clearDraftCcUsers(type);
     }
   }
 
@@ -143,6 +151,15 @@ export function ApplicationFormContainer({
   const [backendAttachments, setBackendAttachments] = useState<
     { id: string; filename: string; sizeBytes: number }[]
   >([]);
+  // 참조자(CC users) — payload 가 아닌 별도 sessionStorage 키로 관리. 작성/수정 양쪽 공유.
+  const [ccUsers, setCcUsers] = useState<string[]>(() =>
+    readCcUsers(editFormId ?? null, type),
+  );
+  // 참조자 변경 — 메모리 state + 현재 컨텍스트(formId 또는 임시 키) sessionStorage 즉시 갱신.
+  const onCcUsersChange = (next: string[]) => {
+    setCcUsers(next);
+    writeCcUsers(formId, type, next);
+  };
   // 수정 진입 시점의 원본 값 스냅샷 — 변경 항목 비교(제출 전 검토 모달) 에 사용.
   const [originalValues, setOriginalValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -229,6 +246,8 @@ export function ApplicationFormContainer({
             sizeBytes: a.sizeBytes ?? a.size_bytes ?? 0,
           })),
         );
+        // 참조자 — 해당 form id 키에서 로드(없으면 빈 배열).
+        setCcUsers(readCcUsers(f.id, type));
         if (isAppStatus(f.status)) setStatus(f.status);
         if (f.approval_history && f.approval_history.length > 0) {
           setHistory(buildHistoryFromBackend(f.approval_history));
@@ -340,6 +359,9 @@ export function ApplicationFormContainer({
         } catch {
           /* ignore */
         }
+        // 참조자 마이그레이션 — 임시 키(draft-temp:{type})의 참조자를 실제 form id 키로 옮긴다.
+        //   현재 메모리 목록(ccUsers)을 실제 키에 보장 저장(임시 키가 비어 있어도).
+        migrateCcUsers(result.id, type, ccUsers);
       }
       setFormId(result.id);
       // 같은 유형으로 다시 들어왔을 때 복원할 수 있도록 sessionStorage 에 기록.
@@ -462,6 +484,8 @@ export function ApplicationFormContainer({
             disabled={readOnly}
             formId={formId}
             applicationType={type}
+            ccUsers={ccUsers}
+            onCcUsersChange={onCcUsersChange}
           />
         ))}
       </form>
@@ -509,6 +533,7 @@ export function ApplicationFormContainer({
             originalPayload={originalValues}
             formId={formId}
             backendAttachments={backendAttachments}
+            ccUsers={ccUsers}
           />
         )}
 
@@ -560,6 +585,7 @@ export function ApplicationFormContainer({
             onConfirmSubmit={onConfirmSubmit}
             formId={formId}
             backendAttachments={backendAttachments}
+            ccUsers={ccUsers}
           />
         )}
       </div>

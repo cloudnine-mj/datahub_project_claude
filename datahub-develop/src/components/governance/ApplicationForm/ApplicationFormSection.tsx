@@ -11,6 +11,7 @@ import type { FieldDef, SectionDef } from "@/lib/governance/forms/schemas";
 import { DateField } from "@/components/governance/DateField";
 import { NumberInput } from "@/components/governance/NumberInput";
 import { InlineAttachmentInput } from "./InlineAttachmentInput";
+import { CcUsersInput } from "@/components/governance/CcUsersInput";
 
 interface Props {
   section: SectionDef;
@@ -20,6 +21,9 @@ interface Props {
   /** 첨부파일 필드용 — 임시저장된 form id (있을 때) + 신청 유형. attachment 필드만 사용. */
   formId?: string | null;
   applicationType?: string;
+  /** 참조자(cc_users) 필드용 — payload 외부에서 관리되는 이름 배열 + 변경 핸들러. */
+  ccUsers?: string[];
+  onCcUsersChange?: (next: string[]) => void;
 }
 
 export function ApplicationFormSection({
@@ -29,6 +33,8 @@ export function ApplicationFormSection({
   disabled = false,
   formId = null,
   applicationType = "",
+  ccUsers = [],
+  onCcUsersChange,
 }: Props) {
   // inlineWithNext 적용 — 같은 행에 묶을 두 필드를 사전 그룹핑.
   // 결과 배열은 [field] | [field, nextField] 의 시퀀스.
@@ -72,6 +78,8 @@ export function ApplicationFormSection({
               isLast={idx === groups.length - 1}
               formId={formId}
               applicationType={applicationType}
+              ccUsers={ccUsers}
+              onCcUsersChange={onCcUsersChange}
             />
           ))}
         </div>
@@ -106,6 +114,8 @@ function TableRow({
   isLast,
   formId,
   applicationType,
+  ccUsers = [],
+  onCcUsersChange,
 }: {
   fields: FieldDef[];
   values: Record<string, unknown>;
@@ -114,11 +124,14 @@ function TableRow({
   isLast: boolean;
   formId: string | null;
   applicationType: string;
+  ccUsers?: string[];
+  onCcUsersChange?: (next: string[]) => void;
 }) {
   const primary = fields[0];
   const isTallTextarea = primary.type === "textarea";
   const isCheckbox = primary.type === "checkbox";
   const isAttachment = primary.type === "attachment";
+  const isCcUsers = primary.type === "cc_users";
   const borderCls = isLast ? "" : "border-b border-gray-200 dark:border-gray-700";
   const rowLabel = primary.tableLabel ?? primary.label;
   const tallRow = isTallTextarea || isAttachment;
@@ -135,6 +148,24 @@ function TableRow({
             formId={formId}
             applicationType={applicationType}
             disabled={disabled}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 참조자(cc_users) 행 — 라벨 위쪽 정렬 + CcUsersInput(inline). payload 외부 state 로 관리.
+  if (isCcUsers) {
+    return (
+      <div className={`grid grid-cols-[240px_1fr] ${borderCls}`}>
+        <div className="flex items-start bg-gray-50 px-4 py-4 text-[12px] text-gray-500 dark:bg-gray-800/40 dark:text-gray-400">
+          {rowLabel}
+        </div>
+        <div className="px-4 py-3">
+          <CcUsersInput
+            mode="inline"
+            value={ccUsers}
+            onChange={(next) => onCcUsersChange?.(next)}
           />
         </div>
       </div>
