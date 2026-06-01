@@ -38,6 +38,7 @@ import {
   approvalHistoryToEvents,
 } from "@/components/governance/HistoryTimeline";
 import { AttachmentSection } from "@/components/governance/AttachmentSection";
+import { CcUsersInlineView } from "@/components/governance/CcUsersInlineView";
 
 /** 신청서 편집 진입 URL.
  *  작성 흐름(ApplicationFormContainer)이 지원하는 유형이면 작성 화면과 동일한 intake 폼을
@@ -261,8 +262,14 @@ export default function Page({ params }: { params: { id: string } }) {
                 </Row>
               );
             }
-            // 참조자(cc_users)는 payload 외부(sessionStorage) 관리 + 협의 단계 카드에서 표시 — 표 제외.
-            if (f.type === "cc_users") return null;
+            // 참조자(cc_users) — payload 외부(sessionStorage)에 보관. 표 행으로 칩 표시.
+            if (f.type === "cc_users") {
+              return (
+                <Row key={f.key} label="참조자">
+                  <CcUsersInlineView formId={form.id} applicationType={form.form_type} />
+                </Row>
+              );
+            }
             const v = form.payload[f.key];
             if (v === undefined || v === null || v === "") return null;
             const displayLabel =
