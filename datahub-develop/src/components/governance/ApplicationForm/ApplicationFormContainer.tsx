@@ -138,6 +138,11 @@ export function ApplicationFormContainer({
 
   const [status, setStatus] = useState<ApplicationStatus>(initialStatus);
   const [values, setValues] = useState<Record<string, unknown>>({});
+  // 수정 모드에서 백엔드로 로드된 첨부(form.attachments) — sessionStorage 에 없을 수 있어
+  //   제출 전 검토 모달이 함께 표시하도록 보관. {id, filename, sizeBytes}.
+  const [backendAttachments, setBackendAttachments] = useState<
+    { id: string; filename: string; sizeBytes: number }[]
+  >([]);
   // 수정 진입 시점의 원본 값 스냅샷 — 변경 항목 비교(제출 전 검토 모달) 에 사용.
   const [originalValues, setOriginalValues] = useState<Record<string, unknown>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -210,6 +215,20 @@ export function ApplicationFormContainer({
         const loaded = (f.payload ?? {}) as Record<string, unknown>;
         setValues(loaded);
         setOriginalValues(loaded); // 원본 스냅샷 — 변경 항목 비교 기준.
+        // 백엔드 첨부 보관 — 미리보기 모달이 sessionStorage 첨부와 병합해 표시.
+        const atts = (f.attachments ?? []) as {
+          id: string;
+          filename: string;
+          sizeBytes?: number;
+          size_bytes?: number;
+        }[];
+        setBackendAttachments(
+          atts.map((a) => ({
+            id: a.id,
+            filename: a.filename,
+            sizeBytes: a.sizeBytes ?? a.size_bytes ?? 0,
+          })),
+        );
         if (isAppStatus(f.status)) setStatus(f.status);
         if (f.approval_history && f.approval_history.length > 0) {
           setHistory(buildHistoryFromBackend(f.approval_history));
@@ -489,6 +508,7 @@ export function ApplicationFormContainer({
             mode={isEditMode ? "edit" : "create"}
             originalPayload={originalValues}
             formId={formId}
+            backendAttachments={backendAttachments}
           />
         )}
 
@@ -539,6 +559,7 @@ export function ApplicationFormContainer({
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
             formId={formId}
+            backendAttachments={backendAttachments}
           />
         )}
       </div>

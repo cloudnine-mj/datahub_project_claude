@@ -58,6 +58,9 @@ interface Props {
   /** 임시저장 후 폼 id. 첨부는 payload 가 아니라 sessionStorage 에 영속되므로
    *  formId(없으면 임시 키)로 첨부 목록을 읽어 미리보기에 함께 표시한다. */
   formId?: string | null;
+  /** 수정 모드에서 백엔드(form.attachments)로 로드된 첨부 — sessionStorage 에 없을 수 있어
+   *  함께 병합해 표시. {id, filename, sizeBytes} 형태. */
+  backendAttachments?: StoredAttachment[];
 }
 
 export function PreSubmitPreviewModal({
@@ -70,6 +73,7 @@ export function PreSubmitPreviewModal({
   mode = "create",
   originalPayload,
   formId = null,
+  backendAttachments = [],
 }: Props) {
   const isEdit = mode === "edit";
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -116,10 +120,27 @@ export function PreSubmitPreviewModal({
       ),
     [schema],
   );
-  const attachments: StoredAttachment[] = useMemo(
-    () => (hasAttachmentField ? readStoredAttachments(formId, type) : []),
-    [hasAttachmentField, formId, type],
-  );
+  const attachments: StoredAttachment[] = useMemo(() => {
+    if (!hasAttachmentField) return [];
+    // sessionStorage 첨부(작성/임시저장 중) + 백엔드 첨부(수정 모드 로드) 병합.
+    //   같은 id 는 한 번만. 새로 추가/삭제한 sessionStorage 상태를 우선한다.
+    const local = readStoredAttachments(formId, type);
+    const seen: Record<string, boolean> = {};
+    const merged: StoredAttachment[] = [];
+    local.forEach((a) => {
+      if (!seen[a.id]) {
+        seen[a.id] = true;
+        merged.push(a);
+      }
+    });
+    backendAttachments.forEach((a) => {
+      if (!seen[a.id]) {
+        seen[a.id] = true;
+        merged.push(a);
+      }
+    });
+    return merged;
+  }, [hasAttachmentField, formId, type, backendAttachments]);
 
   // edit 모드 — 원본 대비 변경된 필드만 수집 (es5 호환: forEach).
   const changes: ChangeItem[] = useMemo(() => {
