@@ -457,8 +457,15 @@ export default function Page({ params }: { params: { id: string } }) {
         ensureFormId={async () => form.id}
         fillParent
         currentStage={serviceStage}
-        // 협의 단계(50:50 레이아웃)에서만 채팅이 넓어지므로 말풍선을 75% 로 제한.
-        bubbleMaxWidthClass={serviceStage === 1 ? "max-w-[75%]" : undefined}
+        // 단계별 채팅 폭에 맞춘 말풍선 max-width:
+        //   협의(1, 50:50) → 75%, 신청(0, 60:40) → 85%, 그 외 기본(80%).
+        bubbleMaxWidthClass={
+          serviceStage === 1
+            ? "max-w-[75%]"
+            : serviceStage === 0
+              ? "max-w-[85%]"
+              : undefined
+        }
       />
     ) : null;
 
@@ -537,8 +544,8 @@ export default function Page({ params }: { params: { id: string } }) {
           <>
             {processBar}
 
-            {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이 */}
-            <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_300px]">
+            {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이. 신청 단계는 60:40 비율. */}
+            <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[60fr_40fr]">
               <div className="flex min-w-0 flex-col gap-3">
                 {requestInfoCard}
                 <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
