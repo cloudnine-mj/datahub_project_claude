@@ -488,6 +488,7 @@ export function ApplicationFormContainer({
             onConfirmSubmit={onConfirmSubmit}
             mode={isEditMode ? "edit" : "create"}
             originalPayload={originalValues}
+            formId={formId}
           />
         )}
 
@@ -537,6 +538,7 @@ export function ApplicationFormContainer({
             applicantDepartment={applicant.department}
             onClose={() => setPreviewOpen(false)}
             onConfirmSubmit={onConfirmSubmit}
+            formId={formId}
           />
         )}
       </div>

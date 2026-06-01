@@ -47,6 +47,18 @@ function storageKey(formId: string | null, applicationType: string): string {
 
 type StoredMock = Omit<MockAttachment, "blobUrl">;
 
+/** 미리보기 등 외부에서 사용할 저장 첨부 항목 타입(파일명·크기). */
+export type StoredAttachment = StoredMock;
+
+/** 현재 폼 컨텍스트(formId 또는 임시 키)의 저장 첨부 목록을 읽는다.
+ *  제출 전 검토 모달이 동일 키에서 첨부를 표시하는 데 사용. */
+export function readStoredAttachments(
+  formId: string | null,
+  applicationType: string,
+): StoredAttachment[] {
+  return readStored(storageKey(formId, applicationType));
+}
+
 function readStored(key: string): StoredMock[] {
   if (typeof window === "undefined") return [];
   try {

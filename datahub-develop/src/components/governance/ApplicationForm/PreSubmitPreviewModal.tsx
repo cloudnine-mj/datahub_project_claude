@@ -8,13 +8,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { ArrowRight, Info, Pencil, X } from "lucide-react";
+import { ArrowRight, Info, Paperclip, Pencil, X } from "lucide-react";
 import {
   APPLICATION_TYPE_LABEL,
   APPLICATION_TO_FORM_TYPE,
   type ApplicationType,
 } from "@/lib/governance/forms/application-config";
 import { FORM_SCHEMAS, type FieldDef } from "@/lib/governance/forms/schemas";
+import {
+  readStoredAttachments,
+  type StoredAttachment,
+} from "./InlineAttachmentInput";
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
 
 interface RowDef {
   key: string;
@@ -45,6 +55,9 @@ interface Props {
   mode?: "create" | "edit";
   /** 수정 진입 시점 원본 값 — edit 모드에서 변경 항목 비교에 사용. */
   originalPayload?: Record<string, unknown>;
+  /** 임시저장 후 폼 id. 첨부는 payload 가 아니라 sessionStorage 에 영속되므로
+   *  formId(없으면 임시 키)로 첨부 목록을 읽어 미리보기에 함께 표시한다. */
+  formId?: string | null;
 }
 
 export function PreSubmitPreviewModal({
@@ -56,6 +69,7 @@ export function PreSubmitPreviewModal({
   onConfirmSubmit,
   mode = "create",
   originalPayload,
+  formId = null,
 }: Props) {
   const isEdit = mode === "edit";
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -92,6 +106,20 @@ export function PreSubmitPreviewModal({
     });
     return all;
   }, [schema]);
+
+  // 첨부파일 — payload 가 아닌 sessionStorage 에 영속되므로 formId(또는 임시 키)로 읽는다.
+  //   스키마에 attachment 필드가 있는 유형(용역 제작 등)에서만 행을 노출.
+  const hasAttachmentField = useMemo(
+    () =>
+      schema.sections.some((sec) =>
+        sec.fields.some((f) => f.type === "attachment"),
+      ),
+    [schema],
+  );
+  const attachments: StoredAttachment[] = useMemo(
+    () => (hasAttachmentField ? readStoredAttachments(formId, type) : []),
+    [hasAttachmentField, formId, type],
+  );
 
   // edit 모드 — 원본 대비 변경된 필드만 수집 (es5 호환: forEach).
   const changes: ChangeItem[] = useMemo(() => {
@@ -226,7 +254,8 @@ export function PreSubmitPreviewModal({
                 <PreviewRow label="신청자" value={applicant} />
                 {rows.map((r, idx) => {
                   const text = formatValue(payload[r.key]);
-                  const isLast = idx === rows.length - 1;
+                  const isLast =
+                    idx === rows.length - 1 && !hasAttachmentField;
                   return (
                     <PreviewRow
                       key={r.key}
@@ -237,6 +266,9 @@ export function PreSubmitPreviewModal({
                     />
                   );
                 })}
+                {hasAttachmentField && (
+                  <AttachmentRow attachments={attachments} />
+                )}
               </tbody>
             </table>
           </div>
@@ -347,6 +379,42 @@ function PreviewRow({
           <span className="ml-1.5 text-[11px]" style={{ color: "#854F0B" }}>
             (변경됨)
           </span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+/** 첨부파일 행 — 미리보기 표 마지막 행. 저장된 첨부의 파일명·크기를 나열.
+ *  첨부가 없으면 '—' 표시. (다운로드는 새로고침 시 ObjectURL 이 사라지므로 미리보기에선 생략) */
+function AttachmentRow({ attachments }: { attachments: StoredAttachment[] }) {
+  return (
+    <tr>
+      <th
+        scope="row"
+        className="w-[160px] bg-gray-50 px-[14px] py-[11px] text-left align-top text-gray-500 font-normal dark:bg-gray-800/40 dark:text-gray-400"
+      >
+        첨부파일
+      </th>
+      <td className="px-[14px] py-[11px] text-gray-900 dark:text-gray-100">
+        {attachments.length === 0 ? (
+          <span className="text-gray-400">—</span>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {attachments.map((a) => (
+              <li key={a.id} className="flex items-center gap-2">
+                <Paperclip
+                  size={13}
+                  aria-hidden="true"
+                  className="shrink-0 text-gray-400"
+                />
+                <span className="min-w-0 break-all">{a.filename}</span>
+                <span className="shrink-0 text-[11px] text-gray-400">
+                  {formatBytes(a.sizeBytes)}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </td>
     </tr>
