@@ -20,6 +20,7 @@ import {
   writeCcUsers,
   migrateCcUsers,
   clearDraftCcUsers,
+  type CcUser,
 } from "@/lib/governance/cc-users-storage";
 import { PreSubmitPreviewModal } from "./PreSubmitPreviewModal";
 import { ServiceExampleModal } from "./ServiceExampleModal";
@@ -152,11 +153,11 @@ export function ApplicationFormContainer({
     { id: string; filename: string; sizeBytes: number }[]
   >([]);
   // 참조자(CC users) — payload 가 아닌 별도 sessionStorage 키로 관리. 작성/수정 양쪽 공유.
-  const [ccUsers, setCcUsers] = useState<string[]>(() =>
+  const [ccUsers, setCcUsers] = useState<CcUser[]>(() =>
     readCcUsers(editFormId ?? null, type),
   );
   // 참조자 변경 — 메모리 state + 현재 컨텍스트(formId 또는 임시 키) sessionStorage 즉시 갱신.
-  const onCcUsersChange = (next: string[]) => {
+  const onCcUsersChange = (next: CcUser[]) => {
     setCcUsers(next);
     writeCcUsers(formId, type, next);
   };

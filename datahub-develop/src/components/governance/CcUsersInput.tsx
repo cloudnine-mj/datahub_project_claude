@@ -1,31 +1,61 @@
-// 참조자(CC users) 입력 — 이름 칩 리스트. 두 모드 공용.
-//   inline: 신청서 폼 행 안 — input + [추가] 한 줄 + 아래 칩 목록(항상 입력칸 노출).
-//   card:   협의 단계 카드 본문 — 3상태(있음/없음/입력 모드), [+ 참조자 추가] 점선 토글.
+// 참조자(CC users) 입력 — 담당자 지정과 동일한 모달(이름+이메일 팝업) 방식.
+//   inline: 신청서 폼 행 — 칩 목록 + [+ 참조자 추가] 점선 버튼 → 모달.
+//   card:   협의 단계 카드 — 동일 동작(헤더 뱃지는 카드 래퍼가 담당).
 //
-// 이름만 다룬다(이메일·검색 없음). trim 후 빈 값/중복(대소문자 무시)/50자 초과는 추가 막음.
-// Phase 1: 권한 분기 없음 — 모든 사용자 추가/제거 가능. 안내 문구 없음.
+// 추가는 모달에서 이름·이메일 입력(Enter 즉시 추가, Esc 취소). 이메일 기준 중복 금지.
+// Phase 1: 권한 분기 없음. 안내 문구 없음.
 
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { addCcUser, removeCcUser } from "@/lib/governance/cc-users-storage";
+import { addCcUser, removeCcUser, type CcUser } from "@/lib/governance/cc-users-storage";
 
 interface Props {
-  value: string[];
-  onChange: (next: string[]) => void;
+  value: CcUser[];
+  onChange: (next: CcUser[]) => void;
   mode: "inline" | "card";
 }
 
-export function CcUsersInput({ value, onChange, mode }: Props) {
-  if (mode === "inline") {
-    return <InlineMode value={value} onChange={onChange} />;
-  }
-  return <CardMode value={value} onChange={onChange} />;
+export function CcUsersInput({ value, onChange }: Props) {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {value.map((u) => (
+          <CcChip
+            key={u.email}
+            user={u}
+            onRemove={() => onChange(removeCcUser(value, u.email))}
+          />
+        ))}
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="inline-flex items-center gap-1 rounded-[14px] border-[0.5px] border-dashed border-[var(--color-border-secondary,#d1d5db)] px-[9px] py-[3px] text-[11px] text-gray-500 transition hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
+        >
+          <Plus size={11} aria-hidden="true" /> 참조자 추가
+        </button>
+      </div>
+
+      {modalOpen && (
+        <AddCcUserModal
+          onClose={() => setModalOpen(false)}
+          onAdd={(name, email) => {
+            const res = addCcUser(value, name, email);
+            if (res.error) return res.error;
+            onChange(res.list);
+            return null;
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
-/** 파란 참조자 칩 — 이름 + X 제거. */
-function CcChip({ name, onRemove }: { name: string; onRemove: () => void }) {
+/** 파란 참조자 칩 — 이름(+이메일 title) + X 제거. */
+function CcChip({ user, onRemove }: { user: CcUser; onRemove: () => void }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 text-[11px]"
@@ -35,12 +65,13 @@ function CcChip({ name, onRemove }: { name: string; onRemove: () => void }) {
         borderRadius: 14,
         padding: "3px 6px 3px 10px",
       }}
+      title={user.email || undefined}
     >
-      {name}
+      {user.name}
       <button
         type="button"
         onClick={onRemove}
-        aria-label={`${name} 제거`}
+        aria-label={`${user.name} 제거`}
         className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-white transition hover:brightness-110"
         style={{ background: "#0C447C" }}
       >
@@ -50,190 +81,133 @@ function CcChip({ name, onRemove }: { name: string; onRemove: () => void }) {
   );
 }
 
-/** 신청서 폼 행 — input + [추가] 한 줄, 아래 칩 목록(입력칸 항상 노출). */
-function InlineMode({
-  value,
-  onChange,
+/** 참조자 추가 모달 — 담당자 추가 모달과 동일 패턴(이름·이메일, Enter 추가, Esc 취소).
+ *  onAdd 가 에러 메시지를 반환하면 인라인 노출 후 닫지 않음. null 이면 성공 → 닫힘. */
+function AddCcUserModal({
+  onClose,
+  onAdd,
 }: {
-  value: string[];
-  onChange: (next: string[]) => void;
+  onClose: () => void;
+  onAdd: (name: string, email: string) => string | null;
 }) {
-  const [draft, setDraft] = useState("");
-  const [dupFlash, setDupFlash] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
 
-  function commit() {
-    const next = addCcUser(value, draft);
-    if (next === value) {
-      // 추가 실패(빈 값/중복/길이초과) — 중복일 때만 빨강 테두리 잠깐.
-      if (draft.trim().length > 0) {
-        setDupFlash(true);
-        window.setTimeout(() => setDupFlash(false), 800);
-      }
+  useEffect(() => {
+    nameRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function submit() {
+    const error = onAdd(name, email);
+    if (error) {
+      setErr(error);
       return;
     }
-    onChange(next);
-    setDraft("");
+    onClose();
   }
 
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
+  function onEnter(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.nativeEvent.isComposing || e.key === "Process") return;
     if (e.key === "Enter") {
       e.preventDefault();
-      commit();
+      submit();
     }
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value);
-            setDupFlash(false);
-          }}
-          onKeyDown={onKey}
-          placeholder="참조자 이름을 입력하고 Enter"
-          className={`flex-1 rounded-md border-[0.5px] bg-white px-2.5 py-[5px] text-[11px] text-gray-900 focus:outline-none dark:bg-gray-900 dark:text-gray-100 ${
-            dupFlash
-              ? "border-[#D4533E]"
-              : "border-[var(--color-border-tertiary,#e5e7eb)] focus:border-[#D4533E]"
-          }`}
-        />
-        <button
-          type="button"
-          onClick={commit}
-          className="shrink-0 rounded-md border-[0.5px] border-[var(--color-border-secondary,#d1d5db)] bg-white px-3 py-[5px] text-[11px] font-medium text-gray-700 transition hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-        >
-          추가
-        </button>
-      </div>
-      {value.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {value.map((n) => (
-            <CcChip key={n} name={n} onRemove={() => onChange(removeCcUser(value, n))} />
-          ))}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-cc-user-title"
+    >
+      <div
+        className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3
+            id="add-cc-user-title"
+            className="text-[14px] font-medium text-gray-900 dark:text-gray-100"
+          >
+            참조자 추가
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="rounded p-0.5 text-gray-400 transition hover:text-gray-700 dark:hover:text-gray-200"
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
         </div>
-      )}
-    </div>
-  );
-}
 
-/** 협의 단계 카드 본문 — 3상태(있음/없음/입력 모드). 카드 래퍼(테두리·헤더)는 CcUsersCard 가 담당.
- *  여기서는 칩 + [+ 참조자 추가] 점선 버튼 / 입력 영역만 렌더하고, 입력 모드 여부를 부모에 알린다. */
-function CardMode({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-}) {
-  return (
-    <CardModeBody value={value} onChange={onChange} editing={false} onEditingChange={() => {}} />
-  );
-}
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
+              이름
+            </label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setErr(null);
+              }}
+              onKeyDown={onEnter}
+              placeholder="참조자 이름"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
+              이메일
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErr(null);
+              }}
+              onKeyDown={onEnter}
+              placeholder="example@company.com"
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+          {err && (
+            <p className="text-[11px] text-[#993C1D]" role="alert">
+              {err}
+            </p>
+          )}
+        </div>
 
-/** CcUsersCard 가 헤더의 '추가 중' 뱃지·테두리 강조를 위해 editing 상태를 공유해야 하므로,
- *  실제 본문은 editing 을 prop 으로 받는 별도 컴포넌트로 분리해 카드가 제어한다. */
-export function CardModeBody({
-  value,
-  onChange,
-  editing,
-  onEditingChange,
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-  editing: boolean;
-  onEditingChange: (next: boolean) => void;
-}) {
-  const [draft, setDraft] = useState("");
-  const [dupFlash, setDupFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  function commit() {
-    const next = addCcUser(value, draft);
-    if (next === value) {
-      if (draft.trim().length > 0) {
-        setDupFlash(true);
-        window.setTimeout(() => setDupFlash(false), 800);
-      }
-      return;
-    }
-    onChange(next);
-    setDraft("");
-    inputRef.current?.focus();
-  }
-
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing || e.key === "Process") return;
-    if (e.key === "Enter") {
-      e.preventDefault();
-      commit();
-    }
-    if (e.key === "Escape") {
-      setDraft("");
-      onEditingChange(false);
-    }
-  }
-
-  const openInput = () => {
-    onEditingChange(true);
-    window.setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  return (
-    <div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {value.map((n) => (
-          <CcChip key={n} name={n} onRemove={() => onChange(removeCcUser(value, n))} />
-        ))}
-        {!editing && (
+        <div className="mt-5 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={openInput}
-            className="inline-flex items-center gap-1 rounded-[14px] border-[0.5px] border-dashed border-[var(--color-border-secondary,#d1d5db)] px-[9px] py-[3px] text-[11px] text-gray-500 transition hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-          >
-            <Plus size={11} aria-hidden="true" /> 참조자 추가
-          </button>
-        )}
-      </div>
-
-      {editing && (
-        <div className="mt-2.5 flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-              setDupFlash(false);
-            }}
-            onKeyDown={onKey}
-            placeholder="참조자 이름을 입력하고 Enter"
-            className={`flex-1 rounded-md border-[0.5px] bg-white px-2.5 py-[5px] text-[11px] text-gray-900 focus:outline-none dark:bg-gray-900 dark:text-gray-100 ${
-              dupFlash ? "border-[#D4533E]" : "border-[#D4533E]"
-            }`}
-          />
-          <button
-            type="button"
-            onClick={commit}
-            className="shrink-0 rounded-md bg-[#D4533E] px-3 py-[5px] text-[11px] font-medium text-white transition hover:brightness-110"
-          >
-            추가
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDraft("");
-              onEditingChange(false);
-            }}
-            className="shrink-0 rounded-md border-[0.5px] border-[var(--color-border-secondary,#d1d5db)] bg-transparent px-3 py-[5px] text-[11px] font-medium text-gray-700 transition hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+            onClick={onClose}
+            className="rounded-md border border-gray-200 bg-white px-3.5 py-1.5 text-[12px] font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             취소
           </button>
+          <button
+            type="button"
+            onClick={submit}
+            className="rounded-md bg-[#D4533E] px-3.5 py-1.5 text-[12px] font-medium text-white transition hover:brightness-110"
+          >
+            추가
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

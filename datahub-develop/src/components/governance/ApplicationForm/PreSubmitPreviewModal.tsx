@@ -19,6 +19,7 @@ import {
   readStoredAttachments,
   type StoredAttachment,
 } from "./InlineAttachmentInput";
+import type { CcUser } from "@/lib/governance/cc-users-storage";
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -62,7 +63,7 @@ interface Props {
    *  함께 병합해 표시. {id, filename, sizeBytes} 형태. */
   backendAttachments?: StoredAttachment[];
   /** 참조자(CC users) — 현재 메모리 목록. 미리보기 표에 칩으로 표시(빈 배열이면 '—'). */
-  ccUsers?: string[];
+  ccUsers?: CcUser[];
 }
 
 export function PreSubmitPreviewModal({
@@ -462,8 +463,8 @@ function AttachmentRow({ attachments }: { attachments: StoredAttachment[] }) {
   );
 }
 
-/** 참조자 행 — 미리보기 표 마지막 행. 이름을 파란 칩으로 나열. 비어 있으면 '—'. */
-function CcUsersRow({ users }: { users: string[] }) {
+/** 참조자 행 — 미리보기 표 마지막 행. 이름을 파란 칩으로 나열(이메일 title). 비어 있으면 '—'. */
+function CcUsersRow({ users }: { users: CcUser[] }) {
   return (
     <tr>
       <th
@@ -477,9 +478,9 @@ function CcUsersRow({ users }: { users: string[] }) {
           <span className="text-gray-400">—</span>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            {users.map((n) => (
+            {users.map((u) => (
               <span
-                key={n}
+                key={u.email}
                 className="inline-flex items-center text-[11px]"
                 style={{
                   background: "#E6F1FB",
@@ -487,8 +488,9 @@ function CcUsersRow({ users }: { users: string[] }) {
                   borderRadius: 14,
                   padding: "3px 10px",
                 }}
+                title={u.email || undefined}
               >
-                {n}
+                {u.name}
               </span>
             ))}
           </div>

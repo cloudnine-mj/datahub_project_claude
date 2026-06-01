@@ -4,7 +4,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { readCcUsers } from "@/lib/governance/cc-users-storage";
+import { readCcUsers, type CcUser } from "@/lib/governance/cc-users-storage";
 
 interface Props {
   formId: string;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function CcUsersInlineView({ formId, applicationType }: Props) {
-  const [users, setUsers] = useState<string[]>([]);
+  const [users, setUsers] = useState<CcUser[]>([]);
 
   useEffect(() => {
     setUsers(readCcUsers(formId, applicationType));
@@ -25,9 +25,9 @@ export function CcUsersInlineView({ formId, applicationType }: Props) {
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {users.map((n) => (
+      {users.map((u) => (
         <span
-          key={n}
+          key={u.email}
           className="inline-flex items-center text-[11px]"
           style={{
             background: "#E6F1FB",
@@ -35,8 +35,9 @@ export function CcUsersInlineView({ formId, applicationType }: Props) {
             borderRadius: 14,
             padding: "3px 10px",
           }}
+          title={u.email || undefined}
         >
-          {n}
+          {u.name}
         </span>
       ))}
     </div>

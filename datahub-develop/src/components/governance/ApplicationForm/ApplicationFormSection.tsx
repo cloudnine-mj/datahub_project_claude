@@ -12,6 +12,7 @@ import { DateField } from "@/components/governance/DateField";
 import { NumberInput } from "@/components/governance/NumberInput";
 import { InlineAttachmentInput } from "./InlineAttachmentInput";
 import { CcUsersInput } from "@/components/governance/CcUsersInput";
+import type { CcUser } from "@/lib/governance/cc-users-storage";
 
 interface Props {
   section: SectionDef;
@@ -22,8 +23,8 @@ interface Props {
   formId?: string | null;
   applicationType?: string;
   /** 참조자(cc_users) 필드용 — payload 외부에서 관리되는 이름 배열 + 변경 핸들러. */
-  ccUsers?: string[];
-  onCcUsersChange?: (next: string[]) => void;
+  ccUsers?: CcUser[];
+  onCcUsersChange?: (next: CcUser[]) => void;
 }
 
 export function ApplicationFormSection({
@@ -124,8 +125,8 @@ function TableRow({
   isLast: boolean;
   formId: string | null;
   applicationType: string;
-  ccUsers?: string[];
-  onCcUsersChange?: (next: string[]) => void;
+  ccUsers?: CcUser[];
+  onCcUsersChange?: (next: CcUser[]) => void;
 }) {
   const primary = fields[0];
   const isTallTextarea = primary.type === "textarea";
