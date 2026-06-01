@@ -145,13 +145,13 @@ const dataProduction: FormSchema = {
         { key: "데이터셋_이름", label: "데이터셋 이름", type: "text", placeholder: "K-Nowledge" },
         { key: "희망_작업_착수일", label: "작업 착수 희망일", type: "date", inlineNote: "신청서 제출 기준 3주 이후부터 선택 가능" },
         { key: "희망_수령일", label: "데이터 수령 희망일", type: "date", inlineNote: "작업 마감 기한" },
-        { key: "작업_형태", label: "작업 형태", type: "textarea", placeholder: "문항 풀기 및 평가" },
+        { key: "작업_형태", label: "작업 형태", type: "text", placeholder: "문항 풀기 및 평가" },
         { key: "작업_도구", label: "작업 도구", type: "text", placeholder: "엑셀" },
         { key: "목표_데이터_수량", label: "목표 데이터 수량", type: "number", placeholder: "숫자만 입력" },
-        { key: "목표_데이터_수량_단위상세", label: "목표 데이터 수량 (단위 상세)", type: "textarea", rows: 3, placeholder: "예: Seed Q: 500개 / Following Q 8지선다 선택: 2500건 / AB test: 500건" },
+        { key: "목표_데이터_수량_단위상세", label: "목표 데이터 수량 (단위 상세)", type: "textarea", placeholder: "예: Seed Q: 500개 / Following Q 8지선다 선택: 2500건 / AB test: 500건" },
         { key: "데이터_1개당_필요_작업자", label: "데이터 1개당 필요 작업자", type: "text", placeholder: "3명 이상" },
         { key: "작업자_보유_기술", label: "작업자 보유 기술", type: "text", placeholder: "예: 영어모어화자, 특정 자격증, 도메인 지식 등" },
-        { key: "품질_평가_방식", label: "품질 평가 방식", type: "textarea", placeholder: "품질 평가 방식" },
+        { key: "품질_평가_방식", label: "품질 평가 방식", type: "text", placeholder: "품질 평가 방식" },
         // 조직장 사전 승인 — 별도 섹션에서 요청 정보 표 마지막 행으로 이동.
         {
           key: "조직장_승인_완료",
