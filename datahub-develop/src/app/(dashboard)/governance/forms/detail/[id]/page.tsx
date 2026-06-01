@@ -457,6 +457,8 @@ export default function Page({ params }: { params: { id: string } }) {
         ensureFormId={async () => form.id}
         fillParent
         currentStage={serviceStage}
+        // 협의 단계(50:50 레이아웃)에서만 채팅이 넓어지므로 말풍선을 75% 로 제한.
+        bubbleMaxWidthClass={serviceStage === 1 ? "max-w-[75%]" : undefined}
       />
     ) : null;
 

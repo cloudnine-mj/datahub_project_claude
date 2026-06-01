@@ -58,7 +58,7 @@ export function AgreementCard({ value, onField }: Props) {
                     : ""
                 }
               >
-                <td className="w-[120px] bg-[var(--color-background-secondary,#f9fafb)] px-3 py-[9px] align-middle text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
+                <td className="w-[90px] bg-[var(--color-background-secondary,#f9fafb)] px-3 py-[9px] align-middle text-gray-500 dark:bg-gray-800/50 dark:text-gray-400">
                   {f.label}
                 </td>
                 <td className="px-3 py-[9px] align-middle text-gray-900 dark:text-gray-100">

@@ -30,7 +30,6 @@ import {
 } from "@/lib/governance/negotiation-storage";
 import { readContract, writeContract } from "@/lib/governance/contract-storage";
 import { AgreementCard } from "./negotiation-contract/AgreementCard";
-import { CcUsersCard } from "./negotiation-contract/CcUsersCard";
 import { EasInfoCard } from "./negotiation-contract/EasInfoCard";
 import { NegotiationFilesCard } from "./negotiation-contract/NegotiationFilesCard";
 import { ProceedToProgressModal } from "./negotiation-contract/ProceedToProgressModal";
@@ -104,13 +103,12 @@ export function NegotiationContractStageTab({
   }
 
   return (
-    <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-3">
         <InfoCard />
 
+        {/* 신청 정보 카드 — 펼치면 참조자 행 포함(편집 가능). 별도 참조자 카드는 두지 않음. */}
         <CollapsibleRequestInfo>{requestInfoTable}</CollapsibleRequestInfo>
-
-        <CcUsersCard formId={formId} />
 
         <AgreementCard value={negotiation} onField={onAgreementField} />
 

@@ -56,6 +56,8 @@ interface Props {
   currentStage?: number;
   /** 단계 인덱스를 라벨로 매핑 — 미지정 시 기본값 사용. */
   stageLabels?: readonly string[];
+  /** 말풍선 max-width 클래스 — 미지정 시 max-w-[80%]. 협의 단계(50:50)는 75% 전달. */
+  bubbleMaxWidthClass?: string;
 }
 
 const DEFAULT_STAGE_LABELS = ["신청", "협의", "진행", "종료"] as const;
@@ -120,6 +122,7 @@ export function ChatPanel({
   fillParent = false,
   currentStage,
   stageLabels = DEFAULT_STAGE_LABELS,
+  bubbleMaxWidthClass,
 }: Props) {
   const [messages, setMessages] = useState<FormMessageItem[]>([]);
   const [text, setText] = useState("");
@@ -333,6 +336,7 @@ export function ChatPanel({
                   assigneeTeam={assigneeTeam}
                   mineBubbleClass={accentBubble}
                   attachments={msgAttachments[m.id]}
+                  bubbleMaxWidthClass={bubbleMaxWidthClass}
                 />
               </Fragment>
             );

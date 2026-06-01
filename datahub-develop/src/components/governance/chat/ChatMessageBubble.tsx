@@ -28,6 +28,8 @@ interface Props {
   mineBubbleClass?: string;
   /** 이 메시지에 딸린 첨부 (Phase 1 mock). */
   attachments?: ChatAttachment[];
+  /** 말풍선 max-width 클래스 — 미지정 시 max-w-[80%]. 협의 단계는 75% 전달. */
+  bubbleMaxWidthClass?: string;
 }
 
 function fmtTime(iso: string): string {
@@ -168,6 +170,7 @@ export function ChatMessageBubble({
   assigneeTeam,
   mineBubbleClass,
   attachments = [],
+  bubbleMaxWidthClass = "max-w-[80%]",
 }: Props) {
   const isMine =
     !!currentUserEmail &&
@@ -181,7 +184,7 @@ export function ChatMessageBubble({
   if (isMine) {
     return (
       <div className="flex justify-end gap-2">
-        <div className="flex max-w-[80%] flex-col items-end gap-1.5">
+        <div className={`flex ${bubbleMaxWidthClass} flex-col items-end gap-1.5`}>
           {hasText && (
             <div className={`rounded-[12px_4px_12px_12px] px-3 py-2.5 text-[12px] leading-relaxed ${mineCls}`}>
               <p className="whitespace-pre-wrap break-words">{message.body}</p>
@@ -204,7 +207,7 @@ export function ChatMessageBubble({
       >
         {initial(message.senderName)}
       </div>
-      <div className="flex max-w-[80%] flex-col items-start gap-1.5">
+      <div className={`flex ${bubbleMaxWidthClass} flex-col items-start gap-1.5`}>
         <div className="text-[11px] text-gray-500 dark:text-gray-400">
           {message.senderName}
           {assigneeTeam && (
