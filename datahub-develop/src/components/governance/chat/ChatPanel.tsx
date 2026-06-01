@@ -200,6 +200,15 @@ export function ChatPanel({
         setStageMap(next);
         writeStageMap(targetId, next);
       }
+      // 첨부가 있으면 같은 화면의 단계별 자료 카드(협의/계약 자료)가 즉시 갱신되도록 알림.
+      //   focus 이벤트로만 갱신하면 같은 화면 첨부 시 반영이 늦으므로 커스텀 이벤트로 즉시 통지.
+      if (atts.length > 0 && typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("dh:gov:chat-attachment-added", {
+            detail: { formId: targetId },
+          }),
+        );
+      }
       return true;
     } catch (e) {
       setError((e as Error).message);

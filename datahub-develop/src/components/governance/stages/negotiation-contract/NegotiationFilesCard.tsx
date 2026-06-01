@@ -80,9 +80,18 @@ export function NegotiationFilesCard({ formId, refreshNonce }: Props) {
   useEffect(() => {
     void collect();
     const onFocus = () => void collect();
+    // 채팅에서 첨부 전송 시 ChatPanel 이 발생시키는 커스텀 이벤트 — 같은 formId 면 즉시 갱신.
+    const onChatAttachment = (e: Event) => {
+      const detail = (e as CustomEvent<{ formId?: string }>).detail;
+      if (!detail || detail.formId === formId) void collect();
+    };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [collect, refreshNonce]);
+    window.addEventListener("dh:gov:chat-attachment-added", onChatAttachment);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("dh:gov:chat-attachment-added", onChatAttachment);
+    };
+  }, [collect, refreshNonce, formId]);
 
   return (
     <section className="rounded-xl border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
