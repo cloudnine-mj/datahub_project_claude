@@ -8,18 +8,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
+import { InputCursor } from "@/components/common/InputCursor";
 
 export function InlineCell({
   value,
   canEdit = true,
-  emptyEditable,
+  emptyEditable = "",
   emptyReadonly = "—",
   format,
   onCommit,
 }: {
   value: string;
   canEdit?: boolean;
-  emptyEditable: string;
+  /** 편집 가능 + 빈칸일 때 보일 안내 텍스트. 빈 문자열(기본)이면 깜빡이는 커서만 표시. */
+  emptyEditable?: string;
   emptyReadonly?: string;
   format?: (v: string) => string;
   onCommit: (next: string) => void;
@@ -106,7 +108,7 @@ export function InlineCell({
         setDraft(value);
         setEditing(true);
       }}
-      className="group inline-flex w-full items-center gap-1.5 rounded text-left transition hover:bg-gray-50/60 dark:hover:bg-gray-800/40"
+      className="group inline-flex w-full cursor-text items-center gap-1.5 rounded text-left transition hover:bg-[#FCF8EF] dark:hover:bg-[#FCF8EF]/10"
     >
       {hasValue ? (
         <>
@@ -117,8 +119,12 @@ export function InlineCell({
             className="shrink-0 text-gray-300 opacity-0 transition group-hover:opacity-100"
           />
         </>
-      ) : (
+      ) : emptyEditable ? (
+        // 안내 텍스트가 명시된 경우(예: 모달의 '입력 필요')는 그대로 텍스트 표시.
         <span className="text-gray-400">{emptyEditable}</span>
+      ) : (
+        // 빈 셀 — '+ 클릭해서 입력' 대신 깜빡이는 커서로 즉시 입력 가능 신호.
+        <InputCursor />
       )}
     </button>
   );

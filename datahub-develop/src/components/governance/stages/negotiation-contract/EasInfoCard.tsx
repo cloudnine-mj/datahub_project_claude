@@ -35,11 +35,7 @@ export function EasInfoCard({ value, onCommit }: Props) {
                 품의번호
               </td>
               <td className="px-3 py-[9px] align-middle text-gray-900 dark:text-gray-100">
-                <InlineCell
-                  value={value}
-                  emptyEditable="+ 클릭해서 입력"
-                  onCommit={onCommit}
-                />
+                <InlineCell value={value} onCommit={onCommit} />
               </td>
             </tr>
           </tbody>

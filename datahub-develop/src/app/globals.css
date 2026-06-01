@@ -92,3 +92,24 @@
     color: #9ca3af; /* gray-400 */
   }
 }
+
+/* 인라인 편집 표의 빈 셀 — 깜빡이는 입력 커서. 1초 주기(0.5s 보임/0.5s 사라짐).
+   '+ 클릭해서 입력' 텍스트 대신 빈 셀이 곧 input 처럼 보이도록 한다. 색상 #D4533E 통일. */
+@keyframes input-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+.input-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 13px;
+  background: #d4533e;
+  vertical-align: middle;
+  animation: input-cursor-blink 1s step-end infinite;
+}

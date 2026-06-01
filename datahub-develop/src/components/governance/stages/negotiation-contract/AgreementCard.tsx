@@ -66,7 +66,6 @@ export function AgreementCard({ value, onField }: Props) {
                     <div className="min-w-0 flex-1">
                       <InlineCell
                         value={value[f.key]}
-                        emptyEditable="+ 클릭해서 입력"
                         format={f.format}
                         onCommit={(next) => onField(f.key, next)}
                       />
