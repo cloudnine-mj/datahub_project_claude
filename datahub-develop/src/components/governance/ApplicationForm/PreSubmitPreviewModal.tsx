@@ -308,7 +308,7 @@ export function PreSubmitPreviewModal({
                   );
                 })}
                 {hasAttachmentField && (
-                  <AttachmentRow attachments={attachments} />
+                  <AttachmentRow attachments={attachments} noBorder={!hasCcUsersField} />
                 )}
                 {hasCcUsersField && <CcUsersRow users={ccUsers} />}
               </tbody>
@@ -429,9 +429,15 @@ function PreviewRow({
 
 /** 첨부파일 행 — 미리보기 표 마지막 행. 저장된 첨부의 파일명·크기를 나열.
  *  첨부가 없으면 '—' 표시. (다운로드는 새로고침 시 ObjectURL 이 사라지므로 미리보기에선 생략) */
-function AttachmentRow({ attachments }: { attachments: StoredAttachment[] }) {
+function AttachmentRow({
+  attachments,
+  noBorder,
+}: {
+  attachments: StoredAttachment[];
+  noBorder?: boolean;
+}) {
   return (
-    <tr>
+    <tr className={noBorder ? "" : "border-b border-gray-200 dark:border-gray-800"}>
       <th
         scope="row"
         className="w-[160px] bg-gray-50 px-[14px] py-[11px] text-left align-top text-gray-500 font-normal dark:bg-gray-800/40 dark:text-gray-400"
