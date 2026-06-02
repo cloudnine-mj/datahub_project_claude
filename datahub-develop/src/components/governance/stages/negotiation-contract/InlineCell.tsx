@@ -12,14 +12,14 @@ import { Pencil } from "lucide-react";
 export function InlineCell({
   value,
   canEdit = true,
-  emptyEditable,
+  emptyEditable = "+ 클릭해서 입력",
   emptyReadonly = "—",
   format,
   onCommit,
 }: {
   value: string;
   canEdit?: boolean;
-  emptyEditable: string;
+  emptyEditable?: string;
   emptyReadonly?: string;
   format?: (v: string) => string;
   onCommit: (next: string) => void;

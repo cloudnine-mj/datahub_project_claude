@@ -37,6 +37,8 @@ export type HistoryEventType =
   | "approval_requested"
   | "approved"
   | "info_requested"
+  | "negotiation_completed"
+  | "contract_completed"
   | "stage_transition";
 
 export type ActorRole = "applicant" | "lead" | "member" | "system";
@@ -69,6 +71,8 @@ const EVENT_CONFIG: Record<HistoryEventType, Config> = {
   approval_requested: { label: "승인 요청", icon: SendHorizontal, node: "#BA7517", chipBg: "#FAEEDA", chipText: "#854F0B" },
   approved: { label: "승인 완료", icon: CircleCheck, node: "#1D9E75", chipBg: "#E1F5EE", chipText: "#0F6E56" },
   info_requested: { label: "보완 요청", icon: Pencil, node: "#E08027", chipBg: "#FBEBD6", chipText: "#B5610F" },
+  negotiation_completed: { label: "협의 완료", icon: CircleCheck, node: "#1D9E75", chipBg: "#E1F5EE", chipText: "#0F6E56" },
+  contract_completed: { label: "계약 완료", icon: CircleCheck, node: "#1D9E75", chipBg: "#E1F5EE", chipText: "#0F6E56" },
   stage_transition: { label: "계약 단계 전환", icon: ArrowRightCircle, node: "#D4533E", chipBg: "#FCEAE5", chipText: "#993C1D" },
 };
 
@@ -85,6 +89,8 @@ function roleForType(type: HistoryEventType): ActorRole {
     type === "member_assigned" ||
     type === "approved" ||
     type === "info_requested" ||
+    type === "negotiation_completed" ||
+    type === "contract_completed" ||
     type === "stage_transition"
   ) {
     return "lead";
@@ -238,6 +244,8 @@ const ACTION_TO_TYPE: Record<string, HistoryEventType> = {
   info_resubmitted: "revision",
   info_requested: "info_requested",
   approved: "approved",
+  negotiation_completed: "negotiation_completed",
+  contract_completed: "contract_completed",
   stage_transition: "stage_transition",
 };
 

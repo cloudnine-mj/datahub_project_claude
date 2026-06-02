@@ -37,6 +37,7 @@ import {
   HistoryTimeline,
   approvalHistoryToEvents,
 } from "@/components/governance/HistoryTimeline";
+import { HistoryTimelineWithSubProgress } from "@/components/governance/common/HistoryTimelineWithSubProgress";
 import { AttachmentSection } from "@/components/governance/AttachmentSection";
 import { CcUsersInlineView } from "@/components/governance/CcUsersInlineView";
 
@@ -513,10 +514,15 @@ export default function Page({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* 진행 이력 가로 타임라인 — approval_history 의 이벤트 매핑. 용역 제작 한정. */}
+      {/* 진행 이력 — 협의·계약 단계(serviceStage===1)에서는 3단계 진척 통합 카드로 대체,
+          그 외(신청 등)에서는 기존 가로 타임라인. 용역 제작 한정. */}
       {form.form_type === "data_production" && (
         <div className="mb-4">
-          <HistoryTimeline events={approvalHistoryToEvents(form.approval_history)} />
+          {serviceStage === 1 ? (
+            <HistoryTimelineWithSubProgress formId={form.id} />
+          ) : (
+            <HistoryTimeline events={approvalHistoryToEvents(form.approval_history)} />
+          )}
         </div>
       )}
 

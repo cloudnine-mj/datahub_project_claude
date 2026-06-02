@@ -24,15 +24,19 @@ import {
   ensureWorkCountDefault,
   readNegotiation,
   writeNegotiation,
-  NEGOTIATION_FIELDS,
   type NegotiationField,
   type NegotiationResult,
 } from "@/lib/governance/negotiation-storage";
 import { readContract, writeContract } from "@/lib/governance/contract-storage";
+import {
+  readNegotiationStatus,
+  readContractStatus,
+  markNegotiationComplete,
+  markContractComplete,
+} from "@/lib/governance/stage-status";
 import { AgreementCard } from "./negotiation-contract/AgreementCard";
 import { EasInfoCard } from "./negotiation-contract/EasInfoCard";
 import { NegotiationFilesCard } from "./negotiation-contract/NegotiationFilesCard";
-import { ProceedToProgressModal } from "./negotiation-contract/ProceedToProgressModal";
 
 interface Props {
   formId: string;
@@ -62,7 +66,13 @@ export function NegotiationContractStageTab({
   const [contractNo, setContractNo] = useState<string>(
     () => readContract(formId).easApprovalNumber,
   );
-  const [modalOpen, setModalOpen] = useState(false);
+  // 협의·계약 완료 상태 — sessionStorage 영속(stage-status). isCompleted 면 카드 잠금.
+  const [negotiationDone, setNegotiationDone] = useState<boolean>(
+    () => readNegotiationStatus(formId).isCompleted,
+  );
+  const [contractDone, setContractDone] = useState<boolean>(
+    () => readContractStatus(formId).isCompleted,
+  );
 
   // 작업 건수 초기값 — 신청서 '목표 데이터 수량' 으로 1회 자동 채움(미입력 시에만).
   useEffect(() => {
@@ -71,22 +81,60 @@ export function NegotiationContractStageTab({
     ensureWorkCountDefault(formId, def);
     setNegotiation(readNegotiation(formId));
     setContractNo(readContract(formId).easApprovalNumber);
+    setNegotiationDone(readNegotiationStatus(formId).isCompleted);
+    setContractDone(readContractStatus(formId).isCompleted);
   }, [formId, form]);
 
   function onAgreementField(key: NegotiationField, next: string): void {
+    if (negotiationDone) return; // 잠금 가드
     setNegotiation(writeNegotiation(formId, { [key]: next }));
   }
 
   function onContractField(next: string): void {
+    if (contractDone || !negotiationDone) return; // 잠금/협의 미완료 가드
     setContractNo(writeContract(formId, { easApprovalNumber: next }).easApprovalNumber);
   }
 
-  const allFilled =
-    NEGOTIATION_FIELDS.every((k) => negotiation[k].trim().length > 0) &&
-    contractNo.trim().length > 0;
+  // [협의 완료] — 협의 카드 잠금 + 이력 기록.
+  function onCompleteNegotiation(): void {
+    markNegotiationComplete(formId);
+    setNegotiationDone(true);
+    api
+      .appendFormEvent(formId, {
+        action: "negotiation_completed",
+        comment: "협의 완료",
+        actorName: lead.name,
+        actorRole: "lead",
+      })
+      .then(() => onActivity?.())
+      .catch(() => {
+        /* ignore */
+      });
+  }
 
-  // [진행 단계로 →] 확정 — 이력 기록 + 단계 갱신.
+  // [계약 완료] — 계약 카드 잠금 + 이력 기록.
+  function onCompleteContract(): void {
+    markContractComplete(formId);
+    setContractDone(true);
+    api
+      .appendFormEvent(formId, {
+        action: "contract_completed",
+        comment: "계약 완료",
+        actorName: lead.name,
+        actorRole: "lead",
+      })
+      .then(() => onActivity?.())
+      .catch(() => {
+        /* ignore */
+      });
+  }
+
+  // [진행 단계로] 활성 조건 — 협의·계약 모두 완료.
+  const canAdvance = negotiationDone && contractDone;
+
+  // [진행 단계로] 클릭 — 즉시 단계 전환(모달 없음, 스펙 7-5).
   function onProceedToProgress(): void {
+    if (!canAdvance) return;
     api
       .appendFormEvent(formId, {
         action: "stage_transition",
@@ -99,7 +147,6 @@ export function NegotiationContractStageTab({
         /* ignore */
       });
     onAdvanceToProgress();
-    setModalOpen(false);
   }
 
   return (
@@ -110,44 +157,48 @@ export function NegotiationContractStageTab({
         {/* 신청 정보 카드 — 펼치면 참조자 행 포함(편집 가능). 별도 참조자 카드는 두지 않음. */}
         <CollapsibleRequestInfo>{requestInfoTable}</CollapsibleRequestInfo>
 
-        <AgreementCard value={negotiation} onField={onAgreementField} />
+        <AgreementCard
+          value={negotiation}
+          onField={onAgreementField}
+          isCompleted={negotiationDone}
+          onComplete={onCompleteNegotiation}
+        />
 
-        <EasInfoCard value={contractNo} onCommit={onContractField} />
+        <EasInfoCard
+          value={contractNo}
+          onCommit={onContractField}
+          negotiationCompleted={negotiationDone}
+          isCompleted={contractDone}
+          onComplete={onCompleteContract}
+        />
 
         <NegotiationFilesCard formId={formId} />
 
-        {/* Phase 1 — 권한 분기 없이 모든 사용자에게 노출. 협의 4필드 + 품의번호 모두 입력 시 활성. */}
+        {/* [진행 단계로] — 협의·계약 모두 완료 시 활성. 모달 없이 즉시 전환(스펙 7-5). */}
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
-          disabled={!allFilled}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 dark:disabled:bg-gray-700"
+          onClick={onProceedToProgress}
+          disabled={!canAdvance}
+          className={
+            canAdvance
+              ? "inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#D4533E] px-4 py-[11px] text-[12px] font-medium text-white transition hover:brightness-110"
+              : "inline-flex w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-lg bg-[var(--color-background-secondary,#f3f4f6)] px-4 py-[11px] text-[12px] font-medium text-[var(--color-text-tertiary,#9ca3af)] dark:bg-gray-800"
+          }
         >
           진행 단계로
           <ArrowRight size={14} aria-hidden="true" />
         </button>
-        <p className="text-center text-[11px] text-gray-400">
-          최종 협의 내용 4필드 + 품의번호 모두 입력 시 활성
-        </p>
+        {!canAdvance && (
+          <p className="text-center text-[10px] text-[var(--color-text-tertiary,#9ca3af)]">
+            협의 완료 + 계약 완료 후 활성
+          </p>
+        )}
       </div>
 
-      {/* 채팅 컬럼 — 좌측 본문 높이에 정확히 맞추기 위해 absolute 트릭 사용.
-          채팅 콘텐츠가 grid 행 높이에 기여하지 않도록 absolute 로 띄워, 행 높이는 좌측이 결정.
-          메시지가 아무리 많아도 패널은 좌측 높이를 절대 못 넘고 내부에서만 스크롤. */}
+      {/* 채팅 컬럼 — absolute 트릭으로 좌측 본문 높이에 맞춤(grid 행 높이는 좌측이 결정). */}
       <div className="relative min-h-[480px]">
         <div className="absolute inset-0">{chatPanel}</div>
       </div>
-
-      {modalOpen && (
-        <ProceedToProgressModal
-          negotiation={negotiation}
-          contractNo={contractNo}
-          onAgreementField={onAgreementField}
-          onContractField={onContractField}
-          onProceed={onProceedToProgress}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
     </div>
   );
 }
