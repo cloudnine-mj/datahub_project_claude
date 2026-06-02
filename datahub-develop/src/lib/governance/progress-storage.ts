@@ -25,7 +25,6 @@ export interface ReceivedDataItem {
   fileType: string;
   uploader: string;
   uploadedAt: string; // ISO
-  changeMemo?: string;
   status: ReceivedStatus;
 }
 
@@ -117,7 +116,6 @@ export function appendReceivedData(
     fileType: next.fileType,
     uploader: next.uploader,
     uploadedAt: new Date().toISOString(),
-    changeMemo: next.changeMemo,
     status: next.status ?? "reviewing",
   };
   writeJson(RECEIVED_KEY(formId), [...current, item]);

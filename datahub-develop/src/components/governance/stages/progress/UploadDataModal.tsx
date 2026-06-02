@@ -1,10 +1,11 @@
 // 새 데이터 업로드 모달 — 진행 단계 수령 데이터 카드의 [업로드] 클릭 시.
-//   납품 선택(필수) + 파일 선택 + 자동 버전 표시 + 변경점 메모(선택). 등록 시 카드 갱신.
+//   납품 선택(필수) + 파일 선택 + 자동 버전 표시 + 액션. 등록 시 카드 갱신.
+//   변경점 메모 입력 없음 — 변경 사항은 채팅으로 공유.
 
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CloudUpload, FileUp, X } from "lucide-react";
+import { Check, CloudUpload, FileUp, X } from "lucide-react";
 import {
   appendReceivedData,
   deliveryLabel,
@@ -37,7 +38,6 @@ function ext(name: string): string {
 export function UploadDataModal({ formId, uploader, onClose, onUploaded }: Props) {
   const [round, setRound] = useState<DeliveryRound | null>(null);
   const [picked, setPicked] = useState<PickedFile[]>([]);
-  const [memo, setMemo] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -105,7 +105,6 @@ export function UploadDataModal({ formId, uploader, onClose, onUploaded }: Props
       fileSize: first.file.size,
       fileType: first.ext,
       uploader,
-      changeMemo: memo.trim() || undefined,
     });
     // 추가 파일도 같은 round 로 누적 등록(각각 v+1 부여).
     picked.slice(1).forEach((p) => {
@@ -115,7 +114,6 @@ export function UploadDataModal({ formId, uploader, onClose, onUploaded }: Props
         fileSize: p.file.size,
         fileType: p.ext,
         uploader,
-        changeMemo: memo.trim() || undefined,
       });
     });
     onUploaded(round, item.version);
@@ -131,7 +129,7 @@ export function UploadDataModal({ formId, uploader, onClose, onUploaded }: Props
       aria-labelledby="upload-data-title"
     >
       <div
-        className="w-full max-w-[480px] rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        className="w-full max-w-[460px] rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
         style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -254,23 +252,6 @@ export function UploadDataModal({ formId, uploader, onClose, onUploaded }: Props
           </div>
         )}
 
-        {/* 변경점 메모 (선택) */}
-        <div className="mb-3">
-          <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
-            변경점 메모{" "}
-            <span className="text-[10px] text-[var(--color-text-tertiary,#9ca3af)]">
-              (선택)
-            </span>
-          </label>
-          <textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            placeholder="예: 최종 v1 대비 라벨 28건 수정"
-            className="w-full resize-none overflow-y-auto rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            style={{ minHeight: "50px" }}
-          />
-        </div>
-
         {err && (
           <p className="mb-2 text-[11px] text-[#993C1D]" role="alert">
             {err}
@@ -335,7 +316,7 @@ function RoundButton({
       >
         {caption}
       </span>
-      {active && <span className="text-[9px]">✓</span>}
+      {active && <Check size={11} aria-hidden="true" className="text-[#D4533E]" />}
     </button>
   );
 }

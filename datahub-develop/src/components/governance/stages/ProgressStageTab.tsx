@@ -76,20 +76,26 @@ export function ProgressStageTab({
     return it;
   }, [received]);
 
-  function onUploaded(round: DeliveryRound, _version: number): void {
+  function onUploaded(round: DeliveryRound, version: number): void {
     // 진행 단계 진척 상태 갱신 — 해당 납품이 시작/진행 중인 것을 반영.
     if (round === "final") {
       writeProgressState(formId, { finalReviewing: true });
     }
-    // 채팅에는 자동 이벤트 안 보냄. 이력 기록만(로깅용).
+    // 채팅에 시스템 자동 메시지 알림 — 업로드 사실을 담당자/신청자에게 공유.
+    //   변경 사항 상세는 담당자가 채팅으로 자유롭게 덧붙임.
+    const shortLabel = round === "middle" ? "중간" : round === "modified" ? "수정" : "최종";
     api
-      .appendFormEvent(formId, {
-        action: "data_received",
-        comment: `${round === "middle" ? "중간" : round === "modified" ? "수정" : "최종"} 납품 업로드`,
-        actorName: lead.name,
-        actorRole: "lead",
+      .createFormMessage(
+        formId,
+        `[${lead.name}]님이 ${shortLabel} v${version} 데이터를 업로드했습니다.`,
+      )
+      .then(() => {
+        // ChatPanel 은 focus 이벤트로 메시지를 재조회 — 같은 화면 즉시 갱신 유도.
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("focus"));
+        }
+        onActivity?.();
       })
-      .then(() => onActivity?.())
       .catch(() => {
         /* ignore */
       });
