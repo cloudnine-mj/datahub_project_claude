@@ -131,10 +131,11 @@ export function NegotiationContractStageTab({
         </p>
       </div>
 
-      {/* 채팅 컬럼 — 메시지가 많아도 행 전체를 늘리지 않도록 상한 + overflow-hidden.
-          좌측 본문 높이에 맞춰 고정되고, 메시지 초과분은 패널 내부에서만 스크롤된다. */}
-      <div className="min-h-0 overflow-hidden lg:max-h-[calc(100vh-96px)]">
-        {chatPanel}
+      {/* 채팅 컬럼 — 좌측 본문 높이에 정확히 맞추기 위해 absolute 트릭 사용.
+          채팅 콘텐츠가 grid 행 높이에 기여하지 않도록 absolute 로 띄워, 행 높이는 좌측이 결정.
+          메시지가 아무리 많아도 패널은 좌측 높이를 절대 못 넘고 내부에서만 스크롤. */}
+      <div className="relative min-h-[480px]">
+        <div className="absolute inset-0">{chatPanel}</div>
       </div>
 
       {modalOpen && (

@@ -551,8 +551,10 @@ export default function Page({ params }: { params: { id: string } }) {
                 {requestInfoCard}
                 <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
               </div>
-              <div className="min-h-0 overflow-hidden lg:max-h-[calc(100vh-96px)]">
-                {chatPanel}
+              {/* 채팅 컬럼 — 좌측 높이에 맞추기 위해 absolute 트릭. 채팅 콘텐츠가 행 높이에
+                  기여하지 않아 좌측이 행을 결정, 메시지 많아도 좌측을 넘지 않음. */}
+              <div className="relative min-h-[480px]">
+                <div className="absolute inset-0">{chatPanel}</div>
               </div>
             </div>
 
