@@ -31,6 +31,7 @@ import {
 } from "@/components/governance/ProgressBar";
 import { ApplicationStageTab } from "@/components/governance/stages/ApplicationStageTab";
 import { NegotiationContractStageTab } from "@/components/governance/stages/NegotiationContractStageTab";
+import { ProgressStageTab } from "@/components/governance/stages/ProgressStageTab";
 import { ChatPanel } from "@/components/governance/chat/ChatPanel";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
@@ -519,7 +520,9 @@ export default function Page({ params }: { params: { id: string } }) {
       {form.form_type === "data_production" && (
         <div className="mb-4">
           {serviceStage === 1 ? (
-            <HistoryTimelineWithSubProgress formId={form.id} />
+            <HistoryTimelineWithSubProgress formId={form.id} variant="negotiation-contract" />
+          ) : serviceStage === 2 ? (
+            <HistoryTimelineWithSubProgress formId={form.id} variant="progress" />
           ) : (
             <HistoryTimeline events={approvalHistoryToEvents(form.approval_history)} />
           )}
@@ -538,6 +541,18 @@ export default function Page({ params }: { params: { id: string } }) {
               requestInfoTable={requestInfoTable}
               chatPanel={chatPanel}
               onAdvanceToProgress={() => jumpServiceStage(2)}
+              onActivity={refetch}
+            />
+          </>
+        ) : serviceStage === 2 ? (
+          // 진행 단계(3/4) — 안내 / 수령 데이터 / 피드백 이력 / 60:40(좌: 접힘·검토, 우: 채팅).
+          <>
+            {processBar}
+            <ProgressStageTab
+              formId={form.id}
+              form={form}
+              requestInfoTable={requestInfoTable}
+              chatPanel={chatPanel}
               onActivity={refetch}
             />
           </>
