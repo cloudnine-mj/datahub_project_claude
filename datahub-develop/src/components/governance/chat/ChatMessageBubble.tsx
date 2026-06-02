@@ -97,7 +97,7 @@ function AttachmentList({
               <img
                 src={a.url}
                 alt={a.name}
-                className="block max-h-[180px] max-w-[200px] object-cover"
+                className="block max-h-[240px] max-w-full object-contain"
               />
             </button>
             {/* 다운로드 버튼 — 썸네일 우측 하단 오버레이. */}

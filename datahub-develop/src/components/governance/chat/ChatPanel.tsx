@@ -314,11 +314,12 @@ export function ChatPanel({
     accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
   const accentIconHeader = accent === "brand" ? "text-[#D4533E]" : "text-blue-500";
 
-  // 채팅 패널 높이 — 메시지가 많아도 무한정 길어지지 않게 고정 + 내부 스크롤.
-  //   fillParent: 부모(좌측 본문 높이) 에 맞추되(h-full), 메시지가 길어도 뷰포트 상한을
-  //     넘지 않도록 max-h 를 두고 최소 480px 보장. 상한 초과분은 메시지 영역 내부 스크롤.
+  // 채팅 패널 높이 — 메시지가 많아도 무한정 길어지지 않게 "뷰포트 기반 고정 높이".
+  //   h-full 은 부모에 명시적 height 가 있어야 동작하는데, grid items-stretch 의 행 높이는
+  //   좌측 콘텐츠로 결정돼 신뢰할 수 없다. 그래서 부모와 무관하게 자체 고정 높이를 박아
+  //   항상 그 높이를 유지하고, 초과분은 내부 메시지 영역(min-h-0 + overflow-y-auto)에서만 스크롤.
   const heightCls = fillParent
-    ? "h-full min-h-[480px] max-h-[calc(100vh-96px)]"
+    ? "h-[calc(100vh-96px)]"
     : "h-[calc(100vh-104px)] max-h-[560px]";
   return (
     <aside
