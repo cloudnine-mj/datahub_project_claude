@@ -30,6 +30,8 @@ interface Props {
   attachments?: ChatAttachment[];
   /** 말풍선 max-width 클래스 — 미지정 시 max-w-[80%]. 협의 단계는 75% 전달. */
   bubbleMaxWidthClass?: string;
+  /** 첨부 1개 삭제 콜백 — 지정 시 각 첨부에 삭제(X) 버튼 노출. 협의/계약 자료도 함께 갱신됨. */
+  onDeleteAttachment?: (attachmentId: string) => void;
 }
 
 function fmtTime(iso: string): string {
@@ -49,9 +51,22 @@ function initial(name: string): string {
   return trimmed.slice(0, 1);
 }
 
-/** 첨부 목록 — 이미지 썸네일(클릭=확대 라이트박스) / 파일 카드. 부모 정렬을 따른다. */
-function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
+/** 첨부 목록 — 이미지 썸네일(클릭=확대 라이트박스) / 파일 카드. 부모 정렬을 따른다.
+ *  onDelete 지정 시 각 첨부에 삭제(X) 버튼 노출 — 삭제하면 협의/계약 자료에서도 함께 사라짐. */
+function AttachmentList({
+  attachments,
+  onDelete,
+}: {
+  attachments: ChatAttachment[];
+  onDelete?: (attachmentId: string) => void;
+}) {
   const [zoom, setZoom] = useState<ChatAttachment | null>(null);
+
+  function confirmDelete(att: ChatAttachment): void {
+    if (!onDelete) return;
+    const ok = window.confirm(`"${att.name}" 첨부를 삭제할까요?\n협의 자료에서도 함께 삭제됩니다.`);
+    if (ok) onDelete(att.id);
+  }
 
   useEffect(() => {
     if (!zoom) return;
@@ -94,13 +109,22 @@ function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
             >
               <Download size={13} aria-hidden="true" />
             </a>
+            {/* 삭제 버튼 — 썸네일 우측 상단. onDelete 지정 시에만. */}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => confirmDelete(a)}
+                aria-label={`${a.name} 삭제`}
+                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            )}
           </div>
         ) : (
-          <a
+          <div
             key={a.id}
-            href={a.url}
-            download={a.name}
-            className="flex w-[240px] max-w-full items-center gap-2.5 rounded-[10px] border border-gray-200 bg-white px-2.5 py-2 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/60"
+            className="flex w-[240px] max-w-full items-center gap-2.5 rounded-[10px] border border-gray-200 bg-white px-2.5 py-2 dark:border-gray-700 dark:bg-gray-800"
           >
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[9px] font-medium text-white"
@@ -120,8 +144,25 @@ function AttachmentList({ attachments }: { attachments: ChatAttachment[] }) {
                 {formatChatBytes(a.size)}
               </div>
             </div>
-            <Download size={14} className="shrink-0 text-gray-400" aria-hidden="true" />
-          </a>
+            <a
+              href={a.url}
+              download={a.name}
+              aria-label={`${a.name} 다운로드`}
+              className="shrink-0 rounded p-1 text-gray-400 transition hover:bg-gray-50 hover:text-gray-700 dark:hover:bg-gray-700/60 dark:hover:text-gray-200"
+            >
+              <Download size={14} aria-hidden="true" />
+            </a>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => confirmDelete(a)}
+                aria-label={`${a.name} 삭제`}
+                className="shrink-0 rounded p-1 text-gray-400 transition hover:bg-gray-50 hover:text-red-600 dark:hover:bg-gray-700/60 dark:hover:text-red-400"
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
         ),
       )}
 
@@ -171,6 +212,7 @@ export function ChatMessageBubble({
   mineBubbleClass,
   attachments = [],
   bubbleMaxWidthClass = "max-w-[80%]",
+  onDeleteAttachment,
 }: Props) {
   const isMine =
     !!currentUserEmail &&
@@ -190,7 +232,9 @@ export function ChatMessageBubble({
               <p className="whitespace-pre-wrap break-words">{message.body}</p>
             </div>
           )}
-          {hasAttachments && <AttachmentList attachments={attachments} />}
+          {hasAttachments && (
+            <AttachmentList attachments={attachments} onDelete={onDeleteAttachment} />
+          )}
           {time && <span className="text-[10px] text-gray-400">{time}</span>}
         </div>
       </div>

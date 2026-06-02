@@ -226,9 +226,31 @@ export function ChatPanel({
     }
   }
 
+  // 채팅 메시지의 첨부 1개 삭제 — msgAttachments 맵에서 제거 후 저장.
+  //   협의/계약 자료 카드가 같은 첨부를 수집하므로, 삭제 후 갱신 이벤트로 즉시 반영시킨다.
+  function deleteAttachment(messageId: string, attachmentId: string): void {
+    if (!formId) return;
+    const current = msgAttachments[messageId] ?? [];
+    const remaining = current.filter((a) => a.id !== attachmentId);
+    const nextMap = { ...msgAttachments };
+    if (remaining.length > 0) {
+      nextMap[messageId] = remaining;
+    } else {
+      delete nextMap[messageId];
+    }
+    setMsgAttachments(nextMap);
+    writeMsgAttachments(formId, nextMap);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("dh:gov:chat-attachment-added", {
+          detail: { formId },
+        }),
+      );
+    }
+  }
+
   async function send() {
-    if (!canSend) return;
-    const ok = await sendMessage(text.trim(), pending);
+    if (!canSend) return;    const ok = await sendMessage(text.trim(), pending);
     if (ok) {
       setText("");
       setPending([]);
@@ -356,6 +378,7 @@ export function ChatPanel({
                   mineBubbleClass={accentBubble}
                   attachments={msgAttachments[m.id]}
                   bubbleMaxWidthClass={bubbleMaxWidthClass}
+                  onDeleteAttachment={(attId) => deleteAttachment(m.id, attId)}
                 />
               </Fragment>
             );
