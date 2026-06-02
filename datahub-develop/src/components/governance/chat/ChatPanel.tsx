@@ -163,10 +163,18 @@ export function ChatPanel({
     return () => window.removeEventListener("focus", onFocus);
   }, [fetchMessages]);
 
-  // 새 메시지/첨부 추가·도착 시 최신으로 자동 스크롤.
+  // 새 메시지/첨부 도착 시 최신으로 자동 스크롤.
+  //   첫 렌더(초기 진입)는 instant 로 맨 아래에 위치시키고, 이후 새 메시지는 smooth 스크롤.
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
     const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    if (!didInitialScrollRef.current) {
+      el.scrollTop = el.scrollHeight; // 초기엔 instant
+      didInitialScrollRef.current = true;
+      return;
+    }
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length, pending.length]);
 
   const canSend = (text.trim().length > 0 || pending.length > 0) && !sending;
@@ -284,8 +292,10 @@ export function ChatPanel({
     accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
   const accentIconHeader = accent === "brand" ? "text-[#D4533E]" : "text-blue-500";
 
+  // 좌측 본문이 짧아도 채팅이 너무 짧아지지 않도록 min-height 확보(스펙 3-4).
+  //   fillParent: 부모(좌측 본문) 높이에 맞추되 최소 480px. 그 외: 기존 뷰포트 기반.
   const heightCls = fillParent
-    ? "h-full"
+    ? "h-full min-h-[480px]"
     : "h-[calc(100vh-104px)] max-h-[560px]";
   return (
     <aside
