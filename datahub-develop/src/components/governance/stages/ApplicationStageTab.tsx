@@ -14,11 +14,12 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CircleCheck, Clock, Plus, Users, X } from "lucide-react";
 import { api, type Me } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import type { SubStep } from "@/components/governance/ProgressBar";
+import { UserPicker } from "@/components/governance/UserPicker";
 
 interface MemberMock {
   id: string;
@@ -285,10 +286,8 @@ function AddMemberModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    nameRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -303,14 +302,6 @@ function AddMemberModal({
       return;
     }
     onClose();
-  }
-
-  function onEnter(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing || e.key === "Process") return;
-    if (e.key === "Enter") {
-      e.preventDefault();
-      submit();
-    }
   }
 
   return (
@@ -342,46 +333,21 @@ function AddMemberModal({
           </button>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
-              이름
-            </label>
-            <input
-              ref={nameRef}
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setErr(null);
-              }}
-              onKeyDown={onEnter}
-              placeholder="담당자 이름"
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
-              이메일
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setErr(null);
-              }}
-              onKeyDown={onEnter}
-              placeholder="example@company.com"
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            />
-          </div>
-          {err && (
-            <p className="text-[11px] text-[#993C1D]" role="alert">
-              {err}
-            </p>
-          )}
-        </div>
+        <UserPicker
+          name={name}
+          email={email}
+          onChange={(next) => {
+            setName(next.name);
+            setEmail(next.email);
+            setErr(null);
+          }}
+          onSubmit={submit}
+        />
+        {err && (
+          <p className="mt-3 text-[11px] text-[#993C1D]" role="alert">
+            {err}
+          </p>
+        )}
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
