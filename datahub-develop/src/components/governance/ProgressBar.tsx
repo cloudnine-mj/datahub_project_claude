@@ -99,7 +99,7 @@ export function ProgressBar({ stages, currentIndex, onStageClick }: Props) {
 }
 
 /** 용역 제작(data_production) 의 4단계. 협의·계약 통합으로 5→4 단계로 축소. */
-export const SERVICE_STAGES = ["신청", "협의", "진행", "종료"] as const;
+export const SERVICE_STAGES = ["요청서 검토", "협의 및 계약", "진행", "종료"] as const;
 
 /** Phase 1 — 4단계 진행은 form status 와 무관한 별도 상태로 관리.
  *  신청 단계(0) 에서 총괄 담당자가 실무자 지정 후 [승인 완료] 를 눌러야
