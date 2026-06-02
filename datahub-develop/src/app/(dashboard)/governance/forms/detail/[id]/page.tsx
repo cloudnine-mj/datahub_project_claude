@@ -544,13 +544,16 @@ export default function Page({ params }: { params: { id: string } }) {
           <>
             {processBar}
 
-            {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅), 같은 높이. 신청 단계는 60:40 비율. */}
-            <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[60fr_40fr]">
+            {/* 블록 1 — 좌(신청 정보 + 버튼) / 우(채팅). 신청 단계는 60:40 비율.
+                채팅은 메시지가 많아도 행 전체를 늘리지 않도록 sticky + 상한 + 내부 스크롤. */}
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[60fr_40fr]">
               <div className="flex min-w-0 flex-col gap-3">
                 {requestInfoCard}
                 <div className="flex flex-wrap justify-end gap-2">{actionButtons}</div>
               </div>
-              <div className="min-h-0">{chatPanel}</div>
+              <div className="min-h-0 overflow-hidden lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)]">
+                {chatPanel}
+              </div>
             </div>
 
             {/* 블록 2 — 전체 너비: 담당자 카드 */}

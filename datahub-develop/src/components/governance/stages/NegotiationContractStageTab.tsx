@@ -103,7 +103,7 @@ export function NegotiationContractStageTab({
   }
 
   return (
-    <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-3">
         <InfoCard />
 
@@ -131,7 +131,11 @@ export function NegotiationContractStageTab({
         </p>
       </div>
 
-      <div className="min-h-0">{chatPanel}</div>
+      {/* 채팅 컬럼 — 메시지가 많아도 행 전체를 늘리지 않도록 상한 + overflow-hidden.
+          lg 이상에서 sticky 로 화면에 고정해 좌측 카드보다 길어져도 스크롤은 내부에서만. */}
+      <div className="min-h-0 overflow-hidden lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)]">
+        {chatPanel}
+      </div>
 
       {modalOpen && (
         <ProceedToProgressModal

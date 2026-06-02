@@ -314,10 +314,11 @@ export function ChatPanel({
     accent === "brand" ? "text-white" : "text-blue-600 dark:text-blue-300";
   const accentIconHeader = accent === "brand" ? "text-[#D4533E]" : "text-blue-500";
 
-  // 좌측 본문이 짧아도 채팅이 너무 짧아지지 않도록 min-height 확보(스펙 3-4).
-  //   fillParent: 부모(좌측 본문) 높이에 맞추되 최소 480px. 그 외: 기존 뷰포트 기반.
+  // 채팅 패널 높이 — 메시지가 많아도 무한정 길어지지 않게 뷰포트 기반 고정 높이 + 내부 스크롤.
+  //   fillParent: 부모 그리드(items-start)에 콘텐츠로 늘어나지 않도록 자체 높이를 가진다.
+  //     화면 높이에서 헤더/여백을 뺀 값을 쓰되 최소 480px 보장.
   const heightCls = fillParent
-    ? "h-full min-h-[480px]"
+    ? "h-[calc(100vh-120px)] min-h-[480px]"
     : "h-[calc(100vh-104px)] max-h-[560px]";
   return (
     <aside
