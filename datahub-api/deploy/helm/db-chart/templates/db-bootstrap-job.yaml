@@ -1,0 +1,103 @@
+# =============================================================================
+# DB Bootstrap Job — 멱등 user/db 생성
+#
+# PostgreSQL 의 docker-entrypoint-initdb.d 는 PGDATA 가 비어있을 때만 실행된다.
+# 즉 chart 가 처음 배포된 후 webDatabase / webUser 등을 추가하면 PVC 가 살아
+# 있어 init script 가 다시 돌지 않는다 (실제 dev cluster 회귀 — 2026-04-30).
+#
+# 본 Job 은 helm upgrade 마다 실행되어 core user/db 가 모두 존재함을 보장한다.
+# `IF NOT EXISTS` 패턴 (PostgreSQL 의 DO $$ block) 으로 멱등.
+#
+# helm hook:
+#   post-install / post-upgrade 에 실행.
+#   helm 이 자동으로 이전 Job 객체를 정리 (hook-delete-policy).
+# =============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-bootstrap
+  labels:
+    app: {{ .Release.Name }}-postgresql
+    component: bootstrap
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "0"
+spec:
+  ttlSecondsAfterFinished: 600
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgresql
+        component: bootstrap
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-postgresql-initdb-env
+          env:
+            - name: PG_HOST
+              value: {{ .Release.Name }}-postgresql
+            # postgres admin 으로 접속 (POSTGRES_PASSWORD 는 secretRef envFrom 으로 주입됨)
+            - name: PGUSER
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-initdb-env
+                  key: POSTGRES_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              # PG 가 ready 될 때까지 대기 (chart 의 PG Deployment 와 같은 release 라
+              # post-install/post-upgrade hook 시점엔 보통 ready 지만 안전장치)
+              for i in $(seq 1 60); do
+                if pg_isready -h "$PG_HOST" -p 5432 -U postgres -q; then
+                  break
+                fi
+                echo "[bootstrap] waiting for postgres ($i/60)..."
+                sleep 2
+              done
+
+              run_sql() {
+                psql -h "$PG_HOST" -U postgres -v ON_ERROR_STOP=1 -tA -c "$1"
+              }
+
+              # ── platform_db ────────────────────────────────────────────────
+              ensure_role_and_db() {
+                local role="$1"; local pw="$2"; local db="$3"
+                if [ -z "$pw" ]; then
+                  echo "[bootstrap] WARN: password for $role is empty — skipping"
+                  return 0
+                fi
+                # role
+                exists=$(run_sql "SELECT 1 FROM pg_roles WHERE rolname='$role'")
+                if [ -z "$exists" ]; then
+                  echo "[bootstrap] CREATE USER $role"
+                  psql -h "$PG_HOST" -U postgres -v ON_ERROR_STOP=1 \
+                    -c "CREATE USER $role WITH ENCRYPTED PASSWORD '$pw'"
+                else
+                  # 비밀번호 동기화 (CI 가 새 PW 로 --set 한 경우 반영)
+                  psql -h "$PG_HOST" -U postgres -v ON_ERROR_STOP=1 \
+                    -c "ALTER USER $role WITH ENCRYPTED PASSWORD '$pw'"
+                fi
+                # database
+                exists=$(run_sql "SELECT 1 FROM pg_database WHERE datname='$db'")
+                if [ -z "$exists" ]; then
+                  echo "[bootstrap] CREATE DATABASE $db OWNER $role"
+                  psql -h "$PG_HOST" -U postgres -v ON_ERROR_STOP=1 \
+                    -c "CREATE DATABASE $db OWNER $role"
+                fi
+              }
+
+              ensure_role_and_db "{{ .Values.postgresql.auth.platformUser }}" "$PLATFORM_DB_PW" "{{ .Values.postgresql.auth.platformDatabase }}"
+              ensure_role_and_db "{{ .Values.postgresql.auth.webUser }}"     "$WEB_DB_PW"     "{{ .Values.postgresql.auth.webDatabase }}"
+
+              echo "[bootstrap] core user/db ensured"

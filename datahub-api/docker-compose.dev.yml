@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: platform_db
+    ports:
+      - "${DATAHUB_DEV_POSTGRES_PORT:-15432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform -d platform_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - datahub-api-dev-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${DATAHUB_DEV_REDIS_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://platform:password@postgres:5432/platform_db
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: local-dev-jwt-secret-for-datahub-api-000000000000
+      INTERNAL_SERVICE_SECRET: local-dev-internal-service-secret-000000000000
+      FRONTEND_URL: http://localhost:3179
+      GCP_BUCKET_PREFIX: lgair-dgdh-local
+      OTEL_ENABLED: "false"
+      MCP_ENABLED: "false"
+      GOOGLE_CLIENT_ID: local-dev-google-client-id
+      GOOGLE_CLIENT_SECRET: local-dev-google-client-secret
+      UC_ENDPOINT: http://unity-catalog-disabled.local
+      LLM_API_KEY: ""
+    ports:
+      - "${DATAHUB_DEV_API_PORT:-18080}:8080"
+    volumes:
+      - .:/srv
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
+
+volumes:
+  datahub-api-dev-postgres:

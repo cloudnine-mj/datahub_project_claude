@@ -1,0 +1,38 @@
+# =============================================================================
+# dev hardening override — file-transfer capacity verification profile
+#
+# Usage:
+#   helm upgrade --install dh ./deploy/helm/dp-chart \
+#     -f ./deploy/helm/dp-chart/values.yaml \
+#     -f ./deploy/helm/dp-chart/values-dev.yaml \
+#     -f ./deploy/helm/dp-chart/values-dev-hardening.yaml \
+#     ...
+#
+# Keep values-dev.yaml conservative for shared dev. Apply this file only while
+# running scheduled file-transfer hardening profiles, then remove the override.
+# =============================================================================
+
+platform:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  config:
+    RATE_LIMIT_WINDOW_SECONDS: "60"
+    RATE_LIMIT_SESSION_REQUESTS: "60"
+    RATE_LIMIT_TRANSFER_REQUESTS: "600"
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/limit-rps: "200"
+      nginx.ingress.kubernetes.io/limit-connections: "400"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"

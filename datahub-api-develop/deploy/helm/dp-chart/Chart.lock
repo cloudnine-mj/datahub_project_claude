@@ -1,6 +1,0 @@
-dependencies:
-- name: lakefs
-  repository: https://charts.lakefs.io
-  version: 1.8.0
-digest: sha256:4ac0960005284fa6f096e860c566e5091ef00c41bc60c7370c9686ad21f113e4
-generated: "2026-03-05T10:13:35.585394352Z"

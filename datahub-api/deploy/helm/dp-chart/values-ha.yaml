@@ -1,0 +1,35 @@
+postgresql:
+  enabled: false
+
+platform:
+  replicaCount: 3
+  metrics:
+    podMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      additionalLabels: {}
+    alerts:
+      enabled: true
+      duration: 10m
+      errorRateThreshold: "0.05"
+      latencyThresholdSeconds: "5"
+      podRestartThreshold: "1"
+      additionalLabels: {}
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  secrets:
+    DATABASE_URL: "postgresql://platform:${PLATFORM_DB_PW}@${CLOUDSQL_HOST}:5432/platform_db"
+    REDIS_URL: "redis://${REDIS_HOST}:6379/0"
+
+unityCatalog:
+  enabled: false
+
+postgresqlBackup:
+  enabled: true
+  bucket: "datahub-postgresql-backups"
+  host: "${CLOUDSQL_HOST}"
+  port: 5432

@@ -1,0 +1,63 @@
+# =============================================================================
+# dev 환경 오버라이드 — lgair-datahub-dev 클러스터
+# Cluster  : gke_lgair-dg-data-hub_us-central1_lgair-datahub-dev
+# Namespace: lgair-datahub
+# Helm     : release = dh, chart = dp-chart
+# GCS      : bucket prefix = lgair-dgdh-dev
+# 진입: https://dev.datahub.lgair-data.com/api/v1 (API)
+#       https://dev.datahub.lgair-data.com        (웹, portal-chart)
+#
+# 시크릿은 모두 CI에서 --set으로 주입 (GitLab CI/CD Variables + environment scope=dev).
+# values 파일에는 절대 평문 credential을 커밋하지 않는다.
+# =============================================================================
+
+platform:
+  image:
+    tag: develop               # CI가 develop 브랜치 빌드 시 이 태그를 push
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  config:
+    FRONTEND_URL: "https://dev.datahub.lgair-data.com"
+    OAUTH_REDIRECT_URI: "https://dev.datahub.lgair-data.com/api/v1/auth/callback"
+    COOKIE_DOMAIN: ".datahub.lgair-data.com"
+    GCP_BUCKET_PREFIX: "lgair-dgdh-dev"
+    MCP_ENABLED: "false"
+    OTEL_ENABLED: "false"
+    RATE_LIMIT_WINDOW_SECONDS: "60"
+    RATE_LIMIT_SESSION_REQUESTS: "60"
+    RATE_LIMIT_TRANSFER_REQUESTS: "120"
+  secrets: {}                  # CI에서 --set platform.secrets.* 로 주입
+  ingress:
+    enabled: true
+    host: dev.datahub.lgair-data.com
+    path: "/api/v1"
+    pathType: Prefix
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/limit-rps: "50"
+      nginx.ingress.kubernetes.io/limit-connections: "100"
+    tls:
+      enabled: true
+      secretName: "web-tls"
+  externalService:
+    enabled: false
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+redis:
+  enabled: true
+
+# 공유 PostgreSQL (dh-db)로 이관 — 인차트 PostgreSQL 비활성화 (governance#100)
+# DATABASE_URL은 CI에서 --set platform.secrets.DATABASE_URL 로 주입
+postgresql:
+  enabled: false
+
+unityCatalog:
+  enabled: false

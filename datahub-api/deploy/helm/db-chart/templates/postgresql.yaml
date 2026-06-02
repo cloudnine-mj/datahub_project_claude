@@ -1,0 +1,234 @@
+# =============================================================================
+# PostgreSQL — initdb Secret
+# 비밀번호는 환경변수로 참조하여 Secret stringData에 스크립트만 저장.
+# CI에서 postgresql.auth.* 를 --set으로 주입 → K8s Secret으로 마운트.
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-postgresql-initdb
+  labels:
+    app: {{ .Release.Name }}-postgresql
+stringData:
+  initdb.sh: |
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+      -- Platform API DB
+      CREATE USER {{ .Values.postgresql.auth.platformUser }} WITH ENCRYPTED PASSWORD '${PLATFORM_DB_PW}';
+      CREATE DATABASE {{ .Values.postgresql.auth.platformDatabase }} OWNER {{ .Values.postgresql.auth.platformUser }};
+
+      -- DataHub Web DB
+      CREATE USER {{ .Values.postgresql.auth.webUser }} WITH ENCRYPTED PASSWORD '${WEB_DB_PW}';
+      CREATE DATABASE {{ .Values.postgresql.auth.webDatabase }} OWNER {{ .Values.postgresql.auth.webUser }};
+    EOSQL
+
+---
+# =============================================================================
+# PostgreSQL — 비밀번호 Secret (POSTGRES_PASSWORD + initdb.sh 환경변수 주입용)
+# POSTGRES_PASSWORD를 여기에 포함시켜 Deployment에서 secretKeyRef로 참조 (governance#101).
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-postgresql-initdb-env
+  labels:
+    app: {{ .Release.Name }}-postgresql
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: {{ .Values.postgresql.auth.postgresPassword | quote }}
+  PLATFORM_DB_PW: {{ .Values.postgresql.auth.platformPassword | quote }}
+  WEB_DB_PW: {{ .Values.postgresql.auth.webPassword | quote }}
+
+---
+# =============================================================================
+# PostgreSQL — PersistentVolumeClaim
+# =============================================================================
+{{- if .Values.postgresql.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.postgresql.persistence.storageClass }}
+  storageClassName: {{ .Values.postgresql.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.persistence.size }}
+{{- end }}
+
+---
+# =============================================================================
+# PostgreSQL — Deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgresql
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgresql-initdb-env
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-postgresql-initdb-env
+          volumeMounts:
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+            {{- if .Values.postgresql.persistence.enabled }}
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            {{- end }}
+          resources:
+            requests:
+              cpu: {{ .Values.postgresql.resources.requests.cpu | quote }}
+              memory: {{ .Values.postgresql.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.postgresql.resources.limits.cpu | quote }}
+              memory: {{ .Values.postgresql.resources.limits.memory | quote }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: initdb
+          secret:
+            secretName: {{ .Release.Name }}-postgresql-initdb
+            defaultMode: 0755
+        {{- if .Values.postgresql.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-postgresql
+        {{- end }}
+
+---
+# =============================================================================
+# PostgreSQL — ClusterIP Service (내부 접근용)
+# 크로스 네임스페이스 DNS: dh-db-postgresql.lgair-datahub-db.svc.cluster.local:5432
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgresql
+  labels:
+    app: {{ .Release.Name }}-postgresql
+  {{- with .Values.postgresql.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.postgresql.service.type }}
+  ports:
+    - port: {{ .Values.postgresql.service.port }}
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-postgresql
+
+---
+# =============================================================================
+# PostgreSQL — External LoadBalancer Service (디버깅·외부 접근용)
+# 방화벽: loadBalancerSourceRanges 필수 — 0.0.0.0/0 절대 금지
+# DNS: db-{stage}.datahub.lgair-data.com → GCP External IP
+# =============================================================================
+{{- if .Values.postgresql.externalService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgresql-external
+  labels:
+    app: {{ .Release.Name }}-postgresql
+  {{- with .Values.postgresql.externalService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: LoadBalancer
+  {{- with .Values.postgresql.externalService.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.postgresql.externalService.port | default 5432 }}
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: {{ .Release.Name }}-postgresql
+{{- end }}
+
+---
+# =============================================================================
+# PostgreSQL — NetworkPolicy
+# lgair-datahub 네임스페이스에서만 내부 접근 허용
+# =============================================================================
+{{- if .Values.postgresql.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-postgresql-access
+  labels:
+    app: {{ .Release.Name }}-postgresql
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgresql
+  policyTypes:
+    - Ingress
+  ingress:
+    # 동일 네임스페이스 (lgair-datahub-db) 내부
+    - from:
+        - podSelector: {}
+    # 허용 네임스페이스 (lgair-datahub — api/web 서비스)
+    {{- range .Values.postgresql.networkPolicy.allowFromNamespaces }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . | quote }}
+    {{- end }}
+      ports:
+        - protocol: TCP
+          port: 5432
+{{- end }}

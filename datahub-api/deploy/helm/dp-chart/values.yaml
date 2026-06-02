@@ -1,0 +1,269 @@
+# =============================================================================
+# dp-chart: DataHub API Helm Chart 기본값
+# 신규 클러스터: lgair-datahub-prd (us-central1)
+#
+# 방화벽: 외부 접근은 nginx ingress controller에서 loadBalancerSourceRanges로 제한
+# nginx ingress CIDR:
+#   203.247.149.40/29, 61.100.40.18/32, 10.1.251.0/24,
+#   165.85.218.127/32, 165.85.218.128/32,
+#   140.209.203.20/32, 140.209.203.114/32,
+#   134.231.208.126/32, 134.231.208.21/32,
+#   34.56.23.209/32, 34.69.21.196/32, 34.44.90.1/32,
+#   210.98.176.131/32, 10.128.0.102/32,
+#   35.222.144.28/32, 35.222.221.89/32, 34.170.180.252/32
+# =============================================================================
+
+# -- 공유 GCS 설정 (사전 생성된 Secret 참조)
+gcs:
+  secretName: gcs-service-account-key
+  keyPath: /secrets/key.json
+
+# =============================================================================
+# PostgreSQL
+# =============================================================================
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    postgresPassword: ""           # GitLab CI/CD Variable: POSTGRES_ADMIN_PW
+    platformUser: platform
+    platformPassword: ""           # GitLab CI/CD Variable: PLATFORM_DB_PW
+    platformDatabase: platform_db
+  persistence:
+    enabled: true
+    storageClass: standard-rwo
+    size: 10Gi
+  service:
+    type: ClusterIP
+    port: 5432
+    annotations: {}
+  # -- External LoadBalancer (loadBalancerSourceRanges 방화벽 필수!)
+  externalService:
+    enabled: false                   # dev/prd에서 필요 시 true로 변경
+    port: 5432
+    annotations: {}                  # 추가 annotation 필요 시
+    # ⚠️ 방화벽: 아래 CIDR만 PostgreSQL 접근 허용 (공개 노출 금지)
+    loadBalancerSourceRanges:
+      - "203.247.149.40/29"       # LG 사내망
+      - "61.100.40.18/32"
+      - "10.1.251.0/24"           # 내부 VPN
+      - "165.85.218.127/32"
+      - "165.85.218.128/32"
+      - "140.209.203.20/32"
+      - "140.209.203.114/32"
+      - "134.231.208.126/32"
+      - "134.231.208.21/32"
+      - "210.98.176.131/32"
+      - "34.56.23.209/32"         # GCP 내부 서비스
+      - "34.69.21.196/32"
+      - "34.44.90.1/32"
+      - "35.222.144.28/32"
+      - "35.222.221.89/32"
+      - "34.170.180.252/32"
+      - "10.128.0.0/16"           # VPC 내부
+  # -- NetworkPolicy (PostgreSQL 접근 제한)
+  networkPolicy:
+    enabled: true
+    additionalFrom: []               # 추가 ingress source 필요 시
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+# =============================================================================
+# Redis (인클러스터 — dev/staging 전용)
+# prd/HA는 enabled=false로 설정하고 platform.secrets.REDIS_URL을 CI 변수로 주입.
+# =============================================================================
+redis:
+  enabled: false             # dev/staging values에서 true로 활성화
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "64Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+# =============================================================================
+# Data Platform API
+# =============================================================================
+platform:
+  enabled: true
+  replicaCount: 3
+  metrics:
+    enabled: true
+    path: /metrics
+    portName: http
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: "/metrics"
+      prometheus.io/port: "8080"
+    podMonitor:
+      enabled: false
+      interval: 30s
+      scrapeTimeout: 10s
+      additionalLabels: {}
+    alerts:
+      enabled: false
+      duration: 10m
+      errorRateThreshold: "0.05"
+      latencyThresholdSeconds: "5"
+      podRestartThreshold: "1"
+      additionalLabels: {}
+  image:
+    repository: us-central1-docker.pkg.dev/lgair-dg-data-hub/datahub/platform
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+  # -- External LoadBalancer (CLI/SDK 직접 접속용, 방화벽 필수!)
+  externalService:
+    enabled: false
+    port: 8080
+    loadBalancerSourceRanges:
+      - "203.247.149.40/29"       # LG 사내망
+      - "61.100.40.18/32"
+      - "10.1.251.0/24"           # 내부 VPN
+      - "165.85.218.127/32"
+      - "165.85.218.128/32"
+      - "140.209.203.20/32"
+      - "140.209.203.114/32"
+      - "134.231.208.126/32"
+      - "134.231.208.21/32"
+      - "210.98.176.131/32"
+      - "34.56.23.209/32"         # GCP 내부 서비스
+      - "34.69.21.196/32"
+      - "34.44.90.1/32"
+      - "35.222.144.28/32"
+      - "35.222.221.89/32"
+      - "34.170.180.252/32"
+      - "10.128.0.0/16"           # VPC 내부
+  config:
+    FRONTEND_URL: ""               # 환경별 values 파일에서 설정
+    GCP_PROJECT: "lgair-dg-data-hub"
+    GCP_BUCKET_PREFIX: ""          # 필수: 환경별 values 파일에서 lgair-dgdh-{dev|stg|prd} 로 설정
+    GCP_BUCKET_LOCATION: "us-central1"
+    GCP_SYSTEM_SA_EMAIL: ""        # GitLab CI/CD Variable: GCP_SYSTEM_SA_EMAIL
+    OAUTH_REDIRECT_URI: ""         # 환경별 values 파일에서 설정
+    COOKIE_DOMAIN: ""              # 환경별 values (예: ".datahub.lgair-data.com"). 비우면 호스트 쿠키.
+    MCP_ENABLED: "false"
+    OTEL_ENABLED: "false"          # exporter endpoint가 명시될 때만 활성화
+    UC_ENDPOINT: "http://unity-catalog-disabled.local"
+    RATE_LIMIT_WINDOW_SECONDS: "60"
+    RATE_LIMIT_SESSION_REQUESTS: "60"
+    RATE_LIMIT_TRANSFER_REQUESTS: "120"
+    DATAHUB_APP_VERSION: ""
+    DATAHUB_GIT_SHA: ""
+    DATAHUB_BUILD_REF: ""
+    DATAHUB_BUILD_PIPELINE: ""
+    DATAHUB_BUILD_TIME: ""
+  secrets:
+    DATABASE_URL: ""               # 비워두면 postgresql 연결정보로 자동 생성
+    REDIS_URL: ""
+    JWT_SECRET: ""                 # GitLab CI/CD Variable: JWT_SECRET
+    INTERNAL_SERVICE_SECRET: ""
+    # GitLab CI/CD Variable: WEB_SERVICE_TOKEN. ServiceCallerMiddleware 정적 매핑 (datahub-web 식별).
+    # 미설정 시 Web BFF 호출이 service_caller=None → CAB 채널 (Web 사용자 실패) 로 동작.
+    WEB_SERVICE_TOKEN: ""
+    # Google OAuth (MS OAuth 전환 전까지 사용)
+    GOOGLE_CLIENT_ID: ""           # GitLab CI/CD Variable: GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_SECRET: ""       # GitLab CI/CD Variable: GOOGLE_CLIENT_SECRET
+    # MS OAuth legacy (cleanup 대상, 코드에서 unused. PR 7 에서 제거 검토)
+    MICROSOFT_CLIENT_ID: ""        # GitLab CI/CD Variable: MICROSOFT_CLIENT_ID
+    MICROSOFT_CLIENT_SECRET: ""    # GitLab CI/CD Variable: MICROSOFT_CLIENT_SECRET
+    MICROSOFT_TENANT_ID: ""        # GitLab CI/CD Variable: MICROSOFT_TENANT_ID
+    # Azure AD SSO (governance §api-specs/auth-api-spec §Azure AD OIDC).
+    # plan 2026-05-22-azure-sso-activation: dev env scope 에 AZURE_SSO_ENABLED=true +
+    # TENANT_ID / CLIENT_ID / CLIENT_SECRET 등록 시 활성화. stg/prd 는 후속 cycle.
+    AZURE_AD_TENANT_ID: ""           # GitLab CI/CD Variable: AZURE_AD_TENANT_ID (env-scoped, masked)
+    AZURE_AD_CLIENT_ID: ""           # GitLab CI/CD Variable: AZURE_AD_CLIENT_ID (env-scoped, masked)
+    AZURE_AD_CLIENT_SECRET: ""       # GitLab CI/CD Variable: AZURE_AD_CLIENT_SECRET (env-scoped, masked + protected)
+    AZURE_SSO_ENABLED: ""            # GitLab CI/CD Variable: AZURE_SSO_ENABLED (env-scoped, plain "true"|"false")
+    AZURE_ALLOWED_TENANTS: ""        # GitLab CI/CD Variable: AZURE_ALLOWED_TENANTS (optional, comma-separated tid; 비면 AZURE_AD_TENANT_ID 만 허용)
+    AZURE_ALLOWED_EMAIL_DOMAIN: ""   # GitLab CI/CD Variable: AZURE_ALLOWED_EMAIL_DOMAIN (env-scoped, 보통 "lgresearch.ai")
+    LLM_API_KEY: ""                  # GitLab CI/CD Variable: LLM_API_KEY
+  extraEnv: []
+  ingress:
+    enabled: true
+    className: nginx
+    host: ""                       # 환경별 values 파일에서 Web 도메인으로 설정
+    path: "/api/v1"                # 단일 도메인 path routing: Web host + /api/v1 → platform
+    pathType: Prefix
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/whitelist-source-range: "203.247.149.40/29,61.100.40.18/32,10.1.251.0/24,165.85.218.127/32,165.85.218.128/32,140.209.203.20/32,140.209.203.114/32,134.231.208.126/32,134.231.208.21/32,34.56.23.209/32,34.69.21.196/32,34.44.90.1/32,210.98.176.131/32,10.128.0.0/20,10.105.0.0/16,35.222.144.28/32,35.222.221.89/32,34.170.180.252/32"
+      nginx.ingress.kubernetes.io/limit-rps: "200"
+      nginx.ingress.kubernetes.io/limit-connections: "400"
+    tls:
+      enabled: true
+      secretName: "web-tls"        # Web Ingress 와 같은 host/certificate 사용
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+# =============================================================================
+# Unity Catalog
+# =============================================================================
+unityCatalog:
+  enabled: false  # legacy disabled; no uc_db is provisioned in db-chart
+  replicaCount: 2
+  database:
+    host: ""
+    port: 5432
+    name: ""
+    user: ""
+    password: ""
+  image:
+    repository: unitycatalog/unitycatalog
+    tag: latest
+    pullPolicy: Always
+  server:
+    port: 8080
+  ui:
+    enabled: false
+  ingress:
+    enabled: false
+  uiIngress:
+    enabled: false
+  hibernate:
+    driverClass: org.postgresql.Driver
+    dialect: org.hibernate.dialect.PostgreSQLDialect
+    hbm2ddlAuto: update
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+postgresqlBackup:
+  enabled: true
+  schedule: "0 3 * * *"
+  bucket: ""
+  host: ""
+  port: 5432
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  backoffLimit: 2

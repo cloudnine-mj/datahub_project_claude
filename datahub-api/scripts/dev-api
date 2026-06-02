@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="${DATAHUB_DEV_COMPOSE_FILE:-$ROOT_DIR/docker-compose.dev.yml}"
+COMPOSE_PROJECT="${DATAHUB_DEV_COMPOSE_PROJECT:-datahub-api-dev}"
+
+POSTGRES_PORT="${DATAHUB_DEV_POSTGRES_PORT:-15432}"
+REDIS_PORT="${DATAHUB_DEV_REDIS_PORT:-16379}"
+API_PORT="${DATAHUB_DEV_API_PORT:-18080}"
+
+export DATABASE_URL="${DATABASE_URL:-postgresql://platform:password@localhost:${POSTGRES_PORT}/platform_db}"
+export REDIS_URL="${REDIS_URL:-redis://localhost:${REDIS_PORT}/0}"
+export JWT_SECRET="${JWT_SECRET:-local-dev-jwt-secret-for-datahub-api-000000000000}"
+export INTERNAL_SERVICE_SECRET="${INTERNAL_SERVICE_SECRET:-local-dev-internal-service-secret-000000000000}"
+export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3179}"
+export OTEL_ENABLED="${OTEL_ENABLED:-false}"
+export MCP_ENABLED="${MCP_ENABLED:-false}"
+export GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-local-dev-google-client-id}"
+export GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-local-dev-google-client-secret}"
+export UC_ENDPOINT="${UC_ENDPOINT:-http://unity-catalog-disabled.local}"
+export LLM_API_KEY="${LLM_API_KEY:-}"
+
+compose() {
+  docker compose -p "$COMPOSE_PROJECT" -f "$COMPOSE_FILE" "$@"
+}
+
+port_busy() {
+  local port="$1"
+  command -v ss >/dev/null 2>&1 || return 1
+  ss -H -ltn "sport = :$port" 2>/dev/null | grep -q .
+}
+
+compose_published_port() {
+  local service="$1"
+  local container_port="$2"
+  compose port "$service" "$container_port" 2>/dev/null | awk -F: 'END {print $NF}'
+}
+
+port_owned_by_compose_service() {
+  local service="$1"
+  local container_port="$2"
+  local host_port="$3"
+  local published
+  published="$(compose_published_port "$service" "$container_port")"
+  [ "$published" = "$host_port" ]
+}
+
+explain_port_conflict() {
+  local label="$1"
+  local port="$2"
+  cat >&2 <<EOF
+$label port $port is already in use.
+
+Use different local ports, for example:
+  DATAHUB_DEV_API_PORT=18081 scripts/dev-api server
+  DATAHUB_DEV_POSTGRES_PORT=15433 DATAHUB_DEV_REDIS_PORT=16380 scripts/dev-api up
+
+For a fully isolated parallel environment, also set:
+  DATAHUB_DEV_COMPOSE_PROJECT=datahub-api-dev-<name>
+EOF
+}
+
+require_free_port() {
+  local label="$1"
+  local port="$2"
+  if port_busy "$port"; then
+    explain_port_conflict "$label" "$port"
+    return 1
+  fi
+}
+
+require_free_or_owned_port() {
+  local label="$1"
+  local port="$2"
+  local service="$3"
+  local container_port="$4"
+  if port_busy "$port" && ! port_owned_by_compose_service "$service" "$container_port" "$port"; then
+    explain_port_conflict "$label" "$port"
+    return 1
+  fi
+}
+
+check_infra_ports() {
+  require_free_or_owned_port "PostgreSQL" "$POSTGRES_PORT" postgres 5432
+  require_free_or_owned_port "Redis" "$REDIS_PORT" redis 6379
+}
+
+check_api_port_for_compose() {
+  require_free_or_owned_port "API" "$API_PORT" api 8080
+}
+
+wait_db() {
+  echo "Waiting for PostgreSQL on localhost:${POSTGRES_PORT}..."
+  for _ in $(seq 1 60); do
+    if compose exec -T postgres pg_isready -U platform -d platform_db >/dev/null 2>&1; then
+      echo "PostgreSQL is ready."
+      return 0
+    fi
+    sleep 1
+  done
+  echo "PostgreSQL did not become ready in time." >&2
+  return 1
+}
+
+print_env() {
+  cat <<EOF
+DATABASE_URL=$DATABASE_URL
+REDIS_URL=$REDIS_URL
+DATAHUB_DEV_COMPOSE_PROJECT=$COMPOSE_PROJECT
+DATAHUB_DEV_COMPOSE_FILE=$COMPOSE_FILE
+FRONTEND_URL=$FRONTEND_URL
+OTEL_ENABLED=$OTEL_ENABLED
+MCP_ENABLED=$MCP_ENABLED
+DATAHUB_DEV_API_PORT=$API_PORT
+DATAHUB_DEV_POSTGRES_PORT=$POSTGRES_PORT
+DATAHUB_DEV_REDIS_PORT=$REDIS_PORT
+UC_ENDPOINT=$UC_ENDPOINT
+EOF
+}
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/dev-api <command>
+
+Commands:
+  up             Start local infrastructure containers: PostgreSQL, Redis
+  api-up         Start PostgreSQL, Redis, and API in Docker
+  down           Stop local containers
+  reset          Destroy local containers and volumes, then recreate DB and migrate
+  migrate        Run Alembic migrations against the local PostgreSQL
+  server         Run FastAPI locally with uvicorn --reload
+  smoke [url]    Run HTTP smoke checks against a running API server
+  check-ports    Check whether configured local ports are available
+  logs [svc]     Follow Docker logs
+  ps             Show Docker compose status
+  env            Print effective local environment
+
+Typical local loop:
+  scripts/dev-api up
+  scripts/dev-api migrate
+  scripts/dev-api server
+
+In another terminal:
+  scripts/dev-api smoke
+EOF
+}
+
+command="${1:-}"
+shift || true
+
+case "$command" in
+  up)
+    check_infra_ports
+    compose up -d postgres redis
+    wait_db
+    ;;
+  api-up)
+    check_infra_ports
+    check_api_port_for_compose
+    compose up -d --build --force-recreate api
+    ;;
+  down)
+    compose down --remove-orphans
+    ;;
+  reset)
+    compose down -v --remove-orphans
+    check_infra_ports
+    compose up -d postgres redis
+    wait_db
+    (cd "$ROOT_DIR" && uv run --frozen --extra dev alembic upgrade head)
+    ;;
+  migrate)
+    wait_db
+    (cd "$ROOT_DIR" && uv run --frozen --extra dev alembic upgrade head)
+    ;;
+  server)
+    wait_db
+    require_free_port "API" "$API_PORT"
+    (cd "$ROOT_DIR" && uv run --frozen --extra dev uvicorn app.main:app --reload --host 0.0.0.0 --port "$API_PORT")
+    ;;
+  smoke)
+    base_url="${1:-${DATAHUB_API_BASE_URL:-http://127.0.0.1:${API_PORT}}}"
+    (cd "$ROOT_DIR" && uv run --frozen --extra dev python scripts/dev_api_smoke.py "$base_url")
+    ;;
+  logs)
+    compose logs -f "$@"
+    ;;
+  ps)
+    compose ps
+    ;;
+  check-ports)
+    check_infra_ports
+    check_api_port_for_compose
+    echo "Configured local ports are available or owned by this compose project."
+    ;;
+  env)
+    print_env
+    ;;
+  -h|--help|help|"")
+    usage
+    ;;
+  *)
+    echo "Unknown command: $command" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

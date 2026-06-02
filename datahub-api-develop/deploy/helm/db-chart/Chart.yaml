@@ -1,8 +1,0 @@
-apiVersion: v2
-name: db-chart
-description: >
-  DataHub 공유 PostgreSQL — lgair-datahub-db 네임스페이스에 단일 인스턴스로 배포.
-  platform_db / lakefs_db / uc_db / management_db 4개 데이터베이스를 모두 수용.
-type: application
-version: 1.0.0
-appVersion: "16"
