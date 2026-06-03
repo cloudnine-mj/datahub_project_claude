@@ -1,14 +1,16 @@
-// 피드백 이력 카드 — 진행 단계 페이지 전체 폭.
-//   표 형식: 대상/대상 버전/작성일시/내용 요약/첨부/상태/펼침.
-//   헤더에 [+ 피드백 작성] 버튼(언제든 자유 작성). 대상 '일반'은 회색 뱃지 + 버전 '-'.
-//   행 클릭 시 인라인 펼침(다른 행은 접힘 유지). 텍스트만/첨부만/둘 다 모두 표시.
+// 피드백 이력 카드 — 진행 단계 페이지 전체 폭(페이지의 핵심).
+//   표 6컬럼: 납품 구분 / 데이터 수령일 / 작성일시 / 내용 요약 / 첨부 / 펼침.
+//   헤더에 [+ 피드백 작성] 버튼. 행 클릭 시 인라인 펼침(다른 행은 접힘 유지).
 
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowUpDown,
   ChevronDown,
   ChevronUp,
+  Download,
+  Filter,
   MessageSquare,
   Paperclip,
   Plus,
@@ -20,11 +22,11 @@ import {
   formatDateTime,
   readFeedbackHistory,
   type FeedbackItem,
-} from "@/lib/governance/progress-storage";
+} from "@/lib/governance/feedback-storage";
 
 interface Props {
   formId: string;
-  /** 헤더 [+ 피드백 작성] — 부모가 작성 모달(대상 '일반' 기본)을 연다. */
+  /** 헤더 [+ 피드백 작성] — 부모가 작성 모달을 연다. */
   onCompose: () => void;
 }
 
@@ -41,15 +43,15 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
       const detail = (e as CustomEvent<{ formId?: string }>).detail;
       if (!detail || detail.formId === formId) refresh();
     };
-    window.addEventListener("dh:gov:progress-changed", onChange);
+    window.addEventListener("dh:gov:feedback-changed", onChange);
     window.addEventListener("focus", refresh);
     return () => {
-      window.removeEventListener("dh:gov:progress-changed", onChange);
+      window.removeEventListener("dh:gov:feedback-changed", onChange);
       window.removeEventListener("focus", refresh);
     };
   }, [formId]);
 
-  // 표시 정렬 — 최신 위.
+  // 표시 정렬 — 최신 위(작성일시 desc).
   const sorted = useMemo(() => {
     const copy = items.slice();
     copy.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -58,7 +60,7 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
 
   return (
     <section className="rounded-[11px] border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white px-[15px] py-[13px] dark:border-gray-700 dark:bg-gray-900">
-      <header className="mb-3 flex items-center gap-2">
+      <header className="mb-3 flex flex-wrap items-center gap-2">
         <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-[#D4533E]" />
         <h3 className="text-[12px] font-medium text-gray-900 dark:text-gray-100">
           피드백 이력
@@ -74,13 +76,18 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
         >
           {items.length}건
         </span>
-        <button
-          type="button"
-          onClick={onCompose}
-          className="ml-auto inline-flex items-center gap-1 rounded-md bg-[#D4533E] px-2.5 py-1 text-[10px] font-medium text-white transition hover:brightness-110"
-        >
-          <Plus size={12} aria-hidden="true" /> 피드백 작성
-        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <SmallButton icon={<Filter size={11} aria-hidden="true" />}>필터</SmallButton>
+          <SmallButton icon={<ArrowUpDown size={11} aria-hidden="true" />}>정렬</SmallButton>
+          <SmallButton icon={<Download size={11} aria-hidden="true" />}>내보내기</SmallButton>
+          <button
+            type="button"
+            onClick={onCompose}
+            className="inline-flex items-center gap-1 rounded-md bg-[#D4533E] px-2.5 py-1 text-[10px] font-medium text-white transition hover:brightness-110"
+          >
+            <Plus size={12} aria-hidden="true" /> 피드백 작성
+          </button>
+        </div>
       </header>
 
       <div className="overflow-x-auto">
@@ -93,19 +100,18 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
                 color: "var(--color-text-secondary,#6b7280)",
               }}
             >
-              <Th width="80px">대상</Th>
-              <Th width="60px">대상 버전</Th>
+              <Th width="90px">납품 구분</Th>
+              <Th width="100px">데이터 수령일</Th>
               <Th width="130px">작성일시</Th>
               <Th>내용 요약</Th>
               <Th width="60px" align="center">첨부</Th>
-              <Th width="80px" align="center">상태</Th>
               <Th width="32px" align="center" />
             </tr>
           </thead>
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3" style={{ padding: "30px 12px" }}>
+                <td colSpan={6} style={{ padding: "30px 12px" }}>
                   <div className="flex flex-col items-center justify-center gap-1 text-center">
                     <MessageSquare
                       size={24}
@@ -116,7 +122,7 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
                       아직 작성된 피드백이 없습니다.
                     </p>
                     <p className="text-[10px] text-[var(--color-text-tertiary,#9ca3af)]">
-                      상단 [+ 피드백 작성] 버튼으로 언제든 작성할 수 있습니다.
+                      상단 [+ 피드백 작성] 버튼으로 작성할 수 있습니다.
                     </p>
                   </div>
                 </td>
@@ -137,6 +143,24 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
         </table>
       </div>
     </section>
+  );
+}
+
+function SmallButton({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 rounded-md border-[0.5px] border-[var(--color-border-secondary,#d1d5db)] bg-white px-2 py-[3px] text-[10px] text-gray-600 transition hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300"
+    >
+      {icon}
+      {children}
+    </button>
   );
 }
 
@@ -168,17 +192,7 @@ function FeedbackRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  // 대상 '일반'(특정 버전 없음) — round/version 둘 중 하나라도 null.
-  const isGeneral = item.targetDeliveryRound === null || item.targetVersion === null;
-  const dc = isGeneral
-    ? {
-        bg: "var(--color-background-secondary,#f3f4f6)",
-        text: "var(--color-text-secondary,#6b7280)",
-      }
-    : deliveryColors(item.targetDeliveryRound as Exclude<typeof item.targetDeliveryRound, null>);
-  const targetLabel = isGeneral
-    ? "일반"
-    : deliveryLabel(item.targetDeliveryRound as Exclude<typeof item.targetDeliveryRound, null>);
+  const dc = deliveryColors(item.deliveryRound);
   const summary =
     item.content && item.content.trim().length > 0
       ? item.content.split("\n")[0]
@@ -197,25 +211,11 @@ function FeedbackRow({
             className="inline-flex items-center text-[9px] font-medium"
             style={{ background: dc.bg, color: dc.text, borderRadius: 4, padding: "2px 6px" }}
           >
-            {targetLabel}
+            {deliveryLabel(item.deliveryRound)}
           </span>
         </Td>
         <Td>
-          {isGeneral ? (
-            <span className="text-gray-400">-</span>
-          ) : (
-            <span
-              className="inline-flex items-center text-[9px] font-medium"
-              style={{
-                background: "var(--color-background-secondary,#f3f4f6)",
-                color: "#111827",
-                borderRadius: 4,
-                padding: "2px 6px",
-              }}
-            >
-              v{item.targetVersion}
-            </span>
-          )}
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>{item.receivedDate}</span>
         </Td>
         <Td>
           <span style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -245,18 +245,6 @@ function FeedbackRow({
           )}
         </Td>
         <Td align="center">
-          <span
-            className="inline-flex items-center text-[9px] font-medium"
-            style={
-              item.status === "sent"
-                ? { background: "#E1F5EE", color: "#0F6E56", borderRadius: 4, padding: "2px 6px" }
-                : { background: "#FAEEDA", color: "#854F0B", borderRadius: 4, padding: "2px 6px" }
-            }
-          >
-            {item.status === "sent" ? "전달됨" : "대기"}
-          </span>
-        </Td>
-        <Td align="center">
           {expanded ? (
             <ChevronUp size={13} aria-hidden="true" style={{ color: "#D4533E" }} />
           ) : (
@@ -266,7 +254,7 @@ function FeedbackRow({
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={7} className="border-b-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)]">
+          <td colSpan={6} className="border-b-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)]">
             <div
               className="px-[14px] py-[11px]"
               style={{ borderTop: "1px dashed var(--color-border-tertiary,#e5e7eb)" }}
@@ -281,9 +269,11 @@ function FeedbackRow({
                     padding: "2px 6px",
                   }}
                 >
-                  {targetLabel}
+                  {deliveryLabel(item.deliveryRound)}
                 </span>
-                {!isGeneral && <span>v{item.targetVersion}</span>}
+                <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                  수령일 {item.receivedDate}
+                </span>
                 <span>·</span>
                 <span>{item.author}</span>
                 <span>·</span>
@@ -294,10 +284,7 @@ function FeedbackRow({
               {item.content && item.content.trim().length > 0 && (
                 <div
                   className="mb-2 whitespace-pre-wrap break-words rounded-md px-3 py-2.5 text-[11px] leading-relaxed text-gray-800 dark:text-gray-100"
-                  style={{
-                    background: "#FCF3F0",
-                    border: "0.5px solid #EFC4B9",
-                  }}
+                  style={{ background: "#FCF3F0", border: "0.5px solid #EFC4B9" }}
                 >
                   {item.content}
                 </div>

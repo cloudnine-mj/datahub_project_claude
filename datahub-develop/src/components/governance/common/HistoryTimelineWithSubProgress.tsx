@@ -1,8 +1,7 @@
 // 진행 이력 카드 — 현재 단계의 sub-step 진척을 가로로 통합 표시.
 //   협의·계약 단계: 3단계(협의 진행 / 계약 진행 / 진행 단계 진입)
-//   진행 단계:       4단계(중간 납품 완료 / 수정 납품 완료 / 최종 납품 검토 / 종료 절차)
 //
-// 변경 이벤트(dh:gov:stage-status-changed, dh:gov:progress-changed) 수신 시 즉시 재로드.
+// 변경 이벤트(dh:gov:stage-status-changed) 수신 시 즉시 재로드.
 
 "use client";
 
@@ -12,7 +11,6 @@ import {
   readContractStatus,
   readNegotiationStatus,
 } from "@/lib/governance/stage-status";
-import { readProgressState } from "@/lib/governance/progress-storage";
 
 export type SubStepState = "done" | "current" | "upcoming";
 
@@ -26,22 +24,14 @@ interface StepView {
 
 interface Props {
   formId: string;
-  /** 'negotiation-contract': 협의·계약 단계용 3단계,
-   *  'progress': 진행 단계용 4단계. */
-  variant: "negotiation-contract" | "progress";
+  /** 협의·계약 단계용 3단계. */
+  variant: "negotiation-contract";
 }
 
 const NC_STEPS: readonly StepView[] = [
   { key: "negotiation", label: "협의 진행 중", doneLabel: "협의 완료", number: 1 },
   { key: "contract", label: "계약 진행", doneLabel: "계약 완료", number: 2 },
   { key: "advance", label: "진행 단계 진입", doneLabel: "진행 단계 진입", number: 3 },
-];
-
-const PROGRESS_STEPS: readonly StepView[] = [
-  { key: "middle", label: "중간 납품 진행", doneLabel: "중간 납품 완료", number: 1 },
-  { key: "modified", label: "수정 납품 진행", doneLabel: "수정 납품 완료", number: 2 },
-  { key: "final", label: "최종 납품 검토", doneLabel: "최종 납품 검토", number: 3 },
-  { key: "closure", label: "종료 절차", doneLabel: "종료 절차", number: 4 },
 ];
 
 function useNegotiationContractStates(formId: string): SubStepState[] {
@@ -76,57 +66,10 @@ function useNegotiationContractStates(formId: string): SubStepState[] {
   return s;
 }
 
-function useProgressStates(formId: string): SubStepState[] {
-  const [s, setS] = useState<SubStepState[]>([
-    "current",
-    "upcoming",
-    "upcoming",
-    "upcoming",
-  ]);
-  useEffect(() => {
-    function refresh(): void {
-      const st = readProgressState(formId);
-      // 단계별 상태 결정 — 진행 중인 단계는 current, 완료된 단계는 done, 그 뒤는 upcoming.
-      const next: SubStepState[] = ["current", "upcoming", "upcoming", "upcoming"];
-      if (st.middleCompleted) {
-        next[0] = "done";
-        next[1] = "current";
-      }
-      if (st.modifiedCompleted) {
-        next[1] = "done";
-        next[2] = "current";
-      }
-      if (st.finalReviewing) {
-        // 최종 납품이 업로드돼 검토 진행 중 — closure 전까지 현재 단계.
-        next[2] = "current";
-      }
-      if (st.closureStarted) {
-        next[2] = "done";
-        next[3] = "current";
-      }
-      setS(next);
-    }
-    refresh();
-    const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ formId?: string }>).detail;
-      if (!detail || detail.formId === formId) refresh();
-    };
-    window.addEventListener("dh:gov:progress-changed", onChange);
-    window.addEventListener("focus", refresh);
-    return () => {
-      window.removeEventListener("dh:gov:progress-changed", onChange);
-      window.removeEventListener("focus", refresh);
-    };
-  }, [formId]);
-  return s;
-}
-
-export function HistoryTimelineWithSubProgress({ formId, variant }: Props) {
-  const ncStates = useNegotiationContractStates(formId);
-  const pgStates = useProgressStates(formId);
-  const steps = variant === "progress" ? PROGRESS_STEPS : NC_STEPS;
-  const states = variant === "progress" ? pgStates : ncStates;
-  const currentLabel = variant === "progress" ? "진행" : "협의 및 계약";
+export function HistoryTimelineWithSubProgress({ formId }: Props) {
+  const states = useNegotiationContractStates(formId);
+  const steps = NC_STEPS;
+  const currentLabel = "협의 및 계약";
 
   return (
     <section className="rounded-[11px] border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white px-[15px] py-[13px] dark:border-gray-700 dark:bg-gray-900">

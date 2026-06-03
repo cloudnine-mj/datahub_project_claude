@@ -1,86 +1,32 @@
-// 피드백 작성 모달 — 진행 단계 모든 진입점 공유.
-//   1) 피드백 이력 카드 [+ 피드백 작성] (대상 '일반' 기본)
-//   2) 최신 데이터 검토 [피드백 작성] (중간/수정, 대상 최신 자동)
-//   3) 최신 데이터 검토 [문제 있음 → 피드백 작성] (최종, 대상 최종 최신 자동)
-//
-//   대상은 '일반' + 업로드된 각 납품 버전 중 택1. 텍스트/첨부 중 하나는 필수.
+// 피드백 작성 모달 — 진행 단계 [+ 피드백 작성] 진입.
+//   입력 4필드: 납품 구분(필수, 중간/수정/최종) / 데이터 수령일(필수) / 내용 / 첨부.
+//   전송: 납품 구분 + 수령일 + (내용 또는 첨부) 충족 시 활성. 채팅 알림 없음.
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, MessageSquarePlus, Paperclip, Plus, Send, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Calendar, Check, MessageSquarePlus, Paperclip, Plus, Send, X } from "lucide-react";
 import {
-  deliveryShortLabel,
+  deliveryLabel,
   formatBytes,
+  todayYmd,
   type DeliveryRound,
   type FeedbackAttachmentMeta,
-  type ReceivedDataItem,
-} from "@/lib/governance/progress-storage";
-
-/** 대상 선택값 — 'general' 또는 특정 (납품, 버전). */
-export interface FeedbackTarget {
-  deliveryRound: DeliveryRound | null;
-  version: number | null;
-}
-
-interface TargetOption {
-  key: string;
-  label: string;
-  target: FeedbackTarget;
-}
+} from "@/lib/governance/feedback-storage";
 
 interface Props {
-  received: ReceivedDataItem[];
-  /** 진입 시 미리 선택할 대상. 없으면 '일반'. */
-  initialTarget?: FeedbackTarget;
   onClose: () => void;
   onSubmit: (payload: {
-    targetDeliveryRound: DeliveryRound | null;
-    targetVersion: number | null;
+    deliveryRound: DeliveryRound;
+    receivedDate: string;
     content: string;
     attachments: FeedbackAttachmentMeta[];
   }) => void;
 }
 
-const GENERAL_KEY = "general";
-
-function targetKey(t: FeedbackTarget): string {
-  if (t.deliveryRound === null || t.version === null) return GENERAL_KEY;
-  return `${t.deliveryRound}-${t.version}`;
-}
-
-export function FeedbackComposeModal({
-  received,
-  initialTarget,
-  onClose,
-  onSubmit,
-}: Props) {
-  // 대상 옵션 — '일반' + 업로드된 (납품, 버전) 중복 제거.
-  const options = useMemo<TargetOption[]>(() => {
-    const opts: TargetOption[] = [
-      {
-        key: GENERAL_KEY,
-        label: "일반 (특정 버전 없음)",
-        target: { deliveryRound: null, version: null },
-      },
-    ];
-    const seen: Record<string, true> = {};
-    received.forEach((it) => {
-      const k = `${it.deliveryRound}-${it.version}`;
-      if (seen[k]) return;
-      seen[k] = true;
-      opts.push({
-        key: k,
-        label: `${deliveryShortLabel(it.deliveryRound)} v${it.version}`,
-        target: { deliveryRound: it.deliveryRound, version: it.version },
-      });
-    });
-    return opts;
-  }, [received]);
-
-  const [selectedKey, setSelectedKey] = useState<string>(
-    initialTarget ? targetKey(initialTarget) : GENERAL_KEY,
-  );
+export function FeedbackComposeModal({ onClose, onSubmit }: Props) {
+  const [round, setRound] = useState<DeliveryRound | null>(null);
+  const [receivedDate, setReceivedDate] = useState<string>(todayYmd());
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<FeedbackAttachmentMeta[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,14 +53,16 @@ export function FeedbackComposeModal({
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  const canSend = content.trim().length > 0 || files.length > 0;
+  const canSend =
+    round !== null &&
+    receivedDate.length > 0 &&
+    (content.trim().length > 0 || files.length > 0);
 
   function submit(): void {
-    if (!canSend) return;
-    const opt = options.find((o) => o.key === selectedKey) ?? options[0];
+    if (!round || !canSend) return;
     onSubmit({
-      targetDeliveryRound: opt.target.deliveryRound,
-      targetVersion: opt.target.version,
+      deliveryRound: round,
+      receivedDate,
       content: content.trim(),
       attachments: files,
     });
@@ -129,13 +77,13 @@ export function FeedbackComposeModal({
       aria-labelledby="feedback-compose-title"
     >
       <div
-        className="w-full max-w-[520px] rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        className="w-full max-w-[480px] rounded-xl bg-white p-5 shadow-xl dark:bg-gray-900"
         style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <header className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <MessageSquarePlus size={15} aria-hidden="true" className="text-[#D4533E]" />
+            <MessageSquarePlus size={17} aria-hidden="true" className="text-[#D4533E]" />
             <h3
               id="feedback-compose-title"
               className="text-[14px] font-medium text-gray-900 dark:text-gray-100"
@@ -154,42 +102,60 @@ export function FeedbackComposeModal({
         </header>
 
         <p className="mb-3 text-[11px] leading-relaxed text-gray-600 dark:text-gray-300">
-          데이터에 대한 피드백, 개선 제안, 추가 요청 사항 등을 자유롭게 작성합니다.
+          메일·SharePoint로 받은 데이터에 대한 피드백, 개선 제안을 자유롭게 작성합니다.
         </p>
 
-        {/* 대상 선택 (필수) */}
+        {/* 납품 구분 (필수) */}
         <div className="mb-3">
           <label className="mb-1.5 block text-[11px] font-medium text-gray-700 dark:text-gray-200">
-            대상 <span style={{ color: "#D4533E" }}>*</span>
+            납품 구분 <span style={{ color: "#D4533E" }}>*</span>
           </label>
-          <div className="flex flex-wrap gap-1.5">
-            {options.map((o) => {
-              const active = o.key === selectedKey;
-              return (
-                <button
-                  key={o.key}
-                  type="button"
-                  onClick={() => setSelectedKey(o.key)}
-                  className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[10px] transition"
-                  style={
-                    active
-                      ? { background: "#FCF3F0", border: "1px solid #D4533E", color: "#D4533E" }
-                      : {
-                          background: "#fff",
-                          border: "0.5px solid var(--color-border-secondary,#d1d5db)",
-                          color: "var(--color-text-tertiary,#9ca3af)",
-                        }
-                  }
-                >
-                  {active && <Check size={11} aria-hidden="true" />}
-                  {o.label}
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-3 gap-2">
+            <RoundButton
+              round="middle"
+              active={round === "middle"}
+              caption="첫 납품"
+              onClick={() => setRound("middle")}
+            />
+            <RoundButton
+              round="modified"
+              active={round === "modified"}
+              caption="중간 피드백 반영"
+              onClick={() => setRound("modified")}
+            />
+            <RoundButton
+              round="final"
+              active={round === "final"}
+              caption="최종 납품"
+              onClick={() => setRound("final")}
+            />
           </div>
-          <p className="mt-1 text-[10px] text-[var(--color-text-tertiary,#9ca3af)]">
-            데이터가 없거나 일반 의견이면 &lsquo;일반&rsquo;을 선택하세요.
-          </p>
+        </div>
+
+        {/* 데이터 수령일 (필수) */}
+        <div className="mb-3">
+          <label className="mb-1.5 block text-[11px] font-medium text-gray-700 dark:text-gray-200">
+            데이터 수령일 <span style={{ color: "#D4533E" }}>*</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Calendar
+                size={13}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="date"
+                value={receivedDate}
+                onChange={(e) => setReceivedDate(e.target.value)}
+                className="w-full rounded-md border border-gray-200 bg-white py-2 pl-8 pr-3 text-[11px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              />
+            </div>
+            <span className="shrink-0 text-[9px] text-[var(--color-text-tertiary,#9ca3af)]">
+              메일·SharePoint로 받은 날짜
+            </span>
+          </div>
         </div>
 
         {/* 피드백 내용 */}
@@ -199,9 +165,9 @@ export function FeedbackComposeModal({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="텍스트를 직접 작성하거나, 아래에서 문서를 첨부하거나, 둘 다 가능합니다."
+          placeholder="텍스트 작성 또는 첨부 파일 추가 (둘 다 가능)"
           className="mb-3 w-full resize-none overflow-y-auto rounded-md border border-gray-200 bg-white px-3 py-2 text-[11px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-          style={{ minHeight: "90px" }}
+          style={{ minHeight: "80px" }}
         />
 
         {/* 첨부 */}
@@ -277,5 +243,39 @@ export function FeedbackComposeModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function RoundButton({
+  round,
+  active,
+  caption,
+  onClick,
+}: {
+  round: DeliveryRound;
+  active: boolean;
+  caption: string;
+  onClick: () => void;
+}) {
+  const label = deliveryLabel(round);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? "flex flex-col items-center gap-0.5 rounded-md border border-[#D4533E] bg-[#FCF3F0] px-2 py-2 text-[#D4533E] transition"
+          : "flex flex-col items-center gap-0.5 rounded-md border-[0.5px] border-[var(--color-border-secondary,#d1d5db)] bg-white px-2 py-2 text-gray-700 transition hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-200"
+      }
+    >
+      <span className="text-[11px] font-medium">{label.replace(" 납품", "")}</span>
+      <span
+        className="text-[9px]"
+        style={{ color: active ? "#D4533E" : "var(--color-text-tertiary,#9ca3af)" }}
+      >
+        {caption}
+      </span>
+      {active && <Check size={11} aria-hidden="true" className="text-[#D4533E]" />}
+    </button>
   );
 }

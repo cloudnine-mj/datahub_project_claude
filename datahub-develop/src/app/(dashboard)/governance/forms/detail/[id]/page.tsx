@@ -516,13 +516,12 @@ export default function Page({ params }: { params: { id: string } }) {
       )}
 
       {/* 진행 이력 — 협의·계약 단계(serviceStage===1)에서는 3단계 진척 통합 카드로 대체,
+          진행 단계(serviceStage===2)에서는 진행 이력 카드 없음(단순화),
           그 외(신청 등)에서는 기존 가로 타임라인. 용역 제작 한정. */}
-      {form.form_type === "data_production" && (
+      {form.form_type === "data_production" && serviceStage !== 2 && (
         <div className="mb-4">
           {serviceStage === 1 ? (
             <HistoryTimelineWithSubProgress formId={form.id} variant="negotiation-contract" />
-          ) : serviceStage === 2 ? (
-            <HistoryTimelineWithSubProgress formId={form.id} variant="progress" />
           ) : (
             <HistoryTimeline events={approvalHistoryToEvents(form.approval_history)} />
           )}
