@@ -5,16 +5,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-  Download,
-  Filter,
-  MessageSquare,
-  Paperclip,
-  Plus,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare, Paperclip, Plus } from "lucide-react";
 import {
   deliveryColors,
   deliveryLabel,
@@ -77,9 +68,6 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
           {items.length}건
         </span>
         <div className="ml-auto flex items-center gap-1.5">
-          <SmallButton icon={<Filter size={11} aria-hidden="true" />}>필터</SmallButton>
-          <SmallButton icon={<ArrowUpDown size={11} aria-hidden="true" />}>정렬</SmallButton>
-          <SmallButton icon={<Download size={11} aria-hidden="true" />}>내보내기</SmallButton>
           <button
             type="button"
             onClick={onCompose}
@@ -143,24 +131,6 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
         </table>
       </div>
     </section>
-  );
-}
-
-function SmallButton({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 rounded-md border-[0.5px] border-[var(--color-border-secondary,#d1d5db)] bg-white px-2 py-[3px] text-[10px] text-gray-600 transition hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300"
-    >
-      {icon}
-      {children}
-    </button>
   );
 }
 
