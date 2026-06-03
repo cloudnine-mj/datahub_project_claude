@@ -1,20 +1,24 @@
 // 피드백 작성 모달 — 진행 단계 [+ 피드백 작성] 진입.
-//   입력 4필드: 납품 구분(필수, 중간/수정/최종) / 데이터 수령일(필수) / 내용 / 첨부.
-//   전송: 납품 구분 + 수령일 + (내용 또는 첨부) 충족 시 활성. 채팅 알림 없음.
+//   입력: 납품 구분(필수) → 자동 회차 안내 / 데이터 수령일(필수) / 피드백 내용(필수) / 첨부(선택).
+//   전송: 납품 구분 + 수령일 + 내용(텍스트) 충족 시 활성. 첨부만으로는 불가. 채팅 알림 없음.
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Calendar, Check, MessageSquarePlus, Paperclip, Plus, Send, X } from "lucide-react";
+import { Calendar, Check, Info, MessageSquarePlus, Paperclip, Plus, Send, X } from "lucide-react";
 import {
+  calculateRoundNumber,
   deliveryLabel,
   formatBytes,
   todayYmd,
   type DeliveryRound,
   type FeedbackAttachmentMeta,
+  type FeedbackItem,
 } from "@/lib/governance/feedback-storage";
 
 interface Props {
+  /** 자동 회차 계산용 — 기존 피드백 이력. */
+  history: FeedbackItem[];
   onClose: () => void;
   onSubmit: (payload: {
     deliveryRound: DeliveryRound;
@@ -24,7 +28,7 @@ interface Props {
   }) => void;
 }
 
-export function FeedbackComposeModal({ onClose, onSubmit }: Props) {
+export function FeedbackComposeModal({ history, onClose, onSubmit }: Props) {
   const [round, setRound] = useState<DeliveryRound | null>(null);
   const [receivedDate, setReceivedDate] = useState<string>(todayYmd());
   const [content, setContent] = useState("");
@@ -53,10 +57,11 @@ export function FeedbackComposeModal({ onClose, onSubmit }: Props) {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // 전송 활성: 납품 구분 + 수령일 + 내용(텍스트) 필수. 첨부는 선택.
   const canSend =
-    round !== null &&
-    receivedDate.length > 0 &&
-    (content.trim().length > 0 || files.length > 0);
+    round !== null && receivedDate.length > 0 && content.trim().length > 0;
+  // 자동 회차 = 선택된 납품 기존 건수 + 1.
+  const roundNumber = round ? calculateRoundNumber(history, round) : 0;
 
   function submit(): void {
     if (!round || !canSend) return;
@@ -130,6 +135,27 @@ export function FeedbackComposeModal({ onClose, onSubmit }: Props) {
               onClick={() => setRound("final")}
             />
           </div>
+          {/* 자동 회차 안내 — 납품 구분 선택 시 노출. */}
+          {round && (
+            <div
+              className="mt-2 flex items-center gap-1.5"
+              style={{
+                background: "#FCF8EF",
+                border: "0.5px solid #EFC4B9",
+                borderRadius: 5,
+                padding: "7px 11px",
+              }}
+            >
+              <Info size={12} aria-hidden="true" className="shrink-0 text-[#D4533E]" />
+              <span className="text-[10px] text-[#993C1D]">
+                이번 피드백은{" "}
+                <strong className="font-medium">
+                  {deliveryLabel(round)} {roundNumber}차
+                </strong>
+                로 자동 기록됩니다
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 데이터 수령일 (필수) */}
@@ -158,24 +184,25 @@ export function FeedbackComposeModal({ onClose, onSubmit }: Props) {
           </div>
         </div>
 
-        {/* 피드백 내용 */}
-        <label className="mb-1 block text-[10px] text-gray-500 dark:text-gray-400">
-          피드백 내용
+        {/* 피드백 내용 (필수) */}
+        <label className="mb-1 block text-[11px] font-medium text-gray-700 dark:text-gray-200">
+          피드백 내용 <span style={{ color: "#D4533E" }}>*</span>
         </label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="텍스트 작성 또는 첨부 파일 추가 (둘 다 가능)"
+          placeholder="피드백 내용을 입력하세요"
           className="mb-3 w-full resize-none overflow-y-auto rounded-md border border-gray-200 bg-white px-3 py-2 text-[11px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-          style={{ minHeight: "80px" }}
+          style={{ minHeight: "90px" }}
         />
 
-        {/* 첨부 */}
+        {/* 첨부 (선택) */}
         <div className="mb-1.5 flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
           <Paperclip size={11} aria-hidden="true" />
           첨부 파일
+          <span className="text-[9px] text-[var(--color-text-tertiary,#9ca3af)]">(선택)</span>
           <span className="text-[9px] text-[var(--color-text-tertiary,#9ca3af)]">
-            (엑셀·워드·PDF·이미지 등)
+            · 엑셀·워드·PDF·이미지 등
           </span>
         </div>
         {files.length > 0 && (

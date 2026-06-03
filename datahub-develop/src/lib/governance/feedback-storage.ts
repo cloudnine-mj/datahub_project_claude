@@ -17,9 +17,10 @@ export interface FeedbackAttachmentMeta {
 export interface FeedbackItem {
   id: string;
   deliveryRound: DeliveryRound; // 필수
+  roundNumber: number; // 같은 납품 구분 내 자동 회차(1차, 2차…)
   receivedDate: string; // YYYY-MM-DD, 사용자 입력 (메일·SharePoint 수령일)
-  content?: string;
-  attachments: FeedbackAttachmentMeta[];
+  content: string; // 필수
+  attachments: FeedbackAttachmentMeta[]; // 선택, 빈 배열 가능
   author: string;
   createdAt: string; // ISO, 시스템 자동(전송 시점)
 }
@@ -58,14 +59,27 @@ export function readFeedbackHistory(formId: string): FeedbackItem[] {
   return readJson<FeedbackItem[]>(FEEDBACK_KEY(formId), []);
 }
 
+/** 같은 납품 구분의 다음 회차 = 기존 건수 + 1. */
+export function calculateRoundNumber(
+  history: FeedbackItem[],
+  deliveryRound: DeliveryRound,
+): number {
+  let count = 0;
+  history.forEach((f) => {
+    if (f.deliveryRound === deliveryRound) count += 1;
+  });
+  return count + 1;
+}
+
 export function appendFeedback(
   formId: string,
-  next: Omit<FeedbackItem, "id" | "createdAt">,
+  next: Omit<FeedbackItem, "id" | "createdAt" | "roundNumber">,
 ): FeedbackItem {
   const current = readFeedbackHistory(formId);
   const item: FeedbackItem = {
     id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     deliveryRound: next.deliveryRound,
+    roundNumber: calculateRoundNumber(current, next.deliveryRound),
     receivedDate: next.receivedDate,
     content: next.content,
     attachments: next.attachments,

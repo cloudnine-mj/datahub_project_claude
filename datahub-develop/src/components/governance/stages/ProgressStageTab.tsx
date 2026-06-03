@@ -12,10 +12,16 @@
 
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowRight, ChevronDown, CircleCheck, InfoIcon, Lock } from "lucide-react";
 import type { FormDetail } from "@/lib/governance/api-client-full";
-import { appendFeedback, type DeliveryRound, type FeedbackAttachmentMeta } from "@/lib/governance/feedback-storage";
+import {
+  appendFeedback,
+  readFeedbackHistory,
+  type DeliveryRound,
+  type FeedbackAttachmentMeta,
+  type FeedbackItem,
+} from "@/lib/governance/feedback-storage";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import { FeedbackHistoryCard } from "./progress/FeedbackHistoryCard";
 import { FeedbackComposeModal } from "./progress/FeedbackComposeModal";
@@ -39,6 +45,23 @@ export function ProgressStageTab({
 }: Props) {
   const lead = getChatAssignee();
   const [composeOpen, setComposeOpen] = useState(false);
+  // 자동 회차 계산용 — 모달에 현재 이력 전달.
+  const [history, setHistory] = useState<FeedbackItem[]>([]);
+
+  useEffect(() => {
+    const refresh = () => setHistory(readFeedbackHistory(formId));
+    refresh();
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ formId?: string }>).detail;
+      if (!detail || detail.formId === formId) refresh();
+    };
+    window.addEventListener("dh:gov:feedback-changed", onChange);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("dh:gov:feedback-changed", onChange);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [formId]);
 
   function onSubmitFeedback(payload: {
     deliveryRound: DeliveryRound;
@@ -46,11 +69,11 @@ export function ProgressStageTab({
     content: string;
     attachments: FeedbackAttachmentMeta[];
   }): void {
-    // 피드백만 누적 저장. 채팅 시스템 메시지 생성하지 않음.
+    // 피드백만 누적 저장(회차 자동 부여). 채팅 시스템 메시지 생성하지 않음.
     appendFeedback(formId, {
       deliveryRound: payload.deliveryRound,
       receivedDate: payload.receivedDate,
-      content: payload.content || undefined,
+      content: payload.content,
       attachments: payload.attachments,
       author: lead.name,
     });
@@ -106,6 +129,7 @@ export function ProgressStageTab({
 
       {composeOpen && (
         <FeedbackComposeModal
+          history={history}
           onClose={() => setComposeOpen(false)}
           onSubmit={onSubmitFeedback}
         />

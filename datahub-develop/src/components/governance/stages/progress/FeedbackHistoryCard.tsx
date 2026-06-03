@@ -88,7 +88,7 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
                 color: "var(--color-text-secondary,#6b7280)",
               }}
             >
-              <Th width="90px">납품 구분</Th>
+              <Th width="120px">납품 구분</Th>
               <Th width="100px">데이터 수령일</Th>
               <Th width="130px">작성일시</Th>
               <Th>내용 요약</Th>
@@ -178,10 +178,10 @@ function FeedbackRow({
       >
         <Td>
           <span
-            className="inline-flex items-center text-[9px] font-medium"
+            className="inline-flex items-center text-[9px]"
             style={{ background: dc.bg, color: dc.text, borderRadius: 4, padding: "2px 6px" }}
           >
-            {deliveryLabel(item.deliveryRound)}
+            {deliveryLabel(item.deliveryRound)} · {item.roundNumber}차
           </span>
         </Td>
         <Td>
@@ -231,7 +231,7 @@ function FeedbackRow({
             >
               <div className="mb-2 flex flex-wrap items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
                 <span
-                  className="inline-flex items-center text-[9px] font-medium"
+                  className="inline-flex items-center text-[9px]"
                   style={{
                     background: dc.bg,
                     color: dc.text,
@@ -239,7 +239,7 @@ function FeedbackRow({
                     padding: "2px 6px",
                   }}
                 >
-                  {deliveryLabel(item.deliveryRound)}
+                  {deliveryLabel(item.deliveryRound)} · {item.roundNumber}차
                 </span>
                 <span style={{ fontVariantNumeric: "tabular-nums" }}>
                   수령일 {item.receivedDate}
