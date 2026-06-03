@@ -371,11 +371,20 @@ export function ChatPanel({
         )}
 
         {(() => {
-          let lastStage = -1;
+          // 단계 구분선 — 표시 규칙:
+          //   1) 메시지에 기록된 단계(stageMap)가 있으면 사용.
+          //   2) 기록이 없는(과거/시스템) 메시지는 직전 메시지의 단계 맥락을 계승.
+          //   3) 표시 단계는 시간순으로 뒤로 가지 않음(단조 증가) — 뒤 단계 채팅이
+          //      앞 단계 구분선 아래로 잘못 끼지 않도록 보정.
+          let lastDividerStage = -1;
+          let runningStage = 0;
           return orderedMessages.map((m) => {
-            const stage = stageMap[m.id] ?? 0;
-            const showDivider = showDividers && stage !== lastStage;
-            if (showDividers) lastStage = stage;
+            const recorded = stageMap[m.id];
+            let stage = recorded ?? runningStage;
+            if (stage < runningStage) stage = runningStage;
+            runningStage = stage;
+            const showDivider = showDividers && stage !== lastDividerStage;
+            if (showDividers) lastDividerStage = stage;
             return (
               <Fragment key={m.id}>
                 {showDivider && (
