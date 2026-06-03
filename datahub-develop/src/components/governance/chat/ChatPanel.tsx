@@ -13,7 +13,7 @@
 
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Paperclip, Send, X } from "lucide-react";
 import { api } from "@/lib/governance/api-client-full";
 import type { FormMessageItem } from "@/lib/governance/forms/types";
@@ -125,6 +125,18 @@ export function ChatPanel({
   bubbleMaxWidthClass,
 }: Props) {
   const [messages, setMessages] = useState<FormMessageItem[]>([]);
+  // 백엔드 정렬에 의존하지 않고 항상 작성 시각 오름차순(오래된→최신)으로 표시.
+  //   단계 구분선(요청서 검토 → 협의 및 계약 → 진행)도 이 순서를 따른다.
+  const orderedMessages = useMemo(() => {
+    const copy = messages.slice();
+    copy.sort((a, b) => {
+      const ta = new Date(a.createdAt ?? 0).getTime();
+      const tb = new Date(b.createdAt ?? 0).getTime();
+      if (ta !== tb) return ta - tb;
+      return 0;
+    });
+    return copy;
+  }, [messages]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -360,7 +372,7 @@ export function ChatPanel({
 
         {(() => {
           let lastStage = -1;
-          return messages.map((m) => {
+          return orderedMessages.map((m) => {
             const stage = stageMap[m.id] ?? 0;
             const showDivider = showDividers && stage !== lastStage;
             if (showDividers) lastStage = stage;
