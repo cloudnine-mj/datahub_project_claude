@@ -163,7 +163,7 @@ function CollapsibleSection({
             className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
             style={{ background: "#E1F5EE", color: "#0F6E56" }}
           >
-            <Lock size={11} aria-hidden="true" /> 완료 (잠금)
+            <Lock size={11} aria-hidden="true" /> 완료
           </span>
         )}
         <button
