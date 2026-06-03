@@ -1,11 +1,18 @@
 // 피드백 이력 카드 — 진행 단계 페이지 전체 폭.
-//   표 형식: 납품 구분/대상 버전/작성일시/내용 요약/첨부/상태/펼침.
+//   표 형식: 대상/대상 버전/작성일시/내용 요약/첨부/상태/펼침.
+//   헤더에 [+ 피드백 작성] 버튼(언제든 자유 작성). 대상 '일반'은 회색 뱃지 + 버전 '-'.
 //   행 클릭 시 인라인 펼침(다른 행은 접힘 유지). 텍스트만/첨부만/둘 다 모두 표시.
 
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Paperclip } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  Paperclip,
+  Plus,
+} from "lucide-react";
 import {
   deliveryColors,
   deliveryLabel,
@@ -17,9 +24,11 @@ import {
 
 interface Props {
   formId: string;
+  /** 헤더 [+ 피드백 작성] — 부모가 작성 모달(대상 '일반' 기본)을 연다. */
+  onCompose: () => void;
 }
 
-export function FeedbackHistoryCard({ formId }: Props) {
+export function FeedbackHistoryCard({ formId, onCompose }: Props) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -65,6 +74,13 @@ export function FeedbackHistoryCard({ formId }: Props) {
         >
           {items.length}건
         </span>
+        <button
+          type="button"
+          onClick={onCompose}
+          className="ml-auto inline-flex items-center gap-1 rounded-md bg-[#D4533E] px-2.5 py-1 text-[10px] font-medium text-white transition hover:brightness-110"
+        >
+          <Plus size={12} aria-hidden="true" /> 피드백 작성
+        </button>
       </header>
 
       <div className="overflow-x-auto">
@@ -77,7 +93,7 @@ export function FeedbackHistoryCard({ formId }: Props) {
                 color: "var(--color-text-secondary,#6b7280)",
               }}
             >
-              <Th width="80px">납품 구분</Th>
+              <Th width="80px">대상</Th>
               <Th width="60px">대상 버전</Th>
               <Th width="130px">작성일시</Th>
               <Th>내용 요약</Th>
@@ -89,11 +105,20 @@ export function FeedbackHistoryCard({ formId }: Props) {
           <tbody>
             {sorted.length === 0 ? (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-3 py-6 text-center text-[11px] text-[var(--color-text-tertiary,#9ca3af)]"
-                >
-                  아직 피드백이 없습니다.
+                <td colSpan={7} className="px-3" style={{ padding: "30px 12px" }}>
+                  <div className="flex flex-col items-center justify-center gap-1 text-center">
+                    <MessageSquare
+                      size={24}
+                      aria-hidden="true"
+                      className="text-[var(--color-text-tertiary,#9ca3af)]"
+                    />
+                    <p className="text-[11px] text-[var(--color-text-secondary,#6b7280)]">
+                      아직 작성된 피드백이 없습니다.
+                    </p>
+                    <p className="text-[10px] text-[var(--color-text-tertiary,#9ca3af)]">
+                      상단 [+ 피드백 작성] 버튼으로 언제든 작성할 수 있습니다.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -143,11 +168,21 @@ function FeedbackRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const dc = deliveryColors(item.targetDeliveryRound);
+  // 대상 '일반'(특정 버전 없음) — round/version 둘 중 하나라도 null.
+  const isGeneral = item.targetDeliveryRound === null || item.targetVersion === null;
+  const dc = isGeneral
+    ? {
+        bg: "var(--color-background-secondary,#f3f4f6)",
+        text: "var(--color-text-secondary,#6b7280)",
+      }
+    : deliveryColors(item.targetDeliveryRound as Exclude<typeof item.targetDeliveryRound, null>);
+  const targetLabel = isGeneral
+    ? "일반"
+    : deliveryLabel(item.targetDeliveryRound as Exclude<typeof item.targetDeliveryRound, null>);
   const summary =
     item.content && item.content.trim().length > 0
       ? item.content.split("\n")[0]
-      : `(문서 ${item.attachments.length}개 첨부 — 첨부 파일 참고)`;
+      : `(문서 ${item.attachments.length}개 첨부)`;
   const isAttachOnly = !item.content || item.content.trim().length === 0;
 
   return (
@@ -162,21 +197,25 @@ function FeedbackRow({
             className="inline-flex items-center text-[9px] font-medium"
             style={{ background: dc.bg, color: dc.text, borderRadius: 4, padding: "2px 6px" }}
           >
-            {deliveryLabel(item.targetDeliveryRound)}
+            {targetLabel}
           </span>
         </Td>
         <Td>
-          <span
-            className="inline-flex items-center text-[9px] font-medium"
-            style={{
-              background: "var(--color-background-secondary,#f3f4f6)",
-              color: "#111827",
-              borderRadius: 4,
-              padding: "2px 6px",
-            }}
-          >
-            v{item.targetVersion}
-          </span>
+          {isGeneral ? (
+            <span className="text-gray-400">-</span>
+          ) : (
+            <span
+              className="inline-flex items-center text-[9px] font-medium"
+              style={{
+                background: "var(--color-background-secondary,#f3f4f6)",
+                color: "#111827",
+                borderRadius: 4,
+                padding: "2px 6px",
+              }}
+            >
+              v{item.targetVersion}
+            </span>
+          )}
         </Td>
         <Td>
           <span style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -242,9 +281,9 @@ function FeedbackRow({
                     padding: "2px 6px",
                   }}
                 >
-                  {deliveryLabel(item.targetDeliveryRound)}
+                  {targetLabel}
                 </span>
-                <span>v{item.targetVersion}</span>
+                {!isGeneral && <span>v{item.targetVersion}</span>}
                 <span>·</span>
                 <span>{item.author}</span>
                 <span>·</span>

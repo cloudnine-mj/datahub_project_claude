@@ -1,10 +1,11 @@
 // 최신 데이터 검토 카드 — 진행 단계 60:40 좌측. 가장 최근 업로드된 파일을 보여주고,
-//   [문제 없음 → 종료 절차] / [문제 있음 → 피드백 작성] 두 분기 제공.
+//   납품 구분에 따라 다른 액션 버튼을 제공.
+//     중간/수정 납품: [확인 완료] / [피드백 작성]
+//     최종 납품:      [문제 없음 → 종료 절차] / [문제 있음 → 피드백 작성]
 
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, CircleCheck, FileText } from "lucide-react";
+import { AlertTriangle, CircleCheck, FileText, MessageSquare } from "lucide-react";
 import {
   deliveryColors,
   deliveryShortLabel,
@@ -14,45 +15,53 @@ import {
   formatDateTime,
   type ReceivedDataItem,
 } from "@/lib/governance/progress-storage";
-import { FeedbackComposer } from "./FeedbackComposer";
-import type { FeedbackAttachmentMeta } from "@/lib/governance/progress-storage";
 
 interface Props {
   latest: ReceivedDataItem | null;
-  /** 품질 확인 [문제 없음] — 양식 모달 흐름은 별도 작업. 임시 alert. */
-  onNoIssue: () => void;
-  /** 피드백 전송 — 부모가 storage 저장. */
-  onSubmitFeedback: (payload: {
-    targetDeliveryRound: ReceivedDataItem["deliveryRound"];
-    targetVersion: number;
-    content: string;
-    attachments: FeedbackAttachmentMeta[];
-  }) => void;
+  /** [확인 완료] (중간/수정) — 부모가 status 갱신 + 진척 처리. */
+  onConfirm: (item: ReceivedDataItem) => void;
+  /** [피드백 작성] / [문제 있음] — 부모가 대상 자동 선택해 모달 오픈. */
+  onRequestFeedback: (item: ReceivedDataItem) => void;
+  /** [문제 없음 → 종료 절차] (최종) — 양식 모달 흐름(별도 작업). */
+  onNoIssue: (item: ReceivedDataItem) => void;
 }
 
-export function LatestDataReviewCard({ latest, onNoIssue, onSubmitFeedback }: Props) {
-  const [composing, setComposing] = useState(false);
-
+export function LatestDataReviewCard({
+  latest,
+  onConfirm,
+  onRequestFeedback,
+  onNoIssue,
+}: Props) {
   if (!latest) {
     return (
-      <section
-        className="rounded-[10px] border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white px-[14px] py-[12px] dark:border-gray-700 dark:bg-gray-900"
-      >
+      <section className="rounded-[10px] border-[0.5px] border-[var(--color-border-tertiary,#e5e7eb)] bg-white px-[14px] py-[12px] dark:border-gray-700 dark:bg-gray-900">
         <header className="flex items-center gap-1.5">
           <span aria-hidden="true" className="block h-3.5 w-[3px] rounded-[1px] bg-[#D4533E]" />
           <h3 className="text-[12px] font-medium text-gray-900 dark:text-gray-100">
             최신 데이터 검토
           </h3>
         </header>
-        <div className="mt-3 flex items-center gap-2 rounded-md border border-dashed border-gray-200 px-3 py-4 text-[11px] text-gray-400 dark:border-gray-700">
-          <FileText size={13} aria-hidden="true" />
-          아직 업로드된 데이터가 없습니다.
+        <div className="mt-3 flex flex-col items-center justify-center gap-1 px-3 py-5 text-center">
+          <FileText size={20} aria-hidden="true" className="text-[var(--color-text-tertiary,#9ca3af)]" />
+          <p className="text-[11px] text-[var(--color-text-secondary,#6b7280)]">
+            아직 업로드된 데이터가 없습니다.
+          </p>
         </div>
       </section>
     );
   }
 
   const dc = deliveryColors(latest.deliveryRound);
+  const isFinal = latest.deliveryRound === "final";
+  const headerBadge = isFinal
+    ? `${deliveryShortLabel(latest.deliveryRound)} v${latest.version} 품질 확인 중`
+    : `${deliveryShortLabel(latest.deliveryRound)} v${latest.version} 확인 대기`;
+
+  function onDownload(): void {
+    if (typeof window !== "undefined" && latest) {
+      window.alert(`${latest.fileName} 다운로드 (Phase 1 mock)`);
+    }
+  }
 
   return (
     <section
@@ -68,7 +77,7 @@ export function LatestDataReviewCard({ latest, onNoIssue, onSubmitFeedback }: Pr
           className="inline-flex items-center text-[9px] font-medium"
           style={{ background: "#FAEEDA", color: "#854F0B", borderRadius: 4, padding: "2px 6px" }}
         >
-          {deliveryShortLabel(latest.deliveryRound)} v{latest.version} 확인 중
+          {headerBadge}
         </span>
       </header>
 
@@ -96,57 +105,68 @@ export function LatestDataReviewCard({ latest, onNoIssue, onSubmitFeedback }: Pr
           >
             {fileTypeLabel(latest.fileType)}
           </span>
-          <span className="text-[11px] font-medium text-gray-900 dark:text-gray-100">
+          <button
+            type="button"
+            onClick={onDownload}
+            className="text-[11px] font-medium text-[#D4533E] hover:underline"
+          >
             {latest.fileName}
-          </span>
+          </button>
         </div>
-        <div className="text-[10px] text-[var(--color-text-tertiary,#9ca3af)]" style={{ fontVariantNumeric: "tabular-nums" }}>
+        <div
+          className="text-[10px] text-[var(--color-text-tertiary,#9ca3af)]"
+          style={{ fontVariantNumeric: "tabular-nums" }}
+        >
           {formatBytes(latest.fileSize)} · {latest.uploader} · {formatDateTime(latest.uploadedAt)}
         </div>
       </div>
 
-      {!composing && (
-        <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
-          <div className="mb-2 text-[10px] font-medium text-[#D4533E]">
-            품질 확인 결과 선택
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onNoIssue}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#E1F5EE]/30"
-              style={{ borderColor: "#0F6E56", color: "#0F6E56" }}
-            >
-              <CircleCheck size={13} aria-hidden="true" /> 문제 없음 → 종료 절차
-            </button>
-            <button
-              type="button"
-              onClick={() => setComposing(true)}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#FAEEDA]/30"
-              style={{ borderColor: "#854F0B", color: "#854F0B" }}
-            >
-              <AlertTriangle size={13} aria-hidden="true" /> 문제 있음 → 피드백 작성
-            </button>
-          </div>
+      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
+        <div className="mb-2 text-[10px] font-medium text-[#D4533E]">
+          {isFinal ? "품질 확인 결과 선택" : "다음 액션 선택"}
         </div>
-      )}
-
-      {composing && (
-        <FeedbackComposer
-          targetDeliveryRound={latest.deliveryRound}
-          targetVersion={latest.version}
-          onCancel={() => setComposing(false)}
-          onSubmit={(payload) => {
-            onSubmitFeedback({
-              targetDeliveryRound: latest.deliveryRound,
-              targetVersion: latest.version,
-              content: payload.content,
-              attachments: payload.attachments,
-            });
-            setComposing(false);
-          }}
-        />
-      )}
+        <div className="flex gap-2">
+          {isFinal ? (
+            <>
+              <button
+                type="button"
+                onClick={() => onNoIssue(latest)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#E1F5EE]/30"
+                style={{ borderColor: "#0F6E56", color: "#0F6E56" }}
+              >
+                <CircleCheck size={13} aria-hidden="true" /> 문제 없음 → 종료 절차
+              </button>
+              <button
+                type="button"
+                onClick={() => onRequestFeedback(latest)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#FAEEDA]/30"
+                style={{ borderColor: "#854F0B", color: "#854F0B" }}
+              >
+                <AlertTriangle size={13} aria-hidden="true" /> 문제 있음 → 피드백 작성
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => onConfirm(latest)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#E1F5EE]/30"
+                style={{ borderColor: "#0F6E56", color: "#0F6E56" }}
+              >
+                <CircleCheck size={13} aria-hidden="true" /> 확인 완료
+              </button>
+              <button
+                type="button"
+                onClick={() => onRequestFeedback(latest)}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-md border-[0.5px] bg-transparent px-2 py-2 text-[11px] font-medium transition hover:bg-[#FCF3F0]/60"
+                style={{ borderColor: "#D4533E", color: "#D4533E" }}
+              >
+                <MessageSquare size={13} aria-hidden="true" /> 피드백 작성
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

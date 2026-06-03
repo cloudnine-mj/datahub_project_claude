@@ -36,8 +36,10 @@ export interface FeedbackAttachmentMeta {
 
 export interface FeedbackItem {
   id: string;
-  targetDeliveryRound: DeliveryRound;
-  targetVersion: number;
+  /** 대상 납품 구분. null = '일반'(특정 버전 없음). */
+  targetDeliveryRound: DeliveryRound | null;
+  /** 대상 버전. null = '일반'. */
+  targetVersion: number | null;
   content?: string;
   attachments: FeedbackAttachmentMeta[];
   author: string;
@@ -121,6 +123,18 @@ export function appendReceivedData(
   writeJson(RECEIVED_KEY(formId), [...current, item]);
   dispatchChanged(formId);
   return item;
+}
+
+/** 특정 수령 데이터의 상태 변경 — [확인 완료] 등. */
+export function setReceivedStatus(
+  formId: string,
+  id: string,
+  status: ReceivedStatus,
+): void {
+  const current = readReceivedData(formId);
+  const next = current.map((it) => (it.id === id ? { ...it, status } : it));
+  writeJson(RECEIVED_KEY(formId), next);
+  dispatchChanged(formId);
 }
 
 // ── 피드백 이력 ──────────────────────────────────────────────────────────────

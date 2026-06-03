@@ -16,7 +16,9 @@ import { api, type FormDetail } from "@/lib/governance/api-client-full";
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import {
   appendFeedback,
+  deliveryShortLabel,
   readReceivedData,
+  setReceivedStatus,
   writeProgressState,
   type DeliveryRound,
   type FeedbackAttachmentMeta,
@@ -26,6 +28,10 @@ import { ReceivedDataCard } from "./progress/ReceivedDataCard";
 import { UploadDataModal } from "./progress/UploadDataModal";
 import { FeedbackHistoryCard } from "./progress/FeedbackHistoryCard";
 import { LatestDataReviewCard } from "./progress/LatestDataReviewCard";
+import {
+  FeedbackComposeModal,
+  type FeedbackTarget,
+} from "./progress/FeedbackComposeModal";
 
 interface Props {
   formId: string;
@@ -47,6 +53,9 @@ export function ProgressStageTab({
 }: Props) {
   const lead = useMemo(() => getChatAssignee(), []);
   const [uploadOpen, setUploadOpen] = useState(false);
+  // 피드백 작성 모달 — null 이면 닫힘. initialTarget 으로 진입 시 대상 자동 선택.
+  const [composeTarget, setComposeTarget] = useState<FeedbackTarget | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
   const [received, setReceived] = useState<ReceivedDataItem[]>([]);
 
   useEffect(() => {
@@ -76,21 +85,12 @@ export function ProgressStageTab({
     return it;
   }, [received]);
 
-  function onUploaded(round: DeliveryRound, version: number): void {
-    // 진행 단계 진척 상태 갱신 — 해당 납품이 시작/진행 중인 것을 반영.
-    if (round === "final") {
-      writeProgressState(formId, { finalReviewing: true });
-    }
-    // 채팅에 시스템 자동 메시지 알림 — 업로드 사실을 담당자/신청자에게 공유.
-    //   변경 사항 상세는 담당자가 채팅으로 자유롭게 덧붙임.
-    const shortLabel = round === "middle" ? "중간" : round === "modified" ? "수정" : "최종";
+  // 진행 단계 액션은 모두 채팅 시스템 메시지로 알린다(페이지 안 알림 박스 없음).
+  //   ChatPanel 은 focus 이벤트로 재조회 — 같은 화면 즉시 갱신 유도.
+  function notifyChat(text: string): void {
     api
-      .createFormMessage(
-        formId,
-        `[${lead.name}]님이 ${shortLabel} v${version} 데이터를 업로드했습니다.`,
-      )
+      .createFormMessage(formId, text)
       .then(() => {
-        // ChatPanel 은 focus 이벤트로 메시지를 재조회 — 같은 화면 즉시 갱신 유도.
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("focus"));
         }
@@ -101,18 +101,46 @@ export function ProgressStageTab({
       });
   }
 
-  function onNoIssue(): void {
+  function onUploaded(round: DeliveryRound, version: number): void {
+    // 진행 단계 진척 상태 갱신 — 해당 납품이 시작/진행 중인 것을 반영.
+    if (round === "final") {
+      writeProgressState(formId, { finalReviewing: true });
+    }
+    notifyChat(`[${lead.name}]님이 ${deliveryShortLabel(round)} v${version} 데이터를 업로드했습니다.`);
+  }
+
+  // [확인 완료] (중간/수정) — status 갱신 + 진척 완료 + 채팅 알림.
+  function onConfirm(item: ReceivedDataItem): void {
+    setReceivedStatus(formId, item.id, "confirmed");
+    if (item.deliveryRound === "middle") {
+      writeProgressState(formId, { middleCompleted: true });
+    } else if (item.deliveryRound === "modified") {
+      writeProgressState(formId, { modifiedCompleted: true });
+    }
+    notifyChat(`[${lead.name}]님이 [${deliveryShortLabel(item.deliveryRound)} v${item.version}]를 확인 완료했습니다.`);
+  }
+
+  // [문제 없음 → 종료 절차] (최종) — 양식 모달 흐름은 별도 작업. Phase 1: alert + 채팅 알림.
+  function onNoIssue(item: ReceivedDataItem): void {
     if (typeof window !== "undefined") {
       window.alert(
         "[Phase 1] 양식 모달(수령·품질확인서)은 별도 작업으로 분리됩니다. 임시: 종료 절차 시작.",
       );
     }
+    setReceivedStatus(formId, item.id, "confirmed");
     writeProgressState(formId, { closureStarted: true });
+    notifyChat(`[${lead.name}]님이 최종 데이터 품질을 확정했습니다.`);
+  }
+
+  // 피드백 작성 모달 열기 — 대상 자동 선택(없으면 '일반').
+  function openCompose(target: FeedbackTarget | null): void {
+    setComposeTarget(target);
+    setComposeOpen(true);
   }
 
   function onSubmitFeedback(payload: {
-    targetDeliveryRound: DeliveryRound;
-    targetVersion: number;
+    targetDeliveryRound: DeliveryRound | null;
+    targetVersion: number | null;
     content: string;
     attachments: FeedbackAttachmentMeta[];
   }): void {
@@ -123,6 +151,12 @@ export function ProgressStageTab({
       attachments: payload.attachments,
       author: lead.name,
     });
+    const label =
+      payload.targetDeliveryRound && payload.targetVersion
+        ? `'${deliveryShortLabel(payload.targetDeliveryRound)} v${payload.targetVersion}'에 대한 `
+        : "";
+    notifyChat(`[${lead.name}]님이 ${label}피드백을 작성했습니다.`);
+    setComposeOpen(false);
   }
 
   return (
@@ -131,7 +165,7 @@ export function ProgressStageTab({
 
       <ReceivedDataCard formId={formId} onUploadClick={() => setUploadOpen(true)} />
 
-      <FeedbackHistoryCard formId={formId} />
+      <FeedbackHistoryCard formId={formId} onCompose={() => openCompose(null)} />
 
       <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[60fr_40fr]">
         <div className="flex min-w-0 flex-col gap-3">
@@ -147,8 +181,11 @@ export function ProgressStageTab({
 
           <LatestDataReviewCard
             latest={latest}
+            onConfirm={onConfirm}
             onNoIssue={onNoIssue}
-            onSubmitFeedback={onSubmitFeedback}
+            onRequestFeedback={(item) =>
+              openCompose({ deliveryRound: item.deliveryRound, version: item.version })
+            }
           />
         </div>
 
@@ -163,6 +200,15 @@ export function ProgressStageTab({
           uploader={lead.name}
           onClose={() => setUploadOpen(false)}
           onUploaded={onUploaded}
+        />
+      )}
+
+      {composeOpen && (
+        <FeedbackComposeModal
+          received={received}
+          initialTarget={composeTarget ?? undefined}
+          onClose={() => setComposeOpen(false)}
+          onSubmit={onSubmitFeedback}
         />
       )}
     </div>
