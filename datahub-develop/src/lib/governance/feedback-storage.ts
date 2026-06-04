@@ -56,7 +56,32 @@ function dispatchChanged(formId: string): void {
 // ── 피드백 이력 ──────────────────────────────────────────────────────────────
 
 export function readFeedbackHistory(formId: string): FeedbackItem[] {
-  return readJson<FeedbackItem[]>(FEEDBACK_KEY(formId), []);
+  const list = readJson<FeedbackItem[]>(FEEDBACK_KEY(formId), []);
+  // 마이그레이션 — roundNumber 가 없거나 0/누락인 기존 데이터를 자동 재계산.
+  //   (roundNumber 필드 도입 전에 저장된 피드백이 "· 차"로 표시되는 버그 방지.)
+  let needsMigration = false;
+  list.forEach((f) => {
+    if (!f.roundNumber || f.roundNumber < 1) needsMigration = true;
+  });
+  if (!needsMigration) return list;
+  const migrated = migrateRoundNumbers(list);
+  writeJson(FEEDBACK_KEY(formId), migrated);
+  return migrated;
+}
+
+/** 작성 시각 오름차순으로 납품 구분별 회차(1,2,3…)를 재부여. */
+function migrateRoundNumbers(history: FeedbackItem[]): FeedbackItem[] {
+  const counters: Record<DeliveryRound, number> = { middle: 0, modified: 0, final: 0 };
+  const sorted = history.slice().sort((a, b) => {
+    const ta = new Date(a.createdAt).getTime();
+    const tb = new Date(b.createdAt).getTime();
+    return ta - tb;
+  });
+  sorted.forEach((f) => {
+    counters[f.deliveryRound] += 1;
+    f.roundNumber = counters[f.deliveryRound];
+  });
+  return sorted;
 }
 
 /** 같은 납품 구분의 다음 회차 = 기존 건수 + 1. */
