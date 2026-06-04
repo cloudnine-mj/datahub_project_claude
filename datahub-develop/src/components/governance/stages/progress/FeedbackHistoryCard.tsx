@@ -1,5 +1,5 @@
 // 피드백 이력 카드 — 진행 단계 페이지 전체 폭(페이지의 핵심).
-//   표 6컬럼: 납품 구분 / 데이터 수령일 / 작성일시 / 내용 요약 / 첨부 / 펼침.
+//   표 6컬럼: 납품 구분 / 데이터 수령일 / 작성일시 / 피드백 기록 / 첨부 / 펼침.
 //   헤더에 [+ 피드백 작성] 버튼. 행 클릭 시 인라인 펼침(다른 행은 접힘 유지).
 
 "use client";
@@ -91,7 +91,7 @@ export function FeedbackHistoryCard({ formId, onCompose }: Props) {
               <Th width="120px">납품 구분</Th>
               <Th width="100px">데이터 수령일</Th>
               <Th width="130px">작성일시</Th>
-              <Th>내용 요약</Th>
+              <Th>피드백 기록</Th>
               <Th width="60px" align="center">첨부</Th>
               <Th width="32px" align="center" />
             </tr>
