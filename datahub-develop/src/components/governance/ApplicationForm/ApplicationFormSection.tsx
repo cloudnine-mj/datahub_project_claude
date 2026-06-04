@@ -349,10 +349,8 @@ function FieldInput({
   const id = field.key;
 
   if (field.type === "textarea") {
-    // rows 에 따라 min-height 차등 — 예상 답변 길이를 시각적으로 암시.
-    //   2 → 64px (중간 서술), 3 → 90px (긴 서술), 미지정 → 70px (기본).
-    const minH =
-      field.rows === 2 ? "min-h-[64px]" : field.rows === 3 ? "min-h-[90px]" : "min-h-[70px]";
+    // 공통 textarea 패턴 — resize 없음 + 높이 100px 고정 + 내부 스크롤.
+    //   입력량과 무관하게 양식 전체 높이 변동 없음.
     return (
       <textarea
         id={id}
@@ -361,7 +359,8 @@ function FieldInput({
         placeholder={field.placeholder}
         disabled={disabled}
         rows={field.rows}
-        className={`${INPUT_BASE} ${minH} resize-y`}
+        className={`${INPUT_BASE} resize-none overflow-y-auto`}
+        style={{ height: "100px", lineHeight: 1.6, padding: "8px 11px" }}
       />
     );
   }

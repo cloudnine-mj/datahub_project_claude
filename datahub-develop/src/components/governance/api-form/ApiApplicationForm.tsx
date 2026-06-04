@@ -185,7 +185,8 @@ export function ApiApplicationForm({ applicant, values, onChange }: Props) {
             value={values.apiPurpose}
             onChange={(e) => update({ apiPurpose: e.target.value })}
             placeholder="예: LLM 기반 리포트 자동 생성 및 데이터 분석 워크플로우 효율화"
-            className="min-h-[70px] resize-y rounded-md border border-gray-200 bg-white px-3 py-2 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+            className="resize-none overflow-y-auto rounded-md border border-gray-200 bg-white text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+            style={{ height: "100px", lineHeight: 1.6, padding: "8px 11px" }}
           />
         </div>
 

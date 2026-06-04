@@ -618,7 +618,8 @@ function FieldInput({
           value={(value as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          className={common}
+          className={`${common} resize-none overflow-y-auto`}
+          style={{ height: "100px", lineHeight: 1.6, padding: "8px 11px" }}
         />
       );
     case "date":
@@ -1125,7 +1126,8 @@ function ServiceBlockCard({
           value={block.usage}
           onChange={(e) => onChange({ usage: e.target.value })}
           placeholder="예: 내부 데이터 분석 자동화 및 AI 리포트 생성"
-          className="resize-y rounded-md border border-gray-200 bg-white px-3 py-1.5 text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+          className="resize-none overflow-y-auto rounded-md border border-gray-200 bg-white text-[12px] focus:border-brand focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+          style={{ height: "100px", lineHeight: 1.6, padding: "8px 11px" }}
         />
 
         <label className="pt-2 text-gray-500 dark:text-gray-400">결제 통화</label>
