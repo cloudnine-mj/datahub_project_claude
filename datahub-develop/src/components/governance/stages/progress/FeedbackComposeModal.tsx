@@ -19,6 +19,8 @@ import {
 interface Props {
   /** 자동 회차 계산용 — 기존 피드백 이력. */
   history: FeedbackItem[];
+  /** 진입 시 납품 구분 자동 선택([수정 필요] → 'modified'). 없으면 미선택. */
+  initialRound?: DeliveryRound;
   onClose: () => void;
   onSubmit: (payload: {
     deliveryRound: DeliveryRound;
@@ -28,8 +30,8 @@ interface Props {
   }) => void;
 }
 
-export function FeedbackComposeModal({ history, onClose, onSubmit }: Props) {
-  const [round, setRound] = useState<DeliveryRound | null>(null);
+export function FeedbackComposeModal({ history, initialRound, onClose, onSubmit }: Props) {
+  const [round, setRound] = useState<DeliveryRound | null>(initialRound ?? null);
   const [receivedDate, setReceivedDate] = useState<string>(todayYmd());
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<FeedbackAttachmentMeta[]>([]);

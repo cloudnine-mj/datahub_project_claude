@@ -6,14 +6,14 @@
 // 레이아웃(위→아래):
 //   1) 안내 카드  2) 신청 정보(접힘)  3) 최종 협의·계약(접힘)
 //   4) 피드백 이력 카드(전체 폭, 핵심)  5) 채팅 패널(전체 폭, 사람 대화만)
-//   6) [종료 단계로] 버튼(전체 폭)
+//   6) 최종 데이터 검토 결정 카드([수정 필요] / [종료])
 //
 // Phase 1: sessionStorage 기반. 권한 분기 없음. 채팅 시스템 자동 메시지 없음.
 
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowRight, ChevronDown, CircleCheck, InfoIcon, Lock } from "lucide-react";
+import { ChevronDown, CircleCheck, InfoIcon, Lock } from "lucide-react";
 import type { FormDetail } from "@/lib/governance/api-client-full";
 import {
   appendFeedback,
@@ -25,6 +25,7 @@ import {
 import { getChatAssignee } from "@/lib/governance/chat-assignee";
 import { FeedbackHistoryCard } from "./progress/FeedbackHistoryCard";
 import { FeedbackComposeModal } from "./progress/FeedbackComposeModal";
+import { FinalReviewDecisionCard } from "./progress/FinalReviewDecisionCard";
 
 interface Props {
   formId: string;
@@ -45,8 +46,17 @@ export function ProgressStageTab({
 }: Props) {
   const lead = getChatAssignee();
   const [composeOpen, setComposeOpen] = useState(false);
+  // 진입 시 납품 구분 자동 선택값([수정 필요] → 'modified', [+ 피드백 작성] → undefined).
+  const [composeInitialRound, setComposeInitialRound] = useState<DeliveryRound | undefined>(
+    undefined,
+  );
   // 자동 회차 계산용 — 모달에 현재 이력 전달.
   const [history, setHistory] = useState<FeedbackItem[]>([]);
+
+  function openCompose(initialRound?: DeliveryRound): void {
+    setComposeInitialRound(initialRound);
+    setComposeOpen(true);
+  }
 
   useEffect(() => {
     const refresh = () => setHistory(readFeedbackHistory(formId));
@@ -81,8 +91,8 @@ export function ProgressStageTab({
     onActivity?.();
   }
 
-  function onCloseStage(): void {
-    // 양식 모달(수령·품질확인서) 흐름은 별도 작업. Phase 1: 임시 안내.
+  function onFinish(): void {
+    // [종료] — 양식 모달(수령·품질확인서) 흐름은 별도 작업. Phase 1: 임시 안내.
     if (typeof window !== "undefined") {
       window.alert(
         "[Phase 1] 종료 단계 진입은 양식 모달(수령·품질확인서) 흐름으로 별도 작업입니다.",
@@ -104,32 +114,23 @@ export function ProgressStageTab({
         </p>
       </CollapsibleSection>
 
-      <FeedbackHistoryCard formId={formId} onCompose={() => setComposeOpen(true)} />
+      <FeedbackHistoryCard formId={formId} onCompose={() => openCompose()} />
 
       {/* 채팅 패널 — 전체 폭, 고정 높이. 사람 대화만(시스템 자동 메시지 없음). */}
-      <div className="relative h-[320px]">
+      <div className="relative h-[260px]">
         <div className="absolute inset-0">{chatPanel}</div>
       </div>
 
-      {/* 종료 단계로 — 페이지 하단 전체 폭. */}
-      <div>
-        <button
-          type="button"
-          onClick={onCloseStage}
-          className="flex w-full items-center justify-center gap-1.5 text-[12px] font-medium text-white transition hover:brightness-110"
-          style={{ background: "#D4533E", padding: 11, borderRadius: 8 }}
-        >
-          종료 단계로
-          <ArrowRight size={14} aria-hidden="true" />
-        </button>
-        <p className="mt-1.5 text-center text-[9px] text-[var(--color-text-tertiary,#9ca3af)]">
-          최종 데이터를 받고 필요한 피드백까지 마쳤다면 클릭 → 양식 모달
-        </p>
-      </div>
+      {/* 최종 데이터 검토 결정 카드 — 페이지 하단(기존 [종료 단계로] 대체, 항상 노출). */}
+      <FinalReviewDecisionCard
+        onRevision={() => openCompose("modified")}
+        onFinish={onFinish}
+      />
 
       {composeOpen && (
         <FeedbackComposeModal
           history={history}
+          initialRound={composeInitialRound}
           onClose={() => setComposeOpen(false)}
           onSubmit={onSubmitFeedback}
         />
@@ -147,7 +148,7 @@ function InfoCard() {
     >
       <InfoIcon size={15} aria-hidden="true" className="mt-px shrink-0 text-[#D4533E]" />
       <p className="text-[11px] text-[#993C1D]" style={{ lineHeight: 1.7 }}>
-        데이터는 메일·SharePoint로 주고받습니다. 받은 데이터를 확인한 후 피드백을 작성해 주세요. 모든 작업이 끝나면 [종료 단계로]를 눌러 다음 단계로 넘어갑니다.
+        데이터는 메일·SharePoint로 주고받습니다. 받은 데이터를 확인한 후 피드백을 작성해 주세요.
       </p>
     </section>
   );
