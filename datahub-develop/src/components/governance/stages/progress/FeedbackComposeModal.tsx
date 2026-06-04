@@ -192,8 +192,8 @@ export function FeedbackComposeModal({ history, onClose, onSubmit }: Props) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="피드백 내용을 입력하세요"
-          className="mb-3 w-full resize-none overflow-y-auto rounded-md border border-gray-200 bg-white px-3 py-2 text-[11px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-          style={{ minHeight: "90px" }}
+          className="mb-3 w-full resize-none overflow-y-auto rounded-md border border-gray-200 bg-white text-[11px] focus:border-[#D4533E] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          style={{ height: "100px", lineHeight: 1.6, padding: "8px 11px" }}
         />
 
         {/* 첨부 (선택) */}
